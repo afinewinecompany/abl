@@ -45,14 +45,10 @@ class DataProcessor:
                 player_id = player.get('id')
                 player_details = player_ids.get(player_id, {})
 
-                # Determine player status
-                status = player.get('status', '')
+                # Get original status and only convert NA to Minors
+                status = player.get('status', 'Active')
                 if status.lower() == 'na':
-                    status = 'Minors'  # Convert NA status to Minors
-                elif status.lower() == 'il':
-                    status = 'Reserve'  # Convert IL to Reserve
-                else:
-                    status = 'Active'  # Default to Active
+                    status = 'Minors'
 
                 player_info = {
                     'team': team_name,

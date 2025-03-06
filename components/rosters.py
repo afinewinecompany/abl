@@ -32,8 +32,11 @@ def render(roster_data: pd.DataFrame):
 
     # Split roster by status
     active_roster = team_roster[team_roster['status'] == 'Active']
-    reserve_roster = team_roster[team_roster['status'] == 'Reserve']
     minors_roster = team_roster[team_roster['status'] == 'Minors']
+    # Reserve roster includes all non-Active, non-Minors players
+    reserve_roster = team_roster[
+        ~team_roster['status'].isin(['Active', 'Minors'])
+    ]
 
     # Display roster statistics
     col1, col2, col3, col4 = st.columns(4)
