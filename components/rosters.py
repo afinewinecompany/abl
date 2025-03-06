@@ -31,11 +31,11 @@ def render(roster_data: pd.DataFrame):
     team_roster = roster_data[roster_data['team'] == selected_team]
 
     # Split roster by status
-    active_roster = team_roster[team_roster['status'] == 'Active']
-    minors_roster = team_roster[team_roster['status'] == 'Minors']
-    # Reserve roster includes all non-Active, non-Minors players
+    active_roster = team_roster[team_roster['status'].str.upper() == 'ACTIVE']
+    minors_roster = team_roster[team_roster['status'].str.upper() == 'MINORS']
+    # Reserve roster includes IL, DTD, and other non-Active, non-Minors players
     reserve_roster = team_roster[
-        ~team_roster['status'].isin(['Active', 'Minors'])
+        ~team_roster['status'].str.upper().isin(['ACTIVE', 'MINORS'])
     ]
 
     # Display roster statistics
@@ -67,53 +67,55 @@ def render(roster_data: pd.DataFrame):
     )
 
     # Reserve Roster Section
-    st.subheader("🔄 Reserve Roster")
-    st.dataframe(
-        reserve_roster,
-        column_config={
-            "player_name": "Player",
-            "position": "Position",
-            "mlb_team": "MLB Team",
-            "status": "Status",
-            "salary": st.column_config.NumberColumn(
-                "Salary",
-                format="$%.2f"
-            )
-        },
-        hide_index=True
-    )
+    if not reserve_roster.empty:
+        st.subheader("🔄 Reserve Roster")
+        st.dataframe(
+            reserve_roster,
+            column_config={
+                "player_name": "Player",
+                "position": "Position",
+                "mlb_team": "MLB Team",
+                "status": "Status",
+                "salary": st.column_config.NumberColumn(
+                    "Salary",
+                    format="$%.2f"
+                )
+            },
+            hide_index=True
+        )
 
     # Minors/Prospects Section
-    st.subheader("⭐ Minor League Prospects")
+    if not minors_roster.empty:
+        st.subheader("⭐ Minor League Prospects")
 
-    # Merge prospect rankings with minors roster
-    minors_with_rankings = pd.merge(
-        minors_roster,
-        prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score']],
-        left_on='player_name',
-        right_on='Player',
-        how='left'
-    )
+        # Merge prospect rankings with minors roster
+        minors_with_rankings = pd.merge(
+            minors_roster,
+            prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score']],
+            left_on='player_name',
+            right_on='Player',
+            how='left'
+        )
 
-    st.dataframe(
-        minors_with_rankings,
-        column_config={
-            "player_name": "Player",
-            "position": "Position",
-            "mlb_team": "MLB Team",
-            "Ranking": st.column_config.NumberColumn(
-                "Prospect Ranking",
-                help="Overall prospect ranking"
-            ),
-            "Tier": "Prospect Tier",
-            "prospect_score": st.column_config.NumberColumn(
-                "Prospect Score",
-                format="%.1f",
-                help="Calculated prospect value score"
-            )
-        },
-        hide_index=True
-    )
+        st.dataframe(
+            minors_with_rankings,
+            column_config={
+                "player_name": "Player",
+                "position": "Position",
+                "mlb_team": "MLB Team",
+                "Ranking": st.column_config.NumberColumn(
+                    "Prospect Ranking",
+                    help="Overall prospect ranking"
+                ),
+                "Tier": "Prospect Tier",
+                "prospect_score": st.column_config.NumberColumn(
+                    "Prospect Score",
+                    format="%.1f",
+                    help="Calculated prospect value score"
+                )
+            },
+            hide_index=True
+        )
 
     # Position breakdown
     st.subheader("Position Distribution")
@@ -128,7 +130,7 @@ def render(roster_data: pd.DataFrame):
     for team in teams:
         team_minors = roster_data[
             (roster_data['team'] == team) & 
-            (roster_data['status'] == 'Minors')
+            (roster_data['status'].str.upper() == 'MINORS')
         ]
 
         team_prospects = pd.merge(
