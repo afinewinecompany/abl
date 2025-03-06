@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Dict, List, Union
+import streamlit as st
 
 class DataProcessor:
     def process_league_info(self, data: Dict) -> Dict:
@@ -33,31 +34,42 @@ class DataProcessor:
         """Process roster data and combine with player information"""
         roster_list = []
 
+        # Process rosters from API response
+        period = roster_data.get('period', 1)
         rosters = roster_data.get('rosters', {})
+
         for team_id, team_data in rosters.items():
             team_name = team_data.get('teamName', 'Unknown')
             roster_items = team_data.get('rosterItems', [])
 
-            for player in roster_items:
-                if not isinstance(player, dict):
+            for item in roster_items:
+                if not isinstance(item, dict):
                     continue
 
-                player_id = player.get('id')
-                player_details = player_ids.get(player_id, {})
+                player_id = item.get('id')
+                player_info = player_ids.get(player_id, {})
 
-                player_info = {
+                # Get contract details
+                contract = item.get('contract', {})
+
+                player_record = {
                     'team': team_name,
-                    'player_name': player_details.get('name', player.get('name', 'Unknown')),
-                    'position': player.get('position', 'N/A'),
-                    'status': player.get('status', 'Active'),
-                    'salary': player.get('salary', 0.0),
-                    'mlb_team': player_details.get('team', 'N/A')
+                    'player_name': player_info.get('name', 'Unknown'),
+                    'position': item.get('position', player_info.get('position', 'N/A')),
+                    'status': item.get('status', 'Active'),
+                    'salary': float(item.get('salary', 0.0)),
+                    'mlb_team': player_info.get('team', 'N/A'),
+                    'contract_year': contract.get('name', 'N/A') if contract else 'N/A'
                 }
-                roster_list.append(player_info)
+                roster_list.append(player_record)
 
+        # Create DataFrame and clean up data
         result_df = pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
-            columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
+            columns=['team', 'player_name', 'position', 'mlb_team', 'status', 'salary', 'contract_year']
         )
+
+        # Clean up player names (remove any unnecessary characters)
+        result_df['player_name'] = result_df['player_name'].str.strip()
 
         return result_df
 
