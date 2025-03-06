@@ -10,24 +10,9 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
         """Make API request with error handling"""
         try:
-            # Add debug logging
-            st.write(f"Making request to: {self.base_url}/{endpoint}")
-            st.write(f"With params: {params}")
-
             response = requests.get(f"{self.base_url}/{endpoint}", params=params)
-
-            # Log response status and headers
-            st.write(f"Response status: {response.status_code}")
-            st.write(f"Response headers: {dict(response.headers)}")
-
             response.raise_for_status()
-            data = response.json()
-
-            # Log response data structure
-            st.write(f"Response data type: {type(data)}")
-            st.write(f"Response data preview: {str(data)[:200]}...")
-
-            return data
+            return response.json()
         except requests.exceptions.RequestException as e:
             st.error(f"API request failed: {str(e)}")
             raise Exception(f"API request failed: {str(e)}")
