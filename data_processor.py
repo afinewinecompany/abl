@@ -21,11 +21,11 @@ class DataProcessor:
         scoring_settings = data.get('scoringSettings', {})
 
         return {
-            'name': "Fantasy Baseball League",  # Hardcoded as not present in API response
-            'season': str(data.get('seasonId', 'N/A')),
+            'name': "ABL Season 5",  # Hardcoded league name
+            'season': "2025",  # Current season
             'sport': 'MLB',
-            'scoring_type': settings.get('draftType', 'N/A'),
-            'teams': len(matchup_list),
+            'scoring_type': "Head to Head",  # League format
+            'teams': 30,  # Fixed number of teams
             'scoring_period': scoring_settings.get('scoringPeriod', 'Weekly')
         }
 
