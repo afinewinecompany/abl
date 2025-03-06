@@ -1,0 +1,47 @@
+Making request to: https://www.fantrax.com/fxea/general/getLeagueInfo
+
+With params: {'leagueId': 'grx2lginm1v4p5jd'}
+
+Response status: 200
+
+Response headers: {'Date': 'Thu, 06 Mar 2025 02:15:03 GMT', 'Content-Type': 'text/plain', 'Content-Length': '71173', 'Connection': 'keep-alive', 'Cache-Control': 'no-store, no-cache', 'permissions-policy': 'camera=(self),microphone=(self),payment=()', 'content-security-policy': "font-src 'self' .fantrax.com fantraximg.com fonts.gstatic.com; frame-ancestors 'self';", 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin', 'x-frame-options': 'SAMEORIGIN', 'Set-Cookie': 'uig=8io1jp39m7wps1sm; Path=/; Domain=fantrax.com; Expires=Sun, 05-Mar-2028 02:15:03 GMT; Max-Age=94608000, __cf_bm=kyEnbHzW4HTh0oJUVbrEob9mgIQ.NTjihf7h2ua.WZw-1741227303-1.0.1.1-o3egoRWAkP01bcogE1L_uutBjkoMax7w4zPbiBLgqCFOlB1vuX46mybr9ih7m0SmBbfkWsaFecroLER4cOCi71q82iuvti2H5L50mG1.UX0; path=/; expires=Thu, 06-Mar-25 02:45:03 GMT; domain=.fantrax.com; HttpOnly; Secure; SameSite=None', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'access-control-allow-headers': 'X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept', 'access-control-allow-credentials': 'true', 'access-control-allow-origin': '', 'access-control-allow-methods': 'POST, GET', 'access-control-max-age': '300', 'Content-Encoding': 'gzip', 'strict-transport-security': 'max-age=16000000; includeSubDomains; preload;', 'cf-cache-status': 'DYNAMIC', 'vary': 'accept-encoding', 'Server': 'cloudflare', 'CF-RAY': '91be57d439beeb43-SEA'}
+
+Response data type: <class 'dict'>
+
+Response data preview: {'draftSettings': {'draftType': 'snake'}, 'matchups': [{'period': 1, 'matchupList': [{'away': {'name': 'Washington Nationals', 'id': 'ehzxdg4jm1v4p5l8', 'shortName': 'WAS'}, 'home': {'name': 'San Dieg...
+
+Making request to: https://www.fantrax.com/fxea/general/getTeamRosters
+
+With params: {'leagueId': 'grx2lginm1v4p5jd', 'period': '1'}
+
+Response status: 200
+
+Response headers: {'Date': 'Thu, 06 Mar 2025 02:15:03 GMT', 'Content-Type': 'text/plain', 'Content-Length': '10235', 'Connection': 'keep-alive', 'Cache-Control': 'no-store, no-cache', 'permissions-policy': 'camera=(self),microphone=(self),payment=()', 'content-security-policy': "font-src 'self' .fantrax.com fantraximg.com fonts.gstatic.com; frame-ancestors 'self';", 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin', 'x-frame-options': 'SAMEORIGIN', 'Set-Cookie': 'uig=7a6dm8bem7wps24j; Path=/; Domain=fantrax.com; Expires=Sun, 05-Mar-2028 02:15:03 GMT; Max-Age=94608000, __cf_bm=4WNobDbErKrOlp_pibp8AkvFxpIdGUTuIItN6cxNGxE-1741227303-1.0.1.1-GcWChy4YD3XxejyXe_qBACB80n2082ytN2JIaykuF.PX7.n0igSv1jtohOv6FedLmrhjkyLsVhrDP6mdeniR4pUNUjJj91oxoKRWecloEPw; path=/; expires=Thu, 06-Mar-25 02:45:03 GMT; domain=.fantrax.com; HttpOnly; Secure; SameSite=None', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'access-control-allow-headers': 'X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept', 'access-control-allow-credentials': 'true', 'access-control-allow-origin': '', 'access-control-allow-methods': 'POST, GET', 'access-control-max-age': '300', 'Content-Encoding': 'gzip', 'strict-transport-security': 'max-age=16000000; includeSubDomains; preload;', 'cf-cache-status': 'DYNAMIC', 'vary': 'accept-encoding', 'Server': 'cloudflare', 'CF-RAY': '91be57d7298aebc1-SEA'}
+
+Response data type: <class 'dict'>
+
+Response data preview: {'period': 1, 'rosters': {'32fwt0gmm1v4p5ko': {'teamName': 'Seattle Mariners', 'rosterItems': [{'contract': {'smallId': '2', 'name': '2026'}, 'id': '04efa', 'position': 'CF', 'salary': 26.0, 'status':...
+
+Making request to: https://www.fantrax.com/fxea/general/getStandings
+
+With params: {'leagueId': 'grx2lginm1v4p5jd'}
+
+Response status: 200
+
+Response headers: {'Date': 'Thu, 06 Mar 2025 02:15:03 GMT', 'Content-Type': 'text/plain', 'Content-Length': '865', 'Connection': 'keep-alive', 'Cache-Control': 'no-store, no-cache', 'permissions-policy': 'camera=(self),microphone=(self),payment=()', 'content-security-policy': "font-src 'self' .fantrax.com fantraximg.com fonts.gstatic.com; frame-ancestors 'self';", 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin', 'x-frame-options': 'SAMEORIGIN', 'Set-Cookie': 'uig=85le1onxm7wps28t; Path=/; Domain=fantrax.com; Expires=Sun, 05-Mar-2028 02:15:03 GMT; Max-Age=94608000, __cf_bm=Wz.kquWU.183OYWJ.UzchGIO8oFneXJ4ZN6S1tagmCQ-1741227303-1.0.1.1-s96m2VnQ2utPDkFWXGv.65x3IIA7.vkIiNZXLPP8kY721RGwRnER.AWQAq3s38fjrr4PixcaYSJ5KSs9LnL9JQm51D4BY9Z987TUIsqohJs; path=/; expires=Thu, 06-Mar-25 02:45:03 GMT; domain=.fantrax.com; HttpOnly; Secure; SameSite=None', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'access-control-allow-headers': 'X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept', 'access-control-allow-credentials': 'true', 'access-control-allow-origin': '', 'access-control-allow-methods': 'POST, GET', 'access-control-max-age': '300', 'Content-Encoding': 'gzip', 'strict-transport-security': 'max-age=16000000; includeSubDomains; preload;', 'cf-cache-status': 'DYNAMIC', 'vary': 'accept-encoding', 'Server': 'cloudflare', 'CF-RAY': '91be57d81e2d76bc-SEA'}
+
+Response data type: <class 'list'>
+
+Response data preview: [{'teamName': 'Houston Astros', 'teamId': '7gg40es7m1v4p5kz', 'gamesBack': 0.0, 'rank': 1, 'points': '0-0-0', 'winPercentage': 0.0}, {'teamName': 'Pittsburgh Pirates', 'teamId': 'sg2jbz0hm1v4p5jg', 'g...
+
+Making request to: https://www.fantrax.com/fxea/general/getPlayerIds
+
+With params: {'sport': 'MLB'}
+
+Response status: 200
+
+Response headers: {'Date': 'Thu, 06 Mar 2025 02:15:04 GMT', 'Content-Type': 'text/plain', 'Content-Length': '618804', 'Connection': 'keep-alive', 'Cache-Control': 'no-store, no-cache', 'permissions-policy': 'camera=(self),microphone=(self),payment=()', 'content-security-policy': "font-src 'self' .fantrax.com fantraximg.com fonts.gstatic.com; frame-ancestors 'self';", 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin', 'x-frame-options': 'SAMEORIGIN', 'Set-Cookie': 'uig=wi1nv50hm7wps29u; Path=/; Domain=fantrax.com; Expires=Sun, 05-Mar-2028 02:15:03 GMT; Max-Age=94608000, __cf_bm=br.lbf9HhUM0rOOdP6i6N8TDHIt8n8HN9wSnrNfFL2I-1741227304-1.0.1.1-pm4CZLeyXnj5eQMREM9_fjOoj9X1YJ2Bc4GsD2_sUXeL0jzyOp3j7WDP8DPo2maTSNLzgqbPL6eFNZ47K_8BWBSrh9EouD.RYRG2h6HTTX0; path=/; expires=Thu, 06-Mar-25 02:45:04 GMT; domain=.fantrax.com; HttpOnly; Secure; SameSite=None', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'access-control-allow-headers': 'X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept', 'access-control-allow-credentials': 'true', 'access-control-allow-origin': '', 'access-control-allow-methods': 'POST, GET', 'access-control-max-age': '300', 'Content-Encoding': 'gzip', 'strict-transport-security': 'max-age=16000000; includeSubDomains; preload;', 'cf-cache-status': 'DYNAMIC', 'vary': 'accept-encoding', 'Server': 'cloudflare', 'CF-RAY': '91be57d8d9727621-SEA'}
+
+Response data type: <class 'dict'>
+
+Response data preview: {'01yqi': {'rotowireId': 11188, 'name': 'Crim, Matthew', 'fantraxId': '01yqi', 'team': '(N/A)', 'position': 'SP'}, '028jh': {'rotowireId': 11741, 'name': 'Vinicio, Jose', 'fantraxId': '028jh', 'team':...

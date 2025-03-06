@@ -2,11 +2,9 @@ import pandas as pd
 from typing import Dict, List, Union
 
 class DataProcessor:
-    def process_league_info(self, data: Union[Dict, List]) -> Dict:
+    def process_league_info(self, data: Dict) -> Dict:
         """Process league information data"""
-        if isinstance(data, list) and len(data) > 0:
-            data = data[0]
-        elif not isinstance(data, dict):
+        if not data or not isinstance(data, dict):
             return {
                 'name': 'N/A',
                 'season': 'N/A',
@@ -15,64 +13,60 @@ class DataProcessor:
                 'teams': 0
             }
 
+        # Extract from draftSettings or main data
+        settings = data.get('draftSettings', {})
         return {
-            'name': data.get('name', 'N/A'),
-            'season': data.get('season', 'N/A'),
-            'sport': data.get('sport', 'MLB'),
-            'scoring_type': data.get('scoringType', 'N/A'),
-            'teams': data.get('numTeams', 0)
+            'name': data.get('leagueName', 'N/A'),
+            'season': str(data.get('season', 'N/A')),
+            'sport': 'MLB',
+            'scoring_type': settings.get('draftType', 'N/A'),
+            'teams': len(data.get('matchups', [{}])[0].get('matchupList', []))
         }
 
-    def process_rosters(self, roster_data: Union[Dict, List], player_ids: Union[Dict, List]) -> pd.DataFrame:
+    def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
         """Process roster data and combine with player information"""
         roster_list = []
+        rosters = roster_data.get('rosters', {})
 
-        # Handle if roster_data is a list
-        teams = roster_data.get('teams', []) if isinstance(roster_data, dict) else roster_data
+        for team_id, team_data in rosters.items():
+            team_name = team_data.get('teamName', 'Unknown')
+            roster_items = team_data.get('rosterItems', [])
 
-        for team in teams:
-            if not isinstance(team, dict):
-                continue
+            for player in roster_items:
+                if not isinstance(player, dict):
+                    continue
 
-            team_name = team.get('name', 'Unknown')
-            players = team.get('players', [])
+                player_info = {
+                    'team': team_name,
+                    'player_name': player.get('name', 'Unknown'),
+                    'position': player.get('position', 'N/A'),
+                    'status': player.get('status', 'Active'),
+                    'salary': player.get('salary', 0.0)
+                }
+                roster_list.append(player_info)
 
-            if isinstance(players, list):
-                for player in players:
-                    if not isinstance(player, dict):
-                        continue
+        return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
+            columns=['team', 'player_name', 'position', 'status', 'salary']
+        )
 
-                    player_info = {
-                        'team': team_name,
-                        'player_name': player.get('name', 'Unknown'),
-                        'position': player.get('position', 'N/A'),
-                        'team_mlb': player.get('team', 'N/A'),
-                        'status': player.get('status', 'Active')
-                    }
-                    roster_list.append(player_info)
-
-        return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(columns=['team', 'player_name', 'position', 'team_mlb', 'status'])
-
-    def process_standings(self, standings_data: Union[Dict, List]) -> pd.DataFrame:
+    def process_standings(self, standings_data: List) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
         standings_list = []
 
-        # Handle if standings_data is a list
-        teams = standings_data.get('teams', []) if isinstance(standings_data, dict) else standings_data
-
-        for team in teams:
+        for team in standings_data:
             if not isinstance(team, dict):
                 continue
 
             team_stats = {
-                'team_name': team.get('name', 'Unknown'),
+                'team_name': team.get('teamName', 'Unknown'),
+                'team_id': team.get('teamId', 'N/A'),
                 'rank': team.get('rank', 0),
-                'points': team.get('points', 0),
-                'wins': team.get('wins', 0),
-                'losses': team.get('losses', 0),
-                'ties': team.get('ties', 0),
-                'winning_pct': team.get('winningPercentage', 0.0)
+                'points': team.get('points', '0-0-0'),
+                'winning_pct': team.get('winPercentage', 0.0),
+                'games_back': team.get('gamesBack', 0.0)
             }
             standings_list.append(team_stats)
 
-        return pd.DataFrame(standings_list) if standings_list else pd.DataFrame(columns=['team_name', 'rank', 'points', 'wins', 'losses', 'ties', 'winning_pct'])
+        return pd.DataFrame(standings_list) if standings_list else pd.DataFrame(
+            columns=['team_name', 'team_id', 'rank', 'points', 'winning_pct', 'games_back']
+        )
