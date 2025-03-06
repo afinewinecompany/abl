@@ -43,9 +43,9 @@ def render(roster_data: pd.DataFrame):
         st.metric("Positions", len(active_roster['position'].unique()))
 
     # Display active/reserve roster
-    st.subheader("Active/Reserve Roster")
+    st.subheader("⚾ Active/Reserve Roster")
     st.dataframe(
-        active_roster,
+        active_roster[['player_name', 'position', 'mlb_team', 'status', 'salary']],
         column_config={
             "player_name": "Player",
             "position": "Position",
@@ -56,12 +56,11 @@ def render(roster_data: pd.DataFrame):
                 format="$%.2f"
             )
         },
-        hide_index=True,
-        column_order=["player_name", "position", "mlb_team", "status", "salary"]
+        hide_index=True
     )
 
     # Process and display minors roster with rankings
-    st.subheader("Minor League System")
+    st.subheader("🌟 Minor League System")
 
     # Merge minors roster with prospect rankings
     minors_with_rankings = pd.merge(
@@ -79,7 +78,7 @@ def render(roster_data: pd.DataFrame):
     # Display minors roster with rankings
     if not minors_with_rankings.empty:
         st.dataframe(
-            minors_with_rankings,
+            minors_with_rankings[['player_name', 'position', 'mlb_team', 'Ranking', 'Tier']],
             column_config={
                 "player_name": "Player",
                 "position": "Position",
@@ -90,29 +89,37 @@ def render(roster_data: pd.DataFrame):
                 ),
                 "Tier": "Tier"
             },
-            hide_index=True,
-            column_order=["player_name", "position", "mlb_team", "Ranking", "Tier"]
+            hide_index=True
         )
 
         # Show prospect tier distribution
-        st.subheader("Prospect Tier Distribution")
+        st.subheader("📊 Prospect Tier Distribution")
         tier_counts = minors_with_rankings['Tier'].value_counts().sort_index()
         fig = px.bar(
             tier_counts,
             title="Prospect Tiers",
-            labels={'index': 'Tier', 'value': 'Count'}
+            labels={'index': 'Tier', 'value': 'Count'},
+            color_discrete_sequence=['#1f77b4']
+        )
+        fig.update_layout(
+            showlegend=False,
+            height=400
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("No minor league players found for this team.")
 
     # Position breakdown
-    st.subheader("Position Distribution")
+    st.subheader("📋 Position Distribution")
     position_counts = active_roster['position'].value_counts()
     fig2 = px.pie(
         values=position_counts.values,
         names=position_counts.index,
         title="Position Distribution",
-        hole=0.4
+        hole=0.4,
+        color_discrete_sequence=px.colors.qualitative.Set3
+    )
+    fig2.update_layout(
+        height=400
     )
     st.plotly_chart(fig2, use_container_width=True)

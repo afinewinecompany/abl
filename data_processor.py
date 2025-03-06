@@ -32,8 +32,8 @@ class DataProcessor:
     def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
         """Process roster data and combine with player information"""
         roster_list = []
-        rosters = roster_data.get('rosters', {})
 
+        rosters = roster_data.get('rosters', {})
         for team_id, team_data in rosters.items():
             team_name = team_data.get('teamName', 'Unknown')
             roster_items = team_data.get('rosterItems', [])
@@ -55,9 +55,11 @@ class DataProcessor:
                 }
                 roster_list.append(player_info)
 
-        return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
+        result_df = pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
             columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
         )
+
+        return result_df
 
     def process_standings(self, standings_data: List) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
