@@ -45,11 +45,20 @@ class DataProcessor:
                 player_id = player.get('id')
                 player_details = player_ids.get(player_id, {})
 
+                # Determine player status
+                status = player.get('status', '')
+                if status.lower() == 'na':
+                    status = 'Minors'  # Convert NA status to Minors
+                elif status.lower() == 'il':
+                    status = 'Reserve'  # Convert IL to Reserve
+                else:
+                    status = 'Active'  # Default to Active
+
                 player_info = {
                     'team': team_name,
                     'player_name': player_details.get('name', player.get('name', 'Unknown')),
                     'position': player.get('position', 'N/A'),
-                    'status': player.get('status', 'Active'),
+                    'status': status,
                     'salary': player.get('salary', 0.0),
                     'mlb_team': player_details.get('team', 'N/A')
                 }
