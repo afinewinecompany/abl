@@ -13,14 +13,20 @@ class DataProcessor:
                 'teams': 0
             }
 
-        # Extract from draftSettings or main data
+        matchups = data.get('matchups', [])
+        first_matchup = matchups[0] if matchups else {}
+        matchup_list = first_matchup.get('matchupList', [])
+
         settings = data.get('draftSettings', {})
+        scoring_settings = data.get('scoringSettings', {})
+
         return {
-            'name': data.get('leagueName', 'N/A'),
-            'season': str(data.get('season', 'N/A')),
+            'name': "Fantasy Baseball League",  # Hardcoded as not present in API response
+            'season': str(data.get('seasonId', 'N/A')),
             'sport': 'MLB',
             'scoring_type': settings.get('draftType', 'N/A'),
-            'teams': len(data.get('matchups', [{}])[0].get('matchupList', []))
+            'teams': len(matchup_list),
+            'scoring_period': scoring_settings.get('scoringPeriod', 'Weekly')
         }
 
     def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
@@ -36,17 +42,21 @@ class DataProcessor:
                 if not isinstance(player, dict):
                     continue
 
+                player_id = player.get('id')
+                player_details = player_ids.get(player_id, {})
+
                 player_info = {
                     'team': team_name,
-                    'player_name': player.get('name', 'Unknown'),
+                    'player_name': player_details.get('name', player.get('name', 'Unknown')),
                     'position': player.get('position', 'N/A'),
                     'status': player.get('status', 'Active'),
-                    'salary': player.get('salary', 0.0)
+                    'salary': player.get('salary', 0.0),
+                    'mlb_team': player_details.get('team', 'N/A')
                 }
                 roster_list.append(player_info)
 
         return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
-            columns=['team', 'player_name', 'position', 'status', 'salary']
+            columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
         )
 
     def process_standings(self, standings_data: List) -> pd.DataFrame:
@@ -57,16 +67,22 @@ class DataProcessor:
             if not isinstance(team, dict):
                 continue
 
+            # Parse points string into components (format: "W-L-T")
+            points_str = team.get('points', '0-0-0')
+            wins, losses, ties = map(int, points_str.split('-'))
+
             team_stats = {
                 'team_name': team.get('teamName', 'Unknown'),
                 'team_id': team.get('teamId', 'N/A'),
                 'rank': team.get('rank', 0),
-                'points': team.get('points', '0-0-0'),
+                'wins': wins,
+                'losses': losses,
+                'ties': ties,
                 'winning_pct': team.get('winPercentage', 0.0),
                 'games_back': team.get('gamesBack', 0.0)
             }
             standings_list.append(team_stats)
 
         return pd.DataFrame(standings_list) if standings_list else pd.DataFrame(
-            columns=['team_name', 'team_id', 'rank', 'points', 'winning_pct', 'games_back']
+            columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
         )

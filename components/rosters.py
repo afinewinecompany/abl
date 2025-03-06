@@ -18,6 +18,7 @@ def render(roster_data: pd.DataFrame):
         column_config={
             "player_name": "Player",
             "position": "Position",
+            "mlb_team": "MLB Team",
             "status": "Status",
             "salary": st.column_config.NumberColumn(
                 "Salary",
@@ -28,10 +29,17 @@ def render(roster_data: pd.DataFrame):
     )
 
     # Display roster statistics
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Players", len(team_roster))
     with col2:
         st.metric("Active Players", len(team_roster[team_roster['status'] == 'Active']))
     with col3:
         st.metric("Total Salary", f"${team_roster['salary'].sum():,.2f}")
+    with col4:
+        st.metric("Positions", len(team_roster['position'].unique()))
+
+    # Position breakdown
+    st.subheader("Position Distribution")
+    position_counts = team_roster['position'].value_counts()
+    st.bar_chart(position_counts)
