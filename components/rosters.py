@@ -88,6 +88,11 @@ def render(roster_data: pd.DataFrame):
     if not minors_roster.empty:
         st.subheader("⭐ Minor League Prospects")
 
+        # Debug: Show sample names from both datasets
+        if st.checkbox("Debug Name Matching", value=False):
+            st.write("Sample Minor League Players:", minors_roster['player_name'].head())
+            st.write("Sample Prospect Rankings:", prospect_rankings['Player'].head())
+
         # Merge prospect rankings with minors roster
         minors_with_rankings = pd.merge(
             minors_roster,
