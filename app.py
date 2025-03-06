@@ -94,6 +94,9 @@ def main():
         st.markdown("Advanced Baseball League (ABL) analytics platform for real-time stats and insights.")
 
     try:
+        # Hide API debug output by default
+        api_debug = False
+
         # Fetch all required data
         league_data = api_client.get_league_info()
         roster_data = api_client.get_team_rosters()
@@ -104,17 +107,6 @@ def main():
         processed_league_data = data_processor.process_league_info(league_data)
         processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
         processed_standings_data = data_processor.process_standings(standings_data)
-
-        # Debug logging for roster data
-        with st.expander("Debug: Data Processing", expanded=False):
-            st.write("### Roster Data")
-            st.write("Shape:", processed_roster_data.shape)
-            st.write("Columns:", processed_roster_data.columns.tolist())
-            st.write("Sample Records:", processed_roster_data.head())
-
-            st.write("### Player IDs Data")
-            st.write("Total Players:", len(player_ids))
-            st.write("Sample Player:", next(iter(player_ids.items())))
 
         # Create tabs for different sections
         tab1, tab2, tab3, tab4 = st.tabs([
@@ -135,6 +127,14 @@ def main():
 
         with tab4:
             power_rankings.render(processed_standings_data)
+
+        # Debug information in collapsible section at bottom
+        with st.expander("🔧 Debug Information", expanded=False):
+            st.markdown("### API Response Details")
+            if st.checkbox("Show API Debug Output", value=False):
+                st.json(league_data)
+                st.json(roster_data)
+                st.json(standings_data)
 
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
