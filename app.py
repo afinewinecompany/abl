@@ -10,87 +10,177 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for dark mode with neon effects
+# Custom CSS for enhanced dark mode with modern tech styling
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
     .main {
         padding: 1rem 2rem;
         background: #0e1117;
     }
+
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
         background: #1a1c23;
         padding: 1rem;
         border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        border: 1px solid rgba(0, 255, 136, 0.1);
     }
+
     .stTabs [data-baseweb="tab"] {
         height: 4rem;
-        font-weight: 600;
+        font-weight: 500;
+        letter-spacing: 0.5px;
         transition: all 0.3s ease;
         color: #fafafa;
+        border-radius: 8px;
     }
+
     .stTabs [data-baseweb="tab"]:hover {
         color: #00ff88;
         text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        background: rgba(0, 255, 136, 0.1);
     }
+
     h1 {
         color: #00ff88;
         text-align: center;
-        padding: 1.5rem;
+        padding: 2rem;
         margin-bottom: 2rem;
-        font-size: 2.5em;
+        font-size: 2.8em;
         font-weight: 700;
-        text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-        background: #1a1c23;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        letter-spacing: -1px;
+        text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+        background: linear-gradient(180deg, #1a1c23 0%, rgba(26, 28, 35, 0.8) 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 136, 0.2),
+            inset 0 0 50px rgba(0, 255, 136, 0.05);
     }
+
     .stMetric {
-        background-color: #1a1c23;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
+        padding: 1.8rem;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 136, 0.1);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 136, 0.15),
+            inset 0 0 30px rgba(0, 255, 136, 0.03);
         transition: all 0.3s ease;
     }
+
     .stMetric:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 
+            0 0 30px rgba(0, 255, 136, 0.25),
+            inset 0 0 30px rgba(0, 255, 136, 0.05);
     }
+
     .stDataFrame {
-        background: #1a1c23;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.95) 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 136, 0.1);
+        box-shadow: 
+            0 0 25px rgba(0, 255, 136, 0.15),
+            inset 0 0 40px rgba(0, 255, 136, 0.03);
     }
+
     .css-1d391kg {  /* Streamlit containers */
-        background: #1a1c23;
+        background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
         padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 255, 136, 0.1);
+        box-shadow: 
+            0 0 25px rgba(0, 255, 136, 0.15),
+            inset 0 0 40px rgba(0, 255, 136, 0.03);
         margin-bottom: 2rem;
     }
-    /* Custom scrollbar for dark mode */
-    ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
+
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+        font-weight: 500;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
     }
+
+    .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        transform: translateY(-1px);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
     ::-webkit-scrollbar-track {
         background: #0e1117;
+        border-radius: 4px;
     }
+
     ::-webkit-scrollbar-thumb {
         background: #2e3137;
-        border-radius: 5px;
+        border-radius: 4px;
+        border: 2px solid #0e1117;
     }
+
     ::-webkit-scrollbar-thumb:hover {
         background: #00ff88;
     }
-    /* Sidebar styling */
+
+    /* Sidebar */
     .css-1d391kg {
-        background-color: #1a1c23;
+        background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
     }
+
     .css-1p05t8e {
-        background-color: #0e1117;
+        background: #0e1117;
+    }
+
+    /* Select boxes and inputs */
+    .stSelectbox [data-baseweb="select"] {
+        background: #1a1c23;
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        border-radius: 8px;
+    }
+
+    .stSelectbox [data-baseweb="select"]:hover {
+        border: 1px solid rgba(0, 255, 136, 0.4);
+    }
+
+    /* Headers */
+    h2, h3, h4 {
+        color: #fafafa;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        margin-bottom: 1rem;
+    }
+
+    /* Links */
+    a {
+        color: #00ff88;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    a:hover {
+        color: #00ff88;
+        text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
     }
 </style>
 """, unsafe_allow_html=True)
