@@ -84,7 +84,7 @@ def get_best_lineup_points(players_df: pd.DataFrame, position_limits: Dict[str, 
 def calculate_depth_score(players_df: pd.DataFrame, used_players: set) -> float:
     """Calculate depth score for bench players"""
     bench_players = players_df[~players_df.index.isin(used_players)]
-    return bench_players['projected_points'].sum() * 0.75
+    return bench_players['projected_points'].sum() * 0.85  # Weight bench players at 85%
 
 def get_division_strength(team: str) -> float:
     """Calculate division strength adjustment"""
@@ -138,7 +138,7 @@ def calculate_abl_score(active_points: float, depth_points: float, division_fact
     # Base score from active lineup (weighted at 100%)
     base_score = active_points
 
-    # Add depth points (weighted at 75%)
+    # Add depth points (weighted at 85%)
     depth_score = depth_points
 
     # Apply division factor
@@ -287,7 +287,7 @@ def render(roster_data: pd.DataFrame):
                     "depth_points": st.column_config.NumberColumn(
                         "Depth Value",
                         format="%.1f",
-                        help="Additional value from bench players (weighted at 75%)"
+                        help="Additional value from bench players (weighted at 85%)"
                     ),
                     "division_factor": st.column_config.NumberColumn(
                         "Division Factor",
