@@ -54,12 +54,6 @@ st.markdown("""
     .stMetric:hover {
         transform: translateY(-2px);
     }
-    .debug-section {
-        margin-top: 2rem;
-        padding: 1rem;
-        border-radius: 10px;
-        background: #f8f9fa;
-    }
     .stDataFrame {
         background: #ffffff;
         padding: 1rem;
@@ -83,20 +77,19 @@ def main():
     api_client = FantraxAPI()
     data_processor = DataProcessor()
 
-    # Add refresh button in sidebar with baseball emoji
+    # Streamlined sidebar
     with st.sidebar:
-        st.markdown("### League Controls")
-        if st.button("🔄 Refresh Data", use_container_width=True):
+        st.markdown("### 🔄 League Controls")
+        if st.button("Refresh Data", use_container_width=True):
             st.experimental_rerun()
 
         st.markdown("---")
-        st.markdown("### About")
-        st.markdown("Advanced Baseball League (ABL) analytics platform for real-time stats and insights.")
+        st.markdown("""
+        ### About ABL Analytics
+        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+        """)
 
     try:
-        # Hide API debug output by default
-        api_debug = False
-
         # Fetch all required data
         league_data = api_client.get_league_info()
         roster_data = api_client.get_team_rosters()
@@ -132,17 +125,8 @@ def main():
         with tab5:
             prospects.render(processed_roster_data)
 
-        # Debug information in collapsible section at bottom
-        with st.expander("🔧 Debug Information", expanded=False):
-            st.markdown("### API Response Details")
-            if st.checkbox("Show API Debug Output", value=False):
-                st.json(league_data)
-                st.json(roster_data)
-                st.json(standings_data)
-
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        st.info("Please try refreshing the page or check your internet connection.")
+        st.error(f"An error occurred while loading data. Please try refreshing.")
 
 if __name__ == "__main__":
     main()
