@@ -99,10 +99,10 @@ def get_division_strength(team: str) -> float:
     """Calculate division strength adjustment"""
     division_mapping = {
         # AL West
-        "Seattle Mariners": "AL West",
         "Texas Rangers": "AL West",
+        "Seattle Mariners": "AL West",
         "Houston Astros": "AL West",
-        "Oakland Athletics": "AL West",
+        "Athletics": "AL West",
         "Los Angeles Angels": "AL West",
         # AL Central
         "Cleveland Guardians": "AL Central",
@@ -117,7 +117,7 @@ def get_division_strength(team: str) -> float:
         "Baltimore Orioles": "AL East",
         "Boston Red Sox": "AL East",
         # NL Central
-        "St. Louis Cardinals": "NL Central",
+        "Saint Louis Cardinals": "NL Central",
         "Pittsburgh Pirates": "NL Central",
         "Chicago Cubs": "NL Central",
         "Cincinnati Reds": "NL Central",
