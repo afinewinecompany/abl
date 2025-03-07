@@ -10,6 +10,10 @@ def normalize_name(name: str) -> str:
         if ',' in name:
             last, first = name.split(',', 1)
             return f"{first.strip()} {last.strip()}"
+        # Remove any parentheses and their contents
+        name = name.split('(')[0].strip()
+        # Remove any team designations after the name
+        name = name.split(' - ')[0].strip()
         return name.strip()
     except:
         return name.strip()
@@ -38,7 +42,6 @@ def render(roster_data: pd.DataFrame):
             team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
 
             total_points = 0
-            # Add projected points to each player
             for idx, player in team_roster.iterrows():
                 if 'P' in player['position'].upper():
                     proj = pitchers_proj[pitchers_proj['Name'] == player['clean_name']]
@@ -47,10 +50,7 @@ def render(roster_data: pd.DataFrame):
 
                 if not proj.empty:
                     points = proj.iloc[0]['fantasy_points']
-                    team_roster.at[idx, 'projected_points'] = points
                     total_points += points
-                else:
-                    team_roster.at[idx, 'projected_points'] = 0
 
             all_teams_points[team] = total_points
 
@@ -67,9 +67,20 @@ def render(roster_data: pd.DataFrame):
         total_points = all_teams_points[selected_team]
         st.subheader(f"{selected_team} (Rank: #{rank} - Projected Points: {total_points:,.1f})")
 
-        # Filter data by selected team
-        team_roster = roster_data[roster_data['team'] == selected_team]
+        # Filter data by selected team and create a copy
+        team_roster = roster_data[roster_data['team'] == selected_team].copy()
         team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
+
+        # Add projected points to team roster
+        team_roster['projected_points'] = 0.0  # Initialize with zeros
+        for idx, player in team_roster.iterrows():
+            if 'P' in player['position'].upper():
+                proj = pitchers_proj[pitchers_proj['Name'] == player['clean_name']]
+            else:
+                proj = hitters_proj[hitters_proj['Name'] == player['clean_name']]
+
+            if not proj.empty:
+                team_roster.at[idx, 'projected_points'] = proj.iloc[0]['fantasy_points']
 
         # Split roster by status
         active_roster = team_roster[team_roster['status'].str.upper() == 'ACTIVE']
