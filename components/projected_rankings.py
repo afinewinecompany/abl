@@ -73,6 +73,16 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📊 Projected Rankings")
 
+        # Debug information
+        st.sidebar.markdown("### Debug Information")
+        show_debug = st.sidebar.checkbox("Show Debug Info")
+
+        if show_debug:
+            st.sidebar.markdown("### Initial Roster Data")
+            st.sidebar.write(f"Total players in roster: {len(roster_data)}")
+            st.sidebar.write("\nUnique positions in roster:")
+            st.sidebar.write(roster_data['position'].unique().tolist())
+
         # Check if projection files exist
         hitters_file = "attached_assets/oopsy-hitters.csv"
         pitchers_file = "attached_assets/oopsy-pitchers.csv"
@@ -85,18 +95,13 @@ def render(roster_data: pd.DataFrame):
         hitters_proj = pd.read_csv(hitters_file)
         pitchers_proj = pd.read_csv(pitchers_file)
 
-        # Debug information
-        st.sidebar.markdown("### Debug Information")
-        show_debug = st.sidebar.checkbox("Show Debug Info")
-
         if show_debug:
             st.sidebar.markdown("### Data Loading Info")
             st.sidebar.write(f"Total pitchers in projections: {len(pitchers_proj)}")
             st.sidebar.write(f"Total hitters in projections: {len(hitters_proj)}")
-            st.sidebar.write("\nFirst few rows of hitters CSV:")
-            st.sidebar.write(hitters_proj[['Name', 'Team']].head())
-            st.sidebar.write("\nFirst few rows of pitchers CSV:")
-            st.sidebar.write(pitchers_proj[['Name', 'Team']].head())
+            st.sidebar.write("\nRaw CSV rows for each file:")
+            st.sidebar.write(f"Hitters CSV total rows: {sum(1 for line in open(hitters_file))}")
+            st.sidebar.write(f"Pitchers CSV total rows: {sum(1 for line in open(pitchers_file))}")
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
@@ -107,21 +112,20 @@ def render(roster_data: pd.DataFrame):
         pitchers_proj['fantasy_points'] = pitchers_proj.apply(calculate_pitcher_points, axis=1)
 
         # Split roster by position type
-        roster_hitters = roster_data[roster_data['position'].str.match(r'^(C|1B|2B|3B|SS|OF|DH|UTIL)$', na=False)]
-        roster_pitchers = roster_data[roster_data['position'].str.match(r'^P', na=False)]
+        pitcher_positions = ['SP', 'RP', 'P']  # List of pitcher positions
+        roster_pitchers = roster_data[roster_data['position'].str.upper().isin([pos.upper() for pos in pitcher_positions])]
+        roster_hitters = roster_data[~roster_data['position'].str.upper().isin([pos.upper() for pos in pitcher_positions])]
+
+        if show_debug:
+            st.sidebar.markdown("### Position Filtering Results")
+            st.sidebar.write(f"Total hitters after position filter: {len(roster_hitters)}")
+            st.sidebar.write(f"Total pitchers after position filter: {len(roster_pitchers)}")
+            st.sidebar.write("\nPitcher positions found:")
+            st.sidebar.write(roster_pitchers['position'].unique().tolist())
 
         # Normalize names in roster data
         roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
         roster_pitchers['clean_name'] = roster_pitchers['player_name'].apply(normalize_name)
-
-        if show_debug:
-            st.sidebar.markdown("### Roster Data Info")
-            st.sidebar.write(f"Total pitchers in rosters: {len(roster_pitchers)}")
-            st.sidebar.write(f"Total hitters in rosters: {len(roster_hitters)}")
-            st.sidebar.write("\nFirst 5 pitcher names from projections:")
-            st.sidebar.write(pitchers_proj['Name'].head().tolist())
-            st.sidebar.write("\nFirst 5 pitcher names from rosters:")
-            st.sidebar.write(roster_pitchers['clean_name'].head().tolist())
 
         # Initialize lists to store team scores
         team_hitter_points = []
