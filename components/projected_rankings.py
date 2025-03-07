@@ -66,7 +66,6 @@ def calculate_pitcher_points(row: pd.Series) -> float:
         points -= row['ER'] * 1  # Earned Runs
         points -= row['H'] * 0.5  # Hits Allowed
         points -= row['BB'] * 0.5  # Walks Allowed
-        # HBP is not included in projections, so we skip it
 
         # Calculate QA7 points
         if pd.notna(row['IP']) and pd.notna(row['ER']):
@@ -82,38 +81,53 @@ def calculate_pitcher_points(row: pd.Series) -> float:
         st.error(f"Error calculating pitcher points: {str(e)}")
         return 0
 
-def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
-    """Calculate total fantasy points for a player, handling special case for Ohtani"""
+def get_best_lineup_points(players_df: pd.DataFrame, position_limits: Dict[str, int]) -> float:
+    """Calculate points for the best possible active lineup"""
     total_points = 0
+    used_players = set()
 
-    # Check for hitter projections
-    hitter_proj = hitters_proj[hitters_proj['Name'] == player_name]
-    if not hitter_proj.empty:
-        total_points += hitter_proj.iloc[0]['fantasy_points']
+    # Process each position in order of importance
+    for pos, limit in position_limits.items():
+        # Filter available players for this position
+        eligible_players = players_df[
+            (players_df['position'].str.contains(pos, case=False, na=False)) &
+            (~players_df.index.isin(used_players))
+        ].sort_values('projected_points', ascending=False)
 
-    # Check for pitcher projections
-    pitcher_proj = pitchers_proj[pitchers_proj['Name'] == player_name]
-    if not pitcher_proj.empty:
-        total_points += pitcher_proj.iloc[0]['fantasy_points']
+        # Take the best N players for this position
+        best_players = eligible_players.head(limit)
+        total_points += best_players['projected_points'].sum()
+        used_players.update(best_players.index)
 
     return total_points
+
+def calculate_depth_score(players_df: pd.DataFrame, used_players: set) -> float:
+    """Calculate a depth score for bench players"""
+    bench_players = players_df[~players_df.index.isin(used_players)]
+    return bench_players['projected_points'].sum() * 0.5  # Weight bench players at 50%
 
 def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
     try:
         st.header("📊 Projected Rankings")
 
-        # Debug information
-        st.sidebar.markdown("### Debug Information")
-        show_debug = st.sidebar.checkbox("Show Debug Info")
+        # Define active roster limits
+        position_limits = {
+            'C': 1,
+            '1B': 1,
+            '2B': 1,
+            '3B': 1,
+            'SS': 1,
+            'LF': 1,
+            'CF': 1,
+            'RF': 1,
+            'UT': 1,
+            'SP': 3,
+            'RP': 3,
+            'P': 1
+        }
 
-        if show_debug:
-            st.sidebar.markdown("### Initial Roster Data")
-            st.sidebar.write(f"Total players in roster: {len(roster_data)}")
-            st.sidebar.write("\nUnique positions in roster:")
-            st.sidebar.write(roster_data['position'].unique().tolist())
-
-        # Check if projection files exist
+        # Load projections
         hitters_file = "attached_assets/batx-hitters.csv"
         pitchers_file = "attached_assets/oopsy-pitchers-2.csv"
 
@@ -121,107 +135,48 @@ def render(roster_data: pd.DataFrame):
             st.error("Projection files not found. Please check the file paths.")
             return
 
-        # Load projections data
         hitters_proj = pd.read_csv(hitters_file)
         pitchers_proj = pd.read_csv(pitchers_file)
 
-        if show_debug:
-            st.sidebar.markdown("### Data Loading Info")
-            st.sidebar.write(f"Total pitchers in projections: {len(pitchers_proj)}")
-            st.sidebar.write(f"Total hitters in projections: {len(hitters_proj)}")
-            st.sidebar.write("\nRaw CSV rows for each file:")
-            st.sidebar.write(f"Hitters CSV total rows: {sum(1 for line in open(hitters_file))}")
-            st.sidebar.write(f"Pitchers CSV total rows: {sum(1 for line in open(pitchers_file))}")
-
-        # Normalize names in projection data
+        # Normalize names and calculate fantasy points
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
         pitchers_proj['Name'] = pitchers_proj['Name'].apply(normalize_name)
-
-        # Calculate points for each player
         hitters_proj['fantasy_points'] = hitters_proj.apply(calculate_hitter_points, axis=1)
         pitchers_proj['fantasy_points'] = pitchers_proj.apply(calculate_pitcher_points, axis=1)
 
-        # Split roster by position type
-        pitcher_positions = ['SP', 'RP', 'P']  # List of pitcher positions
-        roster_pitchers = roster_data[
-            roster_data['position'].str.upper().str.contains('SP|RP|P', na=False)
-        ]
-        roster_hitters = roster_data[
-            ~roster_data['position'].str.upper().str.contains('SP|RP|P', na=False)
-        ]
-
-        if show_debug:
-            st.sidebar.markdown("### Position Filtering Results")
-            st.sidebar.write(f"Total hitters after position filter: {len(roster_hitters)}")
-            st.sidebar.write(f"Total pitchers after position filter: {len(roster_pitchers)}")
-            st.sidebar.write("\nPitcher positions found:")
-            st.sidebar.write(roster_pitchers['position'].unique().tolist())
-
-        # Normalize names in roster data
-        roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
-        roster_pitchers['clean_name'] = roster_pitchers['player_name'].apply(normalize_name)
-
-        # Initialize lists to store team scores
-        team_hitter_points = []
-        team_pitcher_points = []
-
+        # Calculate team rankings with active roster and depth considerations
+        team_rankings_data = []
         for team in roster_data['team'].unique():
-            # Calculate hitter points
-            team_hitters = roster_hitters[roster_hitters['team'] == team]
-            hitter_points = 0
-            matched_hitters = 0
-            total_hitters = len(team_hitters)
+            team_roster = roster_data[roster_data['team'] == team].copy()
+            team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
 
-            if show_debug:
-                st.sidebar.markdown(f"\n### {team} Roster Analysis")
+            # Add projected points to each player
+            team_roster['projected_points'] = 0.0
+            for idx, player in team_roster.iterrows():
+                hitter_proj = hitters_proj[hitters_proj['Name'] == player['clean_name']]
+                pitcher_proj = pitchers_proj[pitchers_proj['Name'] == player['clean_name']]
 
-            for _, hitter in team_hitters.iterrows():
-                points = calculate_total_points(hitter['clean_name'], hitters_proj, pitchers_proj)
-                if points > 0:
-                    hitter_points += points
-                    matched_hitters += 1
-                    if show_debug:
-                        st.sidebar.write(f"✅ Matched hitter: {hitter['clean_name']} ({points:.1f} pts)")
-                elif show_debug:
-                    st.sidebar.write(f"❌ No match: {hitter['clean_name']}")
+                points = 0
+                if not hitter_proj.empty:
+                    points += hitter_proj.iloc[0]['fantasy_points']
+                if not pitcher_proj.empty:
+                    points += pitcher_proj.iloc[0]['fantasy_points']
 
-            # Calculate pitcher points
-            team_pitchers = roster_pitchers[roster_pitchers['team'] == team]
-            pitcher_points = 0
-            matched_pitchers = 0
-            total_pitchers = len(team_pitchers)
+                team_roster.at[idx, 'projected_points'] = points
 
-            for _, pitcher in team_pitchers.iterrows():
-                points = calculate_total_points(pitcher['clean_name'], hitters_proj, pitchers_proj)
-                if points > 0:
-                    pitcher_points += points
-                    matched_pitchers += 1
-                    if show_debug:
-                        st.sidebar.write(f"✅ Matched pitcher: {pitcher['clean_name']} ({points:.1f} pts)")
-                elif show_debug:
-                    st.sidebar.write(f"❌ No match: {pitcher['clean_name']}")
+            # Calculate best lineup points
+            active_points = get_best_lineup_points(team_roster, position_limits)
+            depth_points = calculate_depth_score(team_roster, set())
 
-            if show_debug:
-                st.sidebar.markdown(f"### {team} Stats")
-                st.sidebar.write(f"Hitters matched: {matched_hitters}/{total_hitters}")
-                st.sidebar.write(f"Pitchers matched: {matched_pitchers}/{total_pitchers}")
-
-            team_hitter_points.append({
+            team_rankings_data.append({
                 'team': team,
-                'hitter_points': hitter_points
+                'active_lineup_points': active_points,
+                'depth_points': depth_points,
+                'total_points': active_points + depth_points
             })
 
-            team_pitcher_points.append({
-                'team': team,
-                'pitcher_points': pitcher_points
-            })
-
-        # Create team rankings dataframe
-        hitter_df = pd.DataFrame(team_hitter_points)
-        pitcher_df = pd.DataFrame(team_pitcher_points)
-
-        team_rankings = pd.merge(hitter_df, pitcher_df, on='team')
-        team_rankings['total_points'] = team_rankings['hitter_points'] + team_rankings['pitcher_points']
+        # Create rankings DataFrame
+        team_rankings = pd.DataFrame(team_rankings_data)
         team_rankings = team_rankings.sort_values('total_points', ascending=False)
         team_rankings = team_rankings.reset_index(drop=True)
         team_rankings.index = team_rankings.index + 1
@@ -234,26 +189,29 @@ def render(roster_data: pd.DataFrame):
                 "team": "Team",
                 "total_points": st.column_config.NumberColumn(
                     "Total Projected Points",
-                    format="%.1f"
+                    format="%.1f",
+                    help="Combined points from best possible active lineup and bench depth"
                 ),
-                "hitter_points": st.column_config.NumberColumn(
-                    "Projected Hitter Points",
-                    format="%.1f"
+                "active_lineup_points": st.column_config.NumberColumn(
+                    "Active Lineup Points",
+                    format="%.1f",
+                    help="Points from best possible active lineup configuration"
                 ),
-                "pitcher_points": st.column_config.NumberColumn(
-                    "Projected Pitcher Points",
-                    format="%.1f"
+                "depth_points": st.column_config.NumberColumn(
+                    "Depth Value",
+                    format="%.1f",
+                    help="Additional value from bench players (weighted at 50%)"
                 )
             },
             hide_index=False,
-            column_order=["team", "total_points", "hitter_points", "pitcher_points"]
+            column_order=["team", "total_points", "active_lineup_points", "depth_points"]
         )
 
         # Visualization
         fig = px.bar(
             team_rankings,
             x='team',
-            y=['hitter_points', 'pitcher_points'],
+            y=['active_lineup_points', 'depth_points'],
             title='Projected Team Points Distribution',
             labels={
                 'team': 'Team',
@@ -264,43 +222,6 @@ def render(roster_data: pd.DataFrame):
         )
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
-
-        # Display top projected players
-        st.subheader("🌟 Top Projected Players")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.write("Top 10 Hitters")
-            top_hitters = hitters_proj.nlargest(10, 'fantasy_points')[['Name', 'Team', 'fantasy_points']]
-            st.dataframe(
-                top_hitters,
-                column_config={
-                    "Name": "Player",
-                    "Team": "MLB Team",
-                    "fantasy_points": st.column_config.NumberColumn(
-                        "Projected Points",
-                        format="%.1f"
-                    )
-                },
-                hide_index=True
-            )
-
-        with col2:
-            st.write("Top 10 Pitchers")
-            top_pitchers = pitchers_proj.nlargest(10, 'fantasy_points')[['Name', 'Team', 'fantasy_points']]
-            st.dataframe(
-                top_pitchers,
-                column_config={
-                    "Name": "Player",
-                    "Team": "MLB Team",
-                    "fantasy_points": st.column_config.NumberColumn(
-                        "Projected Points",
-                        format="%.1f"
-                    )
-                },
-                hide_index=True
-            )
 
     except Exception as e:
         st.error(f"An error occurred while calculating projected rankings: {str(e)}")
