@@ -23,7 +23,7 @@ def calculate_prospect_score(ranking: int) -> float:
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     st.header("🌟 Prospect Analysis")
-    
+
     # Read and process prospect rankings
     prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
     prospect_rankings['Player'] = prospect_rankings['Player'].str.strip()
@@ -44,12 +44,12 @@ def render(roster_data: pd.DataFrame):
 
     # Team Prospect Rankings
     st.subheader("📊 Team Prospect Power Rankings")
-    
+
     team_scores = ranked_prospects.groupby('team').agg({
         'prospect_score': ['sum', 'mean', 'count'],
         'Ranking': lambda x: x.notna().sum()
     }).reset_index()
-    
+
     team_scores.columns = ['team', 'total_score', 'avg_score', 'total_prospects', 'ranked_prospects']
     team_scores = team_scores.sort_values('total_score', ascending=False)
     team_scores = team_scores.reset_index(drop=True)
@@ -91,7 +91,7 @@ def render(roster_data: pd.DataFrame):
 
     # Individual Prospect Analysis
     st.subheader("👥 Top Prospects by Team")
-    
+
     # Team selector
     selected_team = st.selectbox(
         "Select Team",
@@ -103,9 +103,10 @@ def render(roster_data: pd.DataFrame):
         'prospect_score', ascending=False
     )
 
-    # Display team's prospects
+    # Display team's prospects (excluding clean_name and Player columns)
+    display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player']]
     st.dataframe(
-        team_prospects,
+        team_prospects[display_columns],
         column_config={
             "player_name": "Player",
             "Position": "Position",
@@ -127,7 +128,7 @@ def render(roster_data: pd.DataFrame):
     # Tier Distribution
     st.subheader("📈 Prospect Tier Distribution")
     tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
-    
+
     fig2 = px.bar(
         tier_dist,
         title='Prospect Tier Distribution by Team',
