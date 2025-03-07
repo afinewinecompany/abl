@@ -80,6 +80,10 @@ def render(roster_data: pd.DataFrame):
             ~team_roster['status'].str.upper().isin(['ACTIVE', 'MINORS'])
         ]
 
+        # Calculate total salary excluding MINORS players
+        non_minors_roster = team_roster[team_roster['status'].str.upper() != 'MINORS']
+        total_salary = non_minors_roster['salary'].sum()
+
         # Display roster statistics
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -87,7 +91,7 @@ def render(roster_data: pd.DataFrame):
         with col2:
             st.metric("Active Players", len(active_roster))
         with col3:
-            st.metric("Total Salary", f"${team_roster['salary'].sum():,.2f}")
+            st.metric("Total Salary", f"${total_salary:,.2f}")
         with col4:
             st.metric("Positions", len(team_roster['position'].unique()))
 
