@@ -38,7 +38,7 @@ def calculate_pitcher_points(row: pd.Series) -> float:
         points -= row['ER'] * 1  # Earned Runs
         points -= row['H'] * 0.5  # Hits Allowed
         points -= row['BB'] * 0.5  # Walks Allowed
-        points -= row['HBP'] * 0.5  # Hit Batsmen
+        # HBP is not included in projections, so we skip it
 
         # Calculate QA7 points
         if pd.notna(row['IP']) and pd.notna(row['ER']):
