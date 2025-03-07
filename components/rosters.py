@@ -23,17 +23,17 @@ def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitcher
 def get_salary_penalty(team: str) -> float:
     """Get salary cap penalty for a team"""
     penalties = {
-        "Mariners": 16,
-        "Rockies": 4,
-        "Cubs": 12,
-        "Angels": 11,
-        "Phillies": 4,
-        "Guardians": 6,
-        "Marlins": 6,
-        "Reds": 25,
-        "Brewers": 34,
-        "Yankees": 10,
-        "Pirates": 4
+        "Seattle Mariners": 24,
+        "Colorado Rockies": 4,
+        "Chicago Cubs": 12,
+        "Los Angeles Angels": 11,
+        "Philadelphia Phillies": 4,
+        "Cleveland Guardians": 6,
+        "Miami Marlins": 6,
+        "Cincinnati Reds": 25,
+        "Milwaukee Brewers": 34,
+        "New York Yankees": 10,
+        "Pittsburgh Pirates": 4
     }
     return penalties.get(team, 0)
 
