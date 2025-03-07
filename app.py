@@ -85,12 +85,13 @@ st.markdown("""
 
     .stDataFrame {
         background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.95) 100%);
-        padding: 1.5rem;
+        padding: 1.8rem;
         border-radius: 12px;
         border: 1px solid rgba(0, 255, 136, 0.1);
         box-shadow: 
             0 0 25px rgba(0, 255, 136, 0.15),
             inset 0 0 40px rgba(0, 255, 136, 0.03);
+        margin-bottom: 1.5rem;
     }
 
     .css-1d391kg {  /* Streamlit containers */
@@ -181,6 +182,93 @@ st.markdown("""
     a:hover {
         color: #00ff88;
         text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    /* DataFrames and Tables */
+    .stDataFrame {
+        background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.95) 100%);
+        padding: 1.8rem;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 136, 0.1);
+        box-shadow: 
+            0 0 25px rgba(0, 255, 136, 0.15),
+            inset 0 0 40px rgba(0, 255, 136, 0.03);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Table headers */
+    [data-testid="stDataFrameResizable"] th {
+        background: rgba(0, 255, 136, 0.1) !important;
+        color: #00ff88 !important;
+        font-weight: 600 !important;
+        padding: 1rem !important;
+        border-bottom: 1px solid rgba(0, 255, 136, 0.2) !important;
+        letter-spacing: 0.5px;
+    }
+
+    /* Table cells */
+    [data-testid="stDataFrameResizable"] td {
+        background: transparent !important;
+        color: #fafafa !important;
+        padding: 0.8rem 1rem !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        font-size: 0.95rem;
+    }
+
+    /* Row hover effect */
+    [data-testid="stDataFrameResizable"] tr:hover td {
+        background: rgba(0, 255, 136, 0.05) !important;
+        transition: all 0.2s ease;
+    }
+
+    /* Table container */
+    .element-container iframe {
+        background: transparent !important;
+    }
+
+    /* Sort indicators */
+    button[data-testid="stDataFrameResizable"] svg {
+        fill: #00ff88 !important;
+    }
+
+    /* Custom scrollbar for tables */
+    [data-testid="stDataFrameResizable"] ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    [data-testid="stDataFrameResizable"] ::-webkit-scrollbar-track {
+        background: #0e1117;
+        border-radius: 3px;
+    }
+
+    [data-testid="stDataFrameResizable"] ::-webkit-scrollbar-thumb {
+        background: #2e3137;
+        border-radius: 3px;
+        border: 1px solid #0e1117;
+    }
+
+    [data-testid="stDataFrameResizable"] ::-webkit-scrollbar-thumb:hover {
+        background: #00ff88;
+    }
+
+    /* Number formatting */
+    [data-testid="stDataFrameResizable"] td:has(.style_numeric) {
+        font-family: 'Inter', monospace;
+        letter-spacing: -0.5px;
+    }
+
+    /* Status indicators */
+    .status-active {
+        color: #00ff88 !important;
+    }
+
+    .status-reserve {
+        color: #ff9100 !important;
+    }
+
+    .status-minors {
+        color: #00b4d8 !important;
     }
 </style>
 """, unsafe_allow_html=True)
