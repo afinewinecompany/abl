@@ -10,6 +10,10 @@ def normalize_name(name: str) -> str:
         if ',' in name:
             last, first = name.split(',', 1)
             return f"{first.strip()} {last.strip()}"
+        # Remove any parentheses and their contents
+        name = name.split('(')[0].strip()
+        # Remove any team designations after the name
+        name = name.split(' - ')[0].strip()
         return name.strip()
     except:
         return name.strip()
@@ -105,6 +109,13 @@ def render(roster_data: pd.DataFrame):
         st.sidebar.markdown("### Debug Information")
         show_debug = st.sidebar.checkbox("Show Debug Info")
 
+        if show_debug:
+            st.sidebar.markdown("### Sample Normalized Names")
+            st.sidebar.write("First 5 pitcher projections:")
+            st.sidebar.write(pitchers_proj['Name'].head())
+            st.sidebar.write("\nFirst 5 roster pitcher names:")
+            st.sidebar.write(roster_pitchers['clean_name'].head())
+
         for team in roster_data['team'].unique():
             # Calculate hitter points
             team_hitters = roster_hitters[roster_hitters['team'] == team]
@@ -118,7 +129,7 @@ def render(roster_data: pd.DataFrame):
                     hitter_points += player_proj.iloc[0]['fantasy_points']
                     matched_hitters += 1
                 elif show_debug:
-                    st.sidebar.write(f"No projection found for hitter: {hitter['player_name']} ({team})")
+                    st.sidebar.write(f"No projection found for hitter: {hitter['clean_name']} ({team})")
 
             # Calculate pitcher points
             team_pitchers = roster_pitchers[roster_pitchers['team'] == team]
@@ -127,12 +138,18 @@ def render(roster_data: pd.DataFrame):
             total_pitchers = len(team_pitchers)
 
             for _, pitcher in team_pitchers.iterrows():
+                # Try to find exact match first
                 player_proj = pitchers_proj[pitchers_proj['Name'] == pitcher['clean_name']]
+
+                if player_proj.empty:
+                    # Try case-insensitive match
+                    player_proj = pitchers_proj[pitchers_proj['Name'].str.lower() == pitcher['clean_name'].lower()]
+
                 if not player_proj.empty:
                     pitcher_points += player_proj.iloc[0]['fantasy_points']
                     matched_pitchers += 1
                 elif show_debug:
-                    st.sidebar.write(f"No projection found for pitcher: {pitcher['player_name']} ({team})")
+                    st.sidebar.write(f"No projection found for pitcher: {pitcher['clean_name']} ({team})")
 
             if show_debug:
                 st.sidebar.markdown(f"### {team} Stats")
