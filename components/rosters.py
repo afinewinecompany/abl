@@ -4,19 +4,21 @@ import plotly.express as px
 from typing import Dict
 from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points, normalize_name
 
-def normalize_name(name: str) -> str:
-    """Normalize player name from [last], [first] to [first] [last]"""
-    try:
-        if ',' in name:
-            last, first = name.split(',', 1)
-            return f"{first.strip()} {last.strip()}"
-        # Remove any parentheses and their contents
-        name = name.split('(')[0].strip()
-        # Remove any team designations after the name
-        name = name.split(' - ')[0].strip()
-        return name.strip()
-    except:
-        return name.strip()
+def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
+    """Calculate total fantasy points for a player, handling special case for Ohtani"""
+    total_points = 0
+
+    # Check for hitter projections
+    hitter_proj = hitters_proj[hitters_proj['Name'] == player_name]
+    if not hitter_proj.empty:
+        total_points += hitter_proj.iloc[0]['fantasy_points']
+
+    # Check for pitcher projections
+    pitcher_proj = pitchers_proj[pitchers_proj['Name'] == player_name]
+    if not pitcher_proj.empty:
+        total_points += pitcher_proj.iloc[0]['fantasy_points']
+
+    return total_points
 
 def render(roster_data: pd.DataFrame):
     """Render roster information section"""
@@ -43,14 +45,8 @@ def render(roster_data: pd.DataFrame):
 
             total_points = 0
             for idx, player in team_roster.iterrows():
-                if 'P' in player['position'].upper():
-                    proj = pitchers_proj[pitchers_proj['Name'] == player['clean_name']]
-                else:
-                    proj = hitters_proj[hitters_proj['Name'] == player['clean_name']]
-
-                if not proj.empty:
-                    points = proj.iloc[0]['fantasy_points']
-                    total_points += points
+                points = calculate_total_points(player['clean_name'], hitters_proj, pitchers_proj)
+                total_points += points
 
             all_teams_points[team] = total_points
 
@@ -74,13 +70,8 @@ def render(roster_data: pd.DataFrame):
         # Add projected points to team roster
         team_roster['projected_points'] = 0.0  # Initialize with zeros
         for idx, player in team_roster.iterrows():
-            if 'P' in player['position'].upper():
-                proj = pitchers_proj[pitchers_proj['Name'] == player['clean_name']]
-            else:
-                proj = hitters_proj[hitters_proj['Name'] == player['clean_name']]
-
-            if not proj.empty:
-                team_roster.at[idx, 'projected_points'] = proj.iloc[0]['fantasy_points']
+            points = calculate_total_points(player['clean_name'], hitters_proj, pitchers_proj)
+            team_roster.at[idx, 'projected_points'] = points
 
         # Split roster by status
         active_roster = team_roster[team_roster['status'].str.upper() == 'ACTIVE']
@@ -178,3 +169,17 @@ def render(roster_data: pd.DataFrame):
 
     except Exception as e:
         st.error(f"An error occurred while displaying roster data: {str(e)}")
+
+def normalize_name(name: str) -> str:
+    """Normalize player name from [last], [first] to [first] [last]"""
+    try:
+        if ',' in name:
+            last, first = name.split(',', 1)
+            return f"{first.strip()} {last.strip()}"
+        # Remove any parentheses and their contents
+        name = name.split('(')[0].strip()
+        # Remove any team designations after the name
+        name = name.split(' - ')[0].strip()
+        return name.strip()
+    except:
+        return name.strip()

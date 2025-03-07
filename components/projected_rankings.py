@@ -68,6 +68,22 @@ def calculate_pitcher_points(row: pd.Series) -> float:
         st.error(f"Error calculating pitcher points: {str(e)}")
         return 0
 
+def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
+    """Calculate total fantasy points for a player, handling special case for Ohtani"""
+    total_points = 0
+
+    # Check for hitter projections
+    hitter_proj = hitters_proj[hitters_proj['Name'] == player_name]
+    if not hitter_proj.empty:
+        total_points += hitter_proj.iloc[0]['fantasy_points']
+
+    # Check for pitcher projections
+    pitcher_proj = pitchers_proj[pitchers_proj['Name'] == player_name]
+    if not pitcher_proj.empty:
+        total_points += pitcher_proj.iloc[0]['fantasy_points']
+
+    return total_points
+
 def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
     try:
@@ -126,8 +142,6 @@ def render(roster_data: pd.DataFrame):
             st.sidebar.write(f"Total pitchers after position filter: {len(roster_pitchers)}")
             st.sidebar.write("\nPitcher positions found:")
             st.sidebar.write(roster_pitchers['position'].unique().tolist())
-            st.sidebar.write("\nSample of pitcher roster entries:")
-            st.sidebar.write(roster_pitchers[['player_name', 'position', 'team']].head(10))
 
         # Normalize names in roster data
         roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
@@ -144,13 +158,18 @@ def render(roster_data: pd.DataFrame):
             matched_hitters = 0
             total_hitters = len(team_hitters)
 
+            if show_debug:
+                st.sidebar.markdown(f"\n### {team} Roster Analysis")
+
             for _, hitter in team_hitters.iterrows():
-                player_proj = hitters_proj[hitters_proj['Name'] == hitter['clean_name']]
-                if not player_proj.empty:
-                    hitter_points += player_proj.iloc[0]['fantasy_points']
+                points = calculate_total_points(hitter['clean_name'], hitters_proj, pitchers_proj)
+                if points > 0:
+                    hitter_points += points
                     matched_hitters += 1
+                    if show_debug:
+                        st.sidebar.write(f"✅ Matched hitter: {hitter['clean_name']} ({points:.1f} pts)")
                 elif show_debug:
-                    st.sidebar.write(f"No projection found for hitter: {hitter['clean_name']} ({team})")
+                    st.sidebar.write(f"❌ No match: {hitter['clean_name']}")
 
             # Calculate pitcher points
             team_pitchers = roster_pitchers[roster_pitchers['team'] == team]
@@ -158,24 +177,13 @@ def render(roster_data: pd.DataFrame):
             matched_pitchers = 0
             total_pitchers = len(team_pitchers)
 
-            if show_debug:
-                st.sidebar.markdown(f"\n### {team} Pitchers")
-                st.sidebar.write("Roster pitchers:")
-                st.sidebar.write(team_pitchers['clean_name'].tolist())
-
             for _, pitcher in team_pitchers.iterrows():
-                # Try to find exact match first
-                player_proj = pitchers_proj[pitchers_proj['Name'] == pitcher['clean_name']]
-
-                if player_proj.empty:
-                    # Try case-insensitive match
-                    player_proj = pitchers_proj[pitchers_proj['Name'].str.lower() == pitcher['clean_name'].lower()]
-
-                if not player_proj.empty:
-                    pitcher_points += player_proj.iloc[0]['fantasy_points']
+                points = calculate_total_points(pitcher['clean_name'], hitters_proj, pitchers_proj)
+                if points > 0:
+                    pitcher_points += points
                     matched_pitchers += 1
                     if show_debug:
-                        st.sidebar.write(f"✅ Matched: {pitcher['clean_name']}")
+                        st.sidebar.write(f"✅ Matched pitcher: {pitcher['clean_name']} ({points:.1f} pts)")
                 elif show_debug:
                     st.sidebar.write(f"❌ No match: {pitcher['clean_name']}")
 
