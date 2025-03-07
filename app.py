@@ -7,66 +7,90 @@ st.set_page_config(
     page_title="ABL Analytics",
     page_icon="⚾",
     layout="wide",
-    initial_sidebar_state="collapsed"  # Add this line to collapse sidebar by default
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS
+# Custom CSS for dark mode with neon effects
 st.markdown("""
 <style>
     .main {
         padding: 1rem 2rem;
-        background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+        background: #0e1117;
     }
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
-        background: #ffffff;
+        background: #1a1c23;
         padding: 1rem;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
     }
     .stTabs [data-baseweb="tab"] {
         height: 4rem;
         font-weight: 600;
         transition: all 0.3s ease;
+        color: #fafafa;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        color: #1f77b4;
-        background: #f8f9fa;
+        color: #00ff88;
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
     }
     h1 {
-        color: #1f77b4;
+        color: #00ff88;
         text-align: center;
         padding: 1.5rem;
         margin-bottom: 2rem;
         font-size: 2.5em;
         font-weight: 700;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        background: #ffffff;
+        text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        background: #1a1c23;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
     }
     .stMetric {
-        background-color: #ffffff;
+        background-color: #1a1c23;
         padding: 1.5rem;
         border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        transition: all 0.3s ease;
     }
     .stMetric:hover {
         transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     }
     .stDataFrame {
-        background: #ffffff;
+        background: #1a1c23;
         padding: 1rem;
         border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
     }
     .css-1d391kg {  /* Streamlit containers */
-        background: #ffffff;
+        background: #1a1c23;
         padding: 2rem;
         border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
         margin-bottom: 2rem;
+    }
+    /* Custom scrollbar for dark mode */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0e1117;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #2e3137;
+        border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00ff88;
+    }
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #1a1c23;
+    }
+    .css-1p05t8e {
+        background-color: #0e1117;
     }
 </style>
 """, unsafe_allow_html=True)
