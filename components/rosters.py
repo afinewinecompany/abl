@@ -99,18 +99,6 @@ def render(roster_data: pd.DataFrame):
     if not minors_roster.empty:
         st.subheader("⭐ Minor League Prospects")
 
-        # Debug name matching
-        st.markdown("### Name Matching Debug")
-        debug_tab1, debug_tab2 = st.tabs(["Name Formats", "Sample Data"])
-
-        with debug_tab1:
-            st.write("Minors Roster Names:", minors_roster['player_name'].tolist())
-            st.write("Prospect Rankings Names:", prospect_rankings['Player'].head(10).tolist())
-
-        with debug_tab2:
-            st.write("Sample Minors Data:", minors_roster.head())
-            st.write("Sample Rankings Data:", prospect_rankings.head())
-
         # Clean up player names for matching
         minors_roster['clean_name'] = minors_roster['player_name'].apply(normalize_name)
         prospect_rankings['clean_name'] = prospect_rankings['Player'].apply(normalize_name)
@@ -148,71 +136,3 @@ def render(roster_data: pd.DataFrame):
     st.subheader("Position Distribution")
     position_counts = team_roster['position'].value_counts()
     st.bar_chart(position_counts)
-
-    # Prospect Power Rankings
-    st.subheader("🌟 Prospect Power Rankings")
-
-    # Calculate team prospect scores
-    team_prospect_scores = []
-    for team in teams:
-        team_minors = roster_data[
-            (roster_data['team'] == team) & 
-            (roster_data['status'].str.upper() == 'MINORS')
-        ]
-
-        # Clean up names for matching
-        team_minors['clean_name'] = team_minors['player_name'].apply(normalize_name)
-
-        team_prospects = pd.merge(
-            team_minors,
-            prospect_rankings[['clean_name', 'prospect_score']],
-            left_on='clean_name',
-            right_on='clean_name',
-            how='left'
-        )
-
-        total_score = team_prospects['prospect_score'].sum()
-        avg_score = team_prospects['prospect_score'].mean()
-        ranked_prospects = len(team_prospects[team_prospects['prospect_score'] > 0])
-
-        team_prospect_scores.append({
-            'team': team,
-            'total_score': total_score,
-            'average_score': avg_score,
-            'ranked_prospects': ranked_prospects
-        })
-
-    prospect_rankings_df = pd.DataFrame(team_prospect_scores)
-    prospect_rankings_df = prospect_rankings_df.sort_values('total_score', ascending=False)
-    prospect_rankings_df = prospect_rankings_df.reset_index(drop=True)
-    prospect_rankings_df.index = prospect_rankings_df.index + 1
-
-    st.dataframe(
-        prospect_rankings_df,
-        column_config={
-            "team": "Team",
-            "total_score": st.column_config.NumberColumn(
-                "Total Prospect Score",
-                format="%.1f"
-            ),
-            "average_score": st.column_config.NumberColumn(
-                "Average Prospect Score",
-                format="%.1f"
-            ),
-            "ranked_prospects": "Number of Ranked Prospects"
-        },
-        hide_index=False
-    )
-
-    # Visualize prospect rankings
-    fig = px.bar(
-        prospect_rankings_df,
-        x='team',
-        y='total_score',
-        title='Team Prospect Power Rankings',
-        labels={'team': 'Team', 'total_score': 'Total Prospect Score'},
-        color='total_score',
-        color_continuous_scale='viridis'
-    )
-    fig.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig, use_container_width=True)
