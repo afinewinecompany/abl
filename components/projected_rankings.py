@@ -223,110 +223,119 @@ def render(roster_data: pd.DataFrame):
         # Display prominent rankings table
         st.subheader("🏆 ABL Power Rankings")
 
-        # Custom styling for rankings
-        st.markdown("""
-        <style>
-        div[data-testid="stDataFrame"] div[role="table"] {
-            background-color: #1a1c23;
-            border-radius: 10px;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        div[data-testid="stDataFrame"] div[role="table"] div[role="cell"] {
-            font-size: 1.1rem;
-            padding: 0.75rem !important;
-        }
-        div[data-testid="stDataFrame"] div[role="table"] div[role="columnheader"] {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #00ff88 !important;
-            background-color: #1a1c23;
-            padding: 1rem !important;
-        }
-        div[data-testid="stDataFrame"] div[role="table"] div[role="row"]:hover {
-            background-color: #2a2c33;
-            transition: background-color 0.2s;
-        }
-        div[data-testid="stDataFrame"] div[role="table"] div[role="cell"]:first-child {
-            font-weight: bold;
-            color: #00ff88;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Top rankings with enhanced styling
-        st.dataframe(
-            team_rankings[['team', 'abl_score']],
-            column_config={
-                "team": st.column_config.Column(
-                    "Team",
-                    width="medium",
-                ),
-                "abl_score": st.column_config.NumberColumn(
-                    "ABL Score",
-                    format="%.1f",
-                    help="Combined score based on active lineup, depth, and division strength"
-                )
-            },
-            hide_index=False,
-            use_container_width=True
-        )
-
-        # Alternative card-based view
-        st.markdown("### 📈 Top Teams")
+        # Top 3 teams in cards
         col1, col2, col3 = st.columns(3)
+
+        # Division color mapping
+        division_colors = {
+            "AL East": "#FF6B6B",  # Red shade
+            "AL Central": "#4ECDC4",  # Teal shade
+            "AL West": "#95A5A6",  # Gray shade
+            "NL East": "#F39C12",  # Orange shade
+            "NL Central": "#3498DB",  # Blue shade
+            "NL West": "#2ECC71"   # Green shade
+        }
 
         # Display top 3 teams in cards
         for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_rankings.head(3).iterrows())):
             with col:
+                division = division_mapping.get(row['team'], "Unknown")
+                color = division_colors.get(division, "#00ff88")
                 st.markdown(f"""
                 <div style="
                     padding: 1rem;
                     background-color: #1a1c23;
                     border-radius: 10px;
-                    border-left: 5px solid #00ff88;
+                    border-left: 5px solid {color};
                     margin: 0.5rem 0;
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 ">
-                    <h3 style="margin:0; color: #00ff88;">#{idx + 1}</h3>
+                    <h3 style="margin:0; color: {color};">#{idx + 1}</h3>
                     <h4 style="margin:0.5rem 0;">{row['team']}</h4>
                     <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
                         {row['abl_score']:.1f}
                     </p>
+                    <p style="margin:0; font-size: 0.8rem; color: #888;">
+                        {division}
+                    </p>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Show the rest of the rankings in a more compact format
-        st.markdown("### 📊 Complete Rankings")
+        # Show the rest of the rankings in a single column
+        st.markdown("### Remaining Teams")
 
-        # Create two columns for the remaining teams
+        # Display teams 4-30 in single column
         remaining_teams = team_rankings.iloc[3:]
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+            division = division_mapping.get(row['team'], "Unknown")
+            color = division_colors.get(division, "#00ff88")
+            st.markdown(f"""
+            <div style="
+                padding: 0.75rem;
+                background-color: #1a1c23;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                border-left: 4px solid {color};
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="color: {color}; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
+                        <div>
+                            <div style="font-weight: bold;">{row['team']}</div>
+                            <div style="font-size: 0.8rem; color: #888;">{division}</div>
+                        </div>
+                    </div>
+                    <span style="font-weight: bold; font-size: 1.2rem;">{row['abl_score']:.1f}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Division legend
+        st.markdown("### Division Color Guide")
         col1, col2 = st.columns(2)
 
-        # Split remaining teams between columns
-        half = len(remaining_teams) // 2
+        divisions = list(division_colors.items())
+        mid = len(divisions) // 2
 
-        for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            col = col1 if i < half else col2
+        for i, (division, color) in enumerate(divisions):
+            col = col1 if i < mid else col2
             with col:
                 st.markdown(f"""
                 <div style="
-                    padding: 0.5rem;
-                    background-color: #1a1c23;
-                    border-radius: 5px;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                     margin: 0.25rem 0;
-                    border-left: 3px solid #00ff88;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #00ff88;">#{i + 4}</span>
-                        <span>{row['team']}</span>
-                        <span style="font-weight: bold;">{row['abl_score']:.1f}</span>
-                    </div>
+                    <div style="
+                        width: 1rem;
+                        height: 1rem;
+                        background-color: {color};
+                        border-radius: 3px;
+                    "></div>
+                    <span>{division}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
         # Detailed Statistics (expandable)
         with st.expander("📊 Detailed Statistics"):
+            # Original rankings table
+            st.dataframe(
+                team_rankings[['team', 'abl_score']],
+                column_config={
+                    "team": "Team",
+                    "abl_score": st.column_config.NumberColumn(
+                        "ABL Score",
+                        format="%.1f",
+                        help="Combined score based on active lineup, depth, and division strength"
+                    )
+                },
+                hide_index=False,
+                use_container_width=True
+            )
+
+            # Full statistics table
             st.dataframe(
                 team_rankings,
                 column_config={
@@ -365,21 +374,21 @@ def render(roster_data: pd.DataFrame):
                 hide_index=True
             )
 
-        # Visualization
-        fig = px.bar(
-            team_rankings,
-            x='team',
-            y=['active_lineup_points', 'depth_points'],
-            title='Projected Team Points Distribution',
-            labels={
-                'team': 'Team',
-                'value': 'Projected Points',
-                'variable': 'Category'
-            },
-            barmode='stack'
-        )
-        fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
+            # Visualization
+            fig = px.bar(
+                team_rankings,
+                x='team',
+                y=['active_lineup_points', 'depth_points'],
+                title='Projected Team Points Distribution',
+                labels={
+                    'team': 'Team',
+                    'value': 'Projected Points',
+                    'variable': 'Category'
+                },
+                barmode='stack'
+            )
+            fig.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
         st.error(f"An error occurred while calculating projected rankings: {str(e)}")
