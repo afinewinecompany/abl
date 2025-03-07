@@ -117,7 +117,7 @@ def main():
         ])
 
         with tab1:
-            league_info.render(processed_league_data, roster_data=processed_roster_data)
+            league_info.render(processed_league_data)
 
         with tab2:
             rosters.render(processed_roster_data)
