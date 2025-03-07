@@ -103,13 +103,14 @@ def render(roster_data: pd.DataFrame):
         'prospect_score', ascending=False
     )
 
-    # Display team's prospects (excluding clean_name and Player columns)
-    display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player']]
+    # Display team's prospects (excluding clean_name, Player, and team columns)
+    display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player', 'team']]
     st.dataframe(
         team_prospects[display_columns],
         column_config={
             "player_name": "Player",
-            "Position": "Position",
+            "position": "Position",
+            "mlb_team": "MLB Team",
             "Ranking": st.column_config.NumberColumn(
                 "Overall Ranking",
                 help="Industry prospect ranking"
