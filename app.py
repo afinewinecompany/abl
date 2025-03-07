@@ -6,7 +6,8 @@ from data_processor import DataProcessor
 st.set_page_config(
     page_title="ABL Analytics",
     page_icon="⚾",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"  # Add this line to collapse sidebar by default
 )
 
 # Custom CSS
