@@ -223,30 +223,44 @@ def render(roster_data: pd.DataFrame):
         # Display prominent rankings table
         st.subheader("🏆 ABL Power Rankings")
 
-        # Style the rankings table
+        # Custom styling for rankings
         st.markdown("""
         <style>
-        .rankings-table {
-            font-size: 1.2em;
-            margin-bottom: 2em;
-        }
-        .rankings-table th {
+        div[data-testid="stDataFrame"] div[role="table"] {
             background-color: #1a1c23;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        div[data-testid="stDataFrame"] div[role="table"] div[role="cell"] {
+            font-size: 1.1rem;
+            padding: 0.75rem !important;
+        }
+        div[data-testid="stDataFrame"] div[role="table"] div[role="columnheader"] {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00ff88 !important;
+            background-color: #1a1c23;
+            padding: 1rem !important;
+        }
+        div[data-testid="stDataFrame"] div[role="table"] div[role="row"]:hover {
+            background-color: #2a2c33;
+            transition: background-color 0.2s;
+        }
+        div[data-testid="stDataFrame"] div[role="table"] div[role="cell"]:first-child {
+            font-weight: bold;
             color: #00ff88;
-        }
-        .rankings-table tr:nth-child(even) {
-            background-color: #1a1c23;
         }
         </style>
         """, unsafe_allow_html=True)
 
-        # Display top rankings with minimal columns
+        # Top rankings with enhanced styling
         st.dataframe(
             team_rankings[['team', 'abl_score']],
             column_config={
                 "team": st.column_config.Column(
                     "Team",
-                    width="medium"
+                    width="medium",
                 ),
                 "abl_score": st.column_config.NumberColumn(
                     "ABL Score",
@@ -257,6 +271,59 @@ def render(roster_data: pd.DataFrame):
             hide_index=False,
             use_container_width=True
         )
+
+        # Alternative card-based view
+        st.markdown("### 📈 Top Teams")
+        col1, col2, col3 = st.columns(3)
+
+        # Display top 3 teams in cards
+        for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_rankings.head(3).iterrows())):
+            with col:
+                st.markdown(f"""
+                <div style="
+                    padding: 1rem;
+                    background-color: #1a1c23;
+                    border-radius: 10px;
+                    border-left: 5px solid #00ff88;
+                    margin: 0.5rem 0;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                ">
+                    <h3 style="margin:0; color: #00ff88;">#{idx + 1}</h3>
+                    <h4 style="margin:0.5rem 0;">{row['team']}</h4>
+                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
+                        {row['abl_score']:.1f}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Show the rest of the rankings in a more compact format
+        st.markdown("### 📊 Complete Rankings")
+
+        # Create two columns for the remaining teams
+        remaining_teams = team_rankings.iloc[3:]
+        col1, col2 = st.columns(2)
+
+        # Split remaining teams between columns
+        half = len(remaining_teams) // 2
+
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+            col = col1 if i < half else col2
+            with col:
+                st.markdown(f"""
+                <div style="
+                    padding: 0.5rem;
+                    background-color: #1a1c23;
+                    border-radius: 5px;
+                    margin: 0.25rem 0;
+                    border-left: 3px solid #00ff88;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #00ff88;">#{i + 4}</span>
+                        <span>{row['team']}</span>
+                        <span style="font-weight: bold;">{row['abl_score']:.1f}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
         # Detailed Statistics (expandable)
         with st.expander("📊 Detailed Statistics"):
