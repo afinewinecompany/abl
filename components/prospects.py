@@ -22,125 +22,140 @@ def calculate_prospect_score(ranking: int) -> float:
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
-    st.header("🌟 Prospect Analysis")
+    try:
+        st.header("🌟 Prospect Analysis")
 
-    # Read and process prospect rankings
-    prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
-    prospect_rankings['Player'] = prospect_rankings['Player'].str.strip()
-    prospect_rankings['prospect_score'] = prospect_rankings['Ranking'].apply(calculate_prospect_score)
+        # Read and process prospect rankings
+        prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
+        prospect_rankings['Player'] = prospect_rankings['Player'].str.strip()
+        prospect_rankings['prospect_score'] = prospect_rankings['Ranking'].apply(calculate_prospect_score)
 
-    # Get all minor league players
-    minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
-    minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
+        # Get all minor league players
+        minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
+        minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
 
-    # Merge with rankings
-    ranked_prospects = pd.merge(
-        minors_players,
-        prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score', 'Position', 'ETA']],
-        left_on='clean_name',
-        right_on='Player',
-        how='left'
-    )
+        # Merge with rankings
+        ranked_prospects = pd.merge(
+            minors_players,
+            prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score', 'Position', 'ETA']],
+            left_on='clean_name',
+            right_on='Player',
+            how='left'
+        )
 
-    # Team Prospect Rankings
-    st.subheader("📊 Team Prospect Power Rankings")
+        # Team Prospect Rankings
+        st.subheader("📊 Team Prospect Power Rankings")
 
-    team_scores = ranked_prospects.groupby('team').agg({
-        'prospect_score': ['sum', 'mean'],
-        'Ranking': lambda x: x.notna().sum()  # Count of ranked prospects
-    }).reset_index()
+        # Calculate total prospects for each team
+        total_prospects = minors_players.groupby('team').size().reset_index(name='total_prospects')
 
-    # Calculate total prospects separately
-    total_prospects = minors_players.groupby('team').size().reset_index(name='total_prospects')
+        # Calculate metrics for ranked prospects
+        team_scores = ranked_prospects.groupby('team').agg({
+            'prospect_score': ['sum', 'mean'],
+            'Ranking': lambda x: x.notna().sum()  # Count of ranked prospects
+        }).reset_index()
 
-    # Merge with team scores
-    team_scores = pd.merge(team_scores, total_prospects, on='team', how='left')
+        # Rename columns
+        team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects']
 
-    team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects', 'total_prospects']
-    team_scores = team_scores.sort_values('total_score', ascending=False)
-    team_scores = team_scores.reset_index(drop=True)
-    team_scores.index = team_scores.index + 1
+        # Merge with total prospects
+        team_scores = pd.merge(team_scores, total_prospects, on='team', how='outer')
 
-    # Display team rankings
-    st.dataframe(
-        team_scores,
-        column_config={
-            "team": "Team",
-            "total_score": st.column_config.NumberColumn(
-                "Total Prospect Score",
-                format="%.1f",
-                help="Sum of all prospect scores"
-            ),
-            "avg_score": st.column_config.NumberColumn(
-                "Average Prospect Score",
-                format="%.1f",
-                help="Average score per prospect"
-            ),
-            "total_prospects": "Total Prospects",
-            "ranked_prospects": "Ranked Prospects"
-        },
-        hide_index=False
-    )
+        # Fill NaN values with 0 for teams with no ranked prospects
+        team_scores = team_scores.fillna({
+            'total_score': 0,
+            'avg_score': 0,
+            'ranked_prospects': 0
+        })
 
-    # Visualization
-    fig = px.bar(
-        team_scores,
-        x='team',
-        y='total_score',
-        title='Team Prospect Power Rankings',
-        labels={'team': 'Team', 'total_score': 'Total Prospect Score'},
-        color='total_score',
-        color_continuous_scale='viridis'
-    )
-    fig.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig, use_container_width=True)
+        # Sort by total score
+        team_scores = team_scores.sort_values('total_score', ascending=False)
+        team_scores = team_scores.reset_index(drop=True)
+        team_scores.index = team_scores.index + 1
 
-    # Individual Prospect Analysis
-    st.subheader("👥 Top Prospects by Team")
+        # Display team rankings
+        st.dataframe(
+            team_scores,
+            column_config={
+                "team": "Team",
+                "total_score": st.column_config.NumberColumn(
+                    "Total Prospect Score",
+                    format="%.1f",
+                    help="Sum of all prospect scores"
+                ),
+                "avg_score": st.column_config.NumberColumn(
+                    "Average Prospect Score",
+                    format="%.1f",
+                    help="Average score per prospect"
+                ),
+                "ranked_prospects": "Ranked Prospects",
+                "total_prospects": "Total Prospects"
+            },
+            hide_index=False
+        )
 
-    # Team selector
-    selected_team = st.selectbox(
-        "Select Team",
-        options=team_scores['team'].tolist()
-    )
+        # Visualization
+        fig = px.bar(
+            team_scores,
+            x='team',
+            y='total_score',
+            title='Team Prospect Power Rankings',
+            labels={'team': 'Team', 'total_score': 'Total Prospect Score'},
+            color='total_score',
+            color_continuous_scale='viridis'
+        )
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Filter prospects for selected team
-    team_prospects = ranked_prospects[ranked_prospects['team'] == selected_team].sort_values(
-        'prospect_score', ascending=False
-    )
+        # Individual Prospect Analysis
+        st.subheader("👥 Top Prospects by Team")
 
-    # Display team's prospects (excluding clean_name, Player, and team columns)
-    display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player', 'team']]
-    st.dataframe(
-        team_prospects[display_columns],
-        column_config={
-            "player_name": "Player",
-            "position": "Position",
-            "mlb_team": "MLB Team",
-            "Ranking": st.column_config.NumberColumn(
-                "Overall Ranking",
-                help="Industry prospect ranking"
-            ),
-            "Tier": "Prospect Tier",
-            "ETA": "MLB ETA",
-            "prospect_score": st.column_config.NumberColumn(
-                "Prospect Score",
-                format="%.1f",
-                help="Calculated prospect value"
-            )
-        },
-        hide_index=True
-    )
+        # Team selector
+        selected_team = st.selectbox(
+            "Select Team",
+            options=team_scores['team'].tolist()
+        )
 
-    # Tier Distribution
-    st.subheader("📈 Prospect Tier Distribution")
-    tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
+        # Filter prospects for selected team
+        team_prospects = ranked_prospects[ranked_prospects['team'] == selected_team].sort_values(
+            'prospect_score', ascending=False
+        )
 
-    fig2 = px.bar(
-        tier_dist,
-        title='Prospect Tier Distribution by Team',
-        labels={'value': 'Number of Prospects', 'team': 'Team', 'variable': 'Tier'},
-        barmode='group'
-    )
-    fig2.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig2, use_container_width=True)
+        # Display team's prospects (excluding clean_name, Player, and team columns)
+        display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player', 'team']]
+        st.dataframe(
+            team_prospects[display_columns],
+            column_config={
+                "player_name": "Player",
+                "position": "Position",
+                "mlb_team": "MLB Team",
+                "Ranking": st.column_config.NumberColumn(
+                    "Overall Ranking",
+                    help="Industry prospect ranking"
+                ),
+                "Tier": "Prospect Tier",
+                "ETA": "MLB ETA",
+                "prospect_score": st.column_config.NumberColumn(
+                    "Prospect Score",
+                    format="%.1f",
+                    help="Calculated prospect value"
+                )
+            },
+            hide_index=True
+        )
+
+        # Tier Distribution
+        st.subheader("📈 Prospect Tier Distribution")
+        tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
+
+        fig2 = px.bar(
+            tier_dist,
+            title='Prospect Tier Distribution by Team',
+            labels={'value': 'Number of Prospects', 'team': 'Team', 'variable': 'Tier'},
+            barmode='group'
+        )
+        fig2.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"An error occurred while processing prospect data. Please try refreshing the page.")
