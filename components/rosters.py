@@ -89,10 +89,17 @@ def render(roster_data: pd.DataFrame):
     if not minors_roster.empty:
         st.subheader("⭐ Minor League Prospects")
 
-        # Debug: Show sample names from both datasets
-        if st.checkbox("Debug Name Matching", value=False):
-            st.write("Sample Minor League Players:", minors_roster['player_name'].head())
-            st.write("Sample Prospect Rankings:", prospect_rankings['Player'].head())
+        # Debug name matching
+        st.markdown("### Name Matching Debug")
+        debug_tab1, debug_tab2 = st.tabs(["Name Formats", "Sample Data"])
+
+        with debug_tab1:
+            st.write("Minors Roster Names:", minors_roster['player_name'].tolist())
+            st.write("Prospect Rankings Names:", prospect_rankings['Player'].head(10).tolist())
+
+        with debug_tab2:
+            st.write("Sample Minors Data:", minors_roster.head())
+            st.write("Sample Rankings Data:", prospect_rankings.head())
 
         # Clean up player names for matching
         minors_roster['clean_name'] = minors_roster['player_name'].str.strip()
