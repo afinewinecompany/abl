@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from typing import Dict
 
 def calculate_prospect_score(ranking: int) -> float:
     """Calculate prospect score based on ranking"""
@@ -93,12 +94,16 @@ def render(roster_data: pd.DataFrame):
             st.write("Sample Minor League Players:", minors_roster['player_name'].head())
             st.write("Sample Prospect Rankings:", prospect_rankings['Player'].head())
 
+        # Clean up player names for matching
+        minors_roster['clean_name'] = minors_roster['player_name'].str.strip()
+        prospect_rankings['clean_name'] = prospect_rankings['Player'].str.strip()
+
         # Merge prospect rankings with minors roster
         minors_with_rankings = pd.merge(
             minors_roster,
-            prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score']],
-            left_on='player_name',
-            right_on='Player',
+            prospect_rankings[['clean_name', 'Ranking', 'Tier', 'prospect_score']],
+            left_on='clean_name',
+            right_on='clean_name',
             how='left'
         )
 
@@ -138,11 +143,14 @@ def render(roster_data: pd.DataFrame):
             (roster_data['status'].str.upper() == 'MINORS')
         ]
 
+        # Clean up names for matching
+        team_minors['clean_name'] = team_minors['player_name'].str.strip()
+
         team_prospects = pd.merge(
             team_minors,
-            prospect_rankings[['Player', 'prospect_score']],
-            left_on='player_name',
-            right_on='Player',
+            prospect_rankings[['clean_name', 'prospect_score']],
+            left_on='clean_name',
+            right_on='clean_name',
             how='left'
         )
 
