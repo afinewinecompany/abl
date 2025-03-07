@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings
+from components import league_info, rosters, standings, power_rankings, prospects
 from api_client import FantraxAPI
 from data_processor import DataProcessor
 
@@ -109,11 +109,12 @@ def main():
         processed_standings_data = data_processor.process_standings(standings_data)
 
         # Create tabs for different sections
-        tab1, tab2, tab3, tab4 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🏠 League Info",
             "👥 Team Rosters",
             "📊 Standings",
-            "🏆 Power Rankings"
+            "🏆 Power Rankings",
+            "⭐ Prospects"
         ])
 
         with tab1:
@@ -127,6 +128,9 @@ def main():
 
         with tab4:
             power_rankings.render(processed_standings_data)
+
+        with tab5:
+            prospects.render(processed_roster_data)
 
         # Debug information in collapsible section at bottom
         with st.expander("🔧 Debug Information", expanded=False):
