@@ -20,6 +20,23 @@ def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitcher
 
     return total_points
 
+def get_salary_penalty(team: str) -> float:
+    """Get salary cap penalty for a team"""
+    penalties = {
+        "Mariners": 16,
+        "Rockies": 4,
+        "Cubs": 12,
+        "Angels": 11,
+        "Phillies": 4,
+        "Guardians": 6,
+        "Marlins": 6,
+        "Reds": 25,
+        "Brewers": 34,
+        "Yankees": 10,
+        "Pirates": 4
+    }
+    return penalties.get(team, 0)
+
 def render(roster_data: pd.DataFrame):
     """Render roster information section"""
     st.header("Team Rosters")
@@ -82,7 +99,8 @@ def render(roster_data: pd.DataFrame):
 
         # Calculate total salary excluding MINORS players
         non_minors_roster = team_roster[team_roster['status'].str.upper() != 'MINORS']
-        total_salary = non_minors_roster['salary'].sum()
+        salary_penalty = get_salary_penalty(selected_team)
+        total_salary = non_minors_roster['salary'].sum() + salary_penalty
 
         # Display roster statistics
         col1, col2, col3, col4 = st.columns(4)
@@ -91,7 +109,11 @@ def render(roster_data: pd.DataFrame):
         with col2:
             st.metric("Active Players", len(active_roster))
         with col3:
-            st.metric("Total Salary", f"${total_salary:,.2f}")
+            st.metric(
+                "Total Salary",
+                f"${total_salary:,.2f}",
+                help=f"Includes ${salary_penalty:.2f} cap penalty" if salary_penalty > 0 else None
+            )
         with col4:
             st.metric("Positions", len(team_roster['position'].unique()))
 
