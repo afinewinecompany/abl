@@ -4,6 +4,16 @@ import plotly.express as px
 from typing import Dict, List
 import os
 
+def normalize_name(name: str) -> str:
+    """Normalize player name from [last], [first] to [first] [last]"""
+    try:
+        if ',' in name:
+            last, first = name.split(',', 1)
+            return f"{first.strip()} {last.strip()}"
+        return name.strip()
+    except:
+        return name.strip()
+
 def calculate_hitter_points(row: pd.Series) -> float:
     """Calculate fantasy points for a hitter based on scoring settings"""
     try:
@@ -71,6 +81,10 @@ def render(roster_data: pd.DataFrame):
         hitters_proj = pd.read_csv(hitters_file)
         pitchers_proj = pd.read_csv(pitchers_file)
 
+        # Normalize names in projection data
+        hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
+        pitchers_proj['Name'] = pitchers_proj['Name'].apply(normalize_name)
+
         # Calculate points for each player
         hitters_proj['fantasy_points'] = hitters_proj.apply(calculate_hitter_points, axis=1)
         pitchers_proj['fantasy_points'] = pitchers_proj.apply(calculate_pitcher_points, axis=1)
@@ -79,26 +93,51 @@ def render(roster_data: pd.DataFrame):
         roster_hitters = roster_data[roster_data['position'].str.match(r'^(C|1B|2B|3B|SS|OF|DH|UTIL)$', na=False)]
         roster_pitchers = roster_data[roster_data['position'].str.match(r'^P', na=False)]
 
+        # Normalize names in roster data
+        roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
+        roster_pitchers['clean_name'] = roster_pitchers['player_name'].apply(normalize_name)
+
         # Initialize lists to store team scores
         team_hitter_points = []
         team_pitcher_points = []
+
+        # Debug information
+        st.sidebar.markdown("### Debug Information")
+        show_debug = st.sidebar.checkbox("Show Debug Info")
 
         for team in roster_data['team'].unique():
             # Calculate hitter points
             team_hitters = roster_hitters[roster_hitters['team'] == team]
             hitter_points = 0
+            matched_hitters = 0
+            total_hitters = len(team_hitters)
+
             for _, hitter in team_hitters.iterrows():
-                player_proj = hitters_proj[hitters_proj['Name'] == hitter['player_name']]
+                player_proj = hitters_proj[hitters_proj['Name'] == hitter['clean_name']]
                 if not player_proj.empty:
                     hitter_points += player_proj.iloc[0]['fantasy_points']
+                    matched_hitters += 1
+                elif show_debug:
+                    st.sidebar.write(f"No projection found for hitter: {hitter['player_name']} ({team})")
 
             # Calculate pitcher points
             team_pitchers = roster_pitchers[roster_pitchers['team'] == team]
             pitcher_points = 0
+            matched_pitchers = 0
+            total_pitchers = len(team_pitchers)
+
             for _, pitcher in team_pitchers.iterrows():
-                player_proj = pitchers_proj[pitchers_proj['Name'] == pitcher['player_name']]
+                player_proj = pitchers_proj[pitchers_proj['Name'] == pitcher['clean_name']]
                 if not player_proj.empty:
                     pitcher_points += player_proj.iloc[0]['fantasy_points']
+                    matched_pitchers += 1
+                elif show_debug:
+                    st.sidebar.write(f"No projection found for pitcher: {pitcher['player_name']} ({team})")
+
+            if show_debug:
+                st.sidebar.markdown(f"### {team} Stats")
+                st.sidebar.write(f"Hitters matched: {matched_hitters}/{total_hitters}")
+                st.sidebar.write(f"Pitchers matched: {matched_pitchers}/{total_pitchers}")
 
             team_hitter_points.append({
                 'team': team,
