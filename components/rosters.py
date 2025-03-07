@@ -24,8 +24,8 @@ def render(roster_data: pd.DataFrame):
 
     try:
         # Load projections data
-        hitters_proj = pd.read_csv("attached_assets/oopsy-hitters.csv")
-        pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers.csv")
+        hitters_proj = pd.read_csv("attached_assets/batx-hitters.csv")
+        pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers-2.csv")
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)

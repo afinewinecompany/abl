@@ -84,8 +84,8 @@ def render(roster_data: pd.DataFrame):
             st.sidebar.write(roster_data['position'].unique().tolist())
 
         # Check if projection files exist
-        hitters_file = "attached_assets/oopsy-hitters.csv"
-        pitchers_file = "attached_assets/oopsy-pitchers.csv"
+        hitters_file = "attached_assets/batx-hitters.csv"
+        pitchers_file = "attached_assets/oopsy-pitchers-2.csv"
 
         if not os.path.exists(hitters_file) or not os.path.exists(pitchers_file):
             st.error("Projection files not found. Please check the file paths.")
