@@ -45,8 +45,9 @@ def render(roster_data: pd.DataFrame):
 
     # Active Roster Section
     st.subheader("📋 Active Roster")
+    display_columns = ['player_name', 'position', 'mlb_team', 'status', 'salary']
     st.dataframe(
-        active_roster,
+        active_roster[display_columns],
         column_config={
             "player_name": "Player",
             "position": "Position",
@@ -64,7 +65,7 @@ def render(roster_data: pd.DataFrame):
     if not reserve_roster.empty:
         st.subheader("🔄 Reserve Roster")
         st.dataframe(
-            reserve_roster,
+            reserve_roster[display_columns],
             column_config={
                 "player_name": "Player",
                 "position": "Position",
@@ -82,7 +83,7 @@ def render(roster_data: pd.DataFrame):
     if not minors_roster.empty:
         st.subheader("⭐ Minor League Players")
         st.dataframe(
-            minors_roster,
+            minors_roster[display_columns],
             column_config={
                 "player_name": "Player",
                 "position": "Position",
