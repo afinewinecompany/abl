@@ -113,8 +113,12 @@ def render(roster_data: pd.DataFrame):
 
         # Split roster by position type
         pitcher_positions = ['SP', 'RP', 'P']  # List of pitcher positions
-        roster_pitchers = roster_data[roster_data['position'].str.upper().isin([pos.upper() for pos in pitcher_positions])]
-        roster_hitters = roster_data[~roster_data['position'].str.upper().isin([pos.upper() for pos in pitcher_positions])]
+        roster_pitchers = roster_data[
+            roster_data['position'].str.upper().str.contains('SP|RP|P', na=False)
+        ]
+        roster_hitters = roster_data[
+            ~roster_data['position'].str.upper().str.contains('SP|RP|P', na=False)
+        ]
 
         if show_debug:
             st.sidebar.markdown("### Position Filtering Results")
@@ -122,6 +126,8 @@ def render(roster_data: pd.DataFrame):
             st.sidebar.write(f"Total pitchers after position filter: {len(roster_pitchers)}")
             st.sidebar.write("\nPitcher positions found:")
             st.sidebar.write(roster_pitchers['position'].unique().tolist())
+            st.sidebar.write("\nSample of pitcher roster entries:")
+            st.sidebar.write(roster_pitchers[['player_name', 'position', 'team']].head(10))
 
         # Normalize names in roster data
         roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
