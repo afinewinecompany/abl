@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from typing import Dict, List
+from typing import Dict
 import os
 
 def normalize_name(name: str) -> str:
@@ -70,9 +70,9 @@ def calculate_pitcher_points(row: pd.Series) -> float:
 
 def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
-    st.header("📊 Projected Rankings")
-
     try:
+        st.header("📊 Projected Rankings")
+
         # Check if projection files exist
         hitters_file = "attached_assets/oopsy-hitters.csv"
         pitchers_file = "attached_assets/oopsy-pitchers.csv"
@@ -84,6 +84,15 @@ def render(roster_data: pd.DataFrame):
         # Load projections data
         hitters_proj = pd.read_csv(hitters_file)
         pitchers_proj = pd.read_csv(pitchers_file)
+
+        # Debug information
+        st.sidebar.markdown("### Debug Information")
+        show_debug = st.sidebar.checkbox("Show Debug Info")
+
+        if show_debug:
+            st.sidebar.markdown("### Data Loading Info")
+            st.sidebar.write(f"Total pitchers in projections: {len(pitchers_proj)}")
+            st.sidebar.write(f"Total hitters in projections: {len(hitters_proj)}")
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
@@ -101,20 +110,18 @@ def render(roster_data: pd.DataFrame):
         roster_hitters['clean_name'] = roster_hitters['player_name'].apply(normalize_name)
         roster_pitchers['clean_name'] = roster_pitchers['player_name'].apply(normalize_name)
 
+        if show_debug:
+            st.sidebar.markdown("### Roster Data Info")
+            st.sidebar.write(f"Total pitchers in rosters: {len(roster_pitchers)}")
+            st.sidebar.write(f"Total hitters in rosters: {len(roster_hitters)}")
+            st.sidebar.write("\nFirst 5 pitcher names from projections:")
+            st.sidebar.write(pitchers_proj['Name'].head().tolist())
+            st.sidebar.write("\nFirst 5 pitcher names from rosters:")
+            st.sidebar.write(roster_pitchers['clean_name'].head().tolist())
+
         # Initialize lists to store team scores
         team_hitter_points = []
         team_pitcher_points = []
-
-        # Debug information
-        st.sidebar.markdown("### Debug Information")
-        show_debug = st.sidebar.checkbox("Show Debug Info")
-
-        if show_debug:
-            st.sidebar.markdown("### Sample Normalized Names")
-            st.sidebar.write("First 5 pitcher projections:")
-            st.sidebar.write(pitchers_proj['Name'].head())
-            st.sidebar.write("\nFirst 5 roster pitcher names:")
-            st.sidebar.write(roster_pitchers['clean_name'].head())
 
         for team in roster_data['team'].unique():
             # Calculate hitter points
@@ -137,6 +144,11 @@ def render(roster_data: pd.DataFrame):
             matched_pitchers = 0
             total_pitchers = len(team_pitchers)
 
+            if show_debug:
+                st.sidebar.markdown(f"\n### {team} Pitchers")
+                st.sidebar.write("Roster pitchers:")
+                st.sidebar.write(team_pitchers['clean_name'].tolist())
+
             for _, pitcher in team_pitchers.iterrows():
                 # Try to find exact match first
                 player_proj = pitchers_proj[pitchers_proj['Name'] == pitcher['clean_name']]
@@ -148,8 +160,10 @@ def render(roster_data: pd.DataFrame):
                 if not player_proj.empty:
                     pitcher_points += player_proj.iloc[0]['fantasy_points']
                     matched_pitchers += 1
+                    if show_debug:
+                        st.sidebar.write(f"✅ Matched: {pitcher['clean_name']}")
                 elif show_debug:
-                    st.sidebar.write(f"No projection found for pitcher: {pitcher['clean_name']} ({team})")
+                    st.sidebar.write(f"❌ No match: {pitcher['clean_name']}")
 
             if show_debug:
                 st.sidebar.markdown(f"### {team} Stats")
