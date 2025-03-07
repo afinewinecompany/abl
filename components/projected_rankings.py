@@ -86,53 +86,6 @@ def calculate_depth_score(players_df: pd.DataFrame, used_players: set) -> float:
     bench_players = players_df[~players_df.index.isin(used_players)]
     return bench_players['projected_points'].sum() * 0.85  # Weight bench players at 85%
 
-def get_division_strength(team: str) -> float:
-    """Calculate division strength adjustment"""
-    division_mapping = {
-        "Texas Rangers": "AL West",
-        "Seattle Mariners": "AL West",
-        "Houston Astros": "AL West",
-        "Athletics": "AL West",
-        "Los Angeles Angels": "AL West",
-        "Cleveland Guardians": "AL Central",
-        "Detroit Tigers": "AL Central",
-        "Minnesota Twins": "AL Central",
-        "Chicago White Sox": "AL Central",
-        "Kansas City Royals": "AL Central",
-        "Toronto Blue Jays": "AL East",
-        "New York Yankees": "AL East",
-        "Tampa Bay Rays": "AL East",
-        "Baltimore Orioles": "AL East",
-        "Boston Red Sox": "AL East",
-        "Saint Louis Cardinals": "NL Central",
-        "Pittsburgh Pirates": "NL Central",
-        "Chicago Cubs": "NL Central",
-        "Cincinnati Reds": "NL Central",
-        "Milwaukee Brewers": "NL Central",
-        "Atlanta Braves": "NL East",
-        "Washington Nationals": "NL East",
-        "Miami Marlins": "NL East",
-        "New York Mets": "NL East",
-        "Philadelphia Phillies": "NL East",
-        "Los Angeles Dodgers": "NL West",
-        "Colorado Rockies": "NL West",
-        "Arizona Diamondbacks": "NL West",
-        "San Diego Padres": "NL West",
-        "San Francisco Giants": "NL West"
-    }
-
-    division_strength = {
-        "AL East": 1.1,    # Traditionally strong division
-        "AL West": 1.05,   # Competitive division
-        "NL East": 1.05,   # Competitive division
-        "NL West": 1.0,    # Average division
-        "AL Central": 0.95, # Historically weaker division
-        "NL Central": 0.95  # Historically weaker division
-    }
-
-    division = division_mapping.get(team, "Unknown")
-    return division_strength.get(division, 1.0)
-
 def calculate_abl_score(active_points: float, depth_points: float, division_factor: float) -> float:
     """Calculate overall ABL score combining all factors"""
     # Base score from active lineup (weighted at 100%)
@@ -153,6 +106,20 @@ def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
     try:
         st.header("📊 Projected Rankings")
+
+        # Load division data
+        divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
+        division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
+
+        # Division strength ratings (higher means tougher division)
+        division_strength = {
+            "AL East": 1.1,    # Traditionally strong division
+            "AL West": 1.05,   # Competitive division
+            "NL East": 1.05,   # Competitive division
+            "NL West": 1.0,    # Average division
+            "AL Central": 0.95, # Historically weaker division
+            "NL Central": 0.95  # Historically weaker division
+        }
 
         position_limits = {
             'C': 1, '1B': 1, '2B': 1, '3B': 1, 'SS': 1,
@@ -199,7 +166,8 @@ def render(roster_data: pd.DataFrame):
             # Calculate lineup and depth points
             active_points, used_players = get_best_lineup_points(team_roster, position_limits)
             depth_points = calculate_depth_score(team_roster, used_players)
-            division_factor = get_division_strength(team)
+            division = division_mapping.get(team, "Unknown")
+            division_factor = division_strength.get(division, 1.0)
 
             # Calculate ABL Score
             abl_score = calculate_abl_score(active_points, depth_points, division_factor)
@@ -320,22 +288,6 @@ def render(roster_data: pd.DataFrame):
 
         # Detailed Statistics (expandable)
         with st.expander("📊 Detailed Statistics"):
-            # Original rankings table
-            st.dataframe(
-                team_rankings[['team', 'abl_score']],
-                column_config={
-                    "team": "Team",
-                    "abl_score": st.column_config.NumberColumn(
-                        "ABL Score",
-                        format="%.1f",
-                        help="Combined score based on active lineup, depth, and division strength"
-                    )
-                },
-                hide_index=False,
-                use_container_width=True
-            )
-
-            # Full statistics table
             st.dataframe(
                 team_rankings,
                 column_config={
