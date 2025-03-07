@@ -31,6 +31,10 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
         border: 1px solid rgba(0, 255, 136, 0.1);
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin: 0 auto 2rem auto;
     }
 
     .stTabs [data-baseweb="tab"] {
@@ -40,12 +44,31 @@ st.markdown("""
         transition: all 0.3s ease;
         color: #fafafa;
         border-radius: 8px;
+        padding: 0 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 140px;
+        text-align: center;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
         color: #00ff88;
         text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         background: rgba(0, 255, 136, 0.1);
+    }
+
+    /* Tab list container */
+    [data-testid="stHorizontalBlock"] {
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    /* Active tab indicator */
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: #00ff88;
+        background: rgba(0, 255, 136, 0.1);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
     }
 
     h1 {
