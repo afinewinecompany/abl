@@ -10,6 +10,16 @@ def calculate_prospect_score(ranking: int) -> float:
     # Exponential decay scoring - higher ranked prospects worth more
     return 100 * (0.95 ** (ranking - 1))
 
+def normalize_name(name: str) -> str:
+    """Normalize player name from [last], [first] to [first] [last]"""
+    try:
+        if ',' in name:
+            last, first = name.split(',', 1)
+            return f"{first.strip()} {last.strip()}"
+        return name.strip()
+    except:
+        return name.strip()
+
 def render(roster_data: pd.DataFrame):
     """Render roster information section"""
     st.header("Team Rosters")
@@ -102,8 +112,8 @@ def render(roster_data: pd.DataFrame):
             st.write("Sample Rankings Data:", prospect_rankings.head())
 
         # Clean up player names for matching
-        minors_roster['clean_name'] = minors_roster['player_name'].str.strip()
-        prospect_rankings['clean_name'] = prospect_rankings['Player'].str.strip()
+        minors_roster['clean_name'] = minors_roster['player_name'].apply(normalize_name)
+        prospect_rankings['clean_name'] = prospect_rankings['Player'].apply(normalize_name)
 
         # Merge prospect rankings with minors roster
         minors_with_rankings = pd.merge(
@@ -151,7 +161,7 @@ def render(roster_data: pd.DataFrame):
         ]
 
         # Clean up names for matching
-        team_minors['clean_name'] = team_minors['player_name'].str.strip()
+        team_minors['clean_name'] = team_minors['player_name'].apply(normalize_name)
 
         team_prospects = pd.merge(
             team_minors,
