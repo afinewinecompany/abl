@@ -218,6 +218,10 @@ def render(roster_data: pd.DataFrame):
             team_rankings,
             column_config={
                 "team": "Team",
+                "total_points": st.column_config.NumberColumn(
+                    "Total Projected Points",
+                    format="%.1f"
+                ),
                 "hitter_points": st.column_config.NumberColumn(
                     "Projected Hitter Points",
                     format="%.1f"
@@ -225,13 +229,10 @@ def render(roster_data: pd.DataFrame):
                 "pitcher_points": st.column_config.NumberColumn(
                     "Projected Pitcher Points",
                     format="%.1f"
-                ),
-                "total_points": st.column_config.NumberColumn(
-                    "Total Projected Points",
-                    format="%.1f"
                 )
             },
-            hide_index=False
+            hide_index=False,
+            column_order=["team", "total_points", "hitter_points", "pitcher_points"]
         )
 
         # Visualization

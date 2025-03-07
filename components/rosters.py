@@ -117,8 +117,8 @@ def render(roster_data: pd.DataFrame):
         with col4:
             st.metric("Positions", len(team_roster['position'].unique()))
 
-        # Add projected points to display columns
-        display_columns = ['player_name', 'position', 'mlb_team', 'status', 'salary', 'projected_points']
+        # Add projected points to display columns (reordered and removed status)
+        display_columns = ['player_name', 'position', 'salary', 'projected_points', 'mlb_team']
 
         # Active Roster Section
         st.subheader("📋 Active Roster")
@@ -127,8 +127,6 @@ def render(roster_data: pd.DataFrame):
             column_config={
                 "player_name": "Player",
                 "position": "Position",
-                "mlb_team": "MLB Team",
-                "status": "Status",
                 "salary": st.column_config.NumberColumn(
                     "Salary",
                     format="$%.2f"
@@ -137,7 +135,8 @@ def render(roster_data: pd.DataFrame):
                     "Projected Points",
                     format="%.1f",
                     help="Projected fantasy points for the season"
-                )
+                ),
+                "mlb_team": "MLB Team"
             },
             hide_index=True
         )
@@ -150,8 +149,6 @@ def render(roster_data: pd.DataFrame):
                 column_config={
                     "player_name": "Player",
                     "position": "Position",
-                    "mlb_team": "MLB Team",
-                    "status": "Status",
                     "salary": st.column_config.NumberColumn(
                         "Salary",
                         format="$%.2f"
@@ -160,7 +157,8 @@ def render(roster_data: pd.DataFrame):
                         "Projected Points",
                         format="%.1f",
                         help="Projected fantasy points for the season"
-                    )
+                    ),
+                    "mlb_team": "MLB Team"
                 },
                 hide_index=True
             )
@@ -173,8 +171,6 @@ def render(roster_data: pd.DataFrame):
                 column_config={
                     "player_name": "Player",
                     "position": "Position",
-                    "mlb_team": "MLB Team",
-                    "status": "Status",
                     "salary": st.column_config.NumberColumn(
                         "Salary",
                         format="$%.2f"
@@ -183,7 +179,8 @@ def render(roster_data: pd.DataFrame):
                         "Projected Points",
                         format="%.1f",
                         help="Projected fantasy points for the season"
-                    )
+                    ),
+                    "mlb_team": "MLB Team"
                 },
                 hide_index=True
             )
