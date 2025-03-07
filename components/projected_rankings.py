@@ -3,20 +3,34 @@ import pandas as pd
 import plotly.express as px
 from typing import Dict
 import os
+import unicodedata
 
 def normalize_name(name: str) -> str:
     """Normalize player name from [last], [first] to [first] [last]"""
     try:
+        # Convert to lowercase for case-insensitive comparison
+        name = name.lower()
+
+        # Remove diacritical marks
+        name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
+
         if ',' in name:
             last, first = name.split(',', 1)
-            return f"{first.strip()} {last.strip()}"
+            name = f"{first.strip()} {last.strip()}"
+
         # Remove any parentheses and their contents
         name = name.split('(')[0].strip()
+
         # Remove any team designations after the name
         name = name.split(' - ')[0].strip()
-        return name.strip()
+
+        # Remove any periods and extra spaces
+        name = name.replace('.', '').strip()
+        name = ' '.join(name.split())
+
+        return name
     except:
-        return name.strip()
+        return name.strip().lower()
 
 def calculate_hitter_points(row: pd.Series) -> float:
     """Calculate fantasy points for a hitter based on scoring settings"""

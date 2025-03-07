@@ -8,13 +8,16 @@ def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitcher
     """Calculate total fantasy points for a player, handling special case for Ohtani"""
     total_points = 0
 
-    # Check for hitter projections
-    hitter_proj = hitters_proj[hitters_proj['Name'] == player_name]
+    # Normalize the player name for comparison
+    player_name = normalize_name(player_name)
+
+    # Check for hitter projections (using normalized names for comparison)
+    hitter_proj = hitters_proj[hitters_proj['Name'].apply(normalize_name) == player_name]
     if not hitter_proj.empty:
         total_points += hitter_proj.iloc[0]['fantasy_points']
 
-    # Check for pitcher projections
-    pitcher_proj = pitchers_proj[pitchers_proj['Name'] == player_name]
+    # Check for pitcher projections (using normalized names for comparison)
+    pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(normalize_name) == player_name]
     if not pitcher_proj.empty:
         total_points += pitcher_proj.iloc[0]['fantasy_points']
 
@@ -192,17 +195,3 @@ def render(roster_data: pd.DataFrame):
 
     except Exception as e:
         st.error(f"An error occurred while displaying roster data: {str(e)}")
-
-def normalize_name(name: str) -> str:
-    """Normalize player name from [last], [first] to [first] [last]"""
-    try:
-        if ',' in name:
-            last, first = name.split(',', 1)
-            return f"{first.strip()} {last.strip()}"
-        # Remove any parentheses and their contents
-        name = name.split('(')[0].strip()
-        # Remove any team designations after the name
-        name = name.split(' - ')[0].strip()
-        return name.strip()
-    except:
-        return name.strip()
