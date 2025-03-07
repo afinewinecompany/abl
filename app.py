@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for enhanced dark mode with modern tech styling
+# Custom CSS for enhanced dark mode with modern tech styling and responsive design
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -22,6 +22,61 @@ st.markdown("""
     .main {
         padding: 1rem 2rem;
         background: #0e1117;
+    }
+
+    /* Mobile-first approach */
+    @media screen and (max-width: 768px) {
+        .main {
+            padding: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8em !important;
+            padding: 1rem !important;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            flex-wrap: wrap;
+            gap: 0.5rem !important;
+            padding: 0.5rem !important;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            min-width: 100px !important;
+            padding: 0 1rem !important;
+            height: 3rem !important;
+            font-size: 0.9rem !important;
+        }
+
+        .stMetric {
+            padding: 1rem !important;
+        }
+
+        /* Make data tables scrollable horizontally */
+        .stDataFrame {
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 1rem !important;
+        }
+
+        /* Adjust column sizes for mobile */
+        [data-testid="stDataFrameResizable"] td {
+            padding: 0.5rem !important;
+            font-size: 0.85rem !important;
+            white-space: nowrap;
+        }
+
+        [data-testid="stDataFrameResizable"] th {
+            padding: 0.5rem !important;
+            font-size: 0.85rem !important;
+            white-space: nowrap;
+        }
+
+        /* Adjust chart containers */
+        [data-testid="stArrowVegaLiteChart"] {
+            width: 100% !important;
+            padding: 0 !important;
+        }
     }
 
     .stTabs [data-baseweb="tab-list"] {
