@@ -46,11 +46,17 @@ def render(roster_data: pd.DataFrame):
     st.subheader("📊 Team Prospect Power Rankings")
 
     team_scores = ranked_prospects.groupby('team').agg({
-        'prospect_score': ['sum', 'mean', 'count'],
-        'Ranking': lambda x: x.notna().sum()
+        'prospect_score': ['sum', 'mean'],
+        'Ranking': lambda x: x.notna().sum()  # Count of ranked prospects
     }).reset_index()
 
-    team_scores.columns = ['team', 'total_score', 'avg_score', 'total_prospects', 'ranked_prospects']
+    # Calculate total prospects separately
+    total_prospects = minors_players.groupby('team').size().reset_index(name='total_prospects')
+
+    # Merge with team scores
+    team_scores = pd.merge(team_scores, total_prospects, on='team', how='left')
+
+    team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects', 'total_prospects']
     team_scores = team_scores.sort_values('total_score', ascending=False)
     team_scores = team_scores.reset_index(drop=True)
     team_scores.index = team_scores.index + 1
