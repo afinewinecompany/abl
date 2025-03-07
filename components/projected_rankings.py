@@ -93,6 +93,10 @@ def render(roster_data: pd.DataFrame):
             st.sidebar.markdown("### Data Loading Info")
             st.sidebar.write(f"Total pitchers in projections: {len(pitchers_proj)}")
             st.sidebar.write(f"Total hitters in projections: {len(hitters_proj)}")
+            st.sidebar.write("\nFirst few rows of hitters CSV:")
+            st.sidebar.write(hitters_proj[['Name', 'Team']].head())
+            st.sidebar.write("\nFirst few rows of pitchers CSV:")
+            st.sidebar.write(pitchers_proj[['Name', 'Team']].head())
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
