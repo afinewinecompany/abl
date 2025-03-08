@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 from typing import Dict
 
 def normalize_name(name: str) -> str:
@@ -14,10 +15,26 @@ def normalize_name(name: str) -> str:
         return name.strip()
 
 def calculate_prospect_score(ranking: int) -> float:
-    """Calculate prospect score based on ranking"""
+    """
+    Calculate prospect score based on ranking using exponential decay.
+    - Ranked prospects (1-600) get scores from 100 to ~5
+    - Unranked prospects get a baseline score of 2
+
+    Formula: score = 100 * e^(-0.005 * (rank-1))
+    This creates an exponential decay where:
+    - #1 prospect = 100 points
+    - #100 prospect ≈ 60 points
+    - #300 prospect ≈ 22 points
+    - #600 prospect ≈ 5 points
+    """
     if pd.isna(ranking):
-        return 0
-    return 100 * (0.95 ** (ranking - 1))
+        return 2.0  # Baseline score for unranked prospects
+
+    # Exponential decay formula
+    decay_rate = 0.005  # Controls how quickly scores decline
+    score = 100 * np.exp(-decay_rate * (ranking - 1))
+
+    return round(score, 1)
 
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
