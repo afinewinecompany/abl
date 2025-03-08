@@ -46,36 +46,72 @@ def render_prospect_preview(prospect, color):
     </div>
     """
 
-def render_team_card(team, score, ranked_prospects, division, color, top_3_prospects):
-    """Render a team card with prospect preview"""
+def render_team_card(team, team_rank, score, ranked_prospects, division, color, top_3_prospects, all_prospects):
+    """Render a team card with prospect preview and expandable full list"""
     preview_html = "".join([render_prospect_preview(prospect, color) 
                            for _, prospect in top_3_prospects.iterrows()])
 
-    return f"""
-    <div style="
-        padding: 1rem;
-        background-color: #1a1c23;
-        border-radius: 10px;
-        border-left: 5px solid {color};
-        margin: 0.5rem 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    ">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-            <div>
-                <div style="font-weight: bold; font-size: 1.2rem;">{team}</div>
-                <div style="font-size: 0.8rem; color: #888;">{division}</div>
+    # Prepare all prospects HTML for the expander
+    all_prospects_html = ""
+    if not all_prospects.empty:
+        for _, prospect in all_prospects.iterrows():
+            rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
+            all_prospects_html += f"""
+            <div style="
+                padding: 0.75rem;
+                background-color: #1a1c23;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                border-left: 4px solid {color};
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
+                        <div style="font-size: 0.9rem; color: #888;">
+                            {prospect['position']} | {prospect['mlb_team']} | Score: {prospect['prospect_score']:.1f}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; color: {rank_color};">
+                            {f"Rank #{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #888;">
+                            {f"Tier {prospect['Tier']}" if pd.notna(prospect['Tier']) else ""}
+                            {f" | ETA: {prospect['ETA']}" if pd.notna(prospect['ETA']) else ""}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="text-align: right;">
-                <div style="font-weight: bold; font-size: 1.2rem;">{score:.1f}</div>
-                <div style="font-size: 0.8rem; color: #888;">{int(ranked_prospects)} Ranked</div>
+            """
+
+    return {
+        'header': f"""
+        <div style="
+            padding: 1rem;
+            background-color: #1a1c23;
+            border-radius: 10px;
+            border-left: 5px solid {color};
+            margin: 0.5rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        ">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <div>
+                    <div style="font-weight: bold; font-size: 1.2rem;">#{team_rank} {team}</div>
+                    <div style="font-size: 0.8rem; color: #888;">{division}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; font-size: 1.2rem;">{score:.1f}</div>
+                    <div style="font-size: 0.8rem; color: #888;">{int(ranked_prospects)} Ranked</div>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <div style="font-size: 0.9rem; color: #888; margin-bottom: 0.5rem;">Top Prospects:</div>
+                {preview_html}
             </div>
         </div>
-        <div style="margin-top: 0.5rem;">
-            <div style="font-size: 0.9rem; color: #888; margin-bottom: 0.5rem;">Top Prospects:</div>
-            {preview_html}
-        </div>
-    </div>
-    """
+        """,
+        'all_prospects': all_prospects_html
+    }
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
@@ -129,121 +165,69 @@ def render(roster_data: pd.DataFrame):
         col1, col2, col3 = st.columns(3)
 
         # Display top 3 teams in cards
-        for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
+        for idx, (col, (rank, row)) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
             with col:
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
 
-                # Get team's top prospects
+                # Get team's prospects
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
                 top_3_prospects = team_prospects.head(3)
 
-                # Display team card with preview
-                st.markdown(render_team_card(
-                    row['team'], 
+                # Render team card
+                card = render_team_card(
+                    row['team'],
+                    rank,
                     row['total_score'],
                     row['ranked_prospects'],
                     division,
                     color,
-                    top_3_prospects
-                ), unsafe_allow_html=True)
+                    top_3_prospects,
+                    team_prospects
+                )
 
-                # Create expander for full prospect list
+                # Display card header with preview
+                st.markdown(card['header'], unsafe_allow_html=True)
+
+                # Add expander for full prospect list
                 with st.expander("View All Prospects"):
-                    if not team_prospects.empty:
-                        for _, prospect in team_prospects.iterrows():
-                            rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
-                            st.markdown(f"""
-                            <div style="
-                                padding: 0.75rem;
-                                background-color: #1a1c23;
-                                border-radius: 8px;
-                                margin: 0.5rem 0;
-                                border-left: 4px solid {color};
-                            ">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
-                                        <div style="font-size: 0.9rem; color: #888;">
-                                            {prospect['position']} | {prospect['mlb_team']} | Score: {prospect['prospect_score']:.1f}
-                                        </div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-weight: bold; color: {rank_color};">
-                                            {f"Rank #{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
-                                        </div>
-                                        <div style="font-size: 0.8rem; color: #888;">
-                                            {f"Tier {prospect['Tier']}" if pd.notna(prospect['Tier']) else ""}
-                                            {f" | ETA: {prospect['ETA']}" if pd.notna(prospect['ETA']) else ""}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                    else:
-                        st.info("No prospects found for this team.")
+                    st.markdown(card['all_prospects'], unsafe_allow_html=True)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
 
         # Display teams 4-30 in single column
         remaining_teams = team_scores.iloc[3:]
-        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+        for rank, row in remaining_teams.iterrows():
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
 
-            # Get team's top prospects
+            # Get team's prospects
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
             top_3_prospects = team_prospects.head(3)
 
-            # Display team card with preview
-            st.markdown(render_team_card(
-                row['team'], 
+            # Render team card
+            card = render_team_card(
+                row['team'],
+                rank + 3, # Adjust rank for remaining teams
                 row['total_score'],
                 row['ranked_prospects'],
                 division,
                 color,
-                top_3_prospects
-            ), unsafe_allow_html=True)
+                top_3_prospects,
+                team_prospects
+            )
 
-            # Create expander for full prospect list
+            # Display card header with preview
+            st.markdown(card['header'], unsafe_allow_html=True)
+
+            # Add expander for full prospect list
             with st.expander("View All Prospects"):
-                if not team_prospects.empty:
-                    for _, prospect in team_prospects.iterrows():
-                        rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
-                        st.markdown(f"""
-                        <div style="
-                            padding: 0.75rem;
-                            background-color: #1a1c23;
-                            border-radius: 8px;
-                            margin: 0.5rem 0;
-                            border-left: 4px solid {color};
-                        ">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
-                                    <div style="font-size: 0.9rem; color: #888;">
-                                        {prospect['position']} | {prospect['mlb_team']} | Score: {prospect['prospect_score']:.1f}
-                                    </div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="font-weight: bold; color: {rank_color};">
-                                        {f"Rank #{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: #888;">
-                                        {f"Tier {prospect['Tier']}" if pd.notna(prospect['Tier']) else ""}
-                                        {f" | ETA: {prospect['ETA']}" if pd.notna(prospect['ETA']) else ""}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.info("No prospects found for this team.")
+                st.markdown(card['all_prospects'], unsafe_allow_html=True)
 
         # Division legend
         st.markdown("### Division Color Guide")
