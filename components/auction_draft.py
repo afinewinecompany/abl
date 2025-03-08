@@ -3,12 +3,20 @@ import pandas as pd
 from datetime import datetime, timedelta
 import io
 
-def calculate_remaining_salary(team_bids: pd.DataFrame, team_name: str, salary_cap: float = 260.0) -> float:
-    """Calculate remaining salary for a team"""
-    if team_bids.empty:
+def calculate_remaining_salary(team_roster: pd.DataFrame, team_name: str, salary_cap: float = 260.0) -> float:
+    """Calculate remaining salary for a team based on current roster"""
+    if team_roster.empty:
         return salary_cap
-    team_spent = team_bids[team_bids['winning_team'] == team_name]['bid_amount'].sum()
-    return salary_cap - team_spent
+
+    # Filter for the team and exclude MINORS players
+    team_data = team_roster[
+        (team_roster['team'] == team_name) & 
+        (team_roster['status'].str.upper() != 'MINORS')
+    ]
+
+    # Get current salary
+    current_salary = team_data['salary'].sum()
+    return salary_cap - current_salary
 
 def initialize_session_state():
     """Initialize session state variables"""
@@ -24,7 +32,7 @@ def initialize_session_state():
 
     if 'available_players' not in st.session_state:
         st.session_state.available_players = pd.DataFrame(
-            columns=['player_name', 'position', 'mlb_team', 'status']
+            columns=['player_name', 'position', 'mlb_team', 'status', 'salary']
         )
 
     if 'auction_nominations' not in st.session_state:
@@ -37,6 +45,16 @@ def initialize_session_state():
         st.session_state.auction_bids = pd.DataFrame(
             columns=['player_name', 'team_name', 'bid_amount', 'bid_time']
         )
+
+def process_fantrax_players(df: pd.DataFrame) -> pd.DataFrame:
+    """Process Fantrax players CSV into required format"""
+    return pd.DataFrame({
+        'player_name': df['Player'],
+        'position': df['Position'],
+        'mlb_team': df['Team'],
+        'status': df['Status'],
+        'salary': pd.to_numeric(df['Salary'], errors='coerce').fillna(0)
+    })
 
 def render_settings():
     """Render auction draft settings section"""
@@ -98,39 +116,44 @@ def render_settings():
     uploaded_file = st.file_uploader(
         "Upload Player List (CSV)",
         type=['csv'],
-        help="CSV file should contain columns: player_name, position, mlb_team, status"
+        help="Upload the Fantrax players export CSV"
     )
 
     if uploaded_file is not None:
         try:
             # Read CSV file
             df = pd.read_csv(uploaded_file)
-            required_columns = ['player_name', 'position', 'mlb_team', 'status']
+            required_columns = ['Player', 'Position', 'Team', 'Status', 'Salary']
 
             # Verify columns
             if not all(col in df.columns for col in required_columns):
-                st.error("CSV file must contain columns: player_name, position, mlb_team, status")
+                st.error("CSV file must be a Fantrax players export with required columns")
                 return
 
-            # Update available players
-            st.session_state.available_players = df
-            st.success(f"Successfully loaded {len(df)} players!")
+            # Process and update available players
+            processed_df = process_fantrax_players(df)
+            st.session_state.available_players = processed_df
+            st.success(f"Successfully loaded {len(processed_df)} players!")
 
             # Preview the data
             st.dataframe(
-                df.head(),
+                processed_df.head(),
                 column_config={
                     "player_name": "Player",
                     "position": "Position",
                     "mlb_team": "MLB Team",
-                    "status": "Status"
+                    "status": "Status",
+                    "salary": st.column_config.NumberColumn(
+                        "Salary",
+                        format="$%.2f"
+                    )
                 }
             )
 
         except Exception as e:
             st.error(f"Error loading CSV file: {str(e)}")
 
-def render():
+def render(roster_data: pd.DataFrame = None):
     """Render auction draft section"""
     st.header("🏦 Auction Draft")
 
@@ -189,10 +212,11 @@ def render():
                 "Minnesota Twins", "Chicago White Sox", "Kansas City Royals"]
         nominating_team = st.selectbox("Select Your Team", teams)
 
-        # Calculate remaining salary
+        # Calculate remaining salary based on current roster
         remaining_salary = calculate_remaining_salary(
-            st.session_state.auction_bids, 
-            nominating_team
+            roster_data if roster_data is not None else pd.DataFrame(),
+            nominating_team,
+            st.session_state.auction_settings['salary_cap']
         )
 
         st.markdown(f"Remaining Salary: ${remaining_salary:.2f}")

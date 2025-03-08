@@ -407,7 +407,7 @@ def main():
             projected_rankings.render(processed_roster_data)
 
         with tab6:
-            auction_draft.render()
+            auction_draft.render(processed_roster_data)
 
     except Exception as e:
         st.error(f"An error occurred while loading data. Please try refreshing.")
