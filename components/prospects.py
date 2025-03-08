@@ -29,7 +29,19 @@ def render_prospect_preview(prospect, color):
         border-radius: 8px;
         margin: 0.25rem 0;
         border-left: 3px solid {color};
-    ">
+        transition: all 0.3s ease;
+        cursor: pointer;
+        transform-origin: center;
+    "
+    onmouseover="this.style.transform='scale(1.02)';
+                 this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
+                 this.style.borderLeftWidth='6px';
+                 this.style.backgroundColor='#22242c';"
+    onmouseout="this.style.transform='scale(1)';
+                this.style.boxShadow='none';
+                this.style.borderLeftWidth='3px';
+                this.style.backgroundColor='#1a1c23';"
+    >
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-weight: bold;">{prospect['player_name']}</div>
@@ -63,7 +75,19 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
                 border-radius: 8px;
                 margin: 0.5rem 0;
                 border-left: 4px solid {color};
-            ">
+                transition: all 0.3s ease;
+                cursor: pointer;
+                transform-origin: center;
+            "
+            onmouseover="this.style.transform='scale(1.02)';
+                        this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
+                        this.style.borderLeftWidth='6px';
+                        this.style.backgroundColor='#22242c';"
+            onmouseout="this.style.transform='scale(1)';
+                       this.style.boxShadow='none';
+                       this.style.borderLeftWidth='4px';
+                       this.style.backgroundColor='#1a1c23';"
+            >
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
@@ -93,7 +117,17 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
             border-left: 5px solid {color};
             margin: 0.5rem 0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        ">
+            transition: all 0.3s ease;
+            cursor: pointer;
+            transform-origin: center;
+        "
+        onmouseover="this.style.transform='scale(1.01)';
+                     this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
+                     this.style.borderLeftWidth='8px';"
+        onmouseout="this.style.transform='scale(1)';
+                    this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';
+                    this.style.borderLeftWidth='5px';"
+        >
             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                 <div>
                     <div style="font-weight: bold; font-size: 1.2rem;">#{team_rank} {team}</div>
