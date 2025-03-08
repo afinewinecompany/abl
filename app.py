@@ -382,10 +382,9 @@ def main():
         processed_standings_data = data_processor.process_standings(standings_data)
 
         # Create tabs for different sections
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🏠 League Info",
             "👥 Team Rosters",
-            "📊 Standings",
             "🏆 Power Rankings",
             "⭐ Prospects",
             "📈 Projected Rankings"
@@ -398,15 +397,12 @@ def main():
             rosters.render(processed_roster_data)
 
         with tab3:
-            standings.render(processed_standings_data)
-
-        with tab4:
             power_rankings.render(processed_standings_data)
 
-        with tab5:
+        with tab4:
             prospects.render(processed_roster_data)
 
-        with tab6:
+        with tab5:
             projected_rankings.render(processed_roster_data)
 
     except Exception as e:

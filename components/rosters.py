@@ -1,3 +1,4 @@
+from components.prospects import calculate_prospect_score
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -48,6 +49,11 @@ def render(roster_data: pd.DataFrame):
         # Load projections data
         hitters_proj = pd.read_csv("attached_assets/batx-hitters.csv")
         pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers-2.csv")
+
+        # Load prospect rankings for minors
+        prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
+        prospect_rankings['Player'] = prospect_rankings['Player'].apply(normalize_name)
+        prospect_rankings['prospect_score'] = prospect_rankings['Ranking'].apply(calculate_prospect_score)
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
@@ -120,13 +126,23 @@ def render(roster_data: pd.DataFrame):
         with col4:
             st.metric("Positions", len(team_roster['position'].unique()))
 
-        # Add projected points to display columns (reordered and removed status)
-        display_columns = ['player_name', 'position', 'salary', 'projected_points', 'mlb_team']
+        # Add prospect scores to minors players
+        minors_roster['prospect_score'] = 0.0  # Initialize with zeros
+        for idx, player in minors_roster.iterrows():
+            prospect_match = prospect_rankings[prospect_rankings['Player'] == player['clean_name']]
+            if not prospect_match.empty:
+                minors_roster.at[idx, 'prospect_score'] = prospect_match.iloc[0]['prospect_score']
+            else:
+                minors_roster.at[idx, 'prospect_score'] = 2.0  # Baseline score for unranked prospects
+
+        # Display columns for different roster sections
+        active_display_columns = ['player_name', 'position', 'salary', 'projected_points', 'mlb_team']
+        minors_display_columns = ['player_name', 'position', 'salary', 'prospect_score', 'projected_points', 'mlb_team']
 
         # Active Roster Section
         st.subheader("📋 Active Roster")
         st.dataframe(
-            active_roster[display_columns],
+            active_roster[active_display_columns],
             column_config={
                 "player_name": "Player",
                 "position": "Position",
@@ -148,7 +164,7 @@ def render(roster_data: pd.DataFrame):
         if not reserve_roster.empty:
             st.subheader("🔄 Reserve Roster")
             st.dataframe(
-                reserve_roster[display_columns],
+                reserve_roster[active_display_columns],
                 column_config={
                     "player_name": "Player",
                     "position": "Position",
@@ -170,13 +186,18 @@ def render(roster_data: pd.DataFrame):
         if not minors_roster.empty:
             st.subheader("⭐ Minor League Players")
             st.dataframe(
-                minors_roster[display_columns],
+                minors_roster[minors_display_columns],
                 column_config={
                     "player_name": "Player",
                     "position": "Position",
                     "salary": st.column_config.NumberColumn(
                         "Salary",
                         format="$%.2f"
+                    ),
+                    "prospect_score": st.column_config.NumberColumn(
+                        "Prospect Score",
+                        format="%.1f",
+                        help="Prospect ranking score (100 = #1 prospect)"
                     ),
                     "projected_points": st.column_config.NumberColumn(
                         "Projected Points",
