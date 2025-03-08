@@ -36,6 +36,18 @@ def calculate_prospect_score(ranking: int) -> float:
 
     return round(score, 1)
 
+def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
+    """Generate a color gradient between red and green based on value"""
+    # Normalize value between 0 and 1
+    normalized = (value - min_val) / (max_val - min_val)
+
+    # Generate RGB values for gradient from red (low) to green (high)
+    red = int(255 * (1 - normalized))
+    green = int(255 * normalized)
+    blue = 0
+
+    return f"rgb({red}, {green}, {blue})"
+
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
     rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
@@ -74,7 +86,7 @@ def render_prospect_preview(prospect, color):
     </div>"""
 
 def render_team_card(team, team_rank, score, ranked_prospects, division, color, top_3_prospects):
-    """Render a team card with top 3 prospects"""
+    """Render a team card with prospect preview"""
     preview_html = "".join([render_prospect_preview(prospect, color) 
                            for _, prospect in top_3_prospects.iterrows()])
 
@@ -111,6 +123,49 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
             {preview_html}
         </div>
     </div>"""
+
+def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]) -> None:
+    """Render interactive prospect strength visualization"""
+    st.subheader("🎨 Prospect Strength Visualization")
+
+    # Calculate min and max scores for color scaling
+    min_score = team_scores['total_score'].min()
+    max_score = team_scores['total_score'].max()
+
+    # Create visualization grid
+    cols = st.columns(6)  # 6 columns for 30 teams (5 rows)
+
+    for idx, (_, row) in enumerate(team_scores.iterrows()):
+        col = cols[idx % 6]
+        with col:
+            # Get team color based on prospect score
+            gradient_color = get_gradient_color(row['total_score'], min_score, max_score)
+            division = division_mapping.get(row['team'], "Unknown")
+
+            st.markdown(f"""
+            <div style="
+                padding: 0.75rem;
+                background-color: {gradient_color};
+                border-radius: 8px;
+                margin: 0.25rem 0;
+                color: white;
+                text-align: center;
+                font-size: 0.9rem;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                transition: all 0.3s ease;
+                cursor: pointer;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            "
+            onmouseover="this.style.transform='scale(1.05)';
+                        this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+            onmouseout="this.style.transform='scale(1)';
+                       this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                <div style="font-weight: bold;">{row['team']}</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;">{division}</div>
+                <div style="font-size: 1.1rem; margin: 0.25rem 0;">{row['total_score']:.1f}</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;">{int(row['ranked_prospects'])} Ranked</div>
+            </div>
+            """, unsafe_allow_html=True)
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
@@ -158,6 +213,9 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
+
+        # Render gradient visualization first
+        render_gradient_visualization(team_scores, division_mapping)
 
         # Display top 3 teams
         st.subheader("🏆 Top Prospect Systems")
