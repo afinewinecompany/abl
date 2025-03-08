@@ -275,7 +275,7 @@ def render(roster_data: pd.DataFrame):
 
         # Display teams 4-30 in single column
         remaining_teams = team_scores.iloc[3:]
-        for rank, row in remaining_teams.iterrows():
+        for i, row in remaining_teams.iterrows():
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
 
@@ -288,7 +288,7 @@ def render(roster_data: pd.DataFrame):
             # Display team card
             st.markdown(render_team_card(
                 row['team'],
-                rank + 3,  # Adjust rank for remaining teams
+                i + 4,
                 row['total_score'],
                 row['ranked_prospects'],
                 division,
