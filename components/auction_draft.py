@@ -46,6 +46,10 @@ def initialize_session_state():
             columns=['player_name', 'team_name', 'bid_amount', 'bid_time']
         )
 
+    # Initialize selected team in session state if not present
+    if 'selected_team' not in st.session_state:
+        st.session_state.selected_team = None
+
 def process_fantrax_players(df: pd.DataFrame) -> pd.DataFrame:
     """Process Fantrax players CSV into required format"""
     return pd.DataFrame({
@@ -160,6 +164,11 @@ def render(roster_data: pd.DataFrame = None):
     # Initialize session state
     initialize_session_state()
 
+    # Available teams
+    teams = ["Texas Rangers", "Seattle Mariners", "Houston Astros", "Athletics", 
+            "Los Angeles Angels", "Cleveland Guardians", "Detroit Tigers", 
+            "Minnesota Twins", "Chicago White Sox", "Kansas City Royals"]
+
     # Create tabs for different views
     tab1, tab2, tab3, tab4 = st.tabs([
         "⚙️ Settings",
@@ -173,12 +182,34 @@ def render(roster_data: pd.DataFrame = None):
 
     with tab2:
         st.subheader("Active Auctions")
+
+        # Team selection for bidding
+        selected_team = st.selectbox(
+            "Select Your Team",
+            teams,
+            key="active_auctions_team",
+            index=teams.index(st.session_state.selected_team) if st.session_state.selected_team in teams else 0
+        )
+
+        # Update selected team in session state
+        st.session_state.selected_team = selected_team
+
         if st.session_state.auction_nominations.empty:
             st.info("No active auctions at the moment.")
         else:
             active_auctions = st.session_state.auction_nominations[
                 st.session_state.auction_nominations['status'] == 'active'
             ]
+
+            # Calculate remaining salary for bidding team
+            remaining_salary = calculate_remaining_salary(
+                roster_data if roster_data is not None else pd.DataFrame(),
+                selected_team,
+                st.session_state.auction_settings['salary_cap']
+            )
+
+            st.markdown(f"#### Your Remaining Salary: ${remaining_salary:.2f}")
+
             for _, auction in active_auctions.iterrows():
                 with st.container():
                     col1, col2 = st.columns([2, 1])
@@ -197,20 +228,45 @@ def render(roster_data: pd.DataFrame = None):
                             new_bid = st.number_input(
                                 "Enter Bid Amount",
                                 min_value=float(auction['current_bid'] + st.session_state.auction_settings['bid_increment']),
+                                max_value=float(remaining_salary),
                                 step=st.session_state.auction_settings['bid_increment'],
                                 key=f"bid_{auction['player_name']}"
                             )
                             if st.button("Place Bid", key=f"bid_button_{auction['player_name']}"):
+                                # Check if we need to extend the auction
+                                if time_remaining.total_seconds() <= (st.session_state.auction_settings['extension_threshold'] * 3600):
+                                    new_end_time = datetime.now() + timedelta(hours=st.session_state.auction_settings['initial_bid_timer'])
+                                    st.session_state.auction_nominations.loc[
+                                        st.session_state.auction_nominations['player_name'] == auction['player_name'],
+                                        'bid_end_time'
+                                    ] = new_end_time
+
+                                # Update bid
+                                st.session_state.auction_nominations.loc[
+                                    st.session_state.auction_nominations['player_name'] == auction['player_name'],
+                                    ['current_bid', 'winning_team']
+                                ] = [new_bid, selected_team]
+
+                                # Add to bid history
+                                new_bid_record = pd.DataFrame([{
+                                    'player_name': auction['player_name'],
+                                    'team_name': selected_team,
+                                    'bid_amount': new_bid,
+                                    'bid_time': datetime.now()
+                                }])
+                                st.session_state.auction_bids = pd.concat([
+                                    st.session_state.auction_bids,
+                                    new_bid_record
+                                ], ignore_index=True)
+
                                 st.success(f"Bid placed: ${new_bid:.2f}")
 
     with tab3:
         st.subheader("Nominate a Player")
 
-        # Select team (this would be automated in production)
-        teams = ["Texas Rangers", "Seattle Mariners", "Houston Astros", "Athletics", 
-                "Los Angeles Angels", "Cleveland Guardians", "Detroit Tigers", 
-                "Minnesota Twins", "Chicago White Sox", "Kansas City Royals"]
-        nominating_team = st.selectbox("Select Your Team", teams)
+        # Use the same team selection from active auctions
+        nominating_team = st.session_state.selected_team
+        st.markdown(f"#### Nominating as: {nominating_team}")
 
         # Calculate remaining salary based on current roster
         remaining_salary = calculate_remaining_salary(
@@ -223,47 +279,57 @@ def render(roster_data: pd.DataFrame = None):
 
         # Player search and nomination
         if not st.session_state.available_players.empty:
-            search_term = st.text_input("Search Players", "")
-            if search_term:
-                filtered_players = st.session_state.available_players[
-                    st.session_state.available_players['player_name'].str.contains(search_term, case=False)
-                ]
-                if not filtered_players.empty:
-                    selected_player = st.selectbox(
-                        "Select Player to Nominate",
-                        filtered_players['player_name'].tolist()
-                    )
+            # Remove already nominated players
+            nominated_players = st.session_state.auction_nominations['player_name'].tolist()
+            available_players = st.session_state.available_players[
+                ~st.session_state.available_players['player_name'].isin(nominated_players)
+            ]
 
-                    with st.form("nomination_form"):
-                        starting_bid = st.number_input(
-                            "Starting Bid ($)",
-                            min_value=st.session_state.auction_settings['minimum_bid'],
-                            step=0.5
+            if available_players.empty:
+                st.warning("No players available for nomination.")
+            else:
+                search_term = st.text_input("Search Players", "")
+                if search_term:
+                    filtered_players = available_players[
+                        available_players['player_name'].str.contains(search_term, case=False)
+                    ]
+                    if not filtered_players.empty:
+                        selected_player = st.selectbox(
+                            "Select Player to Nominate",
+                            filtered_players['player_name'].tolist()
                         )
 
-                        if st.form_submit_button("Nominate Player"):
-                            if starting_bid <= remaining_salary:
-                                # Add nomination
-                                new_nomination = pd.DataFrame([{
-                                    'player_name': selected_player,
-                                    'nominated_by': nominating_team,
-                                    'nominated_at': datetime.now(),
-                                    'current_bid': starting_bid,
-                                    'winning_team': nominating_team,
-                                    'bid_end_time': datetime.now() + timedelta(hours=st.session_state.auction_settings['initial_bid_timer']),
-                                    'status': 'active'
-                                }])
+                        with st.form("nomination_form"):
+                            starting_bid = st.number_input(
+                                "Starting Bid ($)",
+                                min_value=st.session_state.auction_settings['minimum_bid'],
+                                max_value=remaining_salary,
+                                step=0.5
+                            )
 
-                                st.session_state.auction_nominations = pd.concat([
-                                    st.session_state.auction_nominations, 
-                                    new_nomination
-                                ], ignore_index=True)
+                            if st.form_submit_button("Nominate Player"):
+                                if starting_bid <= remaining_salary:
+                                    # Add nomination
+                                    new_nomination = pd.DataFrame([{
+                                        'player_name': selected_player,
+                                        'nominated_by': nominating_team,
+                                        'nominated_at': datetime.now(),
+                                        'current_bid': starting_bid,
+                                        'winning_team': nominating_team,
+                                        'bid_end_time': datetime.now() + timedelta(hours=st.session_state.auction_settings['initial_bid_timer']),
+                                        'status': 'active'
+                                    }])
 
-                                st.success(f"Successfully nominated {selected_player} at ${starting_bid:.2f}")
-                            else:
-                                st.error("Starting bid exceeds remaining salary cap!")
-                else:
-                    st.warning("No players found matching your search.")
+                                    st.session_state.auction_nominations = pd.concat([
+                                        st.session_state.auction_nominations, 
+                                        new_nomination
+                                    ], ignore_index=True)
+
+                                    st.success(f"Successfully nominated {selected_player} at ${starting_bid:.2f}")
+                                else:
+                                    st.error("Starting bid exceeds remaining salary cap!")
+                    else:
+                        st.warning("No players found matching your search.")
         else:
             st.warning("Please upload a player list in the Settings tab first.")
 
