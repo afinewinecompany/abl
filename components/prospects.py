@@ -128,56 +128,70 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     """Render interactive prospect strength visualization"""
     st.subheader("🎨 Prospect Strength Visualization")
 
-    # Calculate min and max scores for color scaling
-    min_score = team_scores['total_score'].min()
-    max_score = team_scores['total_score'].max()
+    # Create a color scale for the bars
+    team_scores['normalized_score'] = (team_scores['total_score'] - team_scores['total_score'].min()) / \
+                                    (team_scores['total_score'].max() - team_scores['total_score'].min())
 
-    # Create visualization grid - 3 columns for better mobile viewing
-    cols = st.columns(3)  # 3 columns for 30 teams (10 rows)
+    # Add division information
+    team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    for idx, (_, row) in enumerate(team_scores.iterrows()):
-        col = cols[idx % 3]
-        with col:
-            # Get team color based on prospect score
-            gradient_color = get_gradient_color(row['total_score'], min_score, max_score)
-            division = division_mapping.get(row['team'], "Unknown")
+    # Create horizontal bar chart
+    fig = px.bar(
+        team_scores,
+        y='team',
+        x='total_score',
+        orientation='h',
+        color='normalized_score',
+        color_continuous_scale='RdYlGn',  # Red to Yellow to Green scale
+        hover_data={
+            'normalized_score': False,
+            'ranked_prospects': True,
+            'division': True,
+            'total_score': ':.1f'
+        },
+        labels={
+            'team': 'Team',
+            'total_score': 'Prospect System Score',
+            'ranked_prospects': 'Ranked Prospects',
+            'division': 'Division'
+        },
+        height=800  # Taller to accommodate all teams
+    )
 
-            st.markdown(f"""
-            <div style="
-                padding: 1rem;
-                background-color: {gradient_color};
-                border-radius: 12px;
-                margin: 0.5rem 0;
-                color: white;
-                text-align: center;
-                font-size: 1rem;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-                transition: all 0.3s ease-in-out;
-                cursor: pointer;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                min-height: 120px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                position: relative;
-                overflow: hidden;
-            "
-            onmouseover="
-                this.style.transform='scale(1.05) translateY(-2px)';
-                this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
-                this.style.backgroundColor='{gradient_color}dd';
-            "
-            onmouseout="
-                this.style.transform='scale(1) translateY(0)';
-                this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';
-                this.style.backgroundColor='{gradient_color}';
-            ">
-                <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.3rem;">{row['team']}</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">{division}</div>
-                <div style="font-size: 1.2rem; margin: 0.5rem 0; font-weight: bold;">{row['total_score']:.1f}</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">{int(row['ranked_prospects'])} Ranked</div>
-            </div>
-            """, unsafe_allow_html=True)
+    # Update layout for better mobile viewing
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=10, b=10),
+        coloraxis_showscale=False,  # Hide the color scale
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        xaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)',
+            title_font=dict(size=14),
+            tickfont=dict(size=12),
+        ),
+        yaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)',
+            title_font=dict(size=14),
+            tickfont=dict(size=12),
+        ),
+        hoverlabel=dict(
+            bgcolor='#1a1c23',
+            font_size=14,
+            font_family="sans serif"
+        )
+    )
+
+    # Add hover template
+    fig.update_traces(
+        hovertemplate="<b>%{y}</b><br>" +
+                     "Score: %{x:.1f}<br>" +
+                     "Division: %{customdata[2]}<br>" +
+                     "Ranked Prospects: %{customdata[1]}<extra></extra>"
+    )
+
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
