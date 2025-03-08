@@ -40,8 +40,7 @@ def render_prospect_preview(prospect, color):
     onmouseout="this.style.transform='scale(1)';
                 this.style.boxShadow='none';
                 this.style.borderLeftWidth='3px';
-                this.style.backgroundColor='#1a1c23';"
-    >
+                this.style.backgroundColor='#1a1c23';">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-weight: bold;">{prospect['player_name']}</div>
@@ -55,8 +54,7 @@ def render_prospect_preview(prospect, color):
                 </div>
             </div>
         </div>
-    </div>
-    """
+    </div>"""
 
 def render_team_card(team, team_rank, score, ranked_prospects, division, color, top_3_prospects):
     """Render a team card with top 3 prospects"""
@@ -80,8 +78,7 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
                  this.style.borderLeftWidth='8px';"
     onmouseout="this.style.transform='scale(1)';
                 this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';
-                this.style.borderLeftWidth='5px';"
-    >
+                this.style.borderLeftWidth='5px';">
         <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
             <div>
                 <div style="font-weight: bold; font-size: 1.2rem;">#{team_rank} {team}</div>
@@ -96,8 +93,7 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
             <div style="font-size: 0.9rem; color: #888; margin-bottom: 0.5rem;">Top Prospects:</div>
             {preview_html}
         </div>
-    </div>
-    """
+    </div>"""
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
