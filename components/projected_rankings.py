@@ -105,20 +105,83 @@ def calculate_abl_score(active_points: float, depth_points: float, division_fact
 def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
     try:
-        st.header("📊 Projected Rankings")
+        # Add custom CSS for modern UI and animations
+        st.markdown("""
+        <style>
+        /* Modern UI Typography */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        # Load division data
+        /* Container styles */
+        div.stApp {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Card animations and styling */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .team-card {
+            animation: slideIn 0.3s ease-out forwards;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        /* Modern styling for headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* Gradient backgrounds */
+        .gradient-header {
+            background: linear-gradient(135deg, #1a1c23 0%, #2a2c33 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Modern dividers */
+        .modern-divider {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            margin: 2rem 0;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Header with gradient background
+        st.markdown("""
+        <div class="gradient-header">
+            <h1 style="color: #ffffff; margin: 0;">📊 ABL Power Rankings</h1>
+            <p style="color: #888888; margin: 0.5rem 0 0 0;">Comprehensive team analysis and projections</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Load division data and setup
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
-        # Division strength ratings (higher means tougher division)
-        division_strength = {
-            "AL East": 1.1,    # Traditionally strong division
-            "AL West": 1.05,   # Competitive division
-            "NL East": 1.05,   # Competitive division
-            "NL West": 1.0,    # Average division
-            "AL Central": 0.95, # Historically weaker division
-            "NL Central": 0.95  # Historically weaker division
+        # Division color scheme
+        division_colors = {
+            "AL East": "#FF6B6B",    # Vibrant Red
+            "AL Central": "#4ECDC4",  # Teal
+            "AL West": "#95A5A6",     # Cool Gray
+            "NL East": "#F39C12",     # Orange
+            "NL Central": "#3498DB",  # Blue
+            "NL West": "#2ECC71"      # Green
         }
 
         position_limits = {
@@ -189,80 +252,122 @@ def render(roster_data: pd.DataFrame):
         team_rankings.index = team_rankings.index + 1
 
         # Display prominent rankings table
-        st.subheader("🏆 ABL Power Rankings")
-
-        # Top 3 teams in cards
+        
+        # Display Top 3 Teams with enhanced cards
+        st.markdown("### 🏆 Top Contenders")
         col1, col2, col3 = st.columns(3)
 
-        # Division color mapping
-        division_colors = {
-            "AL East": "#FF6B6B",  # Red shade
-            "AL Central": "#4ECDC4",  # Teal shade
-            "AL West": "#95A5A6",  # Gray shade
-            "NL East": "#F39C12",  # Orange shade
-            "NL Central": "#3498DB",  # Blue shade
-            "NL West": "#2ECC71"   # Green shade
-        }
-
-        # Display top 3 teams in cards
         for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_rankings.head(3).iterrows())):
             with col:
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
                 st.markdown(f"""
-                <div style="
-                    padding: 1rem;
-                    background-color: #1a1c23;
-                    border-radius: 10px;
+                <div class="team-card" style="
+                    padding: 1.5rem;
+                    background: linear-gradient(145deg, #1a1c23 0%, #252730 100%);
+                    border-radius: 12px;
                     border-left: 5px solid {color};
                     margin: 0.5rem 0;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 ">
-                    <h3 style="margin:0; color: {color};">#{idx + 1}</h3>
-                    <h4 style="margin:0.5rem 0;">{row['team']}</h4>
-                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
-                        {row['abl_score']:.1f}
-                    </p>
-                    <p style="margin:0; font-size: 0.8rem; color: #888;">
-                        {division}
-                    </p>
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="
+                            color: {color};
+                            font-size: 1.8rem;
+                            font-weight: 700;
+                            margin-right: 1rem;
+                        ">#{idx + 1}</span>
+                        <div style="flex-grow: 1;">
+                            <h4 style="
+                                margin: 0;
+                                color: #ffffff;
+                                font-size: 1.2rem;
+                                font-weight: 600;
+                            ">{row['team']}</h4>
+                            <p style="
+                                margin: 0;
+                                color: #888888;
+                                font-size: 0.9rem;
+                            ">{division}</p>
+                        </div>
+                    </div>
+                    <div style="
+                        display: flex;
+                        align-items: baseline;
+                        margin-top: 1rem;
+                    ">
+                        <span style="
+                            font-size: 2rem;
+                            font-weight: 700;
+                            color: #ffffff;
+                        ">{row['abl_score']:.1f}</span>
+                        <span style="
+                            margin-left: 0.5rem;
+                            color: #888888;
+                            font-size: 0.9rem;
+                        ">ABL Score</span>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Show the rest of the rankings in a single column
-        st.markdown("### Remaining Teams")
+        st.markdown('<div class="modern-divider"></div>', unsafe_allow_html=True)
 
-        # Display teams 4-30 in single column
+        # Remaining Teams Section
+        st.markdown("### 📈 League Rankings")
+
+        # Display teams 4-30 with enhanced styling
         remaining_teams = team_rankings.iloc[3:]
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
             st.markdown(f"""
-            <div style="
-                padding: 0.75rem;
-                background-color: #1a1c23;
+            <div class="team-card" style="
+                padding: 1rem;
+                background: linear-gradient(145deg, #1a1c23 0%, #252730 100%);
                 border-radius: 8px;
                 margin: 0.5rem 0;
                 border-left: 4px solid {color};
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             ">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
                     <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="color: {color}; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
+                        <span style="
+                            color: {color};
+                            font-size: 1.2rem;
+                            font-weight: 600;
+                            min-width: 2.5rem;
+                        ">#{i + 4}</span>
                         <div>
-                            <div style="font-weight: bold;">{row['team']}</div>
-                            <div style="font-size: 0.8rem; color: #888;">{division}</div>
+                            <div style="
+                                font-weight: 600;
+                                color: #ffffff;
+                                font-size: 1.1rem;
+                            ">{row['team']}</div>
+                            <div style="
+                                font-size: 0.8rem;
+                                color: #888888;
+                            ">{division}</div>
                         </div>
                     </div>
-                    <span style="font-weight: bold; font-size: 1.2rem;">{row['abl_score']:.1f}</span>
+                    <div style="
+                        font-weight: 700;
+                        font-size: 1.4rem;
+                        color: #ffffff;
+                    ">{row['abl_score']:.1f}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-        # Division legend
-        st.markdown("### Division Color Guide")
-        col1, col2 = st.columns(2)
+        st.markdown('<div class="modern-divider"></div>', unsafe_allow_html=True)
 
+        # Division Guide with modern styling
+        st.markdown("### 🎨 Division Overview")
+
+        col1, col2 = st.columns(2)
         divisions = list(division_colors.items())
         mid = len(divisions) // 2
 
@@ -273,20 +378,24 @@ def render(roster_data: pd.DataFrame):
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 0.5rem;
+                    gap: 0.75rem;
+                    padding: 0.5rem;
                     margin: 0.25rem 0;
+                    border-radius: 6px;
+                    background: linear-gradient(145deg, #1a1c23 0%, #252730 100%);
                 ">
                     <div style="
                         width: 1rem;
                         height: 1rem;
                         background-color: {color};
-                        border-radius: 3px;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     "></div>
-                    <span>{division}</span>
+                    <span style="color: #ffffff;">{division}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Detailed Statistics (expandable)
+        # Detailed Statistics in expandable section
         with st.expander("📊 Detailed Statistics"):
             st.dataframe(
                 team_rankings,
@@ -296,16 +405,6 @@ def render(roster_data: pd.DataFrame):
                         "ABL Score",
                         format="%.1f",
                         help="Combined score based on active lineup, depth, and division strength"
-                    ),
-                    "adjusted_total": st.column_config.NumberColumn(
-                        "Adjusted Total Points",
-                        format="%.1f",
-                        help="Total points adjusted for division strength"
-                    ),
-                    "raw_total": st.column_config.NumberColumn(
-                        "Raw Total Points",
-                        format="%.1f",
-                        help="Combined points before division adjustment"
                     ),
                     "active_lineup_points": st.column_config.NumberColumn(
                         "Active Lineup Points",
@@ -326,21 +425,47 @@ def render(roster_data: pd.DataFrame):
                 hide_index=True
             )
 
-            # Visualization
+            # Data visualization with enhanced styling
             fig = px.bar(
                 team_rankings,
                 x='team',
                 y=['active_lineup_points', 'depth_points'],
-                title='Projected Team Points Distribution',
+                title='Team Points Distribution',
                 labels={
                     'team': 'Team',
                     'value': 'Projected Points',
                     'variable': 'Category'
                 },
-                barmode='stack'
+                barmode='stack',
+                template="plotly_dark"
             )
-            fig.update_layout(xaxis_tickangle=-45)
+
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_family="Inter",
+                title_font_size=20,
+                xaxis_tickangle=-45,
+                margin=dict(t=40, b=40, l=20, r=20),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                )
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
         st.error(f"An error occurred while calculating projected rankings: {str(e)}")
+
+        division_strength = {
+            "AL East": 1.1,    # Traditionally strong division
+            "AL West": 1.05,   # Competitive division
+            "NL East": 1.05,   # Competitive division
+            "NL West": 1.0,    # Average division
+            "AL Central": 0.95, # Historically weaker division
+            "NL Central": 0.95  # Historically weaker division
+        }
