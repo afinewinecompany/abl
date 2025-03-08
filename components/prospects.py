@@ -57,29 +57,12 @@ def render(roster_data: pd.DataFrame):
             how='left'
         )
 
-        # Calculate total prospects for each team
-        total_prospects = minors_players.groupby('team').size().reset_index(name='total_prospects')
-
-        # Calculate metrics for ranked prospects
+        # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
             'prospect_score': ['sum', 'mean'],
             'Ranking': lambda x: x.notna().sum()  # Count of ranked prospects
         }).reset_index()
-
-        # Rename columns
         team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects']
-
-        # Merge with total prospects
-        team_scores = pd.merge(team_scores, total_prospects, on='team', how='outer')
-
-        # Fill NaN values with 0 for teams with no ranked prospects
-        team_scores = team_scores.fillna({
-            'total_score': 0,
-            'avg_score': 0,
-            'ranked_prospects': 0
-        })
-
-        # Sort by total score
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
@@ -94,7 +77,13 @@ def render(roster_data: pd.DataFrame):
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
 
-                # Create an expander for the team
+                # Get team's prospects
+                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                    'prospect_score', ascending=False
+                )
+                top_3_prospects = team_prospects.head(3)
+
+                # Create an expander with preview of top 3 prospects
                 with st.expander(f"#{idx + 1} {row['team']}", expanded=False):
                     # Team header and stats
                     st.markdown(f"""
@@ -108,7 +97,7 @@ def render(roster_data: pd.DataFrame):
                     ">
                         <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
                             <div>
-                                <p style="margin:0; font-size: 0.8rem; color: #888;">Total Score</p>
+                                <p style="margin:0; font-size: 0.8rem; color: #888;">System Score</p>
                                 <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{row['total_score']:.1f}</p>
                             </div>
                             <div style="text-align: right;">
@@ -120,11 +109,38 @@ def render(roster_data: pd.DataFrame):
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # Show team's prospects
-                    team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                        'prospect_score', ascending=False
-                    )
+                    # Preview of top 3 prospects (outside expander)
+                    st.markdown("##### Top Prospects Preview")
+                    for _, prospect in top_3_prospects.iterrows():
+                        rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
+                        st.markdown(f"""
+                        <div style="
+                            padding: 0.5rem;
+                            background-color: #1a1c23;
+                            border-radius: 8px;
+                            margin: 0.25rem 0;
+                            border-left: 3px solid {color};
+                        ">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: bold;">{prospect['player_name']}</div>
+                                    <div style="font-size: 0.8rem; color: #888;">
+                                        {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: {rank_color};">
+                                        {f"#{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
+                    # Full prospect list header
+                    st.markdown("##### Complete Prospect List")
+
+                    # Show all team's prospects
                     if not team_prospects.empty:
                         for _, prospect in team_prospects.iterrows():
                             rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
@@ -139,7 +155,9 @@ def render(roster_data: pd.DataFrame):
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div>
                                         <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
-                                        <div style="font-size: 0.9rem; color: #888;">{prospect['position']} | {prospect['mlb_team']}</div>
+                                        <div style="font-size: 0.9rem; color: #888;">
+                                            {prospect['position']} | {prospect['mlb_team']} | Score: {prospect['prospect_score']:.1f}
+                                        </div>
                                     </div>
                                     <div style="text-align: right;">
                                         <div style="font-weight: bold; color: {rank_color};">
@@ -163,6 +181,12 @@ def render(roster_data: pd.DataFrame):
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
+
+            # Get team's prospects
+            team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                'prospect_score', ascending=False
+            )
+            top_3_prospects = team_prospects.head(3)
 
             # Create an expander for each team
             with st.expander(f"#{i + 4} {row['team']}", expanded=False):
@@ -189,11 +213,38 @@ def render(roster_data: pd.DataFrame):
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Show team's prospects
-                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                    'prospect_score', ascending=False
-                )
+                # Preview of top 3 prospects
+                st.markdown("##### Top Prospects Preview")
+                for _, prospect in top_3_prospects.iterrows():
+                    rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
+                    st.markdown(f"""
+                    <div style="
+                        padding: 0.5rem;
+                        background-color: #1a1c23;
+                        border-radius: 8px;
+                        margin: 0.25rem 0;
+                        border-left: 3px solid {color};
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: bold;">{prospect['player_name']}</div>
+                                <div style="font-size: 0.8rem; color: #888;">
+                                    {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: {rank_color};">
+                                    {f"#{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
+                # Full prospect list header
+                st.markdown("##### Complete Prospect List")
+
+                # Show all team's prospects
                 if not team_prospects.empty:
                     for _, prospect in team_prospects.iterrows():
                         rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
@@ -208,7 +259,9 @@ def render(roster_data: pd.DataFrame):
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
-                                    <div style="font-size: 0.9rem; color: #888;">{prospect['position']} | {prospect['mlb_team']}</div>
+                                    <div style="font-size: 0.9rem; color: #888;">
+                                        {prospect['position']} | {prospect['mlb_team']} | Score: {prospect['prospect_score']:.1f}
+                                    </div>
                                 </div>
                                 <div style="text-align: right;">
                                     <div style="font-weight: bold; color: {rank_color};">
