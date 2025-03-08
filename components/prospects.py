@@ -132,11 +132,11 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     min_score = team_scores['total_score'].min()
     max_score = team_scores['total_score'].max()
 
-    # Create visualization grid
-    cols = st.columns(6)  # 6 columns for 30 teams (5 rows)
+    # Create visualization grid - 3 columns for better mobile viewing
+    cols = st.columns(3)  # 3 columns for 30 teams (10 rows)
 
     for idx, (_, row) in enumerate(team_scores.iterrows()):
-        col = cols[idx % 6]
+        col = cols[idx % 3]
         with col:
             # Get team color based on prospect score
             gradient_color = get_gradient_color(row['total_score'], min_score, max_score)
@@ -144,26 +144,38 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
 
             st.markdown(f"""
             <div style="
-                padding: 0.75rem;
+                padding: 1rem;
                 background-color: {gradient_color};
-                border-radius: 8px;
-                margin: 0.25rem 0;
+                border-radius: 12px;
+                margin: 0.5rem 0;
                 color: white;
                 text-align: center;
-                font-size: 0.9rem;
+                font-size: 1rem;
                 text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-                transition: all 0.3s ease;
+                transition: all 0.3s ease-in-out;
                 cursor: pointer;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                min-height: 120px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
             "
-            onmouseover="this.style.transform='scale(1.05)';
-                        this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
-            onmouseout="this.style.transform='scale(1)';
-                       this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
-                <div style="font-weight: bold;">{row['team']}</div>
-                <div style="font-size: 0.8rem; opacity: 0.9;">{division}</div>
-                <div style="font-size: 1.1rem; margin: 0.25rem 0;">{row['total_score']:.1f}</div>
-                <div style="font-size: 0.8rem; opacity: 0.9;">{int(row['ranked_prospects'])} Ranked</div>
+            onmouseover="
+                this.style.transform='scale(1.05) translateY(-2px)';
+                this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
+                this.style.backgroundColor='{gradient_color}dd';
+            "
+            onmouseout="
+                this.style.transform='scale(1) translateY(0)';
+                this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';
+                this.style.backgroundColor='{gradient_color}';
+            ">
+                <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.3rem;">{row['team']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">{division}</div>
+                <div style="font-size: 1.2rem; margin: 0.5rem 0; font-weight: bold;">{row['total_score']:.1f}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">{int(row['ranked_prospects'])} Ranked</div>
             </div>
             """, unsafe_allow_html=True)
 
