@@ -105,20 +105,81 @@ def calculate_abl_score(active_points: float, depth_points: float, division_fact
 def render(roster_data: pd.DataFrame):
     """Render projected rankings section"""
     try:
-        st.header("📊 Projected Rankings")
+        # Add custom CSS with animations
+        st.markdown("""
+        <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .title-container {
+            background: linear-gradient(135deg, #1a1c23 0%, #2a2c33 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease-out;
+            border-bottom: 3px solid #E63946;  /* Patriotic red */
+        }
+
+        .rank-card {
+            animation: slideIn 0.5s ease-out;
+            transition: transform 0.2s ease;
+        }
+
+        .rank-card:hover {
+            transform: translateY(-2px);
+            animation: pulse 1s infinite;
+        }
+
+        .division-indicator {
+            width: 3px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: background-color 0.3s ease;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Header with updated styling
+        st.markdown("""
+        <div class="title-container">
+            <h1 style="color: #fff; margin: 0;">📊 Armchair Baseball League Power Rankings</h1>
+            <p style="color: #aaa; margin: 0.5rem 0 0 0;">Advanced analytics and projections</p>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
-        # Division strength ratings (higher means tougher division)
-        division_strength = {
-            "AL East": 1.1,    # Traditionally strong division
-            "AL West": 1.05,   # Competitive division
-            "NL East": 1.05,   # Competitive division
-            "NL West": 1.0,    # Average division
-            "AL Central": 0.95, # Historically weaker division
-            "NL Central": 0.95  # Historically weaker division
+        # Updated patriotic color scheme for divisions
+        division_colors = {
+            "AL East": "#E63946",    # Patriotic red
+            "AL Central": "#457B9D", # Patriotic blue
+            "AL West": "#1D3557",    # Dark blue
+            "NL East": "#F1FAEE",    # Off white
+            "NL Central": "#A8DADC", # Light blue
+            "NL West": "#E63946"     # Patriotic red
         }
 
         position_limits = {
@@ -167,7 +228,7 @@ def render(roster_data: pd.DataFrame):
             active_points, used_players = get_best_lineup_points(team_roster, position_limits)
             depth_points = calculate_depth_score(team_roster, used_players)
             division = division_mapping.get(team, "Unknown")
-            division_factor = division_strength.get(division, 1.0)
+            division_factor = 1.0 #division_strength.get(division, 1.0) #removed division strength
 
             # Calculate ABL Score
             abl_score = calculate_abl_score(active_points, depth_points, division_factor)
@@ -194,73 +255,71 @@ def render(roster_data: pd.DataFrame):
         # Top 3 teams in cards
         col1, col2, col3 = st.columns(3)
 
-        # Division color mapping
-        division_colors = {
-            "AL East": "#FF6B6B",  # Red shade
-            "AL Central": "#4ECDC4",  # Teal shade
-            "AL West": "#95A5A6",  # Gray shade
-            "NL East": "#F39C12",  # Orange shade
-            "NL Central": "#3498DB",  # Blue shade
-            "NL West": "#2ECC71"   # Green shade
-        }
 
-        # Display top 3 teams in cards
+        # Display top 3 teams in cards with enhanced styling
         for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_rankings.head(3).iterrows())):
             with col:
                 division = division_mapping.get(row['team'], "Unknown")
-                color = division_colors.get(division, "#00ff88")
+                color = division_colors.get(division, "#E63946")
                 st.markdown(f"""
-                <div style="
-                    padding: 1rem;
-                    background-color: #1a1c23;
-                    border-radius: 10px;
-                    border-left: 5px solid {color};
+                <div class="rank-card" style="
+                    padding: 1.5rem;
+                    background: linear-gradient(145deg, #1a1c23 0%, #2a2c33 100%);
+                    border-radius: 15px;
                     margin: 0.5rem 0;
+                    border: 1px solid rgba(255,255,255,0.1);
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    position: relative;
+                    overflow: hidden;
                 ">
-                    <h3 style="margin:0; color: {color};">#{idx + 1}</h3>
-                    <h4 style="margin:0.5rem 0;">{row['team']}</h4>
-                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
+                    <div class="division-indicator" style="background-color: {color};"></div>
+                    <h3 style="margin:0; color: {color}; font-size: 1.8rem;">#{idx + 1}</h3>
+                    <h4 style="margin:0.5rem 0; color: #fff; font-size: 1.3rem;">{row['team']}</h4>
+                    <p style="margin:0; font-size: 1.4rem; color: #F1FAEE;">
                         {row['abl_score']:.1f}
                     </p>
-                    <p style="margin:0; font-size: 0.8rem; color: #888;">
+                    <p style="margin:0.5rem 0 0 0; font-size: 0.9rem; color: {color};">
                         {division}
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Show the rest of the rankings in a single column
+        # Display remaining teams with enhanced styling
         st.markdown("### Remaining Teams")
 
-        # Display teams 4-30 in single column
-        remaining_teams = team_rankings.iloc[3:]
-        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+        for i, (_, row) in enumerate(team_rankings.iloc[3:].iterrows()):
             division = division_mapping.get(row['team'], "Unknown")
-            color = division_colors.get(division, "#00ff88")
+            color = division_colors.get(division, "#E63946")
             st.markdown(f"""
-            <div style="
-                padding: 0.75rem;
-                background-color: #1a1c23;
-                border-radius: 8px;
+            <div class="rank-card" style="
+                padding: 1rem;
+                background: linear-gradient(145deg, #1a1c23 0%, #2a2c33 100%);
+                border-radius: 10px;
                 margin: 0.5rem 0;
-                border-left: 4px solid {color};
+                border: 1px solid rgba(255,255,255,0.1);
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                position: relative;
+                overflow: hidden;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             ">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="color: {color}; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
-                        <div>
-                            <div style="font-weight: bold;">{row['team']}</div>
-                            <div style="font-size: 0.8rem; color: #888;">{division}</div>
-                        </div>
+                <div class="division-indicator" style="background-color: {color};"></div>
+                <div style="display: flex; align-items: center; gap: 1rem; padding-left: 1rem;">
+                    <span style="color: {color}; font-size: 1.2rem; font-weight: bold;">#{i + 4}</span>
+                    <div>
+                        <div style="color: #fff; font-weight: bold;">{row['team']}</div>
+                        <div style="font-size: 0.8rem; color: {color};">{division}</div>
                     </div>
-                    <span style="font-weight: bold; font-size: 1.2rem;">{row['abl_score']:.1f}</span>
                 </div>
+                <span style="font-weight: bold; font-size: 1.3rem; color: #F1FAEE; padding-right: 1rem;">
+                    {row['abl_score']:.1f}
+                </span>
             </div>
             """, unsafe_allow_html=True)
 
-        # Division legend
-        st.markdown("### Division Color Guide")
+        # Division legend with updated styling
+        st.markdown("### Division Legend")
         col1, col2 = st.columns(2)
 
         divisions = list(division_colors.items())
@@ -270,11 +329,14 @@ def render(roster_data: pd.DataFrame):
             col = col1 if i < mid else col2
             with col:
                 st.markdown(f"""
-                <div style="
+                <div class="rank-card" style="
                     display: flex;
                     align-items: center;
                     gap: 0.5rem;
                     margin: 0.25rem 0;
+                    padding: 0.5rem;
+                    border-radius: 5px;
+                    background: rgba(26,28,35,0.5);
                 ">
                     <div style="
                         width: 1rem;
@@ -282,11 +344,11 @@ def render(roster_data: pd.DataFrame):
                         background-color: {color};
                         border-radius: 3px;
                     "></div>
-                    <span>{division}</span>
+                    <span style="color: #fff;">{division}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Detailed Statistics (expandable)
+        # Detailed Statistics section
         with st.expander("📊 Detailed Statistics"):
             st.dataframe(
                 team_rankings,
@@ -326,20 +388,25 @@ def render(roster_data: pd.DataFrame):
                 hide_index=True
             )
 
-            # Visualization
             fig = px.bar(
                 team_rankings,
                 x='team',
                 y=['active_lineup_points', 'depth_points'],
-                title='Projected Team Points Distribution',
+                title='Team Points Distribution',
                 labels={
                     'team': 'Team',
                     'value': 'Projected Points',
                     'variable': 'Category'
                 },
-                barmode='stack'
+                barmode='stack',
+                color_discrete_sequence=['#457B9D', '#E63946']  # Patriotic blue and red
             )
-            fig.update_layout(xaxis_tickangle=-45)
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_color='#ffffff',
+                xaxis_tickangle=-45
+            )
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
