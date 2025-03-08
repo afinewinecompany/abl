@@ -248,23 +248,23 @@ def render(roster_data: pd.DataFrame):
         col1, col2, col3 = st.columns(3)
 
         # Display top 3 teams in cards
-        for idx, (col, (rank, row)) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
+        for idx, (col, row) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
             with col:
-                division = division_mapping.get(row['team'], "Unknown")
+                division = division_mapping.get(row[1]['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
 
                 # Get team's prospects (only display top 3)
-                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                team_prospects = ranked_prospects[ranked_prospects['team'] == row[1]['team']].sort_values(
                     'prospect_score', ascending=False
                 )
                 top_3_prospects = team_prospects.head(3)
 
                 # Display team card
                 st.markdown(render_team_card(
-                    row['team'],
-                    rank,
-                    row['total_score'],
-                    row['ranked_prospects'],
+                    row[1]['team'],
+                    idx + 1,  # Rank 1-3
+                    row[1]['total_score'],
+                    row[1]['ranked_prospects'],
                     division,
                     color,
                     top_3_prospects
@@ -275,7 +275,11 @@ def render(roster_data: pd.DataFrame):
 
         # Display teams 4-30 in single column
         remaining_teams = team_scores.iloc[3:]
-        for i, row in remaining_teams.iterrows():
+
+        # Reset index for remaining teams to ensure correct rank numbering
+        remaining_teams = remaining_teams.reset_index(drop=True)
+
+        for idx, row in remaining_teams.iterrows():
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
 
@@ -285,10 +289,10 @@ def render(roster_data: pd.DataFrame):
             )
             top_3_prospects = team_prospects.head(3)
 
-            # Display team card
+            # Display team card with correct rank (starting from 4)
             st.markdown(render_team_card(
                 row['team'],
-                i + 4,
+                idx + 4,  # Start numbering from 4
                 row['total_score'],
                 row['ranked_prospects'],
                 division,
