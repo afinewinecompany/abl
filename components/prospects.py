@@ -25,6 +25,20 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("🌟 Prospect Analysis")
 
+        # Load division data for color coding
+        divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
+        division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
+
+        # Division color mapping
+        division_colors = {
+            "AL East": "#FF6B6B",  # Red shade
+            "AL Central": "#4ECDC4",  # Teal shade
+            "AL West": "#95A5A6",  # Gray shade
+            "NL East": "#F39C12",  # Orange shade
+            "NL Central": "#3498DB",  # Blue shade
+            "NL West": "#2ECC71"   # Green shade
+        }
+
         # Read and process prospect rankings
         prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
         prospect_rankings['Player'] = prospect_rankings['Player'].str.strip()
@@ -42,9 +56,6 @@ def render(roster_data: pd.DataFrame):
             right_on='Player',
             how='left'
         )
-
-        # Team Prospect Rankings
-        st.subheader("📊 Team Prospect Power Rankings")
 
         # Calculate total prospects for each team
         total_prospects = minors_players.groupby('team').size().reset_index(name='total_prospects')
@@ -73,39 +84,70 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Display team rankings
-        st.dataframe(
-            team_scores,
-            column_config={
-                "team": "Team",
-                "total_score": st.column_config.NumberColumn(
-                    "Total Prospect Score",
-                    format="%.1f",
-                    help="Sum of all prospect scores"
-                ),
-                "avg_score": st.column_config.NumberColumn(
-                    "Average Prospect Score",
-                    format="%.1f",
-                    help="Average score per prospect"
-                ),
-                "ranked_prospects": "Ranked Prospects",
-                "total_prospects": "Total Prospects"
-            },
-            hide_index=False
-        )
+        # Display top 3 prospect systems
+        st.subheader("🏆 Top Prospect Systems")
+        col1, col2, col3 = st.columns(3)
 
-        # Visualization
-        fig = px.bar(
-            team_scores,
-            x='team',
-            y='total_score',
-            title='Team Prospect Power Rankings',
-            labels={'team': 'Team', 'total_score': 'Total Prospect Score'},
-            color='total_score',
-            color_continuous_scale='viridis'
-        )
-        fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
+        for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
+            with col:
+                division = division_mapping.get(row['team'], "Unknown")
+                color = division_colors.get(division, "#00ff88")
+                st.markdown(f"""
+                <div style="
+                    padding: 1rem;
+                    background-color: #1a1c23;
+                    border-radius: 10px;
+                    border-left: 5px solid {color};
+                    margin: 0.5rem 0;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                ">
+                    <h3 style="margin:0; color: {color};">#{idx + 1}</h3>
+                    <h4 style="margin:0.5rem 0;">{row['team']}</h4>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                        <div>
+                            <p style="margin:0; font-size: 0.8rem; color: #888;">Total Score</p>
+                            <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{row['total_score']:.1f}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin:0; font-size: 0.8rem; color: #888;">Ranked Prospects</p>
+                            <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{int(row['ranked_prospects'])}</p>
+                        </div>
+                    </div>
+                    <p style="margin:0.5rem 0 0 0; font-size: 0.8rem; color: #888;">{division}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Show remaining teams in single column
+        st.markdown("### Complete System Rankings")
+        remaining_teams = team_scores.iloc[3:]
+
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+            division = division_mapping.get(row['team'], "Unknown")
+            color = division_colors.get(division, "#00ff88")
+            st.markdown(f"""
+            <div style="
+                padding: 0.75rem;
+                background-color: #1a1c23;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                border-left: 4px solid {color};
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="color: {color}; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
+                        <div>
+                            <div style="font-weight: bold;">{row['team']}</div>
+                            <div style="font-size: 0.8rem; color: #888;">{division}</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; font-size: 1.2rem;">{row['total_score']:.1f}</div>
+                        <div style="font-size: 0.8rem; color: #888;">{int(row['ranked_prospects'])} Ranked</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         # Individual Prospect Analysis
         st.subheader("👥 Top Prospects by Team")
@@ -116,46 +158,96 @@ def render(roster_data: pd.DataFrame):
             options=team_scores['team'].tolist()
         )
 
+        # Get team's division and color
+        team_division = division_mapping.get(selected_team, "Unknown")
+        team_color = division_colors.get(team_division, "#00ff88")
+
+        # Team stats card
+        team_stats = team_scores[team_scores['team'] == selected_team].iloc[0]
+        st.markdown(f"""
+        <div style="
+            padding: 1rem;
+            background-color: #1a1c23;
+            border-radius: 10px;
+            border-left: 5px solid {team_color};
+            margin: 1rem 0;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 style="margin:0; color: {team_color};">{selected_team}</h3>
+                    <p style="margin:0.2rem 0; font-size: 0.9rem; color: #888;">{team_division}</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin:0; font-size: 0.8rem; color: #888;">System Ranking</p>
+                    <p style="margin:0; font-size: 1.4rem; color: #fafafa;">#{team_scores.index[team_scores['team'] == selected_team][0]}</p>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                <div>
+                    <p style="margin:0; font-size: 0.8rem; color: #888;">Total Score</p>
+                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{team_stats['total_score']:.1f}</p>
+                </div>
+                <div>
+                    <p style="margin:0; font-size: 0.8rem; color: #888;">Avg Prospect Score</p>
+                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{team_stats['avg_score']:.1f}</p>
+                </div>
+                <div>
+                    <p style="margin:0; font-size: 0.8rem; color: #888;">Ranked Prospects</p>
+                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">{int(team_stats['ranked_prospects'])}</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
         # Filter prospects for selected team
         team_prospects = ranked_prospects[ranked_prospects['team'] == selected_team].sort_values(
             'prospect_score', ascending=False
         )
 
-        # Display team's prospects (excluding clean_name, Player, and team columns)
-        display_columns = [col for col in team_prospects.columns if col not in ['clean_name', 'Player', 'team']]
-        st.dataframe(
-            team_prospects[display_columns],
-            column_config={
-                "player_name": "Player",
-                "position": "Position",
-                "mlb_team": "MLB Team",
-                "Ranking": st.column_config.NumberColumn(
-                    "Overall Ranking",
-                    help="Industry prospect ranking"
-                ),
-                "Tier": "Prospect Tier",
-                "ETA": "MLB ETA",
-                "prospect_score": st.column_config.NumberColumn(
-                    "Prospect Score",
-                    format="%.1f",
-                    help="Calculated prospect value"
-                )
-            },
-            hide_index=True
-        )
+        # Display team's prospects in cards
+        if not team_prospects.empty:
+            for _, prospect in team_prospects.iterrows():
+                rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
+                st.markdown(f"""
+                <div style="
+                    padding: 0.75rem;
+                    background-color: #1a1c23;
+                    border-radius: 8px;
+                    margin: 0.5rem 0;
+                    border-left: 4px solid {team_color};
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1rem;">{prospect['player_name']}</div>
+                            <div style="font-size: 0.9rem; color: #888;">{prospect['position']} | {prospect['mlb_team']}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: {rank_color};">
+                                {f"Rank #{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #888;">
+                                {f"Tier {prospect['Tier']}" if pd.notna(prospect['Tier']) else ""}
+                                {f" | ETA: {prospect['ETA']}" if pd.notna(prospect['ETA']) else ""}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No prospects found for this team.")
 
         # Tier Distribution
-        st.subheader("📈 Prospect Tier Distribution")
-        tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
+        with st.expander("📊 League-wide Tier Distribution"):
+            tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
 
-        fig2 = px.bar(
-            tier_dist,
-            title='Prospect Tier Distribution by Team',
-            labels={'value': 'Number of Prospects', 'team': 'Team', 'variable': 'Tier'},
-            barmode='group'
-        )
-        fig2.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig2, use_container_width=True)
+            fig = px.bar(
+                tier_dist,
+                title='Prospect Tier Distribution by Team',
+                labels={'value': 'Number of Prospects', 'team': 'Team', 'variable': 'Tier'},
+                barmode='group'
+            )
+            fig.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.error(f"An error occurred while processing prospect data. Please try refreshing the page.")
+        st.error(f"An error occurred while processing prospect data: {str(e)}")
