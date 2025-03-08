@@ -132,12 +132,12 @@ def render(roster_data: pd.DataFrame):
             how='left'
         )
 
-        # Calculate team rankings
+        # Calculate team rankings (using ALL prospects)
         team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean'],
-            'Ranking': lambda x: x.notna().sum()  # Count of ranked prospects
+            'prospect_score': 'sum',  # Total score of ALL prospects
+            'Ranking': lambda x: x.notna().sum()  # Count of ALL ranked prospects
         }).reset_index()
-        team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects']
+        team_scores.columns = ['team', 'total_score', 'ranked_prospects']
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
@@ -152,7 +152,7 @@ def render(roster_data: pd.DataFrame):
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
 
-                # Get team's prospects
+                # Get team's prospects (only display top 3)
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
@@ -178,7 +178,7 @@ def render(roster_data: pd.DataFrame):
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
 
-            # Get team's prospects
+            # Get team's prospects (only display top 3)
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
