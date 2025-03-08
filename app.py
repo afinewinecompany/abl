@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, power_rankings, prospects, projected_rankings, auction_draft
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from api_client import FantraxAPI
 from data_processor import DataProcessor
 
@@ -382,13 +382,12 @@ def main():
         processed_standings_data = data_processor.process_standings(standings_data)
 
         # Create tabs for different sections
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🏠 League Info",
             "👥 Team Rosters",
             "🏆 Power Rankings",
             "⭐ Prospects",
-            "📈 Projected Rankings",
-            "🏦 Auction Draft"
+            "📈 Projected Rankings"
         ])
 
         with tab1:
@@ -405,9 +404,6 @@ def main():
 
         with tab5:
             projected_rankings.render(processed_roster_data)
-
-        with tab6:
-            auction_draft.render(processed_roster_data)
 
     except Exception as e:
         st.error(f"An error occurred while loading data. Please try refreshing.")
