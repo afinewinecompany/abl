@@ -83,8 +83,8 @@ st.markdown("""
         background: #1a1c23;
         padding: 1rem;
         border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
-        border: 1px solid rgba(0, 255, 136, 0.1);
+        box-shadow: 0 0 20px rgba(30, 100, 255, 0.15);
+        border: 1px solid rgba(30, 100, 255, 0.1);
         display: flex;
         justify-content: center;
         width: 100%;
@@ -107,9 +107,9 @@ st.markdown("""
     }
 
     .stTabs [data-baseweb="tab"]:hover {
-        color: #00ff88;
-        text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-        background: rgba(0, 255, 136, 0.1);
+        color: #ff3030;
+        text-shadow: 0 0 10px rgba(255, 30, 30, 0.5);
+        background: rgba(255, 30, 30, 0.1);
     }
 
     /* Tab list container */
@@ -120,54 +120,56 @@ st.markdown("""
 
     /* Active tab indicator */
     .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        color: #00ff88;
-        background: rgba(0, 255, 136, 0.1);
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        color: #ff3030;
+        background: rgba(255, 30, 30, 0.1);
+        box-shadow: 0 0 15px rgba(255, 30, 30, 0.2);
     }
 
     h1 {
-        color: #00ff88;
+        color: #ffffff;
         text-align: center;
         padding: 2rem;
         margin-bottom: 2rem;
         font-size: 2.8em;
         font-weight: 700;
         letter-spacing: -1px;
-        text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+        text-shadow: 
+            0 0 10px rgba(255, 30, 30, 0.6),
+            0 0 20px rgba(30, 100, 255, 0.6);
         background: linear-gradient(180deg, #1a1c23 0%, rgba(26, 28, 35, 0.8) 100%);
         border-radius: 16px;
-        border: 1px solid rgba(0, 255, 136, 0.2);
+        border: 1px solid rgba(255, 30, 30, 0.2);
         box-shadow: 
-            0 0 20px rgba(0, 255, 136, 0.2),
-            inset 0 0 50px rgba(0, 255, 136, 0.05);
+            0 0 20px rgba(30, 100, 255, 0.2),
+            inset 0 0 50px rgba(255, 30, 30, 0.05);
     }
 
     .stMetric {
         background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
         padding: 1.8rem;
         border-radius: 12px;
-        border: 1px solid rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(30, 100, 255, 0.1);
         box-shadow: 
-            0 0 20px rgba(0, 255, 136, 0.15),
-            inset 0 0 30px rgba(0, 255, 136, 0.03);
+            0 0 20px rgba(30, 100, 255, 0.15),
+            inset 0 0 30px rgba(255, 30, 30, 0.03);
         transition: all 0.3s ease;
     }
 
     .stMetric:hover {
         transform: translateY(-2px) scale(1.02);
         box-shadow: 
-            0 0 30px rgba(0, 255, 136, 0.25),
-            inset 0 0 30px rgba(0, 255, 136, 0.05);
+            0 0 30px rgba(30, 100, 255, 0.25),
+            inset 0 0 30px rgba(255, 30, 30, 0.05);
     }
 
     .stDataFrame {
         background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.95) 100%);
         padding: 1.8rem;
         border-radius: 12px;
-        border: 1px solid rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(255, 30, 30, 0.1);
         box-shadow: 
-            0 0 25px rgba(0, 255, 136, 0.15),
-            inset 0 0 40px rgba(0, 255, 136, 0.03);
+            0 0 25px rgba(30, 100, 255, 0.15),
+            inset 0 0 40px rgba(255, 30, 30, 0.03);
         margin-bottom: 1.5rem;
     }
 
@@ -175,18 +177,18 @@ st.markdown("""
         background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
         padding: 2rem;
         border-radius: 16px;
-        border: 1px solid rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(255, 30, 30, 0.1);
         box-shadow: 
-            0 0 25px rgba(0, 255, 136, 0.15),
-            inset 0 0 40px rgba(0, 255, 136, 0.03);
+            0 0 25px rgba(30, 100, 255, 0.15),
+            inset 0 0 40px rgba(255, 30, 30, 0.03);
         margin-bottom: 2rem;
     }
 
     /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
-        border: 1px solid rgba(0, 255, 136, 0.2);
-        color: #00ff88;
+        background: linear-gradient(135deg, rgba(30, 100, 255, 0.1) 0%, rgba(255, 30, 30, 0.05) 100%);
+        border: 1px solid rgba(255, 30, 30, 0.2);
+        color: #ffffff;
         font-weight: 500;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
@@ -194,9 +196,9 @@ st.markdown("""
     }
 
     .stButton > button:hover {
-        background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%);
-        border: 1px solid rgba(0, 255, 136, 0.3);
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        background: linear-gradient(135deg, rgba(30, 100, 255, 0.2) 0%, rgba(255, 30, 30, 0.1) 100%);
+        border: 1px solid rgba(255, 30, 30, 0.3);
+        box-shadow: 0 0 20px rgba(30, 100, 255, 0.2);
         transform: translateY(-1px);
     }
 
@@ -218,7 +220,7 @@ st.markdown("""
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: #00ff88;
+        background: #ff3030;
     }
 
     /* Sidebar */
@@ -251,14 +253,14 @@ st.markdown("""
 
     /* Links */
     a {
-        color: #00ff88;
+        color: #3080ff;
         text-decoration: none;
         transition: all 0.2s ease;
     }
 
     a:hover {
-        color: #00ff88;
-        text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+        color: #ff3030;
+        text-shadow: 0 0 8px rgba(255, 30, 30, 0.5);
     }
 
     /* DataFrames and Tables */
@@ -266,20 +268,20 @@ st.markdown("""
         background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.95) 100%);
         padding: 1.8rem;
         border-radius: 12px;
-        border: 1px solid rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(30, 100, 255, 0.1);
         box-shadow: 
-            0 0 25px rgba(0, 255, 136, 0.15),
-            inset 0 0 40px rgba(0, 255, 136, 0.03);
+            0 0 25px rgba(255, 30, 30, 0.15),
+            inset 0 0 40px rgba(30, 100, 255, 0.03);
         margin-bottom: 1.5rem;
     }
 
     /* Table headers */
     [data-testid="stDataFrameResizable"] th {
-        background: rgba(0, 255, 136, 0.1) !important;
-        color: #00ff88 !important;
+        background: rgba(30, 100, 255, 0.1) !important;
+        color: #ffffff !important;
         font-weight: 600 !important;
         padding: 1rem !important;
-        border-bottom: 1px solid rgba(0, 255, 136, 0.2) !important;
+        border-bottom: 1px solid rgba(30, 100, 255, 0.2) !important;
         letter-spacing: 0.5px;
     }
 
@@ -294,7 +296,7 @@ st.markdown("""
 
     /* Row hover effect */
     [data-testid="stDataFrameResizable"] tr:hover td {
-        background: rgba(0, 255, 136, 0.05) !important;
+        background: rgba(255, 30, 30, 0.05) !important;
         transition: all 0.2s ease;
     }
 
@@ -305,7 +307,7 @@ st.markdown("""
 
     /* Sort indicators */
     button[data-testid="stDataFrameResizable"] svg {
-        fill: #00ff88 !important;
+        fill: #ff3030 !important;
     }
 
     /* Custom scrollbar for tables */
@@ -326,7 +328,7 @@ st.markdown("""
     }
 
     [data-testid="stDataFrameResizable"] ::-webkit-scrollbar-thumb:hover {
-        background: #00ff88;
+        background: #ff3030;
     }
 
     /* Number formatting */
@@ -337,20 +339,25 @@ st.markdown("""
 
     /* Status indicators */
     .status-active {
-        color: #00ff88 !important;
+        color: #ff3030 !important;
     }
 
     .status-reserve {
-        color: #ff9100 !important;
+        color: #ffffff !important;
     }
 
     .status-minors {
-        color: #00b4d8 !important;
+        color: #3080ff !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 def main():
+    # Display logo and title
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("attached_assets/Designer_5.jpeg", width=300)
+        
     st.title("⚾ ABL Analytics")
 
     # Initialize API client
