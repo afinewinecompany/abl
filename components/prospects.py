@@ -24,8 +24,11 @@ def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
 
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
-    # Get MLB team value and ensure it's a string before stripping
-    mlb_team = str(prospect['mlb_team']).strip() if not pd.isna(prospect['mlb_team']) else "N/A"
+    # Handle MLB team display - ensure single value and handle NaN
+    mlb_team = prospect.get('mlb_team', 'N/A')
+    if isinstance(mlb_team, pd.Series):
+        mlb_team = mlb_team.iloc[0] if not mlb_team.empty else 'N/A'
+    mlb_team = str(mlb_team).strip() if pd.notna(mlb_team) else 'N/A'
 
     return f"""
     <div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.transform='translateX(4px)'; this.style.backgroundColor='rgba(26, 28, 35, 0.8)'; this.style.borderLeftWidth='5px';" onmouseout="this.style.transform='translateX(0)'; this.style.backgroundColor='rgba(26, 28, 35, 0.5)'; this.style.borderLeftWidth='3px';">
