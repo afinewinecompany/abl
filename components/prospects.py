@@ -25,48 +25,13 @@ def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
     return f"""
-    <div style="
-        padding: 0.75rem;
-        background-color: rgba(26, 28, 35, 0.5);
-        border-radius: 8px;
-        margin: 0.25rem 0;
-        border-left: 3px solid {color};
-        transition: all 0.2s ease;
-        cursor: pointer;
-    "
-    onmouseover="
-        this.style.transform='translateX(4px)';
-        this.style.backgroundColor='rgba(26, 28, 35, 0.8)';
-        this.style.borderLeftWidth='5px';
-    "
-    onmouseout="
-        this.style.transform='translateX(0)';
-        this.style.backgroundColor='rgba(26, 28, 35, 0.5)';
-        this.style.borderLeftWidth='3px';
-    ">
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        ">
+    <div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.transform='translateX(4px)'; this.style.backgroundColor='rgba(26, 28, 35, 0.8)'; this.style.borderLeftWidth='5px';" onmouseout="this.style.transform='translateX(0)'; this.style.backgroundColor='rgba(26, 28, 35, 0.5)'; this.style.borderLeftWidth='3px';">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
-                <div style="
-                    font-weight: 600;
-                    font-size: 0.95rem;
-                    margin-bottom: 0.2rem;
-                    color: #fafafa;
-                ">{prospect['player_name']}</div>
-                <div style="
-                    font-size: 0.85rem;
-                    color: rgba(250, 250, 250, 0.7);
-                ">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">{prospect['player_name']}</div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
             </div>
-            <div style="
-                text-align: right;
-                font-size: 0.85rem;
-                color: rgba(250, 250, 250, 0.6);
-            ">{prospect['mlb_team']}</div>
+            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">{prospect['mlb_team'].strip()}</div>
         </div>
     </div>"""
 
@@ -76,62 +41,19 @@ def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, 
                            for _, prospect in top_3_prospects.iterrows()])
 
     return f"""
-    <div style="
-        padding: 1.25rem;
-        background-color: rgba(26, 28, 35, 0.8);
-        border-radius: 12px;
-        margin: 0.75rem 0;
-        border-left: 5px solid {color};
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    "
-    onmouseover="
-        this.style.transform='translateY(-2px)';
-        this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';
-        this.style.borderLeftWidth='7px';
-    "
-    onmouseout="
-        this.style.transform='translateY(0)';
-        this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';
-        this.style.borderLeftWidth='5px';
-    ">
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            align-items: center;
-        ">
+    <div style="padding: 1.25rem; background-color: rgba(26, 28, 35, 0.8); border-radius: 12px; margin: 0.75rem 0; border-left: 5px solid {color}; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)'; this.style.borderLeftWidth='7px';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'; this.style.borderLeftWidth='5px';">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center;">
             <div>
-                <div style="
-                    font-weight: 600;
-                    font-size: 1.1rem;
-                    color: #fafafa;
-                    margin-bottom: 0.2rem;
-                ">#{team_rank} {team}</div>
-                <div style="
-                    font-size: 0.9rem;
-                    color: rgba(250, 250, 250, 0.7);
-                ">{division}</div>
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa; margin-bottom: 0.2rem;">#{team_rank} {team}</div>
+                <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.7);">{division}</div>
             </div>
             <div style="text-align: right;">
-                <div style="
-                    font-weight: 600;
-                    font-size: 1.1rem;
-                    color: #fafafa;
-                ">{total_score:.1f}</div>
-                <div style="
-                    font-size: 0.85rem;
-                    color: rgba(250, 250, 250, 0.7);
-                ">Avg: {avg_score:.2f} | {int(ranked_prospects)} Players</div>
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa;">{total_score:.1f}</div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">Avg: {avg_score:.2f} | {int(ranked_prospects)} Players</div>
             </div>
         </div>
         <div style="margin-top: 0.75rem;">
-            <div style="
-                font-size: 0.9rem;
-                color: rgba(250, 250, 250, 0.8);
-                margin-bottom: 0.5rem;
-                font-weight: 500;
-            ">Top Prospects:</div>
+            <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.8); margin-bottom: 0.5rem; font-weight: 500;">Top Prospects:</div>
             {preview_html}
         </div>
     </div>"""
