@@ -1,4 +1,3 @@
-from components.prospects import calculate_prospect_score
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -50,10 +49,9 @@ def render(roster_data: pd.DataFrame):
         hitters_proj = pd.read_csv("attached_assets/batx-hitters.csv")
         pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers-2.csv")
 
-        # Load prospect rankings for minors
-        prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
-        prospect_rankings['Player'] = prospect_rankings['Player'].apply(normalize_name)
-        prospect_rankings['prospect_score'] = prospect_rankings['Ranking'].apply(calculate_prospect_score)
+        # Load prospect scores
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
+        prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
 
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
@@ -63,41 +61,18 @@ def render(roster_data: pd.DataFrame):
         hitters_proj['fantasy_points'] = hitters_proj.apply(calculate_hitter_points, axis=1)
         pitchers_proj['fantasy_points'] = pitchers_proj.apply(calculate_pitcher_points, axis=1)
 
-        # Calculate team projected rankings
-        all_teams_points = {}
-        for team in roster_data['team'].unique():
-            team_roster = roster_data[roster_data['team'] == team].copy()
-            team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
-
-            total_points = 0
-            for idx, player in team_roster.iterrows():
-                points = calculate_total_points(player['clean_name'], hitters_proj, pitchers_proj)
-                total_points += points
-
-            all_teams_points[team] = total_points
-
-        # Sort teams by projected points to get rankings
-        rankings = pd.Series(all_teams_points).sort_values(ascending=False)
-        team_rankings = {team: rank + 1 for rank, team in enumerate(rankings.index)}
-
         # Add team filter
         teams = roster_data['team'].unique()
         selected_team = st.selectbox("Select Team", teams)
-
-        # Show team rank and projected points in header
-        rank = team_rankings[selected_team]
-        total_points = all_teams_points[selected_team]
-        st.subheader(f"{selected_team} (Rank: #{rank} - Projected Points: {total_points:,.1f})")
 
         # Filter data by selected team and create a copy
         team_roster = roster_data[roster_data['team'] == selected_team].copy()
         team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
 
         # Add projected points to team roster
-        team_roster['projected_points'] = 0.0  # Initialize with zeros
-        for idx, player in team_roster.iterrows():
-            points = calculate_total_points(player['clean_name'], hitters_proj, pitchers_proj)
-            team_roster.at[idx, 'projected_points'] = points
+        team_roster['projected_points'] = team_roster['clean_name'].apply(
+            lambda x: calculate_total_points(x, hitters_proj, pitchers_proj)
+        )
 
         # Split roster by status
         active_roster = team_roster[team_roster['status'].str.upper() == 'ACTIVE']
@@ -127,13 +102,14 @@ def render(roster_data: pd.DataFrame):
             st.metric("Positions", len(team_roster['position'].unique()))
 
         # Add prospect scores to minors players
-        minors_roster['prospect_score'] = 0.0  # Initialize with zeros
-        for idx, player in minors_roster.iterrows():
-            prospect_match = prospect_rankings[prospect_rankings['Player'] == player['clean_name']]
-            if not prospect_match.empty:
-                minors_roster.at[idx, 'prospect_score'] = prospect_match.iloc[0]['prospect_score']
-            else:
-                minors_roster.at[idx, 'prospect_score'] = 2.0  # Baseline score for unranked prospects
+        minors_roster = pd.merge(
+            minors_roster,
+            prospect_import[['Name', 'Unique score']],
+            left_on='clean_name',
+            right_on='Name',
+            how='left'
+        )
+        minors_roster['prospect_score'] = minors_roster['Unique score'].fillna(0)
 
         # Display columns for different roster sections
         active_display_columns = ['player_name', 'position', 'salary', 'projected_points', 'mlb_team']
@@ -197,7 +173,7 @@ def render(roster_data: pd.DataFrame):
                     "prospect_score": st.column_config.NumberColumn(
                         "Prospect Score",
                         format="%.1f",
-                        help="Prospect ranking score (100 = #1 prospect)"
+                        help="Unique prospect score (higher is better)"
                     ),
                     "projected_points": st.column_config.NumberColumn(
                         "Projected Points",

@@ -14,28 +14,6 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip()
 
-def calculate_prospect_score(ranking: int) -> float:
-    """
-    Calculate prospect score based on ranking using exponential decay.
-    - Ranked prospects (1-600) get scores from 100 to ~5
-    - Unranked prospects get a baseline score of 2
-
-    Formula: score = 100 * e^(-0.005 * (rank-1))
-    This creates an exponential decay where:
-    - #1 prospect = 100 points
-    - #100 prospect ≈ 60 points
-    - #300 prospect ≈ 22 points
-    - #600 prospect ≈ 5 points
-    """
-    if pd.isna(ranking):
-        return 2.0  # Baseline score for unranked prospects
-
-    # Exponential decay formula
-    decay_rate = 0.005  # Controls how quickly scores decline
-    score = 100 * np.exp(-decay_rate * (ranking - 1))
-
-    return round(score, 1)
-
 def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
     """Generate a color gradient between red and green based on value"""
     # Normalize value between 0 and 1
@@ -50,7 +28,6 @@ def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
 
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
-    rank_color = "#00ff88" if pd.notna(prospect['Ranking']) else "#888"
     return f"""
     <div style="
         padding: 0.5rem;
@@ -78,14 +55,14 @@ def render_prospect_preview(prospect, color):
                 </div>
             </div>
             <div style="text-align: right;">
-                <div style="color: {rank_color};">
-                    {f"#{int(prospect['Ranking'])}" if pd.notna(prospect['Ranking']) else "Unranked"}
+                <div style="font-size: 0.8rem; color: #888;">
+                    {prospect['mlb_team']}
                 </div>
             </div>
         </div>
     </div>"""
 
-def render_team_card(team, team_rank, score, ranked_prospects, division, color, top_3_prospects):
+def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, division, color, top_3_prospects):
     """Render a team card with prospect preview"""
     preview_html = "".join([render_prospect_preview(prospect, color) 
                            for _, prospect in top_3_prospects.iterrows()])
@@ -114,8 +91,8 @@ def render_team_card(team, team_rank, score, ranked_prospects, division, color, 
                 <div style="font-size: 0.8rem; color: #888;">{division}</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: bold; font-size: 1.2rem;">{score:.1f}</div>
-                <div style="font-size: 0.8rem; color: #888;">{int(ranked_prospects)} Ranked</div>
+                <div style="font-weight: bold; font-size: 1.2rem;">{total_score:.1f}</div>
+                <div style="font-size: 0.8rem; color: #888;">Avg: {avg_score:.2f} | {int(ranked_prospects)} Players</div>
             </div>
         </div>
         <div style="margin-top: 0.5rem;">
@@ -147,13 +124,15 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
             'normalized_score': False,
             'ranked_prospects': True,
             'division': True,
-            'total_score': ':.1f'
+            'total_score': ':.1f',
+            'avg_score': ':.2f'
         },
         labels={
             'team': 'Team',
-            'total_score': 'Prospect System Score',
-            'ranked_prospects': 'Ranked Prospects',
-            'division': 'Division'
+            'total_score': 'Total Prospect Score',
+            'ranked_prospects': 'Total Prospects',
+            'division': 'Division',
+            'avg_score': 'Average Score'
         },
         height=800  # Taller to accommodate all teams
     )
@@ -185,9 +164,10 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Add hover template
     fig.update_traces(
         hovertemplate="<b>%{y}</b><br>" +
-                     "Score: %{x:.1f}<br>" +
+                     "Total Score: %{x:.1f}<br>" +
+                     "Avg Score: %{customdata[4]:.2f}<br>" +
                      "Division: %{customdata[2]}<br>" +
-                     "Ranked Prospects: %{customdata[1]}<extra></extra>"
+                     "Total Prospects: %{customdata[1]}<extra></extra>"
     )
 
     # Display the chart
@@ -212,30 +192,34 @@ def render(roster_data: pd.DataFrame):
             "NL West": "#2ECC71"   # Green shade
         }
 
-        # Read and process prospect rankings
-        prospect_rankings = pd.read_csv("attached_assets/2025 Dynasty Dugout Offseason Rankings - Jan 25 Prospects.csv")
-        prospect_rankings['Player'] = prospect_rankings['Player'].str.strip()
-        prospect_rankings['prospect_score'] = prospect_rankings['Ranking'].apply(calculate_prospect_score)
+        # Read and process prospect scores
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
+        prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
 
         # Get all minor league players
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
 
-        # Merge with rankings
+        # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_rankings[['Player', 'Ranking', 'Tier', 'prospect_score', 'Position', 'ETA']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
             left_on='clean_name',
-            right_on='Player',
+            right_on='Name',
             how='left'
         )
 
-        # Calculate team rankings (using ALL prospects)
+        # Set prospect score from Unique score
+        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+
+
+        # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': 'sum',  # Total score of ALL prospects
-            'Ranking': lambda x: x.notna().sum()  # Count of ALL ranked prospects
+            'prospect_score': ['sum', 'mean', 'count']
         }).reset_index()
-        team_scores.columns = ['team', 'total_score', 'ranked_prospects']
+
+        team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects']
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
@@ -264,6 +248,7 @@ def render(roster_data: pd.DataFrame):
                     row[1]['team'],
                     idx + 1,  # Rank 1-3
                     row[1]['total_score'],
+                    row[1]['avg_score'],
                     row[1]['ranked_prospects'],
                     division,
                     color,
@@ -294,6 +279,7 @@ def render(roster_data: pd.DataFrame):
                 row['team'],
                 idx + 4,  # Start numbering from 4
                 row['total_score'],
+                row['avg_score'],
                 row['ranked_prospects'],
                 division,
                 color,
@@ -326,19 +312,6 @@ def render(roster_data: pd.DataFrame):
                     <span>{division}</span>
                 </div>
                 """, unsafe_allow_html=True)
-
-        # Tier Distribution
-        with st.expander("📊 League-wide Tier Distribution"):
-            tier_dist = ranked_prospects[ranked_prospects['Tier'].notna()].groupby(['team', 'Tier']).size().unstack(fill_value=0)
-
-            fig = px.bar(
-                tier_dist,
-                title='Prospect Tier Distribution by Team',
-                labels={'value': 'Number of Prospects', 'team': 'Team', 'variable': 'Tier'},
-                barmode='group'
-            )
-            fig.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
         st.error(f"An error occurred while processing prospect data: {str(e)}")
