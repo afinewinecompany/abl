@@ -24,6 +24,9 @@ def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
 
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
+    # Get MLB team value and ensure it's a string before stripping
+    mlb_team = str(prospect['mlb_team']).strip() if not pd.isna(prospect['mlb_team']) else "N/A"
+
     return f"""
     <div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.transform='translateX(4px)'; this.style.backgroundColor='rgba(26, 28, 35, 0.8)'; this.style.borderLeftWidth='5px';" onmouseout="this.style.transform='translateX(0)'; this.style.backgroundColor='rgba(26, 28, 35, 0.5)'; this.style.borderLeftWidth='3px';">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
@@ -31,7 +34,7 @@ def render_prospect_preview(prospect, color):
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">{prospect['player_name']}</div>
                 <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
             </div>
-            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">{prospect['mlb_team'].strip()}</div>
+            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">{mlb_team}</div>
         </div>
     </div>"""
 
