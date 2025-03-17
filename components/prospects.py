@@ -493,9 +493,10 @@ def render(roster_data: pd.DataFrame):
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
         prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
 
-        # Get all minor league players
+        # Get all minor league players (ensure no duplicates)
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
+        minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
         # Merge with import data
         ranked_prospects = pd.merge(
@@ -508,9 +509,10 @@ def render(roster_data: pd.DataFrame):
 
         # Set prospect score from Unique score
         ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-        # Render top 100 header and dropdown
+        # Render top 100 header and scrollable list
         render_top_100_header(ranked_prospects, player_id_cache)
 
         # Calculate team rankings
