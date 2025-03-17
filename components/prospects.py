@@ -197,7 +197,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Convert to DataFrame for easier handling
     df = pd.DataFrame(data)
 
-    # Create sunburst chart with increased size
+    # Create sunburst chart with increased size and mobile optimization
     fig = go.Figure(go.Sunburst(
         ids=df['id'],
         labels=df['label'],
@@ -212,9 +212,15 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             colorbar=dict(
                 title=dict(
                     text='Relative Prospect Score',
-                    font=dict(color='white')
+                    font=dict(color='white', size=12)
                 ),
-                tickfont=dict(color='white')
+                tickfont=dict(color='white', size=10),
+                len=0.5,  # Make colorbar shorter
+                yanchor='bottom',  # Position at bottom
+                y=0,  # Position at bottom
+                xanchor='center',
+                x=0.5,  # Center horizontally
+                orientation='h'  # Horizontal colorbar
             )
         ),
         customdata=df[['avg_score']],
@@ -227,22 +233,31 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         """
     ))
 
-    # Update layout with increased size and mobile responsiveness
+    # Update layout with mobile-responsive settings
     fig.update_layout(
         title=dict(
             text='Prospect System Hierarchy',
             font=dict(color='white', size=24),
             x=0.5,
             xanchor='center',
-            y=0.95
+            y=0.98
         ),
         width=None,  # Allow width to be responsive
-        height=1200,  # Increased height significantly
+        height=None,  # Allow height to be responsive
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=100, l=20, r=20, b=20),
-        autosize=True
+        margin=dict(t=50, l=0, r=0, b=100),  # Reduced top margin, increased bottom for colorbar
+        autosize=True,
+        # Add responsive layout
+        xaxis=dict(
+            scaleanchor='y',
+            scaleratio=1
+        ),
+        yaxis=dict(
+            scaleanchor='x',
+            scaleratio=1
+        )
     )
 
     return fig
