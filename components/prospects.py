@@ -43,6 +43,7 @@ TEAM_ABBREVIATIONS = {
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
     "Cardinals": "STL",  # Added variation
+    "Saint Louis Cardinals": "STL",  # Added correct variation
     "St Louis Cardinals": "STL",  # Added variation without period
     "St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
@@ -110,10 +111,6 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    # Add temporary debug output to see actual team names
-    st.markdown("**Teams in dataset:**")
-    for team in team_scores['team'].unique():
-        st.write(f"Team: '{team}' -> Abbrev: '{TEAM_ABBREVIATIONS.get(team, 'NOT FOUND')}'")
 
     # Create hierarchical bar chart
     fig = px.bar(
