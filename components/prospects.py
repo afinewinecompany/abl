@@ -31,32 +31,44 @@ def get_player_headshot_html(player_name: str, mlb_ids_df: pd.DataFrame) -> str:
     try:
         # Normalize the search name
         search_name = normalize_name(player_name)
+        st.write(f"Debug: Looking for player: {search_name}")  # Debug output
 
         # Search for the player in the MLB IDs dataframe
         for _, row in mlb_ids_df.iterrows():
-            # Parse the name from the CSV's "Name" column
-            if pd.isna(row['Name']):
+            try:
+                # Debug output for row data
+                st.write(f"Debug: CSV row data: {dict(row)}")
+
+                # Parse the CSV name (format is "Name,MLBAMID,RazzballID,etc")
+                name_parts = str(row['Name']).split(',')
+                if len(name_parts) < 2:
+                    continue
+
+                # The format appears to be "Last_Name, First_Name"
+                last_name = name_parts[0].strip()
+                first_name = name_parts[1].strip()
+                db_name = normalize_name(f"{first_name} {last_name}")
+
+                st.write(f"Debug: Comparing {search_name} with {db_name}")  # Debug output
+
+                if search_name == db_name:
+                    st.write(f"Debug: Match found! MLBAMID: {row['MLBAMID']}")  # Debug output
+                    return f"""
+                        <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                            <img src="{get_headshot_url(row['MLBAMID'])}"
+                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
+                                 alt="{player_name} headshot">
+                        </div>
+                    """
+            except Exception as row_error:
+                st.write(f"Debug: Error processing row: {str(row_error)}")
                 continue
 
-            # Split the CSV name by comma (format is "Last, First")
-            csv_name_parts = row['Name'].split(',', 1)
-            if len(csv_name_parts) != 2:
-                continue
-
-            last, first = csv_name_parts
-            db_name = normalize_name(f"{first.strip()} {last.strip()}")
-
-            if search_name == db_name:
-                return f"""
-                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                        <img src="{get_headshot_url(row['MLBAMID'])}"
-                             style="width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
-                             alt="{player_name} headshot">
-                    </div>
-                """
     except Exception as e:
         st.error(f"Error getting headshot for {player_name}: {str(e)}")
+        # Print full exception for debugging
+        st.exception(e)
     return ""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, mlb_ids_df: pd.DataFrame) -> str:
