@@ -103,39 +103,59 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     """Render interactive prospect strength visualization"""
     st.subheader("🎨 Prospect System Quality")
 
-    # Add abbreviated team names
+    # Add abbreviated team names and division info
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
-
-    # Create sunburst data
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    # Create sunburst figure
-    fig = px.sunburst(
+    # Create hierarchical bar chart
+    fig = px.bar(
         team_scores,
-        path=[px.Constant("League"), 'division', 'team_abbrev'],
-        values='total_score',
+        x='avg_score',
+        y='team_abbrev',
         color='avg_score',
+        orientation='h',
         color_continuous_scale='viridis',
-        custom_data=['avg_score', 'total_score', 'team'],
-        title='Team Prospect System Quality Overview'
+        custom_data=['team', 'division', 'total_score'],
+        labels={
+            'avg_score': 'Average Prospect Score',
+            'team_abbrev': 'Team'
+        }
     )
 
     # Update layout
     fig.update_layout(
-        margin=dict(t=30, l=10, r=10, b=10),
+        title=dict(
+            text='Team Prospect System Quality Overview',
+            font=dict(color='white'),
+            x=0.5,
+            xanchor='center'
+        ),
+        height=600,
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        height=600,
-        showlegend=False
+        xaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)',
+            title_font=dict(color='white'),
+            tickfont=dict(color='white'),
+            zeroline=False
+        ),
+        yaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)',
+            title_font=dict(color='white'),
+            tickfont=dict(color='white'),
+            zeroline=False
+        ),
+        showlegend=False,
+        margin=dict(l=10, r=50, t=40, b=10)
     )
 
-    # Update traces
+    # Update hover template
     fig.update_traces(
-        hovertemplate="<b>%{customdata[2]}</b><br>" +
-                     "Average Score: %{customdata[0]:.2f}<br>" +
-                     "Total Score: %{customdata[1]:.1f}<extra></extra>",
-        textinfo="label"
+        hovertemplate="<b>%{customdata[0]}</b><br>" +
+                     "Division: %{customdata[1]}<br>" +
+                     "Average Score: %{x:.2f}<br>" +
+                     "Total Score: %{customdata[2]:.1f}<extra></extra>"
     )
 
     # Display the chart
