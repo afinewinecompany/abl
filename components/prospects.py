@@ -5,6 +5,41 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
+import requests
+from bs4 import BeautifulSoup
+import trafilatura
+import time
+from urllib.parse import quote
+
+def get_mlb_id(player_name: str) -> str:
+    """Fetch MLB ID from milb.com players page"""
+    try:
+        # Format player name for URL
+        formatted_name = quote(player_name.lower().replace(' ', '-'))
+        url = f"https://www.milb.com/player/{formatted_name}"
+
+        # Fetch page content
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded:
+            soup = BeautifulSoup(downloaded, 'html.parser')
+            # Look for player ID in page
+            player_link = soup.find('link', {'rel': 'canonical'})
+            if player_link and 'href' in player_link.attrs:
+                href = player_link['href']
+                # Extract ID from URL
+                player_id = href.split('/')[-1]
+                if player_id.isdigit():
+                    return player_id
+        return None
+    except Exception as e:
+        st.error(f"Error fetching MLB ID for {player_name}: {str(e)}")
+        return None
+
+def get_headshot_url(mlb_id: str) -> str:
+    """Generate headshot URL from MLB ID"""
+    if mlb_id:
+        return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlb_id}/headshot/67/current"
+    return None
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -52,25 +87,49 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None):
         unsafe_allow_html=True
     )
 
-    # Display team header
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <div style="flex-grow: 1;">
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
-                    {prospect['player_name']}
+    # Get MLB ID and headshot URL
+    if 'mlb_id' not in prospect:
+        prospect['mlb_id'] = get_mlb_id(prospect['player_name'])
+
+    headshot_url = get_headshot_url(prospect.get('mlb_id'))
+
+    # Display team header with headshot
+    columns = st.columns([1, 4])
+
+    with columns[0]:
+        if headshot_url:
+            st.image(headshot_url, width=80)
+        else:
+            # Display placeholder for missing headshot
+            st.markdown(
+                """
+                <div style="width: 80px; height: 80px; background: rgba(26, 28, 35, 0.8); 
+                border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <span style="color: rgba(255,255,255,0.5); font-size: 24px;">📷</span>
                 </div>
-                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">
-                    {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                """,
+                unsafe_allow_html=True
+            )
+
+    with columns[1]:
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
+                        {prospect['player_name']}
+                    </div>
+                    <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">
+                        {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                    </div>
+                </div>
+                <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
+                    {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
                 </div>
             </div>
-            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
-                {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+            """,
+            unsafe_allow_html=True
+        )
 
     # Show prospects in expander
     if team_prospects is not None:
@@ -79,17 +138,38 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None):
             st.markdown(f"**Team Average Score:** {avg_score:.2f}")
 
             for _, p in team_prospects.iterrows():
-                st.markdown(
-                    f"""
-                    <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-                        <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
-                        <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                            {p['position']} | Score: {p['prospect_score']:.1f}
+                # Get MLB ID and headshot for each prospect
+                if 'mlb_id' not in p:
+                    p['mlb_id'] = get_mlb_id(p['player_name'])
+                headshot_url = get_headshot_url(p.get('mlb_id'))
+
+                cols = st.columns([1, 4])
+                with cols[0]:
+                    if headshot_url:
+                        st.image(headshot_url, width=60)
+                    else:
+                        st.markdown(
+                            """
+                            <div style="width: 60px; height: 60px; background: rgba(26, 28, 35, 0.8); 
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: rgba(255,255,255,0.5); font-size: 18px;">📷</span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                with cols[1]:
+                    st.markdown(
+                        f"""
+                        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+                            <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
+                            <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                                {p['position']} | Score: {p['prospect_score']:.1f}
+                            </div>
                         </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                        """,
+                        unsafe_allow_html=True
+                    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -299,6 +379,9 @@ def render(roster_data: pd.DataFrame):
         # Set prospect score from Unique score
         ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+
+        # Add MLB IDs
+        ranked_prospects['mlb_id'] = ranked_prospects['player_name'].apply(get_mlb_id)
 
         # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
