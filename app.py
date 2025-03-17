@@ -371,7 +371,7 @@ def main():
         # Update league ID if changed
         if new_league_id != st.session_state.league_id:
             st.session_state.league_id = new_league_id
-            st.experimental_rerun()
+            st.rerun()
 
         # Initialize API client with league ID
         api_client = FantraxAPI(league_id=st.session_state.league_id)
@@ -418,7 +418,7 @@ def main():
         st.error("Please verify your league ID and try again.")
         if st.button("Reset to Default League"):
             st.session_state.league_id = 'grx2lginm1v4p5jd'
-            st.experimental_rerun()
+            st.rerun()
 
 if __name__ == "__main__":
     main()
