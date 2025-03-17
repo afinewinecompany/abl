@@ -25,11 +25,11 @@ def normalize_name(name: str) -> str:
 def get_color_for_score(score: float, min_score: float, max_score: float) -> str:
     """Generate color based on score position in range from yellow (best) to purple (worst)"""
     # Normalize score to 0-1 range
-    normalized = 1 - ((score - min_score) / (max_score - min_score))
+    normalized = (score - min_score) / (max_score - min_score)
     # Create color gradient from yellow (#FFD700) to purple (#800080)
-    r = int(255 * (1 - normalized) + 128 * normalized)
-    g = int(215 * (1 - normalized))
-    b = int(128 * normalized)
+    r = int(255 * normalized + 128 * (1 - normalized))
+    g = int(215 * normalized)
+    b = int(128 * (1 - normalized))
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
@@ -56,42 +56,7 @@ def render_prospect_preview(prospect, color, team_prospects=None):
     prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
     return f"""
-    <style>
-        .prospect-card {{
-            padding: 0.75rem;
-            background-color: rgba(26, 28, 35, 0.5);
-            border-radius: 8px;
-            margin: 0.25rem 0;
-            border-left: 3px solid {color};
-            transition: all 0.2s ease;
-        }}
-        .prospect-details {{
-            display: none;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }}
-        .prospect-card.expanded {{
-            background-color: rgba(26, 28, 35, 0.8);
-            border-left-width: 5px;
-        }}
-        .prospect-card.expanded .prospect-details {{
-            display: block;
-        }}
-
-        /* Mobile Styles */
-        @media screen and (max-width: 768px) {{
-            .prospect-card {{
-                padding: 0.5rem;
-                margin: 0.15rem 0;
-            }}
-            .prospect-details {{
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-            }}
-        }}
-    </style>
-    <div class="prospect-card" id="{team_id}" onclick="toggleTeam('{team_id}')" style="cursor: pointer;">
+    <div class="prospect-card" id="{team_id}" onclick="toggleTeam('{team_id}')" style="cursor: pointer; padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
@@ -106,18 +71,10 @@ def render_prospect_preview(prospect, color, team_prospects=None):
                 <span id="arrow_{team_id}">▼</span>
             </div>
         </div>
-        <div class="prospect-details">
+        <div id="details_{team_id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
             {prospects_list}
         </div>
     </div>
-    <script>
-        function toggleTeam(teamId) {{
-            const card = document.getElementById(teamId);
-            const arrow = document.getElementById('arrow_' + teamId);
-            card.classList.toggle('expanded');
-            arrow.innerHTML = card.classList.contains('expanded') ? '▲' : '▼';
-        }}
-    </script>
     """
 
 # Add team abbreviation mapping
@@ -260,6 +217,29 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📚 Prospect Analysis")
 
+        # Add JavaScript for team expansion
+        st.markdown("""
+        <script>
+            function toggleTeam(teamId) {
+                var details = document.getElementById('details_' + teamId);
+                var arrow = document.getElementById('arrow_' + teamId);
+                var card = document.getElementById(teamId);
+
+                if (details.style.display === 'none') {
+                    details.style.display = 'block';
+                    arrow.innerHTML = '▲';
+                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.8)';
+                    card.style.borderLeftWidth = '5px';
+                } else {
+                    details.style.display = 'none';
+                    arrow.innerHTML = '▼';
+                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.5)';
+                    card.style.borderLeftWidth = '3px';
+                }
+            }
+        </script>
+        """, unsafe_allow_html=True)
+
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
@@ -308,9 +288,9 @@ def render(roster_data: pd.DataFrame):
         - Hover over segments for detailed information
         """)
 
-        # Get score range for color gradient
-        min_score = team_scores['total_score'].min()
-        max_score = team_scores['total_score'].max()
+        # Get score range for color gradient - use average scores instead of total
+        min_score = team_scores['avg_score'].min()
+        max_score = team_scores['avg_score'].max()
 
         # Display top 3 teams
         st.subheader("🏆 Top Prospect Systems")
@@ -319,7 +299,7 @@ def render(roster_data: pd.DataFrame):
         columns = [col1, col2, col3]
         for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
             with columns[idx]:
-                color = get_color_for_score(row['total_score'], min_score, max_score)
+                color = get_color_for_score(row['avg_score'], min_score, max_score)
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
@@ -335,7 +315,7 @@ def render(roster_data: pd.DataFrame):
         remaining_teams = team_scores.iloc[3:]
 
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            color = get_color_for_score(row['total_score'], min_score, max_score)
+            color = get_color_for_score(row['avg_score'], min_score, max_score)
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
@@ -348,12 +328,13 @@ def render(roster_data: pd.DataFrame):
 
         # Add legend for color scale
         st.markdown("### Color Scale Legend")
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0;">
-            <div style="display: flex; flex-grow: 1; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #FFD700 0%, #800080 100%);"></div>
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <span>Higher Score</span>
-                <span>Lower Score</span>
+        st.markdown("""
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
+            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #FFD700 0%, #4169E1 50%, #800080 100%);"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Higher Average Score</span>
+                <span>Medium</span>
+                <span>Lower Average Score</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
