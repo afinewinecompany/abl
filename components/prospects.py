@@ -56,8 +56,8 @@ def render_prospect_preview(prospect, color, team_prospects=None):
     prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
     return f"""
-    <div class="prospect-card" id="{team_id}" onclick="toggleTeam('{team_id}')" style="cursor: pointer; padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+    <div class="prospect-card" style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
+        <div class="team-header" onclick="toggleTeam('{team_id}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
                     {prospect['player_name']}
@@ -68,10 +68,10 @@ def render_prospect_preview(prospect, color, team_prospects=None):
             </div>
             <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
                 {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
-                <span id="arrow_{team_id}">▼</span>
+                <span class="arrow" id="arrow_{team_id}">▼</span>
             </div>
         </div>
-        <div id="details_{team_id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="prospect-details" id="details_{team_id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
             {prospects_list}
         </div>
     </div>
@@ -217,26 +217,34 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📚 Prospect Analysis")
 
-        # Add JavaScript for team expansion
+        # Add global styles and JavaScript
         st.markdown("""
-        <script>
-            function toggleTeam(teamId) {
-                var details = document.getElementById('details_' + teamId);
-                var arrow = document.getElementById('arrow_' + teamId);
-                var card = document.getElementById(teamId);
-
-                if (details.style.display === 'none') {
-                    details.style.display = 'block';
-                    arrow.innerHTML = '▲';
-                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.8)';
-                    card.style.borderLeftWidth = '5px';
-                } else {
-                    details.style.display = 'none';
-                    arrow.innerHTML = '▼';
-                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.5)';
-                    card.style.borderLeftWidth = '3px';
-                }
+        <style>
+        @media screen and (max-width: 768px) {
+            .prospect-card {
+                padding: 0.5rem !important;
+                margin: 0.15rem 0 !important;
             }
+            .prospect-details {
+                margin-top: 0.5rem !important;
+                padding-top: 0.5rem !important;
+            }
+        }
+        </style>
+        <script>
+        function toggleTeam(teamId) {
+            var details = document.getElementById('details_' + teamId);
+            var arrow = document.getElementById('arrow_' + teamId);
+            var header = document.getElementById(teamId);
+
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                arrow.innerHTML = '▲';
+            } else {
+                details.style.display = 'none';
+                arrow.innerHTML = '▼';
+            }
+        }
         </script>
         """, unsafe_allow_html=True)
 
@@ -275,9 +283,25 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Create sunburst visualization
+        # Create sunburst visualization with adjusted height for mobile
         fig = create_sunburst_visualization(team_scores, division_mapping)
+        fig.update_layout(
+            height=450,  # Reduced height for better mobile viewing
+            margin=dict(t=30, l=10, r=10, b=10)
+        )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        # Add legend for color scale below the visualization
+        st.markdown("""
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0;">
+            <div style="display: flex; height: 1.5rem; border-radius: 4px; background: linear-gradient(90deg, #FFD700 0%, #4169E1 50%, #800080 100%);"></div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span>Higher Average Score</span>
+                <span>Medium</span>
+                <span>Lower Average Score</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Add explanation
         st.markdown("""
