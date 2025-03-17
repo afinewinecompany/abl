@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
+from utils.headshots import get_player_headshot  # Import headshot utility
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -43,6 +44,45 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
 
     return f"#{r:02x}{g:02x}{b:02x}"
 
+def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
+    """Generate HTML for team prospects list"""
+    avg_score = prospects_df['prospect_score'].mean()
+    prospects_html = [
+        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
+    ]
+
+    for _, prospect in prospects_df.iterrows():
+        # Split name into first and last name for headshot lookup
+        name_parts = prospect["player_name"].split()
+        if len(name_parts) >= 2:
+            first_name = name_parts[0]
+            last_name = " ".join(name_parts[1:])
+            headshot_url = get_player_headshot(first_name, last_name)
+        else:
+            headshot_url = None
+
+        # Create prospect card with headshot if available
+        img_html = ''
+        if headshot_url:
+            img_html = f"<img src='{headshot_url}' style='width: 50px; height: 50px; border-radius: 25px; object-fit: cover;' onerror=\"this.style.display='none'\">"
+
+        card_html = f"""
+        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                {img_html}
+                <div>
+                    <div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>
+                    <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                        {prospect["position"]} | Score: {prospect["prospect_score"]:.1f}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        prospects_html.append(card_html)
+
+    return "".join(prospects_html)
+
 def render_prospect_preview(prospect, rank: int, team_prospects=None):
     """Render a single prospect preview card with native Streamlit expander"""
     color = get_color_for_rank(rank)
@@ -75,21 +115,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None):
     # Show prospects in expander
     if team_prospects is not None:
         with st.expander("Show Prospects"):
-            avg_score = team_prospects['prospect_score'].mean()
-            st.markdown(f"**Team Average Score:** {avg_score:.2f}")
-
-            for _, p in team_prospects.iterrows():
-                st.markdown(
-                    f"""
-                    <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-                        <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
-                        <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                            {p['position']} | Score: {p['prospect_score']:.1f}
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            st.markdown(get_team_prospects_html(team_prospects), unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
