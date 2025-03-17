@@ -55,7 +55,7 @@ def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, 
             </div>
             <div style="text-align: right;">
                 <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa;">{total_score:.1f}</div>
-                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">Avg: {avg_score:.2f} | {int(ranked_prospects)} Players</div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">Avg: {avg_score:.2f}</div>
             </div>
         </div>
         <div style="margin-top: 0.75rem;">
@@ -66,7 +66,7 @@ def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, 
 
 def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]) -> None:
     """Render interactive prospect strength visualization"""
-    st.subheader("🎨 Prospect System Strength")
+    st.subheader("🎨 Prospect System Quality")
 
     # Create treemap data
     team_scores['division'] = team_scores['team'].map(division_mapping)
@@ -75,11 +75,11 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     fig = px.treemap(
         team_scores,
         path=[px.Constant("All Teams"), 'division', 'team'],
-        values='ranked_prospects',
-        color='avg_score',
+        values='total_score',  # Size of boxes still shows overall system strength
+        color='avg_score',     # Color represents average prospect quality
         color_continuous_scale='RdYlGn',
-        custom_data=['avg_score', 'ranked_prospects', 'total_score'],
-        title='Team Prospect System Overview',
+        custom_data=['avg_score', 'total_score'],
+        title='Team Prospect System Quality Overview',
     )
 
     # Update layout
@@ -95,30 +95,27 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     fig.update_traces(
         hovertemplate="<b>%{label}</b><br>" +
                      "Average Score: %{customdata[0]:.2f}<br>" +
-                     "Total Prospects: %{customdata[1]}<br>" +
-                     "Total Score: %{customdata[2]:.1f}<extra></extra>",
-        textinfo="label+value"
+                     "Total Score: %{customdata[1]:.1f}<extra></extra>",
+        textinfo="label"
     )
 
     # Display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Add a supplementary scatter plot
-    st.subheader("📊 Prospect Quality vs Quantity")
+    # Add a radar chart for top systems
+    st.subheader("📊 Top System Comparison")
 
-    fig2 = px.scatter(
-        team_scores,
-        x='ranked_prospects',
-        y='avg_score',
-        size='total_score',
-        color='division',
-        hover_name='team',
-        labels={
-            'ranked_prospects': 'Number of Prospects',
-            'avg_score': 'Average Prospect Score',
-            'total_score': 'Total System Score'
-        },
-        title='Prospect System Quality vs Quantity Analysis'
+    # Get top 5 teams by average score
+    top_teams = team_scores.nlargest(5, 'avg_score')
+
+    # Create radar chart
+    fig2 = px.line_polar(
+        top_teams,
+        r='avg_score',
+        theta='team',
+        line_close=True,
+        range_r=[0, top_teams['avg_score'].max() * 1.1],
+        title='Top 5 Farm Systems by Average Prospect Quality'
     )
 
     fig2.update_layout(
@@ -126,8 +123,19 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0.1)',
-        xaxis=dict(gridcolor='rgba(128,128,128,0.1)', title_font=dict(size=14)),
-        yaxis=dict(gridcolor='rgba(128,128,128,0.1)', title_font=dict(size=14)),
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, top_teams['avg_score'].max() * 1.1],
+                showline=False,
+                color='white'
+            ),
+            angularaxis=dict(
+                color='white',
+                gridcolor='rgba(128,128,128,0.1)'
+            ),
+            gridshape='circular'
+        ),
     )
 
     st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
@@ -175,10 +183,10 @@ def render(roster_data: pd.DataFrame):
 
         # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean', 'count']
+            'prospect_score': ['sum', 'mean']
         }).reset_index()
 
-        team_scores.columns = ['team', 'total_score', 'avg_score', 'ranked_prospects']
+        team_scores.columns = ['team', 'total_score', 'avg_score']
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
@@ -208,7 +216,7 @@ def render(roster_data: pd.DataFrame):
                     idx + 1,  # Rank 1-3
                     row[1]['total_score'],
                     row[1]['avg_score'],
-                    row[1]['ranked_prospects'],
+                    len(team_prospects), #Corrected to show total number of prospects for each team
                     division,
                     color,
                     top_3_prospects
@@ -239,7 +247,7 @@ def render(roster_data: pd.DataFrame):
                 idx + 4,  # Start numbering from 4
                 row['total_score'],
                 row['avg_score'],
-                row['ranked_prospects'],
+                len(team_prospects), #Corrected to show total number of prospects for each team
                 division,
                 color,
                 top_3_prospects
