@@ -104,6 +104,7 @@ def render_prospect_preview(prospect, color, team_prospects=None):
             left: 100%;
             top: 0;
             min-width: 300px;
+            max-width: 90vw;
             background: rgba(26, 28, 35, 0.98);
             border-radius: 8px;
             padding: 1rem;
@@ -114,6 +115,27 @@ def render_prospect_preview(prospect, color, team_prospects=None):
         }}
         .prospect-card:hover .prospect-details {{
             display: block;
+        }}
+
+        /* Mobile Styles */
+        @media screen and (max-width: 768px) {{
+            .prospect-card {{
+                padding: 0.5rem;
+                margin: 0.15rem 0;
+            }}
+            .prospect-details {{
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                margin: 0;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+            }}
+            .prospect-card:hover {{
+                margin-left: 2px;
+            }}
         }}
     </style>
     <div class="prospect-card">
@@ -244,12 +266,12 @@ def render(roster_data: pd.DataFrame):
 
         # Division color mapping
         division_colors = {
-            "AL East": "#FF6B6B",  # Red shade
-            "AL Central": "#4ECDC4",  # Teal shade
-            "AL West": "#95A5A6",  # Gray shade
-            "NL East": "#F39C12",  # Orange shade
-            "NL Central": "#3498DB",  # Blue shade
-            "NL West": "#2ECC71"   # Green shade
+            "AL East": "#DC143C",    # Crimson Red
+            "AL Central": "#4169E1",  # Royal Blue
+            "AL West": "#2E8B57",    # Sea Green
+            "NL East": "#FF8C00",    # Dark Orange
+            "NL Central": "#9370DB",  # Medium Purple
+            "NL West": "#20B2AA"     # Light Sea Green
         }
 
         # Read and process prospect scores
