@@ -9,24 +9,18 @@ import unicodedata
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
-        # Convert diacritics to ASCII
-        name = ''.join(c for c in unicodedata.normalize('NFKD', name)
-                      if not unicodedata.combining(c))
-
+        name = name.lower()
+        name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
         if ',' in name:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
-
-        # Handle middle initials by removing them
-        parts = name.strip().split()
-        if len(parts) > 2:
-            # If middle part is an initial (one letter possibly with period)
-            if len(parts[1]) <= 2 and ('.' in parts[1] or len(parts[1]) == 1):
-                name = f"{parts[0]} {parts[-1]}"
-
-        return name.strip()
+        name = name.split('(')[0].strip()
+        name = name.split(' - ')[0].strip()
+        name = name.replace('.', '').strip()
+        name = ' '.join(name.split())
+        return name
     except:
-        return name.strip()
+        return name.strip().lower()
 
 # Team abbreviation mapping with additional variations
 TEAM_ABBREVIATIONS = {
@@ -65,14 +59,6 @@ TEAM_ABBREVIATIONS = {
     "San Diego Padres": "SD",
     "San Francisco Giants": "SF"
 }
-
-def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
-    """Generate a color gradient between red and green based on value"""
-    normalized = (value - min_val) / (max_val - min_val)
-    red = int(255 * (1 - normalized))
-    green = int(255 * normalized)
-    blue = 0
-    return f"rgb({red}, {green}, {blue})"
 
 def render_prospect_preview(prospect, color):
     """Render a single prospect preview card"""
@@ -143,7 +129,7 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Create visualization data
+        # Add team abbreviations and division info
         team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
         team_scores['division'] = team_scores['team'].map(division_mapping)
 
@@ -160,24 +146,26 @@ def render(roster_data: pd.DataFrame):
             'total_score': team_scores['total_score'].sum()
         }])
 
+        # Create unique IDs for the sunburst chart
+        team_ids = [f"team_{i}" for i in range(len(team_scores))]
+        division_ids = [f"div_{i}" for i in range(len(division_scores))]
+
         # Prepare data for sunburst chart
-        sunburst_data = pd.DataFrame({
-            'ids': ['League'] + 
-                  [f"div_{div}" for div in division_scores['division']] +
-                  [f"team_{team}" for team in team_scores['team_abbrev']],
+        sunburst_data = {
+            'ids': ['league'] + division_ids + team_ids,
             'labels': ['League'] + 
-                     list(division_scores['division']) +
+                     list(division_scores['division']) + 
                      list(team_scores['team_abbrev']),
             'parents': [''] + 
-                      ['League'] * len(division_scores) +
+                      ['league'] * len(division_scores) + 
                       list(team_scores['division']),
-            'values': [league_scores['total_score'].iloc[0]] +
-                     list(division_scores['total_score']) +
+            'values': [league_scores['total_score'].iloc[0]] + 
+                     list(division_scores['total_score']) + 
                      list(team_scores['total_score']),
-            'colors': [league_scores['avg_score'].iloc[0]] +
-                     list(division_scores['avg_score']) +
+            'colors': [league_scores['avg_score'].iloc[0]] + 
+                     list(division_scores['avg_score']) + 
                      list(team_scores['avg_score'])
-        })
+        }
 
         # Create sunburst chart
         fig = go.Figure(go.Sunburst(
