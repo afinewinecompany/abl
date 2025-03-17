@@ -344,7 +344,7 @@ def render(roster_data: pd.DataFrame):
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
         # Load MLB player IDs
-        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids.csv")
+        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
 
         # Read and process prospect scores
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
