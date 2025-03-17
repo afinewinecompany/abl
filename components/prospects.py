@@ -102,7 +102,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     data.append({
         'id': 'league',
         'parent': '',
-        'label': f"League (Avg: {league_avg:.2f})",
+        'label': 'League',
         'value': league_total,
         'color': league_avg
     })
@@ -112,7 +112,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"div_{div['division']}",
             'parent': 'league',
-            'label': f"{div['division']} (Avg: {div['avg_score']:.2f})",
+            'label': div['division'],
             'value': div['total_score'],
             'color': div['avg_score']
         })
@@ -122,7 +122,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"team_{team['team_abbrev']}",
             'parent': f"div_{team['division']}",
-            'label': f"{team['team_abbrev']} (Avg: {team['avg_score']:.2f})",
+            'label': team['team_abbrev'],
             'value': team['total_score'],
             'color': team['avg_score']
         })
@@ -137,7 +137,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         parents=df['parent'],
         values=df['value'],
         branchvalues='total',
-        textinfo='label+value',
+        textinfo='label',
         marker=dict(
             colors=df['color'],
             colorscale='viridis',
