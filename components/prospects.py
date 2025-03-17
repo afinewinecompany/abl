@@ -51,7 +51,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="{get_headshot_url(mlbam_id)}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgaG9zdD0nJyc+PGNpcmNsZSBjeD0nMzAnIGN5PSIzMCIgcn09JzMwJyBmaWxsPScjMzMzMycvPjxnPjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjAiIHg9IjEwIiB5PSI0MCI+PC90ZXh0PjwvZz48L3N2Zz4=';"
                          alt="{player_name} headshot">
                 </div>
             """
@@ -323,8 +323,8 @@ TEAM_ABBREVIATIONS = {
 }
 
 def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
-    """Render the animated TOP 100 header and dropdown"""
-    # CSS for animated header
+    """Render the animated TOP 100 header and scrollable list"""
+    # CSS for animated header and cards
     st.markdown("""
         <style>
         @keyframes gradient {
@@ -343,6 +343,30 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             margin-bottom: 2rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        .prospect-card {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+            background: rgba(26, 28, 35, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+        }
+        .prospect-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         </style>
         <div class="top-100-header">
             <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
@@ -353,41 +377,51 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
 
-    # Create dropdown
-    st.markdown("### 🌟 Select a prospect to view details")
-    selected_prospect = st.selectbox(
-        "",
-        options=top_100['player_name'],
-        format_func=lambda x: f"{x} ({top_100[top_100['player_name']==x]['team'].iloc[0]})"
-    )
+    # Display all top 100 prospects
+    st.markdown("### 🌟 Top 100 Prospects")
 
-    # Display selected prospect details
-    if selected_prospect:
-        prospect_data = top_100[top_100['player_name'] == selected_prospect].iloc[0]
-        col1, col2 = st.columns([1, 3])
+    # Create 3 columns for better layout
+    cols = st.columns(3)
 
-        with col1:
-            # Display headshot
-            headshot_html = get_player_headshot_html(prospect_data['player_name'], player_id_cache)
-            if headshot_html:
-                st.markdown(headshot_html, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                    <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #1a1c23; 
-                             display: flex; align-items: center; justify-content: center; color: white;">
+    # Distribute prospects across columns
+    for idx, prospect in enumerate(top_100.itertuples(), 1):
+        col = cols[idx % 3]
+        with col:
+            # Get color based on rank
+            rank_color = get_color_for_rank(idx)
+
+            # Get headshot HTML
+            headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
+            if not headshot_html:
+                headshot_html = f"""
+                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
+                         background-color: #1a1c23; display: flex; align-items: center; 
+                         justify-content: center; color: white;">
                         No Photo
                     </div>
-                """, unsafe_allow_html=True)
+                """
 
-        with col2:
+            # Create prospect card with rank number
             st.markdown(f"""
-                <div style="padding: 1rem; background: rgba(26, 28, 35, 0.3); border-radius: 8px;">
-                    <h3 style="margin:0; color: white;">{prospect_data['player_name']}</h3>
-                    <p style="margin:0.5rem 0; color: rgba(255,255,255,0.8);">
-                        Team: {prospect_data['team']}<br>
-                        Position: {prospect_data['position']}<br>
-                        Prospect Score: {prospect_data['prospect_score']:.2f}
-                    </p>
+                <div class="prospect-card" style="border-left: 3px solid {rank_color};">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; 
+                             min-width: 2rem; text-align: center;">
+                            #{idx}
+                        </div>
+                        {headshot_html}
+                        <div style="flex-grow: 1;">
+                            <div style="font-size: 1rem; color: white; font-weight: 500;">
+                                {prospect.player_name}
+                            </div>
+                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                                {prospect.team} | {prospect.position}
+                            </div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">
+                                Score: {prospect.prospect_score:.2f}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
 
