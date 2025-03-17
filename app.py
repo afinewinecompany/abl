@@ -353,11 +353,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
-    # Display logo and title
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("attached_assets/Designer_5.jpeg", width=300)
-
     st.title("⚾ ABL Analytics")
 
     # Initialize API client

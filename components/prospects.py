@@ -66,75 +66,71 @@ def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, 
 
 def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]) -> None:
     """Render interactive prospect strength visualization"""
-    st.subheader("🎨 Prospect Strength Visualization")
+    st.subheader("🎨 Prospect System Strength")
 
-    # Create a color scale for the bars
-    team_scores['normalized_score'] = (team_scores['total_score'] - team_scores['total_score'].min()) / \
-                                    (team_scores['total_score'].max() - team_scores['total_score'].min())
-
-    # Add division information
+    # Create treemap data
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    # Create horizontal bar chart
-    fig = px.bar(
+    # Create treemap figure
+    fig = px.treemap(
         team_scores,
-        y='team',
-        x='total_score',
-        orientation='h',
-        color='normalized_score',
-        color_continuous_scale='RdYlGn',  # Red to Yellow to Green scale
-        hover_data={
-            'normalized_score': False,
-            'ranked_prospects': True,
-            'division': True,
-            'total_score': ':.1f',
-            'avg_score': ':.2f'
-        },
-        labels={
-            'team': 'Team',
-            'total_score': 'Total Prospect Score',
-            'ranked_prospects': 'Total Prospects',
-            'division': 'Division',
-            'avg_score': 'Average Score'
-        },
-        height=800  # Taller to accommodate all teams
+        path=[px.Constant("All Teams"), 'division', 'team'],
+        values='ranked_prospects',
+        color='avg_score',
+        color_continuous_scale='RdYlGn',
+        custom_data=['avg_score', 'ranked_prospects', 'total_score'],
+        title='Team Prospect System Overview',
     )
 
-    # Update layout for better mobile viewing
+    # Update layout
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
-        coloraxis_showscale=False,  # Hide the color scale
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, l=10, r=10, b=10),
         font=dict(color='white'),
-        xaxis=dict(
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(size=14),
-            tickfont=dict(size=12),
-        ),
-        yaxis=dict(
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(size=14),
-            tickfont=dict(size=12),
-        ),
-        hoverlabel=dict(
-            bgcolor='#1a1c23',
-            font_size=14,
-            font_family="sans serif"
-        )
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        height=600,
     )
 
-    # Add hover template
+    # Update traces
     fig.update_traces(
-        hovertemplate="<b>%{y}</b><br>" +
-                      "Total Score: %{x:.1f}<br>" +
-                      "Avg Score: %{customdata[4]:.2f}<br>" +
-                      "Division: %{customdata[2]}<br>" +
-                      "Total Prospects: %{customdata[1]}<extra></extra>"
+        hovertemplate="<b>%{label}</b><br>" +
+                     "Average Score: %{customdata[0]:.2f}<br>" +
+                     "Total Prospects: %{customdata[1]}<br>" +
+                     "Total Score: %{customdata[2]:.1f}<extra></extra>",
+        textinfo="label+value"
     )
 
     # Display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Add a supplementary scatter plot
+    st.subheader("📊 Prospect Quality vs Quantity")
+
+    fig2 = px.scatter(
+        team_scores,
+        x='ranked_prospects',
+        y='avg_score',
+        size='total_score',
+        color='division',
+        hover_name='team',
+        labels={
+            'ranked_prospects': 'Number of Prospects',
+            'avg_score': 'Average Prospect Score',
+            'total_score': 'Total System Score'
+        },
+        title='Prospect System Quality vs Quantity Analysis'
+    )
+
+    fig2.update_layout(
+        height=500,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0.1)',
+        xaxis=dict(gridcolor='rgba(128,128,128,0.1)', title_font=dict(size=14)),
+        yaxis=dict(gridcolor='rgba(128,128,128,0.1)', title_font=dict(size=14)),
+    )
+
+    st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
