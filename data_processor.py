@@ -15,16 +15,27 @@ class DataProcessor:
             }
 
         try:
+            # Extract league settings from the correct location in the API response
             rosters = data.get('rosters', {})
-            league_settings = data.get('leagueSettings', {})
+            league_name = data.get('leagueName', 'N/A')
+            league_season = str(data.get('season', 'N/A'))
+            num_teams = len(rosters) if rosters else 0
+
+            # Get scoring type from leagueSettings if available
+            scoring_type = 'H2H'  # Default to Head-to-Head
+            if 'leagueSettings' in data:
+                settings = data['leagueSettings']
+                if 'scoringType' in settings:
+                    scoring_type = settings['scoringType']
 
             return {
-                'name': data.get('leagueName', 'N/A'),
-                'season': str(data.get('season', 'N/A')),
+                'name': league_name,
+                'season': league_season,
                 'sport': 'MLB',
-                'scoring_type': league_settings.get('scoringType', 'N/A'),
-                'teams': len(rosters) if rosters else 0
+                'scoring_type': scoring_type,
+                'teams': num_teams
             }
+
         except Exception as e:
             st.error(f"Error processing league info: {str(e)}")
             return {
@@ -74,7 +85,7 @@ class DataProcessor:
             columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
         )
 
-    def process_standings(self, standings_data: List) -> pd.DataFrame:
+    def process_standings(self, standings_data: Dict) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
         standings_list = []
 
