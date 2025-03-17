@@ -390,19 +390,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             # Get color based on rank
             rank_color = get_color_for_rank(idx)
 
-            # Get headshot HTML
+            # Get headshot HTML for the prospect using the cache
             headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
-            if not headshot_html:
-                headshot_html = f"""
-                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
-                         background-color: #1a1c23; display: flex; align-items: center; 
-                         justify-content: center; color: white;">
-                        No Photo
-                    </div>
-                """
 
-            # Create prospect card with rank number
-            st.markdown(f"""
+            prospect_card = f"""
                 <div class="prospect-card" style="border-left: 3px solid {rank_color};">
                     <div style="display: flex; align-items: center; gap: 1rem;">
                         <div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; 
@@ -423,10 +414,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                         </div>
                     </div>
                 </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
