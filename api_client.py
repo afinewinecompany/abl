@@ -12,29 +12,46 @@ class FantraxAPI:
         try:
             if params is None:
                 params = {}
-            response = requests.get(f"{self.base_url}/{endpoint}", params=params)
+
+            # Ensure league_id is included in params when required
+            if endpoint in ['getLeagueInfo', 'getTeamRosters', 'getStandings']:
+                if not self.league_id:
+                    raise ValueError("League ID is required")
+                params['leagueId'] = self.league_id
+
+            # Add sport parameter for player IDs
+            if endpoint == 'getPlayerIds':
+                params['sport'] = 'MLB'
+
+            response = requests.get(
+                f"{self.base_url}/{endpoint}",
+                params=params,
+                headers={
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json'
+                }
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             st.error(f"API request failed: {str(e)}")
             raise Exception(f"API request failed: {str(e)}")
         except ValueError as e:
-            st.error(f"Failed to parse JSON response: {str(e)}")
-            raise Exception(f"Failed to parse JSON response: {str(e)}")
+            st.error(f"Invalid league ID or failed to parse response: {str(e)}")
+            raise Exception(f"Invalid league ID or failed to parse response: {str(e)}")
 
     def get_player_ids(self) -> Dict:
         """Fetch player IDs"""
-        return self._make_request("getPlayerIds", {"sport": "MLB"})
+        return self._make_request("getPlayerIds")
 
     def get_league_info(self) -> Dict:
         """Fetch league information"""
-        return self._make_request("getLeagueInfo", {"leagueId": self.league_id})
+        return self._make_request("getLeagueInfo")
 
     def get_team_rosters(self) -> Dict:
         """Fetch team rosters"""
-        return self._make_request("getTeamRosters", 
-                                {"leagueId": self.league_id, "period": "1"})
+        return self._make_request("getTeamRosters", {"period": "1"})
 
     def get_standings(self) -> Dict:
         """Fetch standings data"""
-        return self._make_request("getStandings", {"leagueId": self.league_id})
+        return self._make_request("getStandings")
