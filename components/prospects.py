@@ -393,28 +393,21 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             # Get headshot HTML for the prospect using the cache
             headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-            prospect_card = f"""
+            prospect_card = f'''
                 <div class="prospect-card" style="border-left: 3px solid {rank_color};">
                     <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; 
-                             min-width: 2rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">
                             #{idx}
                         </div>
                         {headshot_html}
                         <div style="flex-grow: 1;">
-                            <div style="font-size: 1rem; color: white; font-weight: 500;">
-                                {prospect.player_name}
-                            </div>
-                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
-                                {prospect.team} | {prospect.position}
-                            </div>
-                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">
-                                Score: {prospect.prospect_score:.2f}
-                            </div>
+                            <div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div>
+                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div>
                         </div>
                     </div>
                 </div>
-            """
+            '''
             st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
