@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
-from utils.headshots import get_player_headshot  # Import headshot utility
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -22,58 +21,6 @@ def normalize_name(name: str) -> str:
         return name
     except:
         return name.strip().lower()
-
-def get_player_names(player_name: str) -> tuple:
-    """Extract first and last name from player name string"""
-    try:
-        if ',' in player_name:
-            last_name, first_name = player_name.split(',', 1)
-            return first_name.strip(), last_name.strip()
-        else:
-            parts = player_name.strip().split()
-            if len(parts) >= 2:
-                return parts[0], ' '.join(parts[1:])
-            return None, None
-    except Exception:
-        return None, None
-
-def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
-    """Generate HTML for team prospects list"""
-    avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
-        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    ]
-
-    for _, prospect in prospects_df.iterrows():
-        # Get first and last name properly handling comma format
-        first_name, last_name = get_player_names(prospect["player_name"])
-
-        # Create prospect card with headshot if we can get names
-        img_html = ''
-        if first_name and last_name:
-            try:
-                headshot_url = get_player_headshot(first_name, last_name)
-                if headshot_url:
-                    img_html = f"<img src='{headshot_url}' style='width: 50px; height: 50px; border-radius: 25px; object-fit: cover;' onerror=\"this.style.display='none'\">"
-            except Exception as e:
-                st.error(f"Error fetching headshot for {first_name} {last_name}: {str(e)}")
-
-        card_html = f"""
-        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                {img_html}
-                <div>
-                    <div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>
-                    <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                        {prospect["position"]} | Score: {prospect["prospect_score"]:.1f}
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-        prospects_html.append(card_html)
-
-    return "".join(prospects_html)
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -128,7 +75,21 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None):
     # Show prospects in expander
     if team_prospects is not None:
         with st.expander("Show Prospects"):
-            st.markdown(get_team_prospects_html(team_prospects), unsafe_allow_html=True)
+            avg_score = team_prospects['prospect_score'].mean()
+            st.markdown(f"**Team Average Score:** {avg_score:.2f}")
+
+            for _, p in team_prospects.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+                        <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
+                        <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                            {p['position']} | Score: {p['prospect_score']:.1f}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
