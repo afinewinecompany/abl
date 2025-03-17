@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
-import os
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -202,32 +201,43 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📚 Prospect Analysis")
 
-        # Verify file paths exist before reading
-        divisions_file = "attached_assets/divisions.csv"
-        prospects_file = "attached_assets/ABL-Import.csv"
-
-        if not os.path.exists(divisions_file):
-            st.error(f"Missing required file: {divisions_file}")
-            return
-        if not os.path.exists(prospects_file):
-            st.error(f"Missing required file: {prospects_file}")
-            return
+        # Add JavaScript for team expansion
+        st.markdown("""
+        <script>
+        function toggleTeam(teamId) {
+            var content = document.getElementById(teamId);
+            var arrow = document.getElementById('arrow_' + teamId);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.innerHTML = '▲';
+            } else {
+                content.style.display = 'none';
+                arrow.innerHTML = '▼';
+            }
+        }
+        </script>
+        """, unsafe_allow_html=True)
 
         # Load division data
-        divisions_df = pd.read_csv(divisions_file, header=None, names=['division', 'team'])
+        divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
+        # Division color mapping
+        division_colors = {
+            "AL East": "#FF6B6B",  # Red shade
+            "AL Central": "#4ECDC4",  # Teal shade
+            "AL West": "#95A5A6",  # Gray shade
+            "NL East": "#F39C12",  # Orange shade
+            "NL Central": "#3498DB",  # Blue shade
+            "NL West": "#2ECC71"   # Green shade
+        }
+
         # Read and process prospect scores
-        prospect_import = pd.read_csv(prospects_file)
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
         prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
 
         # Get all minor league players
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
-
-        if minors_players.empty:
-            st.warning("No minor league players found in the roster data.")
-            return
-
         minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
 
         # Merge with import data
@@ -239,23 +249,95 @@ def render(roster_data: pd.DataFrame):
             how='left'
         )
 
-        if ranked_prospects.empty:
-            st.warning("No prospect data found after merging with rankings.")
-            return
-
         # Set prospect score from Unique score
         ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
+        # Calculate team rankings
+        team_scores = ranked_prospects.groupby('team').agg({
+            'prospect_score': ['sum', 'mean']
+        }).reset_index()
 
-        st.write("### Prospect Rankings")
-        st.dataframe(
-            ranked_prospects[['player_name', 'position', 'team', 'prospect_score']].sort_values(
+        team_scores.columns = ['team', 'total_score', 'avg_score']
+        team_scores = team_scores.sort_values('total_score', ascending=False)
+        team_scores = team_scores.reset_index(drop=True)
+        team_scores.index = team_scores.index + 1
+
+        # Create and display sunburst visualization
+        fig = create_sunburst_visualization(team_scores, division_mapping)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        # Add explanation
+        st.markdown("""
+        #### Understanding the Visualization
+        - **Size**: Represents total prospect value
+        - **Color**: Indicates average prospect quality
+        - **Hierarchy**: League → Division → Team
+        - Hover over segments for detailed information
+        """)
+
+        # Display top 3 teams
+        st.subheader("🏆 Top Prospect Systems")
+        col1, col2, col3 = st.columns(3)
+
+        columns = [col1, col2, col3]
+        for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
+            with columns[idx]:
+                division = division_mapping.get(row['team'], "Unknown")
+                color = division_colors.get(division, "#00ff88")
+                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                    'prospect_score', ascending=False
+                )
+                st.markdown(render_prospect_preview({
+                    'player_name': f"#{idx + 1} {row['team']}",
+                    'position': division,
+                    'prospect_score': row['total_score'],
+                    'mlb_team': row['team']
+                }, color, team_prospects), unsafe_allow_html=True)
+
+        # Show remaining teams
+        st.markdown("### Remaining Teams")
+        remaining_teams = team_scores.iloc[3:]
+
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+            division = division_mapping.get(row['team'], "Unknown")
+            color = division_colors.get(division, "#00ff88")
+            team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
-            ),
-            hide_index=True
-        )
+            )
+            st.markdown(render_prospect_preview({
+                'player_name': f"#{i + 4} {row['team']}",
+                'position': division,
+                'prospect_score': row['total_score'],
+                'mlb_team': row['team']
+            }, color, team_prospects), unsafe_allow_html=True)
+
+        # Division legend
+        st.markdown("### Division Color Guide")
+        col1, col2 = st.columns(2)
+
+        divisions = list(division_colors.items())
+        mid = len(divisions) // 2
+
+        for i, (division, color) in enumerate(divisions):
+            col = col1 if i < mid else col2
+            with col:
+                st.markdown(f"""
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin: 0.25rem 0;
+                ">
+                    <div style="
+                        width: 1rem;
+                        height: 1rem;
+                        background-color: {color};
+                        border-radius: 3px;
+                    "></div>
+                    <span>{division}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
     except Exception as e:
-        st.error(f"Error in prospects analysis: {str(e)}")
-        st.write("Please verify that all required data files are present and properly formatted.")
+        st.error(f"An error occurred while processing prospect data: {str(e)}")
