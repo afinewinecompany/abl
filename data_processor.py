@@ -23,11 +23,16 @@ class DataProcessor:
             st.error(f"Error normalizing name '{name}': {str(e)}")
             return str(name).strip().lower() if name else ""
 
-    def process_roster_data(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
+    def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
         """Process roster data and combine with player information"""
         try:
             roster_list = []
             seen_players = {}  # Track players globally across all teams
+
+            if not roster_data or not isinstance(roster_data, dict):
+                st.error("Invalid roster data format")
+                return pd.DataFrame(columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team'])
+
             rosters = roster_data.get('rosters', {})
 
             for team_id, team_data in rosters.items():
@@ -41,21 +46,20 @@ class DataProcessor:
                     player_id = player.get('id')
                     player_details = player_ids.get(player_id, {})
 
-                    # Normalize player name for consistent comparison
+                    # Get player name and normalize
                     player_name = player_details.get('name', player.get('name', 'Unknown')).strip()
                     if not player_name or player_name == 'Unknown':
                         continue
 
-                    # Create normalized key for comparison
                     normalized_name = self.normalize_name(player_name)
-                    if not normalized_name:  # Skip if normalization failed
+                    if not normalized_name:
                         continue
 
                     # Skip if we've already seen this player
                     if normalized_name in seen_players:
                         continue
 
-                    # Get original status and only convert NA to Minors
+                    # Process status
                     status = player.get('status', 'Active')
                     if status.lower() == 'na':
                         status = 'Minors'
@@ -66,28 +70,20 @@ class DataProcessor:
                         'position': player.get('position', 'N/A'),
                         'status': status,
                         'salary': player.get('salary', 0.0),
-                        'mlb_team': player_details.get('team', 'N/A'),
-                        'normalized_name': normalized_name
+                        'mlb_team': player_details.get('team', 'N/A')
                     }
                     roster_list.append(player_info)
                     seen_players[normalized_name] = True
 
-            # Create DataFrame and ensure no duplicates
+            # Create DataFrame
             df = pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
-                columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team', 'normalized_name']
+                columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
             )
-
-            # Drop duplicates keeping the first occurrence
-            df = df.drop_duplicates(subset=['normalized_name'], keep='first')
-
-            # Remove the normalized_name column as it's no longer needed
-            df = df.drop(columns=['normalized_name'])
 
             return df
 
         except Exception as e:
             st.error(f"Error processing roster data: {str(e)}")
-            # Return empty DataFrame with expected columns
             return pd.DataFrame(
                 columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
             )
@@ -108,11 +104,11 @@ class DataProcessor:
             scoring_settings = data.get('scoringSettings', {})
 
             return {
-                'name': "ABL Season 5",  # Hardcoded league name
-                'season': "2025",  # Current season
+                'name': "ABL Season 5",
+                'season': "2025",
                 'sport': 'MLB',
-                'scoring_type': "Head to Head",  # League format
-                'teams': 30,  # Fixed number of teams
+                'scoring_type': "Head to Head",
+                'teams': 30,
                 'scoring_period': scoring_settings.get('scoringPeriod', 'Weekly')
             }
         except Exception as e:
@@ -134,7 +130,6 @@ class DataProcessor:
                 if not isinstance(team, dict):
                     continue
 
-                # Parse points string into components (format: "W-L-T")
                 points_str = team.get('points', '0-0-0')
                 wins, losses, ties = map(int, points_str.split('-'))
 
