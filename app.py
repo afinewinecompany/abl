@@ -382,7 +382,7 @@ def main():
             "🏠 League Info",
             "👥 Team Rosters",
             "🏆 Power Rankings",
-            "📚 Handbook",
+            "🔎 Prospects",  # Changed from Handbook to Prospects to match the component
             "📈 Projected Rankings"
         ])
 
@@ -408,7 +408,7 @@ def main():
                 power_rankings.render(processed_standings_data)
 
             with tab4:
-                prospects.render(processed_roster_data)
+                prospects.render(processed_roster_data)  # This tab shows prospects analysis
 
             with tab5:
                 projected_rankings.render(processed_roster_data)
