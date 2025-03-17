@@ -27,23 +27,19 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     # Normalize rank to 0-1 range (reverse it so 1 = 1.0 and 30 = 0.0)
     normalized = 1 - ((rank - 1) / (total_teams - 1))
 
-    # Define color stops for red-to-blue gradient
+    # Direct red to blue transition
     # Red: #DC143C (Crimson)
-    # White: #FFFFFF (Middle)
     # Blue: #4169E1 (Royal Blue)
 
-    if normalized > 0.5:
-        # Red to White gradient
-        factor = (normalized - 0.5) * 2  # Scale 0.5-1 to 0-1
-        r = 220  # Red component of crimson
-        g = int(69 + (255 - 69) * (1 - factor))  # Transition to white
-        b = int(60 + (255 - 60) * (1 - factor))
-    else:
-        # White to Blue gradient
-        factor = normalized * 2  # Scale 0-0.5 to 0-1
-        r = int(255 * (1 - factor))
-        g = int(255 * (1 - factor))
-        b = 225  # Blue component
+    # Start color (Crimson)
+    r1, g1, b1 = 220, 20, 60
+    # End color (Royal Blue)
+    r2, g2, b2 = 65, 105, 225
+
+    # Linear interpolation between the two colors
+    r = int(r1 * normalized + r2 * (1 - normalized))
+    g = int(g1 * normalized + g2 * (1 - normalized))
+    b = int(b1 * normalized + b2 * (1 - normalized))
 
     return f"#{r:02x}{g:02x}{b:02x}"
 
@@ -341,7 +337,7 @@ def render(roster_data: pd.DataFrame):
         st.markdown("### Color Scale Legend")
         st.markdown("""
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
-            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #FFFFFF 50%, #4169E1 100%);"></div>
+            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #4169E1 100%);"></div>
             <div style="display: flex; justify-content: space-between;">
                 <span>#1 Rank</span>
                 <span>#15</span>
