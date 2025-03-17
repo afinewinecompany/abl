@@ -129,6 +129,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                     tickfont=dict(color='white')
                 )
             ),
+            customdata=[[d['color']] for d in data],  # Fixed customdata format
             hovertemplate="""
             <b>%{label}</b><br>
             Total Score: %{value:.1f}<br>
@@ -138,26 +139,62 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         ))
 
     else:
-        # Create treemap for leagues without divisions
-        fig = px.treemap(
-            team_scores,
-            names='team',
-            values='total_score',
-            color='avg_score',
-            color_continuous_scale='viridis',
-            title='Prospect System Rankings',
-            custom_data=['total_score', 'avg_score']
-        )
+        # For leagues without divisions, create a single-level sunburst
+        data = []
 
-        fig.update_traces(
+        # Add league level
+        league_total = team_scores['total_score'].sum()
+        league_avg = team_scores['avg_score'].mean()
+
+        data.append({
+            'id': 'league',
+            'parent': '',
+            'label': 'League',
+            'value': league_total,
+            'color': league_avg
+        })
+
+        # Add team level directly under league
+        for _, team in team_scores.iterrows():
+            data.append({
+                'id': f"team_{team['team']}",
+                'parent': 'league',
+                'label': team['team'],
+                'value': team['total_score'],
+                'color': team['avg_score']
+            })
+
+        # Create simplified sunburst chart
+        fig = go.Figure(go.Sunburst(
+            ids=[d['id'] for d in data],
+            labels=[d['label'] for d in data],
+            parents=[d['parent'] for d in data],
+            values=[d['value'] for d in data],
+            branchvalues='total',
+            textinfo='label',
+            marker=dict(
+                colors=[d['color'] for d in data],
+                colorscale='viridis',
+                showscale=True,
+                colorbar=dict(
+                    title=dict(
+                        text='Average Prospect Score (0-10)',
+                        font=dict(color='white')
+                    ),
+                    tickformat='.2f',
+                    tickfont=dict(color='white')
+                )
+            ),
+            customdata=[[d['color']] for d in data],  # Fixed customdata format
             hovertemplate="""
             <b>%{label}</b><br>
-            Total Score: %{customdata[0]:.1f}<br>
-            Average Score: %{customdata[1]:.2f}<br>
+            Total Score: %{value:.1f}<br>
+            Average Score: %{customdata[0]:.2f}
             <extra></extra>
             """
-        )
+        ))
 
+    # Common layout settings
     fig.update_layout(
         title=dict(
             text='Prospect System Overview',
