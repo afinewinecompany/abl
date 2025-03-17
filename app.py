@@ -2,7 +2,6 @@ import streamlit as st
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from api_client import FantraxAPI
 from data_processor import DataProcessor
-import os
 
 st.set_page_config(
     page_title="ABL Analytics",
@@ -356,69 +355,60 @@ st.markdown("""
 def main():
     st.title("⚾ ABL Analytics")
 
-    # Initialize session state for league ID
-    if 'league_id' not in st.session_state:
-        st.session_state.league_id = 'grx2lginm1v4p5jd'  # Default league ID
+    # Initialize API client
+    api_client = FantraxAPI()
+    data_processor = DataProcessor()
+
+    # Streamlined sidebar
+    with st.sidebar:
+        st.markdown("### 🔄 League Controls")
+        if st.button("Refresh Data", use_container_width=True):
+            st.experimental_rerun()
+
+        st.markdown("---")
+        st.markdown("""
+        ### About ABL Analytics
+        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+        """)
 
     try:
-        # League ID input field - moved to top of app for better visibility
-        new_league_id = st.text_input(
-            "Enter League ID",
-            value=st.session_state.league_id,
-            help="Enter your Fantrax league ID to load league-specific data"
-        )
+        # Fetch all required data
+        league_data = api_client.get_league_info()
+        roster_data = api_client.get_team_rosters()
+        standings_data = api_client.get_standings()
+        player_ids = api_client.get_player_ids()
 
-        # Update league ID if changed
-        if new_league_id != st.session_state.league_id:
-            st.session_state.league_id = new_league_id
-            st.rerun()
-
-        # Initialize API client with league ID
-        api_client = FantraxAPI(league_id=st.session_state.league_id)
-        data_processor = DataProcessor()
+        # Process data
+        processed_league_data = data_processor.process_league_info(league_data)
+        processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
+        processed_standings_data = data_processor.process_standings(standings_data)
 
         # Create tabs for different sections
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🏠 League Info",
             "👥 Team Rosters",
             "🏆 Power Rankings",
-            "🔎 Prospects",  # Changed from Handbook to Prospects to match the component
+            "📚 Handbook",
             "📈 Projected Rankings"
         ])
 
-        with st.spinner('Loading league data...'):
-            # Fetch all required data with current league ID
-            league_data = api_client.get_league_info()
-            roster_data = api_client.get_team_rosters()
-            standings_data = api_client.get_standings()
-            player_ids = api_client.get_player_ids()
+        with tab1:
+            league_info.render(processed_league_data)
 
-            # Process data
-            processed_league_data = data_processor.process_league_info(league_data)
-            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
-            processed_standings_data = data_processor.process_standings(standings_data)
+        with tab2:
+            rosters.render(processed_roster_data)
 
-            with tab1:
-                league_info.render(processed_league_data)
+        with tab3:
+            power_rankings.render(processed_standings_data)
 
-            with tab2:
-                rosters.render(processed_roster_data)
+        with tab4:
+            prospects.render(processed_roster_data)
 
-            with tab3:
-                power_rankings.render(processed_standings_data)
-
-            with tab4:
-                prospects.render(processed_roster_data)  # This tab shows prospects analysis
-
-            with tab5:
-                projected_rankings.render(processed_roster_data)
+        with tab5:
+            projected_rankings.render(processed_roster_data)
 
     except Exception as e:
-        st.error(f"An error occurred while loading data: {str(e)}")
-        st.error("Please verify your league ID and try again.")
-        if st.button("Reset to Default League"):
-            st.session_state.league_id = 'grx2lginm1v4p5jd'
-            st.rerun()
+        st.error(f"An error occurred while loading data. Please try refreshing.")
 
 if __name__ == "__main__":
     main()

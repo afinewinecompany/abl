@@ -16,6 +16,7 @@ def render(league_data: Dict):
         st.metric("Sport", league_data['sport'])
 
     with col3:
-        st.metric("League Format", league_data['scoring_type'])
+        st.metric("Draft Type", league_data['scoring_type'])
+        st.metric("Scoring Period", league_data['scoring_period'])
 
     st.divider()
