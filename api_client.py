@@ -41,9 +41,9 @@ class FantraxAPI:
             response.raise_for_status()
             data = response.json()
 
-            # Debug log
-            if not data:
-                st.write(f"Warning: Empty response from {endpoint}")
+            # Debug log for league info
+            if endpoint == 'getLeagueInfo':
+                st.write("League Info Response:", data)
 
             return data
         except requests.exceptions.RequestException as e:
