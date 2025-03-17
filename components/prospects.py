@@ -138,7 +138,7 @@ def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) ->
     return df.groupby(group_col)[value_col].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
 
 def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
-    """Create the sunburst visualization with level-specific color normalization"""
+    """Create the sunburst visualization with league-wide team comparisons"""
     # Add team abbreviations and division info
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
@@ -153,10 +153,11 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     league_total = team_scores['total_score'].sum()
     league_avg = team_scores['avg_score'].mean()
 
-    # Normalize scores within divisions for teams
-    team_scores['normalized_score'] = normalize_within_groups(team_scores, 'division', 'avg_score')
+    # Normalize team scores against all teams in the league
+    team_scores['normalized_score'] = (team_scores['avg_score'] - team_scores['avg_score'].min()) / \
+                                    (team_scores['avg_score'].max() - team_scores['avg_score'].min())
 
-    # Normalize scores for divisions
+    # Normalize division scores against other divisions
     division_scores['normalized_score'] = (division_scores['avg_score'] - division_scores['avg_score'].min()) / \
                                         (division_scores['avg_score'].max() - division_scores['avg_score'].min())
 
@@ -169,7 +170,8 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         'parent': '',
         'label': 'League',
         'value': league_total,
-        'color': 0.5  # Middle of color scale for root
+        'color': 0.5,  # Middle of color scale for root
+        'avg_score': league_avg
     })
 
     # Add division level
@@ -179,7 +181,8 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             'parent': 'league',
             'label': div['division'],
             'value': div['total_score'],
-            'color': div['normalized_score']
+            'color': div['normalized_score'],
+            'avg_score': div['avg_score']
         })
 
     # Add team level
@@ -189,7 +192,8 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             'parent': f"div_{team['division']}",
             'label': team['team_abbrev'],
             'value': team['total_score'],
-            'color': team['normalized_score']
+            'color': team['normalized_score'],
+            'avg_score': team['avg_score']
         })
 
     # Convert to DataFrame for easier handling
@@ -215,10 +219,12 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                 tickfont=dict(color='white')
             )
         ),
+        customdata=df[['avg_score']],
         hovertemplate="""
         <b>%{label}</b><br>
         Total Score: %{value:.1f}<br>
-        Relative Score: %{color:.2f}
+        Average Score: %{customdata[0]:.2f}<br>
+        Relative Position: %{color:.2f}
         <extra></extra>
         """
     ))
