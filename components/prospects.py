@@ -134,10 +134,12 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
             line=dict(color='rgba(255,255,255,0.2)', width=1),
             showscale=True,
             colorbar=dict(
-                title='Avg Score',
-                titleside='right',
-                titlefont=dict(color='white'),
-                tickfont=dict(color='white')
+                title=dict(
+                    text='Average Score',
+                    font=dict(color='white')
+                ),
+                tickfont=dict(color='white'),
+                x=1.1
             )
         ),
         text=top_teams['avg_score'].round(2),
@@ -173,7 +175,7 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
             tickfont=dict(size=12),
             showgrid=False
         ),
-        margin=dict(l=10, r=10, t=40, b=10),
+        margin=dict(l=10, r=50, t=40, b=10),  # Adjusted right margin for colorbar
         showlegend=False
     )
 
