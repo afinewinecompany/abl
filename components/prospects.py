@@ -62,7 +62,15 @@ TEAM_ABBREVIATIONS = {
 
 def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
     """Generate HTML for team prospects list"""
-    prospects_html = []
+    avg_score = prospects_df['prospect_score'].mean()
+    prospects_html = [
+        f"""
+        <div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">
+            Team Average Score: {avg_score:.2f}
+        </div>
+        """
+    ]
+
     for _, prospect in prospects_df.iterrows():
         prospect_html = f"""
         <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
@@ -76,27 +84,59 @@ def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
     return "\n".join(prospects_html)
 
 def render_prospect_preview(prospect, color, team_prospects=None):
-    """Render a single prospect preview card with expandable details"""
-    team_id = f"team_{prospect['player_name'].replace(' ', '_').lower()}"
+    """Render a single prospect preview card with hover details"""
     prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
     return f"""
-    <div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
-        <div onclick="toggleTeam('{team_id}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+    <div class="prospect-card" style="
+        padding: 0.75rem;
+        background-color: rgba(26, 28, 35, 0.5);
+        border-radius: 8px;
+        margin: 0.25rem 0;
+        border-left: 3px solid {color};
+        transition: all 0.2s ease;
+        position: relative;
+    ">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">{prospect['player_name']}</div>
-                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
+                    {prospect['player_name']}
+                </div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">
+                    {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                </div>
             </div>
             <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
                 {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
-                <span id="arrow_{team_id}">▼</span>
             </div>
         </div>
-        <div id="{team_id}" style="display: none; margin-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.75rem;">
-            <div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">All Prospects:</div>
+        <div class="prospect-details" style="
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            min-width: 300px;
+            background: rgba(26, 28, 35, 0.98);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-left: 10px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid {color};
+        ">
             {prospects_list}
         </div>
     </div>
+    <style>
+        .prospect-card:hover {
+            transform: translateX(4px);
+            background-color: rgba(26, 28, 35, 0.8);
+            border-left-width: 5px;
+        }
+        .prospect-card:hover .prospect-details {
+            display: block;
+        }
+    </style>
     """
 
 def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
@@ -201,23 +241,6 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📚 Prospect Analysis")
 
-        # Add JavaScript for team expansion
-        st.markdown("""
-        <script>
-        function toggleTeam(teamId) {
-            var content = document.getElementById(teamId);
-            var arrow = document.getElementById('arrow_' + teamId);
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                arrow.innerHTML = '▲';
-            } else {
-                content.style.display = 'none';
-                arrow.innerHTML = '▼';
-            }
-        }
-        </script>
-        """, unsafe_allow_html=True)
-
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
@@ -263,7 +286,7 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Create and display sunburst visualization
+        # Create sunburst visualization
         fig = create_sunburst_visualization(team_scores, division_mapping)
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
