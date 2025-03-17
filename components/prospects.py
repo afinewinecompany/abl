@@ -51,7 +51,7 @@ def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
     return "".join(prospects_html)
 
 def render_prospect_preview(prospect, color, team_prospects=None):
-    """Render a single prospect preview card with expandable details"""
+    """Render a single prospect preview card with expandable details and debug logging"""
     team_id = f"team_{prospect['player_name'].replace(' ', '_').lower()}"
     prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
@@ -131,7 +131,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     league_total = team_scores['total_score'].sum()
     league_avg = team_scores['avg_score'].mean()
 
-    # Create hierarchical data
+    # Create hierarchical data for sunburst
     data = []
 
     # Add league level
@@ -196,6 +196,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         """
     ))
 
+    # Update layout with increased size and mobile responsiveness
     fig.update_layout(
         title=dict(
             text='Prospect System Hierarchy',
@@ -203,11 +204,13 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             x=0.5,
             xanchor='center'
         ),
-        height=700,
+        height=900,  # Increased height
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=30, l=10, r=10, b=10)
+        margin=dict(t=30, l=10, r=10, b=10),
+        # Add mobile-responsive layout
+        autosize=True,
     )
 
     return fig
@@ -217,26 +220,64 @@ def render(roster_data: pd.DataFrame):
     try:
         st.header("📚 Prospect Analysis")
 
-        # Add JavaScript for team expansion
+        # Add JavaScript for team expansion with debug logging
         st.markdown("""
         <script>
+            console.log('Loading prospect analysis script...');
+
             function toggleTeam(teamId) {
+                console.log('Toggle clicked for team:', teamId);
+
                 var details = document.getElementById('details_' + teamId);
                 var arrow = document.getElementById('arrow_' + teamId);
                 var card = document.getElementById(teamId);
 
-                if (details.style.display === 'none') {
-                    details.style.display = 'block';
-                    arrow.innerHTML = '▲';
-                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.8)';
-                    card.style.borderLeftWidth = '5px';
+                console.log('Elements found:', {
+                    details: details,
+                    arrow: arrow,
+                    card: card
+                });
+
+                if (details && arrow && card) {
+                    if (details.style.display === 'none') {
+                        console.log('Expanding team:', teamId);
+                        details.style.display = 'block';
+                        arrow.innerHTML = '▲';
+                        card.style.backgroundColor = 'rgba(26, 28, 35, 0.8)';
+                        card.style.borderLeftWidth = '5px';
+                    } else {
+                        console.log('Collapsing team:', teamId);
+                        details.style.display = 'none';
+                        arrow.innerHTML = '▼';
+                        card.style.backgroundColor = 'rgba(26, 28, 35, 0.5)';
+                        card.style.borderLeftWidth = '3px';
+                    }
                 } else {
-                    details.style.display = 'none';
-                    arrow.innerHTML = '▼';
-                    card.style.backgroundColor = 'rgba(26, 28, 35, 0.5)';
-                    card.style.borderLeftWidth = '3px';
+                    console.error('Missing elements for team:', teamId);
                 }
             }
+
+            // Add debug info at bottom of page
+            document.addEventListener('DOMContentLoaded', function() {
+                var debugDiv = document.createElement('div');
+                debugDiv.style.margin = '2rem 0';
+                debugDiv.style.padding = '1rem';
+                debugDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                debugDiv.style.borderRadius = '8px';
+                debugDiv.innerHTML = '<h4 style="color: #fff;">Debug Console</h4><div id="debugOutput" style="color: #fff; font-family: monospace; white-space: pre-wrap;"></div>';
+                document.body.appendChild(debugDiv);
+
+                // Override console.log
+                var oldLog = console.log;
+                console.log = function() {
+                    oldLog.apply(console, arguments);
+                    var output = document.getElementById('debugOutput');
+                    if (output) {
+                        var args = Array.from(arguments);
+                        output.innerHTML += args.join(' ') + '\\n';
+                    }
+                };
+            });
         </script>
         """, unsafe_allow_html=True)
 
