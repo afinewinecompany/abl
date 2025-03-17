@@ -51,10 +51,19 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="{get_headshot_url(mlbam_id)}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgaG9zdD0nJyc+PGNpcmNsZSBjeD0nMzAnIGN5PSIzMCIgcn09JzMwJyBmaWxsPScjMzMzMycvPjxnPjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjAiIHg9IjEwIiB5PSI0MCI+PC90ZXh0PjwvZz48L3N2Zz4=';"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIzMCIgZmlsbD0iIzFhMWMyMyIvPjx0ZXh0IHg9IjMwIiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjIwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj57aW5pdGlhbHN9PC90ZXh0Pjwvc3ZnPg==';"
                          alt="{player_name} headshot">
                 </div>
             """
+        else:
+            # Create initials from player name
+            initials = ''.join(n[0].upper() for n in player_name.split() if n)[:2]
+            placeholder_svg = f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+                    <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
+                </div>
+            """
+            return placeholder_svg
     except Exception as e:
         pass
     return ""
@@ -353,6 +362,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             margin: 1rem 0;
             transition: all 0.3s ease;
         }
+        .prospect-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
         .prospect-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -368,6 +381,30 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             }
         }
         </style>
+        <script>
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        };
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            document.querySelectorAll('.prospect-card').forEach(card => {
+                observer.observe(card);
+                card.style.opacity = '0';
+            });
+        });
+        </script>
         <div class="top-100-header">
             <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
             <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
@@ -382,8 +419,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Get color based on rank
-        rank_color = get_color_for_rank(idx)
+        # Get color based on rank (normalize to 100 ranks)
+        rank_color = get_color_for_rank(idx, 100)
 
         # Get headshot HTML for the prospect using the cache
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
