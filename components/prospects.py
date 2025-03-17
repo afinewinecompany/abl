@@ -22,7 +22,7 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
-# Team abbreviation mapping with additional variations
+# Team abbreviation mapping
 TEAM_ABBREVIATIONS = {
     "Baltimore Orioles": "BAL",
     "Boston Red Sox": "BOS",
@@ -36,7 +36,7 @@ TEAM_ABBREVIATIONS = {
     "Minnesota Twins": "MIN",
     "Houston Astros": "HOU",
     "Los Angeles Angels": "LAA",
-    "Athletics": "ATH",  # Added variation
+    "Athletics": "ATH",
     "Oakland Athletics": "ATH",
     "Seattle Mariners": "SEA",
     "Texas Rangers": "TEX",
@@ -49,9 +49,9 @@ TEAM_ABBREVIATIONS = {
     "Cincinnati Reds": "CIN",
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",  # Added variation
-    "Saint Louis Cardinals": "STL",  # Added variation
-    "St Louis Cardinals": "STL",  # Added variation without period
+    "Cardinals": "STL",
+    "Saint Louis Cardinals": "STL",
+    "St Louis Cardinals": "STL",
     "St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
@@ -79,12 +79,107 @@ def render_prospect_preview(prospect, color):
         </div>
     </div>"""
 
+def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
+    """Create the sunburst visualization"""
+    # Add team abbreviations and division info
+    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
+    team_scores['division'] = team_scores['team'].map(division_mapping)
+
+    # Create division-level aggregates
+    division_scores = team_scores.groupby('division').agg({
+        'avg_score': 'mean',
+        'total_score': 'sum'
+    }).reset_index()
+
+    # Create league-level aggregates
+    league_total = team_scores['total_score'].sum()
+    league_avg = team_scores['avg_score'].mean()
+
+    # Create hierarchical data
+    data = []
+
+    # Add league level
+    data.append({
+        'id': 'league',
+        'parent': '',
+        'label': 'League',
+        'value': league_total,
+        'color': league_avg
+    })
+
+    # Add division level
+    for _, div in division_scores.iterrows():
+        data.append({
+            'id': f"div_{div['division']}",
+            'parent': 'league',
+            'label': div['division'],
+            'value': div['total_score'],
+            'color': div['avg_score']
+        })
+
+    # Add team level
+    for _, team in team_scores.iterrows():
+        data.append({
+            'id': f"team_{team['team_abbrev']}",
+            'parent': f"div_{team['division']}",
+            'label': team['team_abbrev'],
+            'value': team['total_score'],
+            'color': team['avg_score']
+        })
+
+    # Convert to DataFrame for easier handling
+    df = pd.DataFrame(data)
+
+    # Create sunburst chart
+    fig = go.Figure(go.Sunburst(
+        ids=df['id'],
+        labels=df['label'],
+        parents=df['parent'],
+        values=df['value'],
+        branchvalues='total',
+        textinfo='label+value',
+        marker=dict(
+            colors=df['color'],
+            colorscale='viridis',
+            showscale=True,
+            colorbar=dict(
+                title=dict(
+                    text='Average Score',
+                    font=dict(color='white')
+                ),
+                tickfont=dict(color='white')
+            )
+        ),
+        hovertemplate="""
+        <b>%{label}</b><br>
+        Total Score: %{value:.1f}<br>
+        Average Score: %{marker.color:.2f}
+        <extra></extra>
+        """
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text='Prospect System Hierarchy',
+            font=dict(color='white'),
+            x=0.5,
+            xanchor='center'
+        ),
+        height=700,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, l=10, r=10, b=10)
+    )
+
+    return fig
+
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
         st.header("📚 Prospect Analysis")
 
-        # Load division data for color coding
+        # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
@@ -129,88 +224,8 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Add team abbreviations and division info
-        team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
-        team_scores['division'] = team_scores['team'].map(division_mapping)
-
-        # Create division-level aggregates
-        division_scores = team_scores.groupby('division').agg({
-            'avg_score': 'mean',
-            'total_score': 'sum'
-        }).reset_index()
-
-        # Create league-level aggregates
-        league_scores = pd.DataFrame([{
-            'level': 'League',
-            'avg_score': team_scores['avg_score'].mean(),
-            'total_score': team_scores['total_score'].sum()
-        }])
-
-        # Create unique IDs for the sunburst chart
-        team_ids = [f"team_{i}" for i in range(len(team_scores))]
-        division_ids = [f"div_{i}" for i in range(len(division_scores))]
-
-        # Prepare data for sunburst chart
-        sunburst_data = {
-            'ids': ['league'] + division_ids + team_ids,
-            'labels': ['League'] + 
-                     list(division_scores['division']) + 
-                     list(team_scores['team_abbrev']),
-            'parents': [''] + 
-                      ['league'] * len(division_scores) + 
-                      list(team_scores['division']),
-            'values': [league_scores['total_score'].iloc[0]] + 
-                     list(division_scores['total_score']) + 
-                     list(team_scores['total_score']),
-            'colors': [league_scores['avg_score'].iloc[0]] + 
-                     list(division_scores['avg_score']) + 
-                     list(team_scores['avg_score'])
-        }
-
-        # Create sunburst chart
-        fig = go.Figure(go.Sunburst(
-            ids=sunburst_data['ids'],
-            labels=sunburst_data['labels'],
-            parents=sunburst_data['parents'],
-            values=sunburst_data['values'],
-            branchvalues='total',
-            textinfo='label+value',
-            marker=dict(
-                colors=sunburst_data['colors'],
-                colorscale='viridis',
-                showscale=True,
-                colorbar=dict(
-                    title=dict(
-                        text='Average Score',
-                        font=dict(color='white')
-                    ),
-                    tickfont=dict(color='white')
-                )
-            ),
-            hovertemplate="""
-            <b>%{label}</b><br>
-            Total Score: %{value:.1f}<br>
-            Average Score: %{marker.color:.2f}
-            <extra></extra>
-            """
-        ))
-
-        # Update layout
-        fig.update_layout(
-            title=dict(
-                text='Prospect System Hierarchy',
-                font=dict(color='white'),
-                x=0.5,
-                xanchor='center'
-            ),
-            height=700,
-            font=dict(color='white'),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, l=10, r=10, b=10)
-        )
-
-        # Display the chart
+        # Create and display sunburst visualization
+        fig = create_sunburst_visualization(team_scores, division_mapping)
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
         # Add explanation
