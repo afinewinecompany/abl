@@ -15,6 +15,40 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip()
 
+# Team abbreviation mapping
+TEAM_ABBREVIATIONS = {
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "New York Yankees": "NYY",
+    "Tampa Bay Rays": "TB",
+    "Toronto Blue Jays": "TOR",
+    "Chicago White Sox": "CHW",
+    "Cleveland Guardians": "CLE",
+    "Detroit Tigers": "DET",
+    "Kansas City Royals": "KC",
+    "Minnesota Twins": "MIN",
+    "Houston Astros": "HOU",
+    "Los Angeles Angels": "LAA",
+    "Oakland Athletics": "OAK",
+    "Seattle Mariners": "SEA",
+    "Texas Rangers": "TEX",
+    "Atlanta Braves": "ATL",
+    "Miami Marlins": "MIA",
+    "New York Mets": "NYM",
+    "Philadelphia Phillies": "PHI",
+    "Washington Nationals": "WSH",
+    "Chicago Cubs": "CHC",
+    "Cincinnati Reds": "CIN",
+    "Milwaukee Brewers": "MIL",
+    "Pittsburgh Pirates": "PIT",
+    "St. Louis Cardinals": "STL",
+    "Arizona Diamondbacks": "ARI",
+    "Colorado Rockies": "COL",
+    "Los Angeles Dodgers": "LAD",
+    "San Diego Padres": "SD",
+    "San Francisco Giants": "SF"
+}
+
 def get_gradient_color(value: float, min_val: float, max_val: float) -> str:
     """Generate a color gradient between red and green based on value"""
     normalized = (value - min_val) / (max_val - min_val)
@@ -38,7 +72,7 @@ def render_prospect_preview(prospect, color):
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">{prospect['player_name']}</div>
                 <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
             </div>
-            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">{mlb_team}</div>
+            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">{TEAM_ABBREVIATIONS.get(mlb_team, mlb_team)}</div>
         </div>
     </div>"""
 
@@ -69,17 +103,20 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     """Render interactive prospect strength visualization"""
     st.subheader("🎨 Prospect System Quality")
 
+    # Add abbreviated team names
+    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
+
     # Create sunburst data
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
     # Create sunburst figure
     fig = px.sunburst(
         team_scores,
-        path=[px.Constant("League"), 'division', 'team'],
+        path=[px.Constant("League"), 'division', 'team_abbrev'],
         values='total_score',
         color='avg_score',
-        color_continuous_scale='viridis',  # Better color scheme
-        custom_data=['avg_score', 'total_score'],
+        color_continuous_scale='viridis',
+        custom_data=['avg_score', 'total_score', 'team'],
         title='Team Prospect System Quality Overview'
     )
 
@@ -95,7 +132,7 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
 
     # Update traces
     fig.update_traces(
-        hovertemplate="<b>%{label}</b><br>" +
+        hovertemplate="<b>%{customdata[2]}</b><br>" +
                      "Average Score: %{customdata[0]:.2f}<br>" +
                      "Total Score: %{customdata[1]:.1f}<extra></extra>",
         textinfo="label"
@@ -104,79 +141,64 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Top Systems Analysis
-    st.subheader("📊 Elite Prospect Systems")
+    # Power Rankings vs Prospect Strength
+    st.subheader("📊 System Strength vs Team Power")
 
-    # Get top 8 teams by average score
-    top_teams = team_scores.nlargest(8, 'avg_score').copy()
-
-    # Create a horizontal lollipop chart
     fig2 = go.Figure()
 
-    # Add lines
+    # Add scatter plot
     fig2.add_trace(go.Scatter(
-        x=top_teams['avg_score'],
-        y=top_teams['team'],
-        mode='lines',
-        line=dict(color='rgba(128,128,128,0.2)', width=2),
-        showlegend=False
-    ))
-
-    # Add markers
-    fig2.add_trace(go.Scatter(
-        x=top_teams['avg_score'],
-        y=top_teams['team'],
-        mode='markers',
+        x=team_scores['power_rank'],
+        y=team_scores['avg_score'],
+        mode='markers+text',
         marker=dict(
-            size=20,
-            color=top_teams['avg_score'],
+            size=15,
+            color=team_scores['avg_score'],
             colorscale='viridis',
-            line=dict(color='rgba(255,255,255,0.2)', width=1),
             showscale=True,
             colorbar=dict(
                 title=dict(
-                    text='Average Score',
+                    text='Prospect Score',
                     font=dict(color='white')
                 ),
-                tickfont=dict(color='white'),
-                x=1.1
+                tickfont=dict(color='white')
             )
         ),
-        text=top_teams['avg_score'].round(2),
-        textposition='middle right',
-        hovertemplate="<b>%{y}</b><br>" +
-                     "Average Score: %{x:.2f}<br>" +
-                     "<extra></extra>"
+        text=team_scores['team_abbrev'],
+        textposition="top center",
+        hovertemplate="<b>%{text}</b><br>" +
+                     "Power Rank: %{x}<br>" +
+                     "Prospect Score: %{y:.2f}<extra></extra>"
     ))
 
     # Update layout
     fig2.update_layout(
         title=dict(
-            text='Top Farm Systems by Average Prospect Quality',
-            font=dict(color='white', size=16),
+            text='Prospect System Quality vs Power Rankings',
+            font=dict(color='white'),
             x=0.5,
             xanchor='center'
         ),
-        height=400,
-        font=dict(color='white'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
         xaxis=dict(
-            title='Average Prospect Score',
+            title='Power Rank',
+            tickmode='linear',
             gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(size=14),
-            tickfont=dict(size=12),
-            showgrid=True,
+            title_font=dict(color='white'),
+            tickfont=dict(color='white'),
             zeroline=False
         ),
         yaxis=dict(
-            title='',
+            title='Average Prospect Score',
             gridcolor='rgba(128,128,128,0.1)',
-            tickfont=dict(size=12),
-            showgrid=False
+            title_font=dict(color='white'),
+            tickfont=dict(color='white'),
+            zeroline=False
         ),
-        margin=dict(l=10, r=50, t=40, b=10),  # Adjusted right margin for colorbar
-        showlegend=False
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        height=500,
+        showlegend=False,
+        margin=dict(l=10, r=50, t=40, b=10)
     )
 
     st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
@@ -185,15 +207,14 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     st.markdown("""
     #### Understanding the Metrics
     - **Average Score**: Represents the typical quality of prospects in the system
-    - **Total Score**: Indicates the overall strength of the farm system
-    - Higher scores suggest stronger future potential and depth
+    - **Power Rank**: Current team power ranking
+    - Lower power rank (1 being best) with high prospect scores indicates strong present and future outlook
     """)
-
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
-        st.header("🌟 Prospect Analysis")
+        st.header("📚 Prospect Analysis")
 
         # Load division data for color coding
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
@@ -230,18 +251,22 @@ def render(roster_data: pd.DataFrame):
         ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-
         # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
             'prospect_score': ['sum', 'mean']
         }).reset_index()
 
         team_scores.columns = ['team', 'total_score', 'avg_score']
+
+        # Add power rankings (assuming 1-30 scale)
+        power_ranks = {team: idx + 1 for idx, team in enumerate(team_scores['team'])}
+        team_scores['power_rank'] = team_scores['team'].map(power_ranks)
+
         team_scores = team_scores.sort_values('total_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Render gradient visualization first
+        # Render visualizations
         render_gradient_visualization(team_scores, division_mapping)
 
         # Display top 3 teams
@@ -266,7 +291,7 @@ def render(roster_data: pd.DataFrame):
                     idx + 1,  # Rank 1-3
                     row[1]['total_score'],
                     row[1]['avg_score'],
-                    len(team_prospects), #Corrected to show total number of prospects for each team
+                    len(team_prospects),
                     division,
                     color,
                     top_3_prospects
@@ -291,13 +316,13 @@ def render(roster_data: pd.DataFrame):
             )
             top_3_prospects = team_prospects.head(3)
 
-            # Display team card with correct rank (starting from 4)
+            # Display team card
             st.markdown(render_team_card(
                 row['team'],
                 idx + 4,  # Start numbering from 4
                 row['total_score'],
                 row['avg_score'],
-                len(team_prospects), #Corrected to show total number of prospects for each team
+                len(team_prospects),
                 division,
                 color,
                 top_3_prospects
