@@ -22,6 +22,59 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
+def get_headshot_url(mlbam_id: str) -> str:
+    """Generate MLB headshot URL from player ID"""
+    return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+
+def get_player_headshot_html(player_name: str, mlb_ids_df: pd.DataFrame) -> str:
+    """Get player headshot HTML if available"""
+    try:
+        # Normalize the search name
+        search_name = normalize_name(player_name)
+
+        # Search for the player in the MLB IDs dataframe
+        for _, row in mlb_ids_df.iterrows():
+            db_name = normalize_name(f"{row['First']} {row['Last']}")
+            if search_name == db_name:
+                return f"""
+                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                        <img src="{get_headshot_url(row['MLBAMID'])}"
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
+                             alt="{player_name} headshot">
+                    </div>
+                """
+    except Exception as e:
+        st.error(f"Error getting headshot for {player_name}: {str(e)}")
+    return ""
+
+def get_team_prospects_html(prospects_df: pd.DataFrame, mlb_ids_df: pd.DataFrame) -> str:
+    """Generate HTML for team prospects list"""
+    avg_score = prospects_df['prospect_score'].mean()
+    prospects_html = [
+        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
+    ]
+
+    for _, prospect in prospects_df.iterrows():
+        # Get headshot HTML for the prospect
+        headshot_html = get_player_headshot_html(prospect['player_name'], mlb_ids_df)
+
+        # Use flexbox layout for all prospect entries
+        prospects_html.append(
+            f'<div style="padding: 0.75rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
+            f'<div style="display: flex; align-items: center; gap: 1rem;">'
+            f'{headshot_html}'
+            f'<div style="flex-grow: 1;">'
+            f'<div style="font-size: 0.95rem; color: #fafafa; font-weight: 500;">{prospect["player_name"]}</div>'
+            f'<div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">'
+            f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+        )
+
+    return "".join(prospects_html)
+
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
     # Normalize rank to 0-1 range (reverse it so 1 = 1.0 and 30 = 0.0)
@@ -43,7 +96,7 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
 
     return f"#{r:02x}{g:02x}{b:02x}"
 
-def render_prospect_preview(prospect, rank: int, team_prospects=None):
+def render_prospect_preview(prospect, rank: int, team_prospects=None, mlb_ids_df=None):
     """Render a single prospect preview card with native Streamlit expander"""
     color = get_color_for_rank(rank)
 
@@ -75,87 +128,11 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None):
     # Show prospects in expander
     if team_prospects is not None:
         with st.expander("Show Prospects"):
-            prospects_html = get_team_prospects_html(team_prospects)
+            prospects_html = get_team_prospects_html(team_prospects, mlb_ids_df)
             st.markdown(prospects_html, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
-    """Generate HTML for team prospects list"""
-    avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
-        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    ]
-
-    for _, prospect in prospects_df.iterrows():
-        # Add headshot for Kristian Campbell with more robust name matching
-        headshot_html = ""
-        clean_name = prospect['player_name'].lower().strip()
-        if "kristian" in clean_name and "campbell" in clean_name:
-            st.write(f"Debug: Found Kristian Campbell: {prospect['player_name']}")  # Debug output
-            headshot_html = """
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/692225/headshot/67/current"
-                         style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
-                         alt="Kristian Campbell headshot">
-                </div>
-            """
-
-        # Use flexbox layout for all prospect entries
-        prospects_html.append(
-            f'<div style="padding: 0.75rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
-            f'<div style="display: flex; align-items: center; gap: 1rem;">'
-            f'{headshot_html}'
-            f'<div style="flex-grow: 1;">'
-            f'<div style="font-size: 0.95rem; color: #fafafa; font-weight: 500;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">'
-            f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
-            f'</div>'
-            f'</div>'
-            f'</div>'
-        )
-
-    return "".join(prospects_html)
-
-# Add team abbreviation mapping
-TEAM_ABBREVIATIONS = {
-    "Baltimore Orioles": "BAL",
-    "Boston Red Sox": "BOS",
-    "New York Yankees": "NYY",
-    "Tampa Bay Rays": "TB",
-    "Toronto Blue Jays": "TOR",
-    "Chicago White Sox": "CHW",
-    "Cleveland Guardians": "CLE",
-    "Detroit Tigers": "DET",
-    "Kansas City Royals": "KC",
-    "Minnesota Twins": "MIN",
-    "Houston Astros": "HOU",
-    "Los Angeles Angels": "LAA",
-    "Athletics": "ATH",
-    "Oakland Athletics": "ATH",
-    "Seattle Mariners": "SEA",
-    "Texas Rangers": "TEX",
-    "Atlanta Braves": "ATL",
-    "Miami Marlins": "MIA",
-    "New York Mets": "NYM",
-    "Philadelphia Phillies": "PHI",
-    "Washington Nationals": "WSH",
-    "Chicago Cubs": "CHC",
-    "Cincinnati Reds": "CIN",
-    "Milwaukee Brewers": "MIL",
-    "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",
-    "Saint Louis Cardinals": "STL",
-    "St Louis Cardinals": "STL",
-    "St. Louis Cardinals": "STL",
-    "Arizona Diamondbacks": "ARI",
-    "Colorado Rockies": "COL",
-    "Los Angeles Dodgers": "LAD",
-    "San Diego Padres": "SD",
-    "San Francisco Giants": "SF"
-}
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
@@ -296,6 +273,44 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
 
     return fig
 
+# Add team abbreviation mapping
+TEAM_ABBREVIATIONS = {
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "New York Yankees": "NYY",
+    "Tampa Bay Rays": "TB",
+    "Toronto Blue Jays": "TOR",
+    "Chicago White Sox": "CHW",
+    "Cleveland Guardians": "CLE",
+    "Detroit Tigers": "DET",
+    "Kansas City Royals": "KC",
+    "Minnesota Twins": "MIN",
+    "Houston Astros": "HOU",
+    "Los Angeles Angels": "LAA",
+    "Athletics": "ATH",
+    "Oakland Athletics": "ATH",
+    "Seattle Mariners": "SEA",
+    "Texas Rangers": "TEX",
+    "Atlanta Braves": "ATL",
+    "Miami Marlins": "MIA",
+    "New York Mets": "NYM",
+    "Philadelphia Phillies": "PHI",
+    "Washington Nationals": "WSH",
+    "Chicago Cubs": "CHC",
+    "Cincinnati Reds": "CIN",
+    "Milwaukee Brewers": "MIL",
+    "Pittsburgh Pirates": "PIT",
+    "Cardinals": "STL",
+    "Saint Louis Cardinals": "STL",
+    "St Louis Cardinals": "STL",
+    "St. Louis Cardinals": "STL",
+    "Arizona Diamondbacks": "ARI",
+    "Colorado Rockies": "COL",
+    "Los Angeles Dodgers": "LAD",
+    "San Diego Padres": "SD",
+    "San Francisco Giants": "SF"
+}
+
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
@@ -304,6 +319,9 @@ def render(roster_data: pd.DataFrame):
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
+
+        # Load MLB player IDs
+        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids.csv")
 
         # Read and process prospect scores
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
@@ -365,7 +383,7 @@ def render(roster_data: pd.DataFrame):
                     'position': division_mapping.get(row['team'], "Unknown"),
                     'prospect_score': row['total_score'],
                     'mlb_team': row['team']
-                }, idx + 1, team_prospects)
+                }, idx + 1, team_prospects, mlb_ids_df)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
@@ -380,7 +398,7 @@ def render(roster_data: pd.DataFrame):
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['total_score'],
                 'mlb_team': row['team']
-            }, i + 4, team_prospects)
+            }, i + 4, team_prospects, mlb_ids_df)
 
         # Add legend for color scale
         st.markdown("### Color Scale Legend")
