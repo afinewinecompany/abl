@@ -107,6 +107,9 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
+    # Debug output to identify missing mappings
+    st.write("Teams without abbreviations:", team_scores[team_scores['team_abbrev'].isnull()]['team'].tolist())
+
     # Create hierarchical bar chart
     fig = px.bar(
         team_scores,
