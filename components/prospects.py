@@ -22,7 +22,7 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
-# Team abbreviation mapping
+# Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
     "Baltimore Orioles": "BAL",
     "Boston Red Sox": "BOS",
@@ -60,42 +60,36 @@ TEAM_ABBREVIATIONS = {
     "San Francisco Giants": "SF"
 }
 
-def render_prospect_preview(prospect, color, all_prospects=None):
-    """Render a single prospect preview card with expandable details"""
-    # Handle MLB team display - ensure single value and handle NaN
-    mlb_team = prospect.get('mlb_team', 'N/A')
-    if isinstance(mlb_team, pd.Series):
-        mlb_team = mlb_team.iloc[0] if not mlb_team.empty else 'N/A'
-    mlb_team = str(mlb_team).strip() if pd.notna(mlb_team) else 'N/A'
-
-    # Generate unique ID for expandable section
-    team_id = f"team_{mlb_team.replace(' ', '_').lower()}"
-
-    # Create prospects list HTML if provided
-    prospects_list = ""
-    if all_prospects is not None:
-        prospects_list = "".join([
-            f"""
-            <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-                <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
-                <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                    {p['position']} | Score: {p['prospect_score']:.1f}
-                </div>
+def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
+    """Generate HTML for team prospects list"""
+    prospects_html = []
+    for _, prospect in prospects_df.iterrows():
+        prospect_html = f"""
+        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+            <div style="font-size: 0.9rem; color: #fafafa;">{prospect['player_name']}</div>
+            <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                {prospect['position']} | Score: {prospect['prospect_score']:.1f}
             </div>
-            """
-            for _, p in all_prospects.iterrows()
-        ])
+        </div>
+        """
+        prospects_html.append(prospect_html)
+    return "\n".join(prospects_html)
+
+def render_prospect_preview(prospect, color, team_prospects=None):
+    """Render a single prospect preview card with expandable details"""
+    team_id = f"team_{prospect['player_name'].replace(' ', '_').lower()}"
+    prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
     return f"""
     <div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
-        <div class="prospect-header" onclick="toggleProspects('{team_id}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <div onclick="toggleTeam('{team_id}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">{prospect['player_name']}</div>
                 <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">{prospect['position']} | Score: {prospect['prospect_score']:.1f}</div>
             </div>
             <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
-                {TEAM_ABBREVIATIONS.get(mlb_team, mlb_team)}
-                <span id="arrow_{team_id}" style="margin-left: 5px;">▼</span>
+                {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
+                <span id="arrow_{team_id}">▼</span>
             </div>
         </div>
         <div id="{team_id}" style="display: none; margin-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.75rem;">
@@ -103,19 +97,6 @@ def render_prospect_preview(prospect, color, all_prospects=None):
             {prospects_list}
         </div>
     </div>
-    <script>
-        function toggleProspects(teamId) {
-            const content = document.getElementById(teamId);
-            const arrow = document.getElementById('arrow_' + teamId);
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                arrow.innerHTML = '▲';
-            } else {
-                content.style.display = 'none';
-                arrow.innerHTML = '▼';
-            }
-        }
-    </script>
     """
 
 def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
@@ -190,7 +171,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                 tickfont=dict(color='white')
             )
         ),
-        customdata=df[['color']],  # Pass color (avg_score) as custom data
+        customdata=df[['color']],
         hovertemplate="""
         <b>%{label}</b><br>
         Total Score: %{value:.1f}<br>
@@ -219,6 +200,23 @@ def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
         st.header("📚 Prospect Analysis")
+
+        # Add JavaScript for team expansion
+        st.markdown("""
+        <script>
+        function toggleTeam(teamId) {
+            var content = document.getElementById(teamId);
+            var arrow = document.getElementById('arrow_' + teamId);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.innerHTML = '▲';
+            } else {
+                content.style.display = 'none';
+                arrow.innerHTML = '▼';
+            }
+        }
+        </script>
+        """, unsafe_allow_html=True)
 
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
@@ -282,17 +280,14 @@ def render(roster_data: pd.DataFrame):
         st.subheader("🏆 Top Prospect Systems")
         col1, col2, col3 = st.columns(3)
 
-        # Display top 3 teams in cards
-        for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_scores.head(3).iterrows())):
-            with col:
+        columns = [col1, col2, col3]
+        for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
+            with columns[idx]:
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
-
-                # Get all prospects for this team
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
-
                 st.markdown(render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division,
@@ -307,12 +302,9 @@ def render(roster_data: pd.DataFrame):
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
             division = division_mapping.get(row['team'], "Unknown")
             color = division_colors.get(division, "#00ff88")
-
-            # Get all prospects for this team
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
-
             st.markdown(render_prospect_preview({
                 'player_name': f"#{i + 4} {row['team']}",
                 'position': division,
