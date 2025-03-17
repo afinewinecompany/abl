@@ -4,13 +4,26 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
+import unicodedata
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
+        # Convert diacritics to ASCII
+        name = ''.join(c for c in unicodedata.normalize('NFKD', name)
+                      if not unicodedata.combining(c))
+
         if ',' in name:
             last, first = name.split(',', 1)
-            return f"{first.strip()} {last.strip()}"
+            name = f"{first.strip()} {last.strip()}"
+
+        # Handle middle initials by removing them
+        parts = name.strip().split()
+        if len(parts) > 2:
+            # If middle part is an initial (one letter possibly with period)
+            if len(parts[1]) <= 2 and ('.' in parts[1] or len(parts[1]) == 1):
+                name = f"{parts[0]} {parts[-1]}"
+
         return name.strip()
     except:
         return name.strip()

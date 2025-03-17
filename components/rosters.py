@@ -3,10 +3,15 @@ import pandas as pd
 import plotly.express as px
 from typing import Dict
 from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points
+import unicodedata
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
+        # Convert diacritics to ASCII
+        name = ''.join(c for c in unicodedata.normalize('NFKD', name)
+                      if not unicodedata.combining(c))
+
         if ',' in name:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
@@ -15,7 +20,7 @@ def normalize_name(name: str) -> str:
         parts = name.strip().split()
         if len(parts) > 2:
             # If middle part is an initial (one letter possibly with period)
-            if len(parts[1]) <= 2 and '.' in parts[1]:
+            if len(parts[1]) <= 2 and ('.' in parts[1] or len(parts[1]) == 1):
                 name = f"{parts[0]} {parts[-1]}"
 
         return name.strip()
