@@ -15,7 +15,7 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip()
 
-# Team abbreviation mapping
+# Team abbreviation mapping with additional variations
 TEAM_ABBREVIATIONS = {
     "Baltimore Orioles": "BAL",
     "Boston Red Sox": "BOS",
@@ -29,7 +29,8 @@ TEAM_ABBREVIATIONS = {
     "Minnesota Twins": "MIN",
     "Houston Astros": "HOU",
     "Los Angeles Angels": "LAA",
-    "Oakland Athletics": "ATH",  # Updated from OAK to ATH
+    "Athletics": "ATH",  # Added variation
+    "Oakland Athletics": "ATH",
     "Seattle Mariners": "SEA",
     "Texas Rangers": "TEX",
     "Atlanta Braves": "ATL",
@@ -41,7 +42,9 @@ TEAM_ABBREVIATIONS = {
     "Cincinnati Reds": "CIN",
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
-    "St. Louis Cardinals": "STL",  # Updated to match exact team name
+    "Cardinals": "STL",  # Added variation
+    "St Louis Cardinals": "STL",  # Added variation without period
+    "St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
     "Los Angeles Dodgers": "LAD",
@@ -106,6 +109,11 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Add abbreviated team names and division info
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
+
+    # Add temporary debug output to see actual team names
+    st.markdown("**Teams in dataset:**")
+    for team in team_scores['team'].unique():
+        st.write(f"Team: '{team}' -> Abbrev: '{TEAM_ABBREVIATIONS.get(team, 'NOT FOUND')}'")
 
     # Create hierarchical bar chart
     fig = px.bar(
