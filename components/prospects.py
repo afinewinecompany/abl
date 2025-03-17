@@ -32,31 +32,16 @@ def get_color_for_score(score: float, min_score: float, max_score: float) -> str
     b = int(128 * (1 - normalized))
     return f"#{r:02x}{g:02x}{b:02x}"
 
-def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
-    """Generate HTML for team prospects list"""
-    avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
-        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    ]
-
-    for _, prospect in prospects_df.iterrows():
-        prospects_html.append(
-            f'<div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
-            f'<div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">'
-            f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
-            f'</div>'
-        )
-
-    return "".join(prospects_html)
-
 def render_prospect_preview(prospect, color, team_prospects=None):
-    """Render a single prospect preview card with expandable details and debug logging"""
-    team_id = f"team_{prospect['player_name'].replace(' ', '_').lower()}"
-    prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
+    """Render a single prospect preview card with native Streamlit expander"""
+    st.markdown(
+        f'<div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color};">',
+        unsafe_allow_html=True
+    )
 
-    return f"""
-    <div class="prospect-card" id="{team_id}" onclick="toggleTeam('{team_id}')" style="cursor: pointer; padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; transition: all 0.2s ease;">
+    # Display team header
+    st.markdown(
+        f"""
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
@@ -68,14 +53,32 @@ def render_prospect_preview(prospect, color, team_prospects=None):
             </div>
             <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
                 {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
-                <span id="arrow_{team_id}">▼</span>
             </div>
         </div>
-        <div id="details_{team_id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-            {prospects_list}
-        </div>
-    </div>
-    """
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Show prospects in expander
+    if team_prospects is not None:
+        with st.expander("Show Prospects"):
+            avg_score = team_prospects['prospect_score'].mean()
+            st.markdown(f"**Team Average Score:** {avg_score:.2f}")
+
+            for _, p in team_prospects.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+                        <div style="font-size: 0.9rem; color: #fafafa;">{p['player_name']}</div>
+                        <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                            {p['position']} | Score: {p['prospect_score']:.1f}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
@@ -166,7 +169,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Convert to DataFrame for easier handling
     df = pd.DataFrame(data)
 
-    # Create sunburst chart
+    # Create sunburst chart with increased size
     fig = go.Figure(go.Sunburst(
         ids=df['id'],
         labels=df['label'],
@@ -176,7 +179,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         textinfo='label',
         marker=dict(
             colors=df['color'],
-            colorscale='viridis',
+            colorscale='RdYlBu_r',  # Changed to a more distinct color scale
             showscale=True,
             colorbar=dict(
                 title=dict(
@@ -200,17 +203,18 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     fig.update_layout(
         title=dict(
             text='Prospect System Hierarchy',
-            font=dict(color='white'),
+            font=dict(color='white', size=24),
             x=0.5,
-            xanchor='center'
+            xanchor='center',
+            y=0.95
         ),
-        height=900,  # Increased height
+        width=None,  # Allow width to be responsive
+        height=1200,  # Increased height significantly
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=30, l=10, r=10, b=10),
-        # Add mobile-responsive layout
-        autosize=True,
+        margin=dict(t=100, l=20, r=20, b=20),
+        autosize=True
     )
 
     return fig
@@ -219,67 +223,6 @@ def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
         st.header("📚 Prospect Analysis")
-
-        # Add JavaScript for team expansion with debug logging
-        st.markdown("""
-        <script>
-            console.log('Loading prospect analysis script...');
-
-            function toggleTeam(teamId) {
-                console.log('Toggle clicked for team:', teamId);
-
-                var details = document.getElementById('details_' + teamId);
-                var arrow = document.getElementById('arrow_' + teamId);
-                var card = document.getElementById(teamId);
-
-                console.log('Elements found:', {
-                    details: details,
-                    arrow: arrow,
-                    card: card
-                });
-
-                if (details && arrow && card) {
-                    if (details.style.display === 'none') {
-                        console.log('Expanding team:', teamId);
-                        details.style.display = 'block';
-                        arrow.innerHTML = '▲';
-                        card.style.backgroundColor = 'rgba(26, 28, 35, 0.8)';
-                        card.style.borderLeftWidth = '5px';
-                    } else {
-                        console.log('Collapsing team:', teamId);
-                        details.style.display = 'none';
-                        arrow.innerHTML = '▼';
-                        card.style.backgroundColor = 'rgba(26, 28, 35, 0.5)';
-                        card.style.borderLeftWidth = '3px';
-                    }
-                } else {
-                    console.error('Missing elements for team:', teamId);
-                }
-            }
-
-            // Add debug info at bottom of page
-            document.addEventListener('DOMContentLoaded', function() {
-                var debugDiv = document.createElement('div');
-                debugDiv.style.margin = '2rem 0';
-                debugDiv.style.padding = '1rem';
-                debugDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
-                debugDiv.style.borderRadius = '8px';
-                debugDiv.innerHTML = '<h4 style="color: #fff;">Debug Console</h4><div id="debugOutput" style="color: #fff; font-family: monospace; white-space: pre-wrap;"></div>';
-                document.body.appendChild(debugDiv);
-
-                // Override console.log
-                var oldLog = console.log;
-                console.log = function() {
-                    oldLog.apply(console, arguments);
-                    var output = document.getElementById('debugOutput');
-                    if (output) {
-                        var args = Array.from(arguments);
-                        output.innerHTML += args.join(' ') + '\\n';
-                    }
-                };
-            });
-        </script>
-        """, unsafe_allow_html=True)
 
         # Load division data
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
@@ -316,7 +259,7 @@ def render(roster_data: pd.DataFrame):
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
-        # Create sunburst visualization
+        # Create and display sunburst visualization with increased size
         fig = create_sunburst_visualization(team_scores, division_mapping)
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
@@ -326,10 +269,10 @@ def render(roster_data: pd.DataFrame):
         - **Size**: Represents total prospect value
         - **Color**: Indicates average prospect quality
         - **Hierarchy**: League → Division → Team
-        - Hover over segments for detailed information
+        - Click on segments to zoom in/out
         """)
 
-        # Get score range for color gradient - use average scores instead of total
+        # Get score range for color gradient - use average scores
         min_score = team_scores['avg_score'].min()
         max_score = team_scores['avg_score'].max()
 
@@ -344,12 +287,12 @@ def render(roster_data: pd.DataFrame):
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
-                st.markdown(render_prospect_preview({
+                render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division_mapping.get(row['team'], "Unknown"),
                     'prospect_score': row['total_score'],
                     'mlb_team': row['team']
-                }, color, team_prospects), unsafe_allow_html=True)
+                }, color, team_prospects)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
@@ -360,12 +303,12 @@ def render(roster_data: pd.DataFrame):
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
-            st.markdown(render_prospect_preview({
+            render_prospect_preview({
                 'player_name': f"#{i + 4} {row['team']}",
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['total_score'],
                 'mlb_team': row['team']
-            }, color, team_prospects), unsafe_allow_html=True)
+            }, color, team_prospects)
 
         # Add legend for color scale
         st.markdown("### Color Scale Legend")
