@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, handbook
 from api_client import FantraxAPI
 from data_processor import DataProcessor
 
@@ -388,7 +388,7 @@ def main():
             "🏠 League Info",
             "👥 Team Rosters",
             "🏆 Power Rankings",
-            "📚 Handbook",
+            "📚 Rules & Info",
             "📈 Projected Rankings"
         ])
 
@@ -402,7 +402,7 @@ def main():
             power_rankings.render(processed_standings_data)
 
         with tab4:
-            prospects.render(processed_roster_data)
+            handbook.render(processed_roster_data)
 
         with tab5:
             projected_rankings.render(processed_roster_data)
