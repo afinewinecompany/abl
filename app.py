@@ -360,23 +360,23 @@ def main():
     if 'league_id' not in st.session_state:
         st.session_state.league_id = 'grx2lginm1v4p5jd'  # Default league ID
 
-    # Initialize API client with league ID
-    api_client = FantraxAPI(league_id=st.session_state.league_id)
-    data_processor = DataProcessor()
+    try:
+        # League ID input field - moved to top of app for better visibility
+        new_league_id = st.text_input(
+            "Enter League ID",
+            value=st.session_state.league_id,
+            help="Enter your Fantrax league ID to load league-specific data"
+        )
 
-    # Streamlined sidebar
-    with st.sidebar:
-        st.markdown("### 🔄 League Controls")
-        if st.button("Refresh Data", use_container_width=True):
+        # Update league ID if changed
+        if new_league_id != st.session_state.league_id:
+            st.session_state.league_id = new_league_id
             st.experimental_rerun()
 
-        st.markdown("---")
-        st.markdown("""
-        ### About ABL Analytics
-        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
-        """)
+        # Initialize API client with league ID
+        api_client = FantraxAPI(league_id=st.session_state.league_id)
+        data_processor = DataProcessor()
 
-    try:
         # Create tabs for different sections
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🏠 League Info",
@@ -386,47 +386,39 @@ def main():
             "📈 Projected Rankings"
         ])
 
-        with tab1:
-            # League ID input field in League Info tab
-            new_league_id = st.text_input(
-                "Enter League ID",
-                value=st.session_state.league_id,
-                help="Enter your Fantrax league ID to load league-specific data"
-            )
-
-            # Update league ID if changed
-            if new_league_id != st.session_state.league_id:
-                st.session_state.league_id = new_league_id
-                st.experimental_rerun()
-
-            # Fetch league data
+        with st.spinner('Loading league data...'):
+            # Fetch all required data with current league ID
             league_data = api_client.get_league_info()
+            roster_data = api_client.get_team_rosters()
+            standings_data = api_client.get_standings()
+            player_ids = api_client.get_player_ids()
+
+            # Process data
             processed_league_data = data_processor.process_league_info(league_data)
-            league_info.render(processed_league_data)
+            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
+            processed_standings_data = data_processor.process_standings(standings_data)
 
-        # Fetch all required data with current league ID
-        roster_data = api_client.get_team_rosters()
-        standings_data = api_client.get_standings()
-        player_ids = api_client.get_player_ids()
+            with tab1:
+                league_info.render(processed_league_data)
 
-        # Process data
-        processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
-        processed_standings_data = data_processor.process_standings(standings_data)
+            with tab2:
+                rosters.render(processed_roster_data)
 
-        with tab2:
-            rosters.render(processed_roster_data)
+            with tab3:
+                power_rankings.render(processed_standings_data)
 
-        with tab3:
-            power_rankings.render(processed_standings_data)
+            with tab4:
+                prospects.render(processed_roster_data)
 
-        with tab4:
-            prospects.render(processed_roster_data)
-
-        with tab5:
-            projected_rankings.render(processed_roster_data)
+            with tab5:
+                projected_rankings.render(processed_roster_data)
 
     except Exception as e:
-        st.error(f"An error occurred while loading data. Please verify your league ID and try refreshing.")
+        st.error(f"An error occurred while loading data: {str(e)}")
+        st.error("Please verify your league ID and try again.")
+        if st.button("Reset to Default League"):
+            st.session_state.league_id = 'grx2lginm1v4p5jd'
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

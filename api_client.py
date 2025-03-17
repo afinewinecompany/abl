@@ -23,6 +23,9 @@ class FantraxAPI:
             if endpoint == 'getPlayerIds':
                 params['sport'] = 'MLB'
 
+            # Debug log
+            st.write(f"Making request to {endpoint} with params: {params}")
+
             response = requests.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
@@ -31,10 +34,20 @@ class FantraxAPI:
                     'Accept': 'application/json'
                 }
             )
+
+            # Debug log
+            st.write(f"Response status code: {response.status_code}")
+
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+
+            # Debug log
+            if not data:
+                st.write(f"Warning: Empty response from {endpoint}")
+
+            return data
         except requests.exceptions.RequestException as e:
-            st.error(f"API request failed: {str(e)}")
+            st.error(f"API request failed for endpoint {endpoint}: {str(e)}")
             raise Exception(f"API request failed: {str(e)}")
         except ValueError as e:
             st.error(f"Invalid league ID or failed to parse response: {str(e)}")
