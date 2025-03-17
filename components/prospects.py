@@ -322,6 +322,78 @@ TEAM_ABBREVIATIONS = {
     "San Francisco Giants": "SF"
 }
 
+def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
+    """Render the animated TOP 100 header and dropdown"""
+    # CSS for animated header
+    st.markdown("""
+        <style>
+        @keyframes gradient {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        .top-100-header {
+            background: linear-gradient(-45deg, #dc143c, #4169e1, #1e90ff, #dc143c);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        </style>
+        <div class="top-100-header">
+            <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
+            <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Get top 100 prospects sorted by score
+    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
+
+    # Create dropdown
+    st.markdown("### 🌟 Select a prospect to view details")
+    selected_prospect = st.selectbox(
+        "",
+        options=top_100['player_name'],
+        format_func=lambda x: f"{x} ({top_100[top_100['player_name']==x]['team'].iloc[0]})"
+    )
+
+    # Display selected prospect details
+    if selected_prospect:
+        prospect_data = top_100[top_100['player_name'] == selected_prospect].iloc[0]
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            # Display headshot
+            headshot_html = get_player_headshot_html(prospect_data['player_name'], player_id_cache)
+            if headshot_html:
+                st.markdown(headshot_html, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #1a1c23; 
+                             display: flex; align-items: center; justify-content: center; color: white;">
+                        No Photo
+                    </div>
+                """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+                <div style="padding: 1rem; background: rgba(26, 28, 35, 0.3); border-radius: 8px;">
+                    <h3 style="margin:0; color: white;">{prospect_data['player_name']}</h3>
+                    <p style="margin:0.5rem 0; color: rgba(255,255,255,0.8);">
+                        Team: {prospect_data['team']}<br>
+                        Position: {prospect_data['position']}<br>
+                        Prospect Score: {prospect_data['prospect_score']:.2f}
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
+
+
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
@@ -355,6 +427,9 @@ def render(roster_data: pd.DataFrame):
         # Set prospect score from Unique score
         ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+
+        # Render top 100 header and dropdown
+        render_top_100_header(ranked_prospects, player_id_cache)
 
         # Calculate team rankings
         team_scores = ranked_prospects.groupby('team').agg({
