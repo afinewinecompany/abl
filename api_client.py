@@ -3,13 +3,15 @@ from typing import Dict, Any
 import streamlit as st
 
 class FantraxAPI:
-    def __init__(self):
+    def __init__(self, league_id: str = None):
         self.base_url = "https://www.fantrax.com/fxea/general"
-        self.league_id = "grx2lginm1v4p5jd"
+        self.league_id = league_id
 
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
         """Make API request with error handling"""
         try:
+            if params is None:
+                params = {}
             response = requests.get(f"{self.base_url}/{endpoint}", params=params)
             response.raise_for_status()
             return response.json()
