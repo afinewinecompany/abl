@@ -151,10 +151,11 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                 tickfont=dict(color='white')
             )
         ),
+        customdata=df[['color']],  # Pass color (avg_score) as custom data
         hovertemplate="""
         <b>%{label}</b><br>
         Total Score: %{value:.1f}<br>
-        Average Score: %{marker.color:.2f}
+        Average Score: %{customdata[0]:.2f}
         <extra></extra>
         """
     ))
