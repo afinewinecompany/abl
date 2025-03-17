@@ -5,44 +5,30 @@ import streamlit as st
 class DataProcessor:
     def process_league_info(self, data: Dict) -> Dict:
         """Process league information data"""
-        if not data or not isinstance(data, dict):
-            return {
-                'name': 'N/A',
-                'season': 'N/A',
-                'sport': 'MLB',
-                'scoring_type': 'N/A',
-                'teams': 0
-            }
-
         try:
+            # Debug the incoming data structure
+            st.write("Raw league data:", data)
+
             # Extract league settings from the correct location in the API response
             rosters = data.get('rosters', {})
-            league_name = data.get('leagueName', 'N/A')
-            league_season = str(data.get('season', 'N/A'))
-            num_teams = len(rosters) if rosters else 0
-
-            # Get scoring type from leagueSettings if available
-            scoring_type = 'H2H'  # Default to Head-to-Head
-            if 'leagueSettings' in data:
-                settings = data['leagueSettings']
-                if 'scoringType' in settings:
-                    scoring_type = settings['scoringType']
+            settings = data.get('settings', {})
 
             return {
-                'name': league_name,
-                'season': league_season,
+                'name': data.get('leagueName', 'N/A'),
+                'season': str(data.get('seasonId', 'N/A')),
                 'sport': 'MLB',
-                'scoring_type': scoring_type,
-                'teams': num_teams
+                'scoring_type': settings.get('scoringType', 'H2H'),
+                'teams': len(rosters) if rosters else 0
             }
 
         except Exception as e:
             st.error(f"Error processing league info: {str(e)}")
+            st.write("Debug - Full data structure:", data)
             return {
                 'name': 'N/A',
                 'season': 'N/A',
                 'sport': 'MLB',
-                'scoring_type': 'N/A',
+                'scoring_type': 'H2H',
                 'teams': 0
             }
 
