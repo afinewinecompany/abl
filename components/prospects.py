@@ -29,7 +29,7 @@ TEAM_ABBREVIATIONS = {
     "Minnesota Twins": "MIN",
     "Houston Astros": "HOU",
     "Los Angeles Angels": "LAA",
-    "Oakland Athletics": "OAK",
+    "Oakland Athletics": "ATH",  # Updated from OAK to ATH
     "Seattle Mariners": "SEA",
     "Texas Rangers": "TEX",
     "Atlanta Braves": "ATL",
@@ -41,7 +41,7 @@ TEAM_ABBREVIATIONS = {
     "Cincinnati Reds": "CIN",
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
-    "St. Louis Cardinals": "STL",
+    "St. Louis Cardinals": "STL",  # Updated to match exact team name
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
     "Los Angeles Dodgers": "LAD",
@@ -107,9 +107,6 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    # Debug output to identify missing mappings
-    st.write("Teams without abbreviations:", team_scores[team_scores['team_abbrev'].isnull()]['team'].tolist())
-
     # Create hierarchical bar chart
     fig = px.bar(
         team_scores,
@@ -156,9 +153,9 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Update hover template
     fig.update_traces(
         hovertemplate="<b>%{customdata[0]}</b><br>" +
-                     "Division: %{customdata[1]}<br>" +
-                     "Average Score: %{x:.2f}<br>" +
-                     "Total Score: %{customdata[2]:.1f}<extra></extra>"
+                      "Division: %{customdata[1]}<br>" +
+                      "Average Score: %{x:.2f}<br>" +
+                      "Total Score: %{customdata[2]:.1f}<extra></extra>"
     )
 
     # Display the chart
@@ -190,8 +187,8 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
         text=team_scores['team_abbrev'],
         textposition="top center",
         hovertemplate="<b>%{text}</b><br>" +
-                     "Power Rank: %{x}<br>" +
-                     "Prospect Score: %{y:.2f}<extra></extra>"
+                      "Power Rank: %{x}<br>" +
+                      "Prospect Score: %{y:.2f}<extra></extra>"
     ))
 
     # Update layout
