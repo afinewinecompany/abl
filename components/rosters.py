@@ -2,7 +2,25 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from typing import Dict
-from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points, normalize_name
+from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points
+
+def normalize_name(name: str) -> str:
+    """Normalize player name for comparison"""
+    try:
+        if ',' in name:
+            last, first = name.split(',', 1)
+            name = f"{first.strip()} {last.strip()}"
+
+        # Handle middle initials by removing them
+        parts = name.strip().split()
+        if len(parts) > 2:
+            # If middle part is an initial (one letter possibly with period)
+            if len(parts[1]) <= 2 and '.' in parts[1]:
+                name = f"{parts[0]} {parts[-1]}"
+
+        return name.strip()
+    except:
+        return name.strip()
 
 def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
     """Calculate total fantasy points for a player, handling special case for Ohtani"""
