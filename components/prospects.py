@@ -102,7 +102,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     data.append({
         'id': 'league',
         'parent': '',
-        'label': f"League ({league_avg:.1%})",
+        'label': f"League (Avg: {league_avg:.2f})",
         'value': league_total,
         'color': league_avg
     })
@@ -112,7 +112,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"div_{div['division']}",
             'parent': 'league',
-            'label': f"{div['division']} ({div['avg_score']:.1%})",
+            'label': f"{div['division']} (Avg: {div['avg_score']:.2f})",
             'value': div['total_score'],
             'color': div['avg_score']
         })
@@ -122,7 +122,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"team_{team['team_abbrev']}",
             'parent': f"div_{team['division']}",
-            'label': f"{team['team_abbrev']} ({team['avg_score']:.1%})",
+            'label': f"{team['team_abbrev']} (Avg: {team['avg_score']:.2f})",
             'value': team['total_score'],
             'color': team['avg_score']
         })
@@ -144,17 +144,17 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             showscale=True,
             colorbar=dict(
                 title=dict(
-                    text='Average Score %',
+                    text='Average Prospect Score (0-10)',
                     font=dict(color='white')
                 ),
-                tickformat='.1%',
+                tickformat='.2f',
                 tickfont=dict(color='white')
             )
         ),
         hovertemplate="""
         <b>%{label}</b><br>
         Total Score: %{value:.1f}<br>
-        Average Score: %{marker.color:.1%}
+        Average Score: %{marker.color:.2f}
         <extra></extra>
         """
     ))
