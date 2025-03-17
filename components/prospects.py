@@ -22,56 +22,44 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
+def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
+    """Create a cache of normalized player names to MLBAMID"""
+    cache = {}
+    for _, row in mlb_ids_df.iterrows():
+        try:
+            if pd.isna(row['Last']) or pd.isna(row['First']):
+                continue
+            name = normalize_name(f"{row['First']} {row['Last']}")
+            if name and not pd.isna(row['MLBAMID']):
+                cache[name] = str(row['MLBAMID'])
+        except Exception:
+            continue
+    return cache
+
 def get_headshot_url(mlbam_id: str) -> str:
     """Generate MLB headshot URL from player ID"""
     return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
-def get_player_headshot_html(player_name: str, mlb_ids_df: pd.DataFrame) -> str:
+def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
     """Get player headshot HTML if available"""
     try:
-        # Normalize the search name
         search_name = normalize_name(player_name)
-        st.write(f"Debug: Looking for player: {search_name}")  # Debug output
+        mlbam_id = player_id_cache.get(search_name)
 
-        # Search for the player in the MLB IDs dataframe
-        for _, row in mlb_ids_df.iterrows():
-            try:
-                # Debug output for row data
-                st.write(f"Debug: CSV row data: {dict(row)}")
-
-                # Parse the CSV name (format is "Name,MLBAMID,RazzballID,etc")
-                name_parts = str(row['Name']).split(',')
-                if len(name_parts) < 2:
-                    continue
-
-                # The format appears to be "Last_Name, First_Name"
-                last_name = name_parts[0].strip()
-                first_name = name_parts[1].strip()
-                db_name = normalize_name(f"{first_name} {last_name}")
-
-                st.write(f"Debug: Comparing {search_name} with {db_name}")  # Debug output
-
-                if search_name == db_name:
-                    st.write(f"Debug: Match found! MLBAMID: {row['MLBAMID']}")  # Debug output
-                    return f"""
-                        <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                            <img src="{get_headshot_url(row['MLBAMID'])}"
-                                 style="width: 100%; height: 100%; object-fit: cover;"
-                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
-                                 alt="{player_name} headshot">
-                        </div>
-                    """
-            except Exception as row_error:
-                st.write(f"Debug: Error processing row: {str(row_error)}")
-                continue
-
+        if mlbam_id:
+            return f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                    <img src="{get_headshot_url(mlbam_id)}"
+                         style="width: 100%; height: 100%; object-fit: cover;"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
+                         alt="{player_name} headshot">
+                </div>
+            """
     except Exception as e:
-        st.error(f"Error getting headshot for {player_name}: {str(e)}")
-        # Print full exception for debugging
-        st.exception(e)
+        pass
     return ""
 
-def get_team_prospects_html(prospects_df: pd.DataFrame, mlb_ids_df: pd.DataFrame) -> str:
+def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
     avg_score = prospects_df['prospect_score'].mean()
     prospects_html = [
@@ -79,8 +67,8 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, mlb_ids_df: pd.DataFrame
     ]
 
     for _, prospect in prospects_df.iterrows():
-        # Get headshot HTML for the prospect
-        headshot_html = get_player_headshot_html(prospect['player_name'], mlb_ids_df)
+        # Get headshot HTML for the prospect using the cache
+        headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
 
         # Use flexbox layout for all prospect entries
         prospects_html.append(
@@ -119,7 +107,7 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
 
     return f"#{r:02x}{g:02x}{b:02x}"
 
-def render_prospect_preview(prospect, rank: int, team_prospects=None, mlb_ids_df=None):
+def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None):
     """Render a single prospect preview card with native Streamlit expander"""
     color = get_color_for_rank(rank)
 
@@ -151,7 +139,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, mlb_ids_df
     # Show prospects in expander
     if team_prospects is not None:
         with st.expander("Show Prospects"):
-            prospects_html = get_team_prospects_html(team_prospects, mlb_ids_df)
+            prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
             st.markdown(prospects_html, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -343,8 +331,9 @@ def render(roster_data: pd.DataFrame):
         divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
         division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
-        # Load MLB player IDs
+        # Load MLB player IDs and create cache
         mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
+        player_id_cache = create_player_id_cache(mlb_ids_df)
 
         # Read and process prospect scores
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
@@ -406,7 +395,7 @@ def render(roster_data: pd.DataFrame):
                     'position': division_mapping.get(row['team'], "Unknown"),
                     'prospect_score': row['total_score'],
                     'mlb_team': row['team']
-                }, idx + 1, team_prospects, mlb_ids_df)
+                }, idx + 1, team_prospects, player_id_cache)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
@@ -421,7 +410,7 @@ def render(roster_data: pd.DataFrame):
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['total_score'],
                 'mlb_team': row['team']
-            }, i + 4, team_prospects, mlb_ids_df)
+            }, i + 4, team_prospects, player_id_cache)
 
         # Add legend for color scale
         st.markdown("### Color Scale Legend")
