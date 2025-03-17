@@ -89,25 +89,28 @@ def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
     ]
 
     for _, prospect in prospects_df.iterrows():
-        # Add headshot for Kristian Campbell as a test
+        # Add headshot for Kristian Campbell with more robust name matching
         headshot_html = ""
-        if "kristian campbell" in prospect['player_name'].lower():
+        clean_name = prospect['player_name'].lower().strip()
+        if "kristian" in clean_name and "campbell" in clean_name:
+            st.write(f"Debug: Found Kristian Campbell: {prospect['player_name']}")  # Debug output
             headshot_html = """
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem;">
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/692225/headshot/67/current"
                          style="width: 100%; height: 100%; object-fit: cover;"
                          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjIwIj4/PC90ZXh0Pjwvc3ZnPg==';"
-                         alt="Player headshot">
+                         alt="Kristian Campbell headshot">
                 </div>
             """
 
+        # Use flexbox layout for all prospect entries
         prospects_html.append(
-            f'<div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
-            f'<div style="display: flex; align-items: center;">'
+            f'<div style="padding: 0.75rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
+            f'<div style="display: flex; align-items: center; gap: 1rem;">'
             f'{headshot_html}'
             f'<div style="flex-grow: 1;">'
-            f'<div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">'
+            f'<div style="font-size: 0.95rem; color: #fafafa; font-weight: 500;">{prospect["player_name"]}</div>'
+            f'<div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">'
             f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
             f'</div>'
             f'</div>'
