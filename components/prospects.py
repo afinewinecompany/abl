@@ -34,7 +34,18 @@ def get_player_headshot_html(player_name: str, mlb_ids_df: pd.DataFrame) -> str:
 
         # Search for the player in the MLB IDs dataframe
         for _, row in mlb_ids_df.iterrows():
-            db_name = normalize_name(f"{row['First']} {row['Last']}")
+            # Parse the name from the CSV's "Name" column
+            if pd.isna(row['Name']):
+                continue
+
+            # Split the CSV name by comma (format is "Last, First")
+            csv_name_parts = row['Name'].split(',', 1)
+            if len(csv_name_parts) != 2:
+                continue
+
+            last, first = csv_name_parts
+            db_name = normalize_name(f"{first.strip()} {last.strip()}")
+
             if search_name == db_name:
                 return f"""
                     <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
