@@ -56,14 +56,21 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 </div>
             """
         else:
-            # Create initials from player name
-            initials = ''.join(n[0].upper() for n in player_name.split() if n)[:2]
-            placeholder_svg = f"""
+            # Split name and get initials in First Last order
+            name_parts = player_name.split(',')  # Split on comma
+            if len(name_parts) == 2:
+                last_name, first_name = name_parts
+                initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
+            else:
+                # Fallback to regular split for names without comma
+                parts = player_name.split()
+                initials = ''.join(part[0].upper() for part in parts[:2])
+
+            return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
                     <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
                 </div>
             """
-            return placeholder_svg
     except Exception as e:
         pass
     return ""
@@ -366,21 +373,60 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             opacity: 1;
             transform: translateY(0);
         }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+        /* Animation Options */
+        .fade-in {
+            animation: fadeIn 0.6s ease forwards;
         }
-        @keyframes fadeInUp {
+        .slide-up {
+            animation: slideUp 0.6s ease forwards;
+        }
+        .slide-in {
+            animation: slideIn 0.6s ease forwards;
+        }
+        .scale-up {
+            animation: scaleUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(40px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
         </style>
+
         <script>
         const observerCallback = (entries, observer) => {
             entries.forEach(entry => {
@@ -405,11 +451,14 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             });
         });
         </script>
-        <div class="top-100-header">
-            <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
-            <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
-        </div>
     """, unsafe_allow_html=True)
+
+    # Check for duplicates in the data
+    duplicates = ranked_prospects[ranked_prospects.duplicated(subset=['player_name'], keep=False)]
+    if not duplicates.empty:
+        st.warning("⚠️ Duplicate players found in rosters:")
+        for name, group in duplicates.groupby('player_name'):
+            st.write(f"- {name} appears {len(group)} times in {', '.join(group['team'])}")
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
@@ -425,7 +474,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Get headshot HTML for the prospect using the cache
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        prospect_card = f'<div class="prospect-card" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
+        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
