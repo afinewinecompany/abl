@@ -88,15 +88,40 @@ def render_prospect_preview(prospect, color, team_prospects=None):
     prospects_list = get_team_prospects_html(team_prospects) if team_prospects is not None else ""
 
     return f"""
-    <div class="prospect-card" style="
-        padding: 0.75rem;
-        background-color: rgba(26, 28, 35, 0.5);
-        border-radius: 8px;
-        margin: 0.25rem 0;
-        border-left: 3px solid {color};
-        transition: all 0.2s ease;
-        position: relative;
-    ">
+    <style>
+        .prospect-card {{
+            padding: 0.75rem;
+            background-color: rgba(26, 28, 35, 0.5);
+            border-radius: 8px;
+            margin: 0.25rem 0;
+            border-left: 3px solid {color};
+            transition: all 0.2s ease;
+            position: relative;
+        }}
+        .prospect-card:hover {{
+            background-color: rgba(26, 28, 35, 0.8);
+            border-left-width: 5px;
+            margin-left: 4px;
+        }}
+        .prospect-details {{
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            min-width: 300px;
+            background: rgba(26, 28, 35, 0.98);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-left: 10px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid {color};
+        }}
+        .prospect-card:hover .prospect-details {{
+            display: block;
+        }}
+    </style>
+    <div class="prospect-card">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex-grow: 1;">
                 <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
@@ -110,33 +135,10 @@ def render_prospect_preview(prospect, color, team_prospects=None):
                 {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
             </div>
         </div>
-        <div class="prospect-details" style="
-            display: none;
-            position: absolute;
-            left: 100%;
-            top: 0;
-            min-width: 300px;
-            background: rgba(26, 28, 35, 0.98);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-left: 10px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            border: 1px solid {color};
-        ">
+        <div class="prospect-details">
             {prospects_list}
         </div>
     </div>
-    <style>
-        .prospect-card:hover {
-            transform: translateX(4px);
-            background-color: rgba(26, 28, 35, 0.8);
-            border-left-width: 5px;
-        }
-        .prospect-card:hover .prospect-details {
-            display: block;
-        }
-    </style>
     """
 
 def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
