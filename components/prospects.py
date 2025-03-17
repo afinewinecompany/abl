@@ -215,12 +215,14 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                     font=dict(color='white', size=12)
                 ),
                 tickfont=dict(color='white', size=10),
-                len=0.5,  # Make colorbar shorter
-                yanchor='bottom',  # Position at bottom
-                y=0,  # Position at bottom
+                len=0.6,  # Slightly longer colorbar
+                yanchor='top',  # Position from top
+                y=-0.12,  # Move down below the plot
                 xanchor='center',
                 x=0.5,  # Center horizontally
-                orientation='h'  # Horizontal colorbar
+                orientation='h',  # Horizontal colorbar
+                thickness=20,  # Slightly thicker bar
+                bgcolor='rgba(0,0,0,0)'  # Transparent background
             )
         ),
         customdata=df[['avg_score']],
@@ -243,13 +245,19 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             y=0.98
         ),
         width=None,  # Allow width to be responsive
-        height=None,  # Allow height to be responsive
+        height=700,  # Fixed height that works well on both desktop and mobile
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=50, l=0, r=0, b=100),  # Reduced top margin, increased bottom for colorbar
+        margin=dict(
+            t=50,   # Top margin
+            l=10,   # Left margin
+            r=10,   # Right margin
+            b=150,  # Increased bottom margin for colorbar
+            pad=0   # No padding
+        ),
         autosize=True,
-        # Add responsive layout
+        # Ensure the plot maintains aspect ratio
         xaxis=dict(
             scaleanchor='y',
             scaleratio=1
