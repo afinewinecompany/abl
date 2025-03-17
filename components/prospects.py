@@ -23,13 +23,28 @@ def normalize_name(name: str) -> str:
         return name.strip().lower()
 
 def get_color_for_score(score: float, min_score: float, max_score: float) -> str:
-    """Generate color based on score position in range from yellow (best) to purple (worst)"""
+    """Generate color based on score position in range from red (best) to blue (worst)"""
     # Normalize score to 0-1 range
     normalized = (score - min_score) / (max_score - min_score)
-    # Create color gradient from yellow (#FFD700) to purple (#800080)
-    r = int(255 * normalized + 128 * (1 - normalized))
-    g = int(215 * normalized)
-    b = int(128 * (1 - normalized))
+
+    # Define color stops for red-to-blue gradient
+    # Red: #DC143C (Crimson)
+    # White: #FFFFFF (Middle)
+    # Blue: #4169E1 (Royal Blue)
+
+    if normalized > 0.5:
+        # Red to White gradient
+        factor = (normalized - 0.5) * 2  # Scale 0.5-1 to 0-1
+        r = 220  # Red component of crimson
+        g = int(69 + (255 - 69) * (1 - factor))  # Transition to white
+        b = int(60 + (255 - 60) * (1 - factor))
+    else:
+        # White to Blue gradient
+        factor = normalized * 2  # Scale 0-0.5 to 0-1
+        r = int(255 * (1 - factor))
+        g = int(255 * (1 - factor))
+        b = 225  # Blue component
+
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def render_prospect_preview(prospect, color, team_prospects=None):
@@ -314,7 +329,7 @@ def render(roster_data: pd.DataFrame):
         st.markdown("### Color Scale Legend")
         st.markdown("""
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
-            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #FFD700 0%, #4169E1 50%, #800080 100%);"></div>
+            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #FFFFFF 50%, #4169E1 100%);"></div>
             <div style="display: flex; justify-content: space-between;">
                 <span>Higher Average Score</span>
                 <span>Medium</span>
