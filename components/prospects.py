@@ -22,10 +22,10 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
-def get_color_for_score(score: float, min_score: float, max_score: float) -> str:
-    """Generate color based on score position in range from red (best) to blue (worst)"""
-    # Normalize score to 0-1 range
-    normalized = (score - min_score) / (max_score - min_score)
+def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
+    """Generate color based on rank position (1 = most red, 30 = most blue)"""
+    # Normalize rank to 0-1 range (reverse it so 1 = 1.0 and 30 = 0.0)
+    normalized = 1 - ((rank - 1) / (total_teams - 1))
 
     # Define color stops for red-to-blue gradient
     # Red: #DC143C (Crimson)
@@ -47,8 +47,10 @@ def get_color_for_score(score: float, min_score: float, max_score: float) -> str
 
     return f"#{r:02x}{g:02x}{b:02x}"
 
-def render_prospect_preview(prospect, color, team_prospects=None):
+def render_prospect_preview(prospect, rank: int, team_prospects=None):
     """Render a single prospect preview card with native Streamlit expander"""
+    color = get_color_for_rank(rank)
+
     st.markdown(
         f'<div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color};">',
         unsafe_allow_html=True
@@ -302,9 +304,6 @@ def render(roster_data: pd.DataFrame):
         - Click on segments to zoom in/out
         """)
 
-        # Get score range for color gradient - use average scores
-        min_score = team_scores['avg_score'].min()
-        max_score = team_scores['avg_score'].max()
 
         # Display top 3 teams
         st.subheader("🏆 Top Prospect Systems")
@@ -313,7 +312,6 @@ def render(roster_data: pd.DataFrame):
         columns = [col1, col2, col3]
         for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
             with columns[idx]:
-                color = get_color_for_score(row['avg_score'], min_score, max_score)
                 team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                     'prospect_score', ascending=False
                 )
@@ -322,14 +320,13 @@ def render(roster_data: pd.DataFrame):
                     'position': division_mapping.get(row['team'], "Unknown"),
                     'prospect_score': row['total_score'],
                     'mlb_team': row['team']
-                }, color, team_prospects)
+                }, idx + 1, team_prospects)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
         remaining_teams = team_scores.iloc[3:]
 
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            color = get_color_for_score(row['avg_score'], min_score, max_score)
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
@@ -338,7 +335,7 @@ def render(roster_data: pd.DataFrame):
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['total_score'],
                 'mlb_team': row['team']
-            }, color, team_prospects)
+            }, i + 4, team_prospects)
 
         # Add legend for color scale
         st.markdown("### Color Scale Legend")
@@ -346,9 +343,9 @@ def render(roster_data: pd.DataFrame):
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
             <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #FFFFFF 50%, #4169E1 100%);"></div>
             <div style="display: flex; justify-content: space-between;">
-                <span>Higher Average Score</span>
-                <span>Medium</span>
-                <span>Lower Average Score</span>
+                <span>#1 Rank</span>
+                <span>#15</span>
+                <span>#30 Rank</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
