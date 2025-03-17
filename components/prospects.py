@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 
@@ -68,18 +69,18 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     """Render interactive prospect strength visualization"""
     st.subheader("🎨 Prospect System Quality")
 
-    # Create treemap data
+    # Create sunburst data
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
-    # Create treemap figure
-    fig = px.treemap(
+    # Create sunburst figure
+    fig = px.sunburst(
         team_scores,
-        path=[px.Constant("All Teams"), 'division', 'team'],
-        values='total_score',  # Size of boxes still shows overall system strength
-        color='avg_score',     # Color represents average prospect quality
-        color_continuous_scale='RdYlGn',
+        path=[px.Constant("League"), 'division', 'team'],
+        values='total_score',
+        color='avg_score',
+        color_continuous_scale='viridis',  # Better color scheme
         custom_data=['avg_score', 'total_score'],
-        title='Team Prospect System Quality Overview',
+        title='Team Prospect System Quality Overview'
     )
 
     # Update layout
@@ -89,6 +90,7 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         height=600,
+        showlegend=False
     )
 
     # Update traces
@@ -102,43 +104,89 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     # Display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Add a radar chart for top systems
-    st.subheader("📊 Top System Comparison")
+    # Top Systems Analysis
+    st.subheader("📊 Elite Prospect Systems")
 
-    # Get top 5 teams by average score
-    top_teams = team_scores.nlargest(5, 'avg_score')
+    # Get top 8 teams by average score
+    top_teams = team_scores.nlargest(8, 'avg_score').copy()
 
-    # Create radar chart
-    fig2 = px.line_polar(
-        top_teams,
-        r='avg_score',
-        theta='team',
-        line_close=True,
-        range_r=[0, top_teams['avg_score'].max() * 1.1],
-        title='Top 5 Farm Systems by Average Prospect Quality'
-    )
+    # Create a horizontal lollipop chart
+    fig2 = go.Figure()
 
+    # Add lines
+    fig2.add_trace(go.Scatter(
+        x=top_teams['avg_score'],
+        y=top_teams['team'],
+        mode='lines',
+        line=dict(color='rgba(128,128,128,0.2)', width=2),
+        showlegend=False
+    ))
+
+    # Add markers
+    fig2.add_trace(go.Scatter(
+        x=top_teams['avg_score'],
+        y=top_teams['team'],
+        mode='markers',
+        marker=dict(
+            size=20,
+            color=top_teams['avg_score'],
+            colorscale='viridis',
+            line=dict(color='rgba(255,255,255,0.2)', width=1),
+            showscale=True,
+            colorbar=dict(
+                title='Avg Score',
+                titleside='right',
+                titlefont=dict(color='white'),
+                tickfont=dict(color='white')
+            )
+        ),
+        text=top_teams['avg_score'].round(2),
+        textposition='middle right',
+        hovertemplate="<b>%{y}</b><br>" +
+                     "Average Score: %{x:.2f}<br>" +
+                     "<extra></extra>"
+    ))
+
+    # Update layout
     fig2.update_layout(
-        height=500,
+        title=dict(
+            text='Top Farm Systems by Average Prospect Quality',
+            font=dict(color='white', size=16),
+            x=0.5,
+            xanchor='center'
+        ),
+        height=400,
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0.1)',
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, top_teams['avg_score'].max() * 1.1],
-                showline=False,
-                color='white'
-            ),
-            angularaxis=dict(
-                color='white',
-                gridcolor='rgba(128,128,128,0.1)'
-            ),
-            gridshape='circular'
+        plot_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(
+            title='Average Prospect Score',
+            gridcolor='rgba(128,128,128,0.1)',
+            title_font=dict(size=14),
+            tickfont=dict(size=12),
+            showgrid=True,
+            zeroline=False
         ),
+        yaxis=dict(
+            title='',
+            gridcolor='rgba(128,128,128,0.1)',
+            tickfont=dict(size=12),
+            showgrid=False
+        ),
+        margin=dict(l=10, r=10, t=40, b=10),
+        showlegend=False
     )
 
     st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
+
+    # Add context explanation
+    st.markdown("""
+    #### Understanding the Metrics
+    - **Average Score**: Represents the typical quality of prospects in the system
+    - **Total Score**: Indicates the overall strength of the farm system
+    - Higher scores suggest stronger future potential and depth
+    """)
+
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
