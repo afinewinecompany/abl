@@ -124,129 +124,327 @@ def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: D
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
+    # Create division-level aggregates
+    division_scores = team_scores.groupby('division').agg({
+        'avg_score': 'mean',
+        'total_score': 'sum'
+    }).reset_index()
 
-    # Create hierarchical bar chart
-    fig = px.bar(
-        team_scores,
-        x='avg_score',
-        y='team_abbrev',
-        color='avg_score',
-        orientation='h',
-        color_continuous_scale='viridis',
-        custom_data=['team', 'division', 'total_score'],
-        labels={
-            'avg_score': 'Average Prospect Score',
-            'team_abbrev': 'Team'
-        }
-    )
+    # Create league-level aggregates
+    league_scores = pd.DataFrame([{
+        'level': 'League',
+        'avg_score': team_scores['avg_score'].mean(),
+        'total_score': team_scores['total_score'].sum()
+    }])
 
-    # Update layout
-    fig.update_layout(
-        title=dict(
-            text='Team Prospect System Quality Overview',
-            font=dict(color='white'),
-            x=0.5,
-            xanchor='center'
-        ),
-        height=600,
-        font=dict(color='white'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(color='white'),
-            tickfont=dict(color='white'),
-            zeroline=False
-        ),
-        yaxis=dict(
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(color='white'),
-            tickfont=dict(color='white'),
-            zeroline=False
-        ),
-        showlegend=False,
-        margin=dict(l=10, r=50, t=40, b=10)
-    )
+    # Prepare data for sunburst chart
+    team_data = team_scores.copy()
+    team_data['parent'] = team_data['division']
+    team_data['label'] = team_data['team_abbrev']
+    team_data = team_data[['label', 'parent', 'avg_score', 'total_score']]
 
-    # Update hover template
-    fig.update_traces(
-        hovertemplate="<b>%{customdata[0]}</b><br>" +
-                      "Division: %{customdata[1]}<br>" +
-                      "Average Score: %{x:.2f}<br>" +
-                      "Total Score: %{customdata[2]:.1f}<extra></extra>"
-    )
+    division_data = division_scores.copy()
+    division_data['parent'] = 'League'
+    division_data['label'] = division_data['division']
+    division_data = division_data[['label', 'parent', 'avg_score', 'total_score']]
 
-    # Display the chart
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    league_data = league_scores.copy()
+    league_data['parent'] = ''
+    league_data['label'] = 'League'
+    league_data = league_data[['label', 'parent', 'avg_score', 'total_score']]
 
-    # Power Rankings vs Prospect Strength
-    st.subheader("📊 System Strength vs Team Power")
+    # Combine all levels
+    sunburst_data = pd.concat([team_data, division_data, league_data], ignore_index=True)
 
-    fig2 = go.Figure()
-
-    # Add scatter plot
-    fig2.add_trace(go.Scatter(
-        x=team_scores['power_rank'],
-        y=team_scores['avg_score'],
-        mode='markers+text',
+    # Create sunburst chart
+    fig = go.Figure(go.Sunburst(
+        ids=sunburst_data.index,
+        labels=sunburst_data['label'],
+        parents=sunburst_data['parent'],
+        values=sunburst_data['total_score'],
+        branchvalues='total',
+        textinfo='label+value',
         marker=dict(
-            size=15,
-            color=team_scores['avg_score'],
+            colors=sunburst_data['avg_score'],
             colorscale='viridis',
             showscale=True,
             colorbar=dict(
                 title=dict(
-                    text='Prospect Score',
+                    text='Average Score',
                     font=dict(color='white')
                 ),
                 tickfont=dict(color='white')
             )
         ),
-        text=team_scores['team_abbrev'],
-        textposition="top center",
-        hovertemplate="<b>%{text}</b><br>" +
-                      "Power Rank: %{x}<br>" +
-                      "Prospect Score: %{y:.2f}<extra></extra>"
+        hovertemplate="""
+        <b>%{label}</b><br>
+        Total Score: %{value:.1f}<br>
+        Average Score: %{color:.2f}
+        <extra></extra>
+        """
     ))
 
     # Update layout
-    fig2.update_layout(
+    fig.update_layout(
         title=dict(
-            text='Prospect System Quality vs Power Rankings',
+            text='Prospect System Hierarchy',
             font=dict(color='white'),
             x=0.5,
             xanchor='center'
         ),
-        xaxis=dict(
-            title='Power Rank',
-            tickmode='linear',
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(color='white'),
-            tickfont=dict(color='white'),
-            zeroline=False
-        ),
-        yaxis=dict(
-            title='Average Prospect Score',
-            gridcolor='rgba(128,128,128,0.1)',
-            title_font=dict(color='white'),
-            tickfont=dict(color='white'),
-            zeroline=False
-        ),
-        plot_bgcolor='rgba(0,0,0,0)',
+        height=700,
+        font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
-        height=500,
-        showlegend=False,
-        margin=dict(l=10, r=50, t=40, b=10)
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, l=10, r=10, b=10)
     )
 
-    st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Add context explanation
+    # Add explanation
     st.markdown("""
-    #### Understanding the Metrics
-    - **Average Score**: Represents the typical quality of prospects in the system
-    - **Power Rank**: Current team power ranking
-    - Lower power rank (1 being best) with high prospect scores indicates strong present and future outlook
+    #### Understanding the Visualization
+    - **Size**: Represents total prospect value
+    - **Color**: Indicates average prospect quality
+    - **Hierarchy**: League → Division → Team
+    - Hover over segments for detailed information
+    """)
+
+def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, division, color, top_3_prospects):
+    """Render a team card with prospect preview"""
+    preview_html = "".join([render_prospect_preview(prospect, color)
+                           for _, prospect in top_3_prospects.iterrows()])
+
+    return f"""
+    <div style="padding: 1.25rem; background-color: rgba(26, 28, 35, 0.8); border-radius: 12px; margin: 0.75rem 0; border-left: 5px solid {color}; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)'; this.style.borderLeftWidth='7px';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'; this.style.borderLeftWidth='5px';">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center;">
+            <div>
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa; margin-bottom: 0.2rem;">#{team_rank} {team}</div>
+                <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.7);">{division}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa;">{total_score:.1f}</div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">Avg: {avg_score:.2f}</div>
+            </div>
+        </div>
+        <div style="margin-top: 0.75rem;">
+            <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.8); margin-bottom: 0.5rem; font-weight: 500;">Top Prospects:</div>
+            {preview_html}
+        </div>
+    </div>"""
+
+def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]) -> None:
+    """Render interactive prospect strength visualization"""
+    st.subheader("🎨 Prospect System Quality")
+
+    # Add abbreviated team names and division info
+    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
+    team_scores['division'] = team_scores['team'].map(division_mapping)
+
+    # Create division-level aggregates
+    division_scores = team_scores.groupby('division').agg({
+        'avg_score': 'mean',
+        'total_score': 'sum'
+    }).reset_index()
+
+    # Create league-level aggregates
+    league_scores = pd.DataFrame([{
+        'level': 'League',
+        'avg_score': team_scores['avg_score'].mean(),
+        'total_score': team_scores['total_score'].sum()
+    }])
+
+    # Prepare data for sunburst chart
+    team_data = team_scores.copy()
+    team_data['parent'] = team_data['division']
+    team_data['label'] = team_data['team_abbrev']
+    team_data = team_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    division_data = division_scores.copy()
+    division_data['parent'] = 'League'
+    division_data['label'] = division_data['division']
+    division_data = division_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    league_data = league_scores.copy()
+    league_data['parent'] = ''
+    league_data['label'] = 'League'
+    league_data = league_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    # Combine all levels
+    sunburst_data = pd.concat([team_data, division_data, league_data], ignore_index=True)
+
+    # Create sunburst chart
+    fig = go.Figure(go.Sunburst(
+        ids=sunburst_data.index,
+        labels=sunburst_data['label'],
+        parents=sunburst_data['parent'],
+        values=sunburst_data['total_score'],
+        branchvalues='total',
+        textinfo='label+value',
+        marker=dict(
+            colors=sunburst_data['avg_score'],
+            colorscale='viridis',
+            showscale=True,
+            colorbar=dict(
+                title=dict(
+                    text='Average Score',
+                    font=dict(color='white')
+                ),
+                tickfont=dict(color='white')
+            )
+        ),
+        hovertemplate="""
+        <b>%{label}</b><br>
+        Total Score: %{value:.1f}<br>
+        Average Score: %{color:.2f}
+        <extra></extra>
+        """
+    ))
+
+    # Update layout
+    fig.update_layout(
+        title=dict(
+            text='Prospect System Hierarchy',
+            font=dict(color='white'),
+            x=0.5,
+            xanchor='center'
+        ),
+        height=700,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, l=10, r=10, b=10)
+    )
+
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Add explanation
+    st.markdown("""
+    #### Understanding the Visualization
+    - **Size**: Represents total prospect value
+    - **Color**: Indicates average prospect quality
+    - **Hierarchy**: League → Division → Team
+    - Hover over segments for detailed information
+    """)
+
+def render_team_card(team, team_rank, total_score, avg_score, ranked_prospects, division, color, top_3_prospects):
+    """Render a team card with prospect preview"""
+    preview_html = "".join([render_prospect_preview(prospect, color)
+                           for _, prospect in top_3_prospects.iterrows()])
+
+    return f"""
+    <div style="padding: 1.25rem; background-color: rgba(26, 28, 35, 0.8); border-radius: 12px; margin: 0.75rem 0; border-left: 5px solid {color}; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)'; this.style.borderLeftWidth='7px';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'; this.style.borderLeftWidth='5px';">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center;">
+            <div>
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa; margin-bottom: 0.2rem;">#{team_rank} {team}</div>
+                <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.7);">{division}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; font-size: 1.1rem; color: #fafafa;">{total_score:.1f}</div>
+                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">Avg: {avg_score:.2f}</div>
+            </div>
+        </div>
+        <div style="margin-top: 0.75rem;">
+            <div style="font-size: 0.9rem; color: rgba(250, 250, 250, 0.8); margin-bottom: 0.5rem; font-weight: 500;">Top Prospects:</div>
+            {preview_html}
+        </div>
+    </div>"""
+
+def render_gradient_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]) -> None:
+    """Render interactive prospect strength visualization"""
+    st.subheader("🎨 Prospect System Quality")
+
+    # Add abbreviated team names and division info
+    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
+    team_scores['division'] = team_scores['team'].map(division_mapping)
+
+    # Create division-level aggregates
+    division_scores = team_scores.groupby('division').agg({
+        'avg_score': 'mean',
+        'total_score': 'sum'
+    }).reset_index()
+
+    # Create league-level aggregates
+    league_scores = pd.DataFrame([{
+        'level': 'League',
+        'avg_score': team_scores['avg_score'].mean(),
+        'total_score': team_scores['total_score'].sum()
+    }])
+
+    # Prepare data for sunburst chart
+    team_data = team_scores.copy()
+    team_data['parent'] = team_data['division']
+    team_data['label'] = team_data['team_abbrev']
+    team_data = team_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    division_data = division_scores.copy()
+    division_data['parent'] = 'League'
+    division_data['label'] = division_data['division']
+    division_data = division_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    league_data = league_scores.copy()
+    league_data['parent'] = ''
+    league_data['label'] = 'League'
+    league_data = league_data[['label', 'parent', 'avg_score', 'total_score']]
+
+    # Combine all levels
+    sunburst_data = pd.concat([team_data, division_data, league_data], ignore_index=True)
+
+    # Create sunburst chart
+    fig = go.Figure(go.Sunburst(
+        ids=sunburst_data.index,
+        labels=sunburst_data['label'],
+        parents=sunburst_data['parent'],
+        values=sunburst_data['total_score'],
+        branchvalues='total',
+        textinfo='label+value',
+        marker=dict(
+            colors=sunburst_data['avg_score'],
+            colorscale='viridis',
+            showscale=True,
+            colorbar=dict(
+                title=dict(
+                    text='Average Score',
+                    font=dict(color='white')
+                ),
+                tickfont=dict(color='white')
+            )
+        ),
+        hovertemplate="""
+        <b>%{label}</b><br>
+        Total Score: %{value:.1f}<br>
+        Average Score: %{color:.2f}
+        <extra></extra>
+        """
+    ))
+
+    # Update layout
+    fig.update_layout(
+        title=dict(
+            text='Prospect System Hierarchy',
+            font=dict(color='white'),
+            x=0.5,
+            xanchor='center'
+        ),
+        height=700,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, l=10, r=10, b=10)
+    )
+
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Add explanation
+    st.markdown("""
+    #### Understanding the Visualization
+    - **Size**: Represents total prospect value
+    - **Color**: Indicates average prospect quality
+    - **Hierarchy**: League → Division → Team
+    - Hover over segments for detailed information
     """)
 
 def render(roster_data: pd.DataFrame):
