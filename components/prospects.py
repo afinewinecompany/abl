@@ -64,24 +64,19 @@ def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
     """Generate HTML for team prospects list"""
     avg_score = prospects_df['prospect_score'].mean()
     prospects_html = [
-        f"""
-        <div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">
-            Team Average Score: {avg_score:.2f}
-        </div>
-        """
+        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
     ]
 
     for _, prospect in prospects_df.iterrows():
-        prospect_html = f"""
-        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-            <div style="font-size: 0.9rem; color: #fafafa;">{prospect['player_name']}</div>
-            <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                {prospect['position']} | Score: {prospect['prospect_score']:.1f}
-            </div>
-        </div>
-        """
-        prospects_html.append(prospect_html)
-    return "\n".join(prospects_html)
+        prospects_html.append(
+            f'<div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
+            f'<div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>'
+            f'<div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">'
+            f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
+            f'</div>'
+        )
+
+    return "".join(prospects_html)
 
 def render_prospect_preview(prospect, color, team_prospects=None):
     """Render a single prospect preview card with hover details"""
