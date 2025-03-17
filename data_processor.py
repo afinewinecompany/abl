@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Dict, List, Union
+import streamlit as st
 
 class DataProcessor:
     def process_league_info(self, data: Dict) -> Dict:
@@ -14,12 +15,15 @@ class DataProcessor:
             }
 
         try:
+            rosters = data.get('rosters', {})
+            league_settings = data.get('leagueSettings', {})
+
             return {
                 'name': data.get('leagueName', 'N/A'),
                 'season': str(data.get('season', 'N/A')),
                 'sport': 'MLB',
-                'scoring_type': data.get('scoringType', 'N/A'),
-                'teams': len(data.get('rosters', {}))
+                'scoring_type': league_settings.get('scoringType', 'N/A'),
+                'teams': len(rosters) if rosters else 0
             }
         except Exception as e:
             st.error(f"Error processing league info: {str(e)}")
