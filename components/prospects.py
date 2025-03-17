@@ -451,14 +451,11 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             });
         });
         </script>
+        <div class="top-100-header">
+            <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
+            <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
+        </div>
     """, unsafe_allow_html=True)
-
-    # Check for duplicates in the data
-    duplicates = ranked_prospects[ranked_prospects.duplicated(subset=['player_name'], keep=False)]
-    if not duplicates.empty:
-        st.warning("⚠️ Duplicate players found in rosters:")
-        for name, group in duplicates.groupby('player_name'):
-            st.write(f"- {name} appears {len(group)} times in {', '.join(group['team'])}")
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')

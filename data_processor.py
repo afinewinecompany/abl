@@ -32,6 +32,7 @@ class DataProcessor:
     def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
         """Process roster data and combine with player information"""
         roster_list = []
+        seen_players = {}  # Track players we've already processed
         rosters = roster_data.get('rosters', {})
 
         for team_id, team_data in rosters.items():
@@ -44,6 +45,11 @@ class DataProcessor:
 
                 player_id = player.get('id')
                 player_details = player_ids.get(player_id, {})
+                player_name = player_details.get('name', player.get('name', 'Unknown'))
+
+                # Skip if we've already seen this player
+                if player_name in seen_players:
+                    continue
 
                 # Get original status and only convert NA to Minors
                 status = player.get('status', 'Active')
@@ -52,13 +58,14 @@ class DataProcessor:
 
                 player_info = {
                     'team': team_name,
-                    'player_name': player_details.get('name', player.get('name', 'Unknown')),
+                    'player_name': player_name,
                     'position': player.get('position', 'N/A'),
                     'status': status,
                     'salary': player.get('salary', 0.0),
                     'mlb_team': player_details.get('team', 'N/A')
                 }
                 roster_list.append(player_info)
+                seen_players[player_name] = True
 
         return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
             columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
