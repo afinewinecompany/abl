@@ -13,18 +13,14 @@ class FantraxAPI:
             if params is None:
                 params = {}
 
-            # Ensure league_id is included in params when required
+            # Add required parameters
             if endpoint in ['getLeagueInfo', 'getTeamRosters', 'getStandings']:
                 if not self.league_id:
                     raise ValueError("League ID is required")
                 params['leagueId'] = self.league_id
 
-            # Add sport parameter for player IDs
             if endpoint == 'getPlayerIds':
                 params['sport'] = 'MLB'
-
-            # Debug log
-            st.write(f"Making request to {endpoint} with params: {params}")
 
             response = requests.get(
                 f"{self.base_url}/{endpoint}",
@@ -34,24 +30,13 @@ class FantraxAPI:
                     'Accept': 'application/json'
                 }
             )
-
-            # Debug log
-            st.write(f"Response status code: {response.status_code}")
-
             response.raise_for_status()
-            data = response.json()
+            return response.json()
 
-            # Debug log for league info
-            if endpoint == 'getLeagueInfo':
-                st.write("League Info Response:", data)
-
-            return data
         except requests.exceptions.RequestException as e:
-            st.error(f"API request failed for endpoint {endpoint}: {str(e)}")
             raise Exception(f"API request failed: {str(e)}")
         except ValueError as e:
-            st.error(f"Invalid league ID or failed to parse response: {str(e)}")
-            raise Exception(f"Invalid league ID or failed to parse response: {str(e)}")
+            raise Exception(f"Invalid league ID or data format: {str(e)}")
 
     def get_player_ids(self) -> Dict:
         """Fetch player IDs"""

@@ -1,29 +1,25 @@
 import pandas as pd
-from typing import Dict, List, Union
+from typing import Dict, Any
 import streamlit as st
 
 class DataProcessor:
     def process_league_info(self, data: Dict) -> Dict:
         """Process league information data"""
         try:
-            # Debug the incoming data structure
-            st.write("Raw league data:", data)
-
-            # Extract league settings from the correct location in the API response
+            # Handle potential missing data gracefully
+            league_name = data.get('leagueName', 'N/A')
+            season = data.get('seasonId', data.get('season', 'N/A'))
             rosters = data.get('rosters', {})
-            settings = data.get('settings', {})
 
             return {
-                'name': data.get('leagueName', 'N/A'),
-                'season': str(data.get('seasonId', 'N/A')),
+                'name': league_name,
+                'season': str(season),
                 'sport': 'MLB',
-                'scoring_type': settings.get('scoringType', 'H2H'),
+                'scoring_type': 'H2H',  # Default scoring type
                 'teams': len(rosters) if rosters else 0
             }
-
         except Exception as e:
             st.error(f"Error processing league info: {str(e)}")
-            st.write("Debug - Full data structure:", data)
             return {
                 'name': 'N/A',
                 'season': 'N/A',
@@ -34,9 +30,8 @@ class DataProcessor:
 
     def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
         """Process roster data and combine with player information"""
-        roster_list = []
-
         try:
+            roster_list = []
             rosters = roster_data.get('rosters', {})
 
             for team_id, team_data in rosters.items():
@@ -64,26 +59,21 @@ class DataProcessor:
                     }
                     roster_list.append(player_info)
 
+            return pd.DataFrame(roster_list)
         except Exception as e:
             st.error(f"Error processing roster data: {str(e)}")
-
-        return pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
-            columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
-        )
+            return pd.DataFrame(columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team'])
 
     def process_standings(self, standings_data: Dict) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
-        standings_list = []
-
         try:
-            if isinstance(standings_data, dict):
-                standings_data = standings_data.get('standings', [])
+            standings_list = []
+            standings = standings_data.get('standings', [])
 
-            for team in standings_data:
+            for team in standings:
                 if not isinstance(team, dict):
                     continue
 
-                # Parse points string into components (format: "W-L-T")
                 points_str = team.get('points', '0-0-0')
                 wins, losses, ties = map(int, points_str.split('-'))
 
@@ -99,9 +89,7 @@ class DataProcessor:
                 }
                 standings_list.append(team_stats)
 
+            return pd.DataFrame(standings_list)
         except Exception as e:
             st.error(f"Error processing standings data: {str(e)}")
-
-        return pd.DataFrame(standings_list) if standings_list else pd.DataFrame(
-            columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
-        )
+            return pd.DataFrame(columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back'])
