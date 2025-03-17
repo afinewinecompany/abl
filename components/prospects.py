@@ -102,7 +102,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     data.append({
         'id': 'league',
         'parent': '',
-        'label': 'League',
+        'label': f"League ({league_avg:.1%})",
         'value': league_total,
         'color': league_avg
     })
@@ -112,7 +112,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"div_{div['division']}",
             'parent': 'league',
-            'label': div['division'],
+            'label': f"{div['division']} ({div['avg_score']:.1%})",
             'value': div['total_score'],
             'color': div['avg_score']
         })
@@ -122,7 +122,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         data.append({
             'id': f"team_{team['team_abbrev']}",
             'parent': f"div_{team['division']}",
-            'label': team['team_abbrev'],
+            'label': f"{team['team_abbrev']} ({team['avg_score']:.1%})",
             'value': team['total_score'],
             'color': team['avg_score']
         })
@@ -144,16 +144,17 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             showscale=True,
             colorbar=dict(
                 title=dict(
-                    text='Average Score',
+                    text='Average Score %',
                     font=dict(color='white')
                 ),
+                tickformat='.1%',
                 tickfont=dict(color='white')
             )
         ),
         hovertemplate="""
         <b>%{label}</b><br>
         Total Score: %{value:.1f}<br>
-        Average Score: %{marker.color:.2f}
+        Average Score: %{marker.color:.1%}
         <extra></extra>
         """
     ))
@@ -246,20 +247,53 @@ def render(roster_data: pd.DataFrame):
             with col:
                 division = division_mapping.get(row['team'], "Unknown")
                 color = division_colors.get(division, "#00ff88")
-
-                # Get team's prospects (only display top 3)
-                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                    'prospect_score', ascending=False
-                )
-                top_3_prospects = team_prospects.head(3)
-
-                # Display team card
                 st.markdown(render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division,
                     'prospect_score': row['total_score'],
                     'mlb_team': row['team']
                 }, color), unsafe_allow_html=True)
+
+        # Show remaining teams
+        st.markdown("### Remaining Teams")
+        remaining_teams = team_scores.iloc[3:]
+
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
+            division = division_mapping.get(row['team'], "Unknown")
+            color = division_colors.get(division, "#00ff88")
+            st.markdown(render_prospect_preview({
+                'player_name': f"#{i + 4} {row['team']}",
+                'position': division,
+                'prospect_score': row['total_score'],
+                'mlb_team': row['team']
+            }, color), unsafe_allow_html=True)
+
+        # Division legend
+        st.markdown("### Division Color Guide")
+        col1, col2 = st.columns(2)
+
+        divisions = list(division_colors.items())
+        mid = len(divisions) // 2
+
+        for i, (division, color) in enumerate(divisions):
+            col = col1 if i < mid else col2
+            with col:
+                st.markdown(f"""
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin: 0.25rem 0;
+                ">
+                    <div style="
+                        width: 1rem;
+                        height: 1rem;
+                        background-color: {color};
+                        border-radius: 3px;
+                    "></div>
+                    <span>{division}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"An error occurred while processing prospect data: {str(e)}")
