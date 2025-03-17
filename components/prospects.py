@@ -23,6 +23,58 @@ def normalize_name(name: str) -> str:
     except:
         return name.strip().lower()
 
+def get_player_names(player_name: str) -> tuple:
+    """Extract first and last name from player name string"""
+    try:
+        if ',' in player_name:
+            last_name, first_name = player_name.split(',', 1)
+            return first_name.strip(), last_name.strip()
+        else:
+            parts = player_name.strip().split()
+            if len(parts) >= 2:
+                return parts[0], ' '.join(parts[1:])
+            return None, None
+    except Exception:
+        return None, None
+
+def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
+    """Generate HTML for team prospects list"""
+    avg_score = prospects_df['prospect_score'].mean()
+    prospects_html = [
+        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
+    ]
+
+    for _, prospect in prospects_df.iterrows():
+        # Get first and last name properly handling comma format
+        first_name, last_name = get_player_names(prospect["player_name"])
+
+        # Create prospect card with headshot if we can get names
+        img_html = ''
+        if first_name and last_name:
+            try:
+                headshot_url = get_player_headshot(first_name, last_name)
+                if headshot_url:
+                    img_html = f"<img src='{headshot_url}' style='width: 50px; height: 50px; border-radius: 25px; object-fit: cover;' onerror=\"this.style.display='none'\">"
+            except Exception as e:
+                st.error(f"Error fetching headshot for {first_name} {last_name}: {str(e)}")
+
+        card_html = f"""
+        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                {img_html}
+                <div>
+                    <div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>
+                    <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
+                        {prospect["position"]} | Score: {prospect["prospect_score"]:.1f}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        prospects_html.append(card_html)
+
+    return "".join(prospects_html)
+
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
     # Normalize rank to 0-1 range (reverse it so 1 = 1.0 and 30 = 0.0)
@@ -43,45 +95,6 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     b = int(b1 * normalized + b2 * (1 - normalized))
 
     return f"#{r:02x}{g:02x}{b:02x}"
-
-def get_team_prospects_html(prospects_df: pd.DataFrame) -> str:
-    """Generate HTML for team prospects list"""
-    avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
-        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    ]
-
-    for _, prospect in prospects_df.iterrows():
-        # Split name into first and last name for headshot lookup
-        name_parts = prospect["player_name"].split()
-        if len(name_parts) >= 2:
-            first_name = name_parts[0]
-            last_name = " ".join(name_parts[1:])
-            headshot_url = get_player_headshot(first_name, last_name)
-        else:
-            headshot_url = None
-
-        # Create prospect card with headshot if available
-        img_html = ''
-        if headshot_url:
-            img_html = f"<img src='{headshot_url}' style='width: 50px; height: 50px; border-radius: 25px; object-fit: cover;' onerror=\"this.style.display='none'\">"
-
-        card_html = f"""
-        <div style="padding: 0.5rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                {img_html}
-                <div>
-                    <div style="font-size: 0.9rem; color: #fafafa;">{prospect["player_name"]}</div>
-                    <div style="font-size: 0.8rem; color: rgba(250, 250, 250, 0.7);">
-                        {prospect["position"]} | Score: {prospect["prospect_score"]:.1f}
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-        prospects_html.append(card_html)
-
-    return "".join(prospects_html)
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None):
     """Render a single prospect preview card with native Streamlit expander"""
