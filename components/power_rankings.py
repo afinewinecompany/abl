@@ -4,6 +4,44 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict
 
+# Add team abbreviation mapping
+TEAM_ABBREVIATIONS = {
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "New York Yankees": "NYY",
+    "Tampa Bay Rays": "TB",
+    "Toronto Blue Jays": "TOR",
+    "Chicago White Sox": "CHW",
+    "Cleveland Guardians": "CLE",
+    "Detroit Tigers": "DET",
+    "Kansas City Royals": "KC",
+    "Minnesota Twins": "MIN",
+    "Houston Astros": "HOU",
+    "Los Angeles Angels": "LAA",
+    "Athletics": "ATH",  # Added variation
+    "Oakland Athletics": "ATH",
+    "Seattle Mariners": "SEA",
+    "Texas Rangers": "TEX",
+    "Atlanta Braves": "ATL",
+    "Miami Marlins": "MIA",
+    "New York Mets": "NYM",
+    "Philadelphia Phillies": "PHI",
+    "Washington Nationals": "WSH",
+    "Chicago Cubs": "CHC",
+    "Cincinnati Reds": "CIN",
+    "Milwaukee Brewers": "MIL",
+    "Pittsburgh Pirates": "PIT",
+    "Cardinals": "STL",  # Added variation
+    "Saint Louis Cardinals": "STL",  # Added variation
+    "St Louis Cardinals": "STL",  # Added variation without period
+    "St. Louis Cardinals": "STL",
+    "Arizona Diamondbacks": "ARI",
+    "Colorado Rockies": "COL",
+    "Los Angeles Dodgers": "LAD",
+    "San Diego Padres": "SD",
+    "San Francisco Giants": "SF"
+}
+
 def calculate_power_score(row: pd.Series) -> float:
     """Calculate power score based on multiple factors"""
     win_weight = 0.4
@@ -111,11 +149,13 @@ def render(standings_data: pd.DataFrame):
     # Load prospect data
     try:
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
-        ranked_prospects = pd.DataFrame()  # This will be populated with processed prospect data
 
-        # Calculate prospect scores (simplified version)
+        # Calculate prospect scores
         team_scores = pd.DataFrame({'team': rankings_df['team_name'].unique()})
         team_scores['power_rank'] = team_scores.index + 1
+
+        # Add prospect data processing here.  This is a placeholder, needs real logic.
+        team_scores['prospect_score'] = 0  # Placeholder for actual prospect scores
 
         # Create comparison visualization
         fig2 = go.Figure()
@@ -123,11 +163,11 @@ def render(standings_data: pd.DataFrame):
         # Add scatter plot
         fig2.add_trace(go.Scatter(
             x=team_scores['power_rank'],
-            y=team_scores['prospect_score'] if 'prospect_score' in team_scores.columns else [0] * len(team_scores),
+            y=team_scores['prospect_score'],
             mode='markers+text',
             marker=dict(
                 size=15,
-                color=team_scores['prospect_score'] if 'prospect_score' in team_scores.columns else [0] * len(team_scores),
+                color=team_scores['prospect_score'],
                 colorscale='viridis',
                 showscale=True,
                 colorbar=dict(
@@ -138,7 +178,7 @@ def render(standings_data: pd.DataFrame):
                     tickfont=dict(color='white')
                 )
             ),
-            text=team_scores['team'].apply(lambda x: TEAM_ABBREVIATIONS.get(x, x)),
+            text=[TEAM_ABBREVIATIONS.get(team, team) for team in team_scores['team']],
             textposition="top center",
             hovertemplate="<b>%{text}</b><br>" +
                         "Power Rank: %{x}<br>" +
