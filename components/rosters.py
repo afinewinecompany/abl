@@ -158,11 +158,9 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
             gap: 0.75rem;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        "
-        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
-        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';"
-        >
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
+            onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+            onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
             {headshot_html}
             <div style="flex-grow: 1;">
                 <div style="font-size: 1rem; color: white; font-weight: 600;">
@@ -173,8 +171,7 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
                     gap: 0.75rem;
                     font-size: 0.8rem;
                     color: rgba(255,255,255,0.8);
-                    margin-top: 0.15rem;
-                ">
+                    margin-top: 0.15rem;">
                     <span>{player['position']}</span>
                     <span>|</span>
                     <span>{player['mlb_team']}</span>
@@ -189,8 +186,7 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
                 border-radius: 15px;
                 color: white;
                 font-weight: 600;
-                font-size: 0.8rem;
-            ">
+                font-size: 0.8rem;">
                 {player['status'].upper()}
             </div>
         </div>
