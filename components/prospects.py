@@ -239,82 +239,6 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
-    # Add the global JavaScript function for image fallback
-    script = """
-    <script>
-    if (!window.imageHandlerAdded) {
-        window.handleProspectImage = function(img, id) {
-            const fallbackUrls = [
-                `https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/${id}/headshot/67/current`,
-                `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current`,
-                `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/${id}/headshot/67/current`
-            ];
-            let currentIndex = 0;
-            img.onerror = function() {
-                if (currentIndex < fallbackUrls.length) {
-                    img.src = fallbackUrls[currentIndex++];
-                } else {
-                    img.onerror = null;
-                }
-            };
-            img.onerror();
-        };
-        window.imageHandlerAdded = true;
-    }
-    </script>
-    """
-
-    # Start with the script and average score
-    avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
-        script,
-        f'<div class="prospect-score">Team Average Score: {avg_score:.2f}</div>'
-    ]
-
-    # Add prospect cards
-    for _, prospect in prospects_df.iterrows():
-        search_name = normalize_name(prospect['player_name'])
-        mlbam_id = player_id_cache.get(search_name)
-
-        if mlbam_id:
-            headshot_html = f"""
-                <div class="prospect-headshot">
-                    <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-                         style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="handleProspectImage(this, '{mlbam_id}')"
-                         alt="{prospect['player_name']} headshot">
-                </div>
-            """
-        else:
-            # Generate initials for players without photos
-            parts = prospect['player_name'].split(',')
-            if len(parts) == 2:
-                last_name, first_name = parts
-                initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
-            else:
-                parts = prospect['player_name'].split()
-                initials = ''.join(part[0].upper() for part in parts[:2] if part)
-
-            headshot_html = f"""
-                <div class="prospect-headshot prospect-initials">
-                    <div class="initials">{initials}</div>
-                </div>
-            """
-
-        prospects_html.append(f"""
-            <div class="prospect-card">
-                <div class="prospect-content">
-                    {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{prospect['player_name']}</div>
-                        <div class="prospect-details">
-                            {prospect['position']} | Score: {prospect['prospect_score']:.1f}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        """)
-
     # Add CSS styles
     styles = """
     <style>
@@ -372,8 +296,63 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     </style>
     """
 
-    # Combine everything into a single container
-    return styles + ''.join(prospects_html)
+    # Start with styles and average score
+    avg_score = prospects_df['prospect_score'].mean()
+    prospects_html = [
+        styles,
+        f'<div class="prospect-score">Team Average Score: {avg_score:.2f}</div>'
+    ]
+
+    # Add prospect cards
+    for _, prospect in prospects_df.iterrows():
+        search_name = normalize_name(prospect['player_name'])
+        mlbam_id = player_id_cache.get(search_name)
+
+        if mlbam_id:
+            # Use a simpler fallback approach
+            primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
+            fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+
+            headshot_html = f"""
+                <div class="prospect-headshot">
+                    <img src="{primary_url}"
+                         style="width: 100%; height: 100%; object-fit: cover;"
+                         onerror="this.onerror=null; this.src='{fallback_url}';"
+                         alt="{prospect['player_name']} headshot">
+                </div>
+            """
+        else:
+            # Generate initials for players without photos
+            parts = prospect['player_name'].split(',')
+            if len(parts) == 2:
+                last_name, first_name = parts
+                initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
+            else:
+                parts = prospect['player_name'].split()
+                initials = ''.join(part[0].upper() for part in parts[:2] if part)
+
+            headshot_html = f"""
+                <div class="prospect-headshot prospect-initials">
+                    <div class="initials">{initials}</div>
+                </div>
+            """
+
+        prospects_html.append(f"""
+            <div class="prospect-card">
+                <div class="prospect-content">
+                    {headshot_html}
+                    <div class="prospect-info">
+                        <div class="prospect-name">{prospect['player_name']}</div>
+                        <div class="prospect-details">
+                            {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """)
+
+    # Return the combined HTML
+    return ''.join(prospects_html)
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -449,21 +428,6 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             transform: translateY(-5px);
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
         }}
-        .team-card-{rank}::before {{
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.1), 
-                transparent);
-            background-size: 200% 100%;
-            animation: shimmer 3s infinite;
-            pointer-events: none;
-        }}
         .team-logo-{rank} {{
             position: absolute;
             right: -30px;
@@ -518,6 +482,23 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             display: inline-block;
             margin-top: 0.5rem;
         }}
+        .prospect-container {{
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            animation: fadeInRight 0.5s ease-out;
+        }}
+        @keyframes fadeInRight {{
+            from {{
+                opacity: 0;
+                transform: translateX(-20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -559,183 +540,12 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
             st.markdown(f"""
-                <style>
-                .prospect-list {{
-                    animation: fadeInRight 0.5s ease-out;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 12px;
-                    padding: 1rem;
-                    margin-top: 1rem;
-                }}
-                @keyframes fadeInRight {{
-                    from {{
-                        opacity: 0;
-                        transform: translateX(-20px);
-                    }}
-                    to {{
-                        opacity: 1;
-                        transform: translateX(0);
-                    }}
-                }}
-                </style>
-                {prospects_html}
+                <div class="prospect-container">
+                    {prospects_html}
+                </div>
             """, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-# Add comprehensive MLB team colors mapping after existing mappings
-MLB_TEAM_COLORS = {
-    "Arizona Diamondbacks": {
-        'primary': '#A71930',  # Sedona Red
-        'secondary': '#E3D4AD',  # Sonoran Sand
-        'accent': '#000000'  # Black
-    },
-    "Atlanta Braves": {
-        'primary': '#CE1141',  # Scarlet
-        'secondary': '#13274F',  # Navy Blue
-        'accent': '#EAAA00'  # Yellow
-    },
-    "Baltimore Orioles": {
-        'primary': '#DF4601',  # Orange
-        'secondary': '#000000',  # Black
-        'accent': '#FFFFFF'  # White
-    },
-    "Boston Red Sox": {
-        'primary': '#BD3039',  # Red
-        'secondary': '#0C2340',  # Blue
-        'accent': '#FFFFFF'  # White
-    },
-    "Chicago Cubs": {
-        'primary': '#0E3386',  # Blue
-        'secondary': '#CC3433',  # Red
-        'accent': '#FFFFFF'  # White
-    },
-    "Chicago White Sox": {
-        'primary': '#27251F',  # Black
-        'secondary': '#C4CED4',  # Silver
-        'accent': '#FFFFFF'  # White
-    },
-    "Cincinnati Reds": {
-        'primary': '#C6011F',  # Red
-        'secondary': '#000000',  # Black
-        'accent': '#FFFFFF'  # White
-    },
-    "Cleveland Guardians": {
-        'primary': '#0C2340',  # Navy Blue
-        'secondary': '#E31937',  # Red
-        'accent': '#FFFFFF'  # White
-    },
-    "Colorado Rockies": {
-        'primary': '#33006F',  # Rockies Purple
-        'secondary': '#C4CED4',  # Silver
-        'accent': '#000000'  # Black
-    },
-    "Detroit Tigers": {
-        'primary': '#0C2340',  # Navy Blue
-        'secondary': '#FA4616',  # Orange
-        'accent': '#FFFFFF'  # White
-    },
-    "Houston Astros": {
-        'primary': '#002D62',  # Navy Blue
-        'secondary': '#EB6E1F',  # Orange
-        'accent': '#F4911E'  # Light Orange
-    },
-    "Kansas City Royals": {
-        'primary': '#004687',  # Royal Blue
-        'secondary': '#BD9B60',  # Gold
-        'accent': '#FFFFFF'  # White
-    },
-    "Los Angeles Angels": {
-        'primary': '#003263',  # Blue
-        'secondary': '#BA0021',  # Red
-        'accent': '#862633'  # Maroon
-    },
-    "Los Angeles Dodgers": {
-        'primary': '#005A9C',  # Dodger Blue
-        'secondary': '#EF3E42',  # Red
-        'accent': '#A5ACAF'  # Silver
-    },
-    "Miami Marlins": {
-        'primary': '#00A3E0',  # Miami Blue
-        'secondary': '#FF6B00',  # Caliente Red
-        'accent': '#000000'  # Midnight Black
-    },
-    "Milwaukee Brewers": {
-        'primary': '#12284B',  # Navy Blue
-        'secondary': '#FFC52F',  # Yellow
-        'accent': '#FFFFFF'  # White
-    },
-    "Minnesota Twins": {
-        'primary': '#002B5C',  # Twins Navy Blue
-        'secondary': '#D31145',  # Scarlet Red
-        'accent': '#B4975A'  # Kasota Gold
-    },
-    "New York Mets": {
-        'primary': '#002D72',  # Blue
-        'secondary': '#FF5910',  # Orange
-        'accent': '#FFFFFF'  # White
-    },
-    "New York Yankees": {
-        'primary': '#003087',  # Blue
-        'secondary': '#E4002B',  # Red
-        'accent': '#0C2340'  # Navy Blue
-    },
-    "Athletics": {
-        'primary': '#003831',  # Green
-        'secondary': '#EFB21E',  # Gold
-        'accent': '#A2AAAD'  # Gray
-    },
-    "Philadelphia Phillies": {
-        'primary': '#E81828',  # Red
-        'secondary': '#002D72',  # Blue
-        'accent': '#FFFFFF'  # White
-    },
-    "Pittsburgh Pirates": {
-        'primary': '#27251F',  # Black
-        'secondary': '#FDB827',  # Yellow
-        'accent': '#FFFFFF'  # White
-    },
-    "San Diego Padres": {
-        'primary': '#2F241D',  # Brown
-        'secondary': '#FFC425',  # Gold
-        'accent': '#FFFFFF'  # White
-    },
-    "San Francisco Giants": {
-        'primary': '#FD5A1E',  # Orange
-        'secondary': '#27251F',  # Black
-        'accent': '#EFD19F'  # Beige
-    },
-    "Seattle Mariners": {
-        'primary': '#0C2C56',  # Navy Blue
-        'secondary': '#005C5C',  # Northwest Green
-        'accent': '#C4CED4'  # Silver
-    },
-    "Saint Louis Cardinals": {
-        'primary':'#C41E3A',  # Red
-        'secondary': '#0C2340',  # Navy Blue
-        'accent': '#FEDB00'  # Yellow
-    },
-    "Tampa BayRays": {
-        'primary': '#092C5C',  # Navy Blue
-        'secondary': '#8FBCE6',  # Columbia Blue
-        'accent': '#F5D130'  # Yellow
-    },
-    "Texas Rangers": {
-        'primary': '#003278',  # Blue
-        'secondary': '#C0111F',  # Red
-        'accent': '#FFFFFF'  # White
-    },
-    "Toronto Blue Jays": {
-        'primary': '#134A8E',  # Blue
-        'secondary': '#1D2D5C',  # Navy Blue
-        'accent': '#E8291C'  # Red
-    },
-    "Washington Nationals": {
-        'primary': '#AB0003',  # Red
-        'secondary': '#14225A',  # Navy Blue
-        'accent': '#FFFFFF'  # White
-    }
-}
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
@@ -1088,4 +898,157 @@ MLB_TEAM_IDS = {
     "Miami Marlins": "146",
     "New York Yankees": "147",
     "Milwaukee Brewers": "158"
+}
+
+MLB_TEAM_COLORS = {
+    "Arizona Diamondbacks": {
+        'primary': '#A71930',  # Sedona Red
+        'secondary': '#E3D4AD',  # Sonoran Sand
+        'accent': '#000000'  # Black
+    },
+    "Atlanta Braves": {
+        'primary': '#CE1141',  # Scarlet
+        'secondary': '#13274F',  # Navy Blue
+        'accent': '#EAAA00'  # Yellow
+    },
+    "Baltimore Orioles": {
+        'primary': '#DF4601',  # Orange
+        'secondary': '#000000',  # Black
+        'accent': '#FFFFFF'  # White
+    },
+    "Boston Red Sox": {
+        'primary': '#BD3039',  # Red
+        'secondary': '#0C2340',  # Blue
+        'accent': '#FFFFFF'  # White
+    },
+    "Chicago Cubs": {
+        'primary': '#0E3386',  # Blue
+        'secondary': '#CC3433',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Chicago White Sox": {
+        'primary': '#27251F',  # Black
+        'secondary': '#C4CED4',  # Silver
+        'accent': '#FFFFFF'  # White
+    },
+    "Cincinnati Reds": {
+        'primary': '#C6011F',  # Red
+        'secondary': '#000000',  # Black
+        'accent': '#FFFFFF'  # White
+    },
+    "Cleveland Guardians": {
+        'primary': '#0C2340',  # Navy Blue
+        'secondary': '#E31937',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Colorado Rockies": {
+        'primary': '#33006F',  # Rockies Purple
+        'secondary': '#C4CED4',  # Silver
+        'accent': '#000000'  # Black
+    },
+    "Detroit Tigers": {
+        'primary': '#0C2340',  # Navy Blue
+        'secondary': '#FA4616',  # Orange
+        'accent': '#FFFFFF'  # White
+    },
+    "Houston Astros": {
+        'primary': '#002D62',  # Navy Blue
+        'secondary': '#EB6E1F',  # Orange
+        'accent': '#F4911E'  # Light Orange
+    },
+    "Kansas City Royals": {
+        'primary': '#004687',  # Royal Blue
+        'secondary': '#BD9B60',  # Gold
+        'accent': '#FFFFFF'  # White
+    },
+    "Los Angeles Angels": {
+        'primary': '#003263',  # Blue
+        'secondary': '#BA0021',  # Red
+        'accent': '#862633'  # Maroon
+    },
+    "Los Angeles Dodgers": {
+        'primary': '#005A9C',  # Dodger Blue
+        'secondary': '#EF3E42',  # Red
+        'accent': '#A5ACAF'  # Silver
+    },
+    "Miami Marlins": {
+        'primary': '#00A3E0',  # Miami Blue
+        'secondary': '#FF6B00',  # Caliente Red
+        'accent': '#000000'  # Midnight Black
+    },
+    "Milwaukee Brewers": {
+        'primary': '#12284B',  # Navy Blue
+        'secondary': '#FFC52F',  # Yellow
+        'accent': '#FFFFFF'  # White
+    },
+    "Minnesota Twins": {
+        'primary': '#002B5C',  # Twins Navy Blue
+        'secondary': '#D31145',  # Scarlet Red
+        'accent': '#B4975A'  # Kasota Gold
+    },
+    "New York Mets": {
+        'primary': '#002D72',  # Blue
+        'secondary': '#FF5910',  # Orange
+        'accent': '#FFFFFF'  # White
+    },
+    "New York Yankees": {
+        'primary': '#003087',  # Blue
+        'secondary': '#E4002B',  # Red
+        'accent': '#0C2340'  # Navy Blue
+    },
+    "Athletics": {
+        'primary': '#003831',  # Green
+        'secondary': '#EFB21E',  # Gold
+        'accent': '#A2AAAD'  # Gray
+    },
+    "Philadelphia Phillies": {
+        'primary': '#E81828',  # Red
+        'secondary': '#002D72',  # Blue
+        'accent': '#FFFFFF'  # White
+    },
+    "Pittsburgh Pirates": {
+        'primary': '#27251F',  # Black
+        'secondary': '#FDB827',  # Yellow
+        'accent': '#FFFFFF'  # White
+    },
+    "San Diego Padres": {
+        'primary': '#2F241D',  # Brown
+        'secondary': '#FFC425',  # Gold
+        'accent': '#FFFFFF'  # White
+    },
+    "San Francisco Giants": {
+        'primary': '#FD5A1E',  # Orange
+        'secondary': '#27251F',  # Black
+        'accent': '#EFD19F'  # Beige
+    },
+    "Seattle Mariners": {
+        'primary': '#0C2C56',  # Navy Blue
+        'secondary': '#005C5C',  # Northwest Green
+        'accent': '#C4CED4'  # Silver
+    },
+    "Saint Louis Cardinals": {
+        'primary':'#C41E3A',  # Red
+        'secondary': '#0C2340',  # Navy Blue
+        'accent': '#FEDB00'  # Yellow
+    },
+    "Tampa Bay Rays": {
+        'primary': '#092C5C',  # Navy Blue
+        'secondary': '#8FBCE6',  # Columbia Blue
+        'accent': '#F5D130'  # Yellow
+    },
+    "Texas Rangers": {
+        'primary': '#003278',  # Blue
+        'secondary': '#C0111F',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Toronto Blue Jays": {
+        'primary': '#134A8E',  # Blue
+        'secondary': '#1D2D5C',  # Navy Blue
+        'accent': '#E8291C'  # Red
+    },
+    "Washington Nationals": {
+        'primary': '#AB0003',  # Red
+        'secondary': '#14225A',  # Navy Blue
+        'accent': '#FFFFFF'  # White
+    }
 }
