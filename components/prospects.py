@@ -242,69 +242,13 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     # Calculate average score
     avg_score = prospects_df['prospect_score'].mean()
 
-    prospects_html = [f"""
-        <style>
-        .prospect-list {
-            padding: 1rem;
-            border-radius: 8px;
-            background: rgba(26, 28, 35, 0.3);
-        }
-        .prospect-card {
-            padding: 1rem;
-            margin: 0.5rem 0;
-            background: rgba(26, 28, 35, 0.5);
-            border-radius: 8px;
-            transition: transform 0.2s ease;
-        }
-        .prospect-card:hover {
-            transform: translateX(5px);
-        }
-        .prospect-header {
-            font-size: 1rem;
-            color: #fafafa;
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            border-radius: 4px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-        .prospect-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .prospect-headshot {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #1a1c23;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .prospect-info {
-            flex-grow: 1;
-        }
-        .prospect-name {
-            font-size: 1rem;
-            color: white;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-details {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        .prospect-initials {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        </style>
-        <div class="prospect-list">
-            <div class="prospect-header">Team Average Score: {avg_score:.2f}</div>
-    """]
+    # Build the HTML with proper CSS styling
+    html = f"""
+        <div style="background: rgba(26, 28, 35, 0.3); border-radius: 8px; padding: 1rem;">
+            <div style="font-size: 1rem; color: #fafafa; margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; background: rgba(0, 0, 0, 0.2);">
+                Team Average Score: {avg_score:.2f}
+            </div>
+    """
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
@@ -317,7 +261,7 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
             fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
             headshot_html = f"""
-                <div class="prospect-headshot">
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="{primary_url}" 
                          style="width: 100%; height: 100%; object-fit: cover;"
                          onerror="this.onerror=null; this.src='{fallback_url}';"
@@ -335,27 +279,29 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
             headshot_html = f"""
-                <div class="prospect-headshot">
-                    <div class="prospect-initials">{initials}</div>
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+                    <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
                 </div>
             """
 
-        prospects_html.append(f"""
-            <div class="prospect-card">
-                <div class="prospect-content">
+        html += f"""
+            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
                     {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{prospect['player_name']}</div>
-                        <div class="prospect-details">
+                    <div style="flex-grow: 1;">
+                        <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                            {prospect['player_name']}
+                        </div>
+                        <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
                             {prospect['position']} | Score: {prospect['prospect_score']:.1f}
                         </div>
                     </div>
                 </div>
             </div>
-        """)
+        """
 
-    prospects_html.append("</div>")
-    return '\n'.join(prospects_html)
+    html += "</div>"
+    return html
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
