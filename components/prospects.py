@@ -164,12 +164,18 @@ def get_headshot_url(mlbam_id: str) -> str:
         if not mlbam_id:
             return ""
 
-        # Try different URL formats
+        # Try different URL formats in order of preference
         urls = [
-            # MILB format
+            # MILB format with c_fill
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current",
+            # MLB format with d_people generic
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current",
+            # MILB format with w_120
             f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
             # MLB format with 67
             f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current",
+            # MLB images format
+            f"https://img.mlbstatic.com/mlb-images/image/upload/q_auto/mlb/{mlbam_id}",
             # Fallback MLB format
             f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
         ]
@@ -190,8 +196,11 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         if mlbam_id:
             # Get all possible URLs
             urls = [
+                f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current",
+                f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current",
                 f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
                 f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current",
+                f"https://img.mlbstatic.com/mlb-images/image/upload/q_auto/mlb/{mlbam_id}",
                 f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
             ]
 
@@ -340,7 +349,7 @@ TEAM_ABBREVIATIONS = {
     "Los Angeles Angels": "LAA",
     "Athletics": "ATH",
     "Oakland Athletics": "ATH",
-    "Seattle Mariners": "SEA",
+    "Seattle Mariners":"SEA",
     "Texas Rangers": "TEX",
     "Atlanta Braves": "ATL",
     "Miami Marlins": "MIA",
