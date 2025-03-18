@@ -242,16 +242,13 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     # Calculate average score
     avg_score = prospects_df['prospect_score'].mean()
 
-    # Start HTML content
-    html_parts = []
-
-    # Add header
-    html_parts.append(f"""
-        <div style="font-size: 1rem; color: #fafafa; margin-bottom: 1rem; padding: 0.5rem; 
-                    border-radius: 4px; background: rgba(0, 0, 0, 0.2);">
+    # Build basic HTML without complex JavaScript
+    html = f"""
+    <div style="background: rgba(26, 28, 35, 0.3); border-radius: 8px; padding: 1rem;">
+        <div style="font-size: 1rem; color: #fafafa; margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; background: rgba(0, 0, 0, 0.2);">
             Team Average Score: {avg_score:.2f}
         </div>
-    """)
+    """
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
@@ -259,15 +256,25 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Create the image element with simplified fallback
-            headshot = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
-                           overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-                         style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current'"
-                         alt="{prospect['player_name']}">
+            # Simple image with fallback
+            html += f"""
+            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             alt="{prospect['player_name']}">
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                            {prospect['player_name']}
+                        </div>
+                        <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                            {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                        </div>
+                    </div>
                 </div>
+            </div>
             """
         else:
             # Generate initials for players without photos
@@ -279,23 +286,14 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 parts = prospect['player_name'].split()
                 initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
-            headshot = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
-                           overflow: hidden; margin-right: 1rem; background-color: #1a1c23; 
-                           display: flex; align-items: center; justify-content: center;">
-                    <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
-                </div>
-            """
-
-        # Create prospect card
-        html_parts.append(f"""
-            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); 
-                        border-radius: 8px; transition: transform 0.2s ease;">
+            html += f"""
+            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px;">
                 <div style="display: flex; align-items: center;">
-                    {headshot}
+                    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+                        <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
+                    </div>
                     <div style="flex-grow: 1;">
-                        <div style="font-size: 1rem; color: white; font-weight: 500; 
-                                  margin-bottom: 0.25rem;">
+                        <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
                             {prospect['player_name']}
                         </div>
                         <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
@@ -304,10 +302,10 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                     </div>
                 </div>
             </div>
-        """)
+            """
 
-    # Combine all HTML parts
-    return ''.join(html_parts)
+    html += "</div>"
+    return html
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -512,6 +510,10 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
     team_scores['division'] = team_scores['team'].map(division_mapping)
 
+    # Ensure numeric columns are finite
+    team_scores['total_score'] = team_scores['total_score'].fillna(0)
+    team_scores['avg_score'] = team_scores['avg_score'].fillna(0)
+
     # Create division-level aggregates
     division_scores = team_scores.groupby('division').agg({
         'avg_score': 'mean',
@@ -522,26 +524,17 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
     league_total = team_scores['total_score'].sum()
     league_avg = team_scores['avg_score'].mean()
 
-    # Normalize team scores against all teams in the league
-    team_scores['normalized_score'] = (team_scores['avg_score'] - team_scores['avg_score'].min()) / \
-                                    (team_scores['avg_score'].max() - team_scores['avg_score'].min())
-
-    # Normalize division scores against other divisions
-    division_scores['normalized_score'] = (division_scores['avg_score'] - division_scores['avg_score'].min()) / \
-                                        (division_scores['avg_score'].max() - division_scores['avg_score'].min())
-
-    # Create hierarchical data for sunburst
-    data = []
-
-    # Add league level
-    data.append({
-        'id': 'league',
-        'parent': '',
-        'label': 'League',
-        'value': league_total,
-        'color': 0.5,  # Middle of color scale for root
-        'avg_score': league_avg
-    })
+    # Create hierarchical data
+    data = [
+        {
+            'id': 'league',
+            'parent': '',
+            'label': 'League',
+            'value': float(league_total),  # Ensure float type
+            'color': 0.5,
+            'avg_score': float(league_avg)  # Ensure float type
+        }
+    ]
 
     # Add division level
     for _, div in division_scores.iterrows():
@@ -549,9 +542,9 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             'id': f"div_{div['division']}",
             'parent': 'league',
             'label': div['division'],
-            'value': div['total_score'],
-            'color': div['normalized_score'],
-            'avg_score': div['avg_score']
+            'value': float(div['total_score']),  # Ensure float type
+            'color': float(div['avg_score'] / division_scores['avg_score'].max()),  # Normalize color
+            'avg_score': float(div['avg_score'])  # Ensure float type
         })
 
     # Add team level
@@ -560,15 +553,15 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             'id': f"team_{team['team_abbrev']}",
             'parent': f"div_{team['division']}",
             'label': team['team_abbrev'],
-            'value': team['total_score'],
-            'color': team['normalized_score'],
-            'avg_score': team['avg_score']
+            'value': float(team['total_score']),  # Ensure float type
+            'color': float(team['avg_score'] / team_scores['avg_score'].max()),  # Normalize color
+            'avg_score': float(team['avg_score'])  # Ensure float type
         })
 
-    # Convert to DataFrame for easier handling
+    # Convert to DataFrame
     df = pd.DataFrame(data)
 
-    # Create sunburst chart with increased size and mobile optimization
+    # Create sunburst chart with fixed scales
     fig = go.Figure(go.Sunburst(
         ids=df['id'],
         labels=df['label'],
@@ -578,7 +571,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
         textinfo='label',
         marker=dict(
             colors=df['color'],
-            colorscale='RdYlBu_r',  # Red to Blue color scale
+            colorscale='RdYlBu_r',
             showscale=True,
             colorbar=dict(
                 title=dict(
@@ -586,27 +579,21 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
                     font=dict(color='white', size=12)
                 ),
                 tickfont=dict(color='white', size=10),
-                len=0.6,  # Slightly longer colorbar
-                yanchor='top',  # Position from top
-                y=-0.12,  # Move down below the plot
+                len=0.6,
+                yanchor='top',
+                y=1.0,
                 xanchor='center',
-                x=0.5,  # Center horizontally
-                orientation='h',  # Horizontal colorbar
-                thickness=20,  # Slightly thicker bar
-                bgcolor='rgba(0,0,0,0)'  # Transparent background
+                x=0.5,
+                orientation='h',
+                thickness=20,
+                bgcolor='rgba(0,0,0,0)'
             )
         ),
         customdata=df[['avg_score']],
-        hovertemplate="""
-        <b>%{label}</b><br>
-        Total Score: %{value:.1f}<br>
-        Average Score: %{customdata[0]:.2f}<br>
-        Relative Position: %{color:.2f}
-        <extra></extra>
-        """
+        hovertemplate="<b>%{label}</b><br>Total Score: %{value:.1f}<br>Average Score: %{customdata[0]:.2f}<extra></extra>"
     ))
 
-    # Update layout with mobile-responsive settings
+    # Update layout
     fig.update_layout(
         title=dict(
             text='Prospect System Hierarchy',
@@ -615,28 +602,13 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
             xanchor='center',
             y=0.98
         ),
-        width=None,  # Allow width to be responsive
-        height=700,  # Fixed height that works well on both desktop and mobile
+        width=None,
+        height=700,
         font=dict(color='white'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(
-            t=50,   # Top margin
-            l=10,   # Left margin
-            r=10,   # Right margin
-            b=150,  # Increased bottom margin for colorbar
-            pad=0   # No padding
-        ),
-        autosize=True,
-        # Ensure the plot maintains aspect ratio
-        xaxis=dict(
-            scaleanchor='y',
-            scaleratio=1
-        ),
-        yaxis=dict(
-            scaleanchor='x',
-            scaleratio=1
-        )
+        margin=dict(t=50, l=10, r=10, b=150, pad=0),
+        autosize=True
     )
 
     return fig
