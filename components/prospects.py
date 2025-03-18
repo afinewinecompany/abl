@@ -246,10 +246,48 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     ]
 
     for _, prospect in prospects_df.iterrows():
-        # Get headshot HTML for the prospect using the cache
-        headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
+        # Get all possible URLs for the prospect's headshot
+        search_name = normalize_name(prospect['player_name'])
+        mlbam_id = player_id_cache.get(search_name)
 
-        # Use flexbox layout for all prospect entries
+        if mlbam_id:
+            # Define all possible image URLs
+            primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
+
+            headshot_html = f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                    <img src="{primary_url}"
+                         style="width: 100%; height: 100%; object-fit: cover;"
+                         onerror="if (!this.retries) {{ 
+                            this.retries = 1;
+                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current';
+                         }} else if (this.retries === 1) {{
+                            this.retries = 2;
+                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current';
+                         }} else {{
+                            this.onerror = null;
+                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current';
+                         }}"
+                         alt="{prospect['player_name']} headshot">
+                </div>
+            """
+        else:
+            # Generate initials for players without photos
+            parts = prospect['player_name'].split(',')  # Split on comma
+            if len(parts) == 2:
+                last_name, first_name = parts
+                initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
+            else:
+                parts = prospect['player_name'].split()
+                initials = ''.join(part[0].upper() for part in parts[:2] if part)
+
+            headshot_html = f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+                    <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
+                </div>
+            """
+
+        # Create the prospect card with the headshot
         prospects_html.append(
             f'<div style="padding: 0.75rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
             f'<div style="display: flex; align-items: center; gap: 1rem;">'
@@ -607,7 +645,7 @@ MLB_TEAM_COLORS = {
         'secondary': '#0C2340',  # Navy Blue
         'accent': '#FEDB00'  # Yellow
     },
-    "Tampa Bay Rays": {
+    "Tampa BayRays": {
         'primary': '#092C5C',  # Navy Blue
         'secondary': '#8FBCE6',  # Columbia Blue
         'accent': '#F5D130'  # Yellow
@@ -981,142 +1019,3 @@ MLB_TEAM_IDS = {
     "New York Yankees": "147",
     "Milwaukee Brewers": "158"
 }
-
-def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
-    """Normalize values within groups to 0-1 range"""
-    return df.groupby(group_col)[value_col].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
-
-def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
-    """Create the sunburst visualization with league-wide team comparisons"""
-    # Add team abbreviations and division info
-    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
-    team_scores['division'] = team_scores['team'].map(division_mapping)
-
-    # Create division-level aggregates
-    division_scores = team_scores.groupby('division').agg({
-        'avg_score': 'mean',
-        'total_score': 'sum'
-    }).reset_index()
-
-    # Create league-level aggregates
-    league_total = team_scores['total_score'].sum()
-    league_avg = team_scores['avg_score'].mean()
-
-    # Normalize team scores against all teams in the league
-    team_scores['normalized_score'] = (team_scores['avg_score'] - team_scores['avg_score'].min()) / \
-                                    (team_scores['avg_score'].max() - team_scores['avg_score'].min())
-
-    # Normalize division scores against other divisions
-    division_scores['normalized_score'] = (division_scores['avg_score'] - division_scores['avg_score'].min()) / \
-                                        (division_scores['avg_score'].max() - division_scores['avg_score'].min())
-
-    # Create hierarchical data for sunburst
-    data = []
-
-    # Add league level
-    data.append({
-        'id': 'league',
-        'parent': '',
-        'label': 'League',
-        'value': league_total,
-        'color': 0.5,  # Middle of color scale for root
-        'avg_score': league_avg
-    })
-
-    # Add division level
-    for _, div in division_scores.iterrows():
-        data.append({
-            'id': f"div_{div['division']}",
-            'parent': 'league',
-            'label': div['division'],
-            'value': div['total_score'],
-            'color': div['normalized_score'],
-            'avg_score': div['avg_score']
-        })
-
-    # Add team level
-    for _, team in team_scores.iterrows():
-        data.append({
-            'id': f"team_{team['team_abbrev']}",
-            'parent': f"div_{team['division']}",
-            'label': team['team_abbrev'],
-            'value': team['total_score'],
-            'color': team['normalized_score'],
-            'avg_score': team['avg_score']
-        })
-
-    # Convert to DataFrame for easier handling
-    df = pd.DataFrame(data)
-
-    # Create sunburst chart with increased size and mobile optimization
-    fig = go.Figure(go.Sunburst(
-        ids=df['id'],
-        labels=df['label'],
-        parents=df['parent'],
-        values=df['value'],
-        branchvalues='total',
-        textinfo='label',
-        marker=dict(
-            colors=df['color'],
-            colorscale='RdYlBu_r',  # Red to Blue color scale
-            showscale=True,
-            colorbar=dict(
-                title=dict(
-                    text='Relative Prospect Score',
-                    font=dict(color='white', size=12)
-                ),
-                tickfont=dict(color='white', size=10),
-                len=0.6,  # Slightly longer colorbar
-                yanchor='top',  # Position from top
-                y=-0.12,  # Move down below the plot
-                xanchor='center',
-                x=0.5,  # Center horizontally
-                orientation='h',  # Horizontal colorbar
-                thickness=20,  # Slightly thicker bar
-                bgcolor='rgba(0,0,0,0)'  # Transparent background
-            )
-        ),
-        customdata=df[['avg_score']],
-        hovertemplate="""
-        <b>%{label}</b><br>
-        Total Score: %{value:.1f}<br>
-        Average Score: %{customdata[0]:.2f}<br>
-        Relative Position: %{color:.2f}
-        <extra></extra>
-        """
-    ))
-
-    # Update layout with mobile-responsive settings
-    fig.update_layout(
-        title=dict(
-            text='Prospect System Hierarchy',
-            font=dict(color='white', size=24),
-            x=0.5,
-            xanchor='center',
-            y=0.98
-        ),
-        width=None,  # Allow width to be responsive
-        height=700,  # Fixed height that works well on both desktop and mobile
-        font=dict(color='white'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(
-            t=50,   # Top margin
-            l=10,   # Left margin
-            r=10,   # Right margin
-            b=150,  # Increased bottom margin for colorbar
-            pad=0   # No padding
-        ),
-        autosize=True,
-        # Ensure the plot maintains aspect ratio
-        xaxis=dict(
-            scaleanchor='y',
-            scaleratio=1
-        ),
-        yaxis=dict(
-            scaleanchor='x',
-            scaleratio=1
-        )
-    )
-
-    return fig
