@@ -602,15 +602,34 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         .prospect-card {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 1.25rem;
+            padding: 1.25rem 1.25rem 1.25rem 3.5rem;  /* Added left padding for rank */
             margin: 1rem 0;
             position: relative;
-            overflow: hidden;
+            overflow: visible;  /* Changed from hidden to show rank */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .prospect-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+        .rank-number {
+            position: absolute;
+            left: -10px;  /* Adjusted position */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 3;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: var(--rank-color);
+            color: white;
         }
         .prospect-content {
             display: flex;
@@ -654,23 +673,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             opacity: 0.15;
             transform: translateY(-50%) scale(1.1) rotate(5deg);
         }
-        .rank-number {
-            position: absolute;
-            top: -15px;
-            left: -15px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transform: translate(-25%, -25%);  /* Add this line to adjust position */
-        }
         .player-headshot img {
             width: 60px;
             height: 60px;
@@ -680,13 +682,13 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         .player-initials {
             width: 60px;
             height: 60px;
-            min-width: 60px;
+            minwidth: 60px;
             border-radius: 50%;
             background-color: #1a1c23;            display: flex;
             align-items: center;
             justify-content: center;
         }
-        `.initials-text {
+        .initials-text {
             color: white;
             font-size: 20px;
             font-weight: bold;
@@ -715,8 +717,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
 
         st.markdown(f"""
-            <div class="prospect-card" style="--card-bg: {gradient}">
-                <div class="rank-number" style="background: {rank_color}; color: white">{idx}</div>
+            <div class="prospect-card" style="--card-bg: {gradient}; --rank-color: {rank_color};">
+                <div class="rank-number">{idx}</div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
