@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from typing import Dict
+
+# Import team colors and IDs from prospects.py
+from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
 
 # Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
@@ -62,24 +64,47 @@ def render(standings_data: pd.DataFrame):
     """Render power rankings section"""
     st.header("⚾ Power Rankings")
     st.markdown("""
-    <style>
-    .power-ranking {
-        padding: 10px;
-        border-radius: 5px;
-        margin: 5px 0;
-        background-color: #f0f2f6;
-    }
-    .top-team {
-        background-color: #28a745;
-        color: white;
-    }
-    .trending-up {
-        color: #28a745;
-    }
-    .trending-down {
-        color: #dc3545;
-    }
-    </style>
+        <style>
+        @keyframes slideInUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .power-ranking {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            background-color: #f0f2f6;
+        }
+        .top-team {
+            background-color: #28a745;
+            color: white;
+        }
+        .trending-up {
+            color: #28a745;
+        }
+        .trending-down {
+            color: #dc3545;
+        }
+        </style>
     """, unsafe_allow_html=True)
 
     # Calculate power rankings
@@ -89,44 +114,112 @@ def render(standings_data: pd.DataFrame):
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
 
     # Display top teams
-    st.subheader("🏆 Top Performers")
+    st.subheader("🏆 League Leaders")
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric("1st Place", 
-                 rankings_df.iloc[0]['team_name'],
-                 f"Score: {rankings_df.iloc[0]['power_score']:.1f}")
-    with col2:
-        st.metric("2nd Place", 
-                 rankings_df.iloc[1]['team_name'],
-                 f"Score: {rankings_df.iloc[1]['power_score']:.1f}")
-    with col3:
-        st.metric("3rd Place", 
-                 rankings_df.iloc[2]['team_name'],
-                 f"Score: {rankings_df.iloc[2]['power_score']:.1f}")
+    # Top 3 teams with enhanced styling
+    for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], rankings_df.head(3).iterrows())):
+        with col:
+            team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
+                                            {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+            team_id = MLB_TEAM_IDS.get(row['team_name'], '')
+            logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Power Rankings Table
-    st.subheader("📊 Complete Power Rankings")
-    st.dataframe(
-        rankings_df,
-        column_config={
-            "team_name": "Team",
-            "wins": "Wins",
-            "winning_pct": st.column_config.NumberColumn(
-                "Win %",
-                format="%.3f"
-            ),
-            "power_score": st.column_config.NumberColumn(
-                "Power Score",
-                format="%.1f"
-            )
-        },
-        hide_index=False,
-        column_order=["team_name", "wins", "winning_pct", "power_score"]
-    )
+            st.markdown(f"""
+                <div style="
+                    padding: 1.5rem;
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    border-radius: 12px;
+                    margin: 0.5rem 0;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    position: relative;
+                    overflow: hidden;
+                    animation: slideInUp 0.6s ease-out {idx * 0.1}s both;
+                ">
+                    <div style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); opacity: 0.15;">
+                        <img src="{logo_url}" style="width: 180px; height: 180px;" alt="Team Logo">
+                    </div>
+                    <div style="position: absolute; left: -10px; top: -10px; background: {team_colors['accent']}; 
+                         color: {team_colors['primary']}; width: 40px; height: 40px; border-radius: 50%; 
+                         display: flex; align-items: center; justify-content: center; font-weight: bold; 
+                         font-size: 1.2rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                        #{idx + 1}
+                    </div>
+                    <div style="position: relative; z-index: 1;">
+                        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
+                            {row['team_name']}
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Wins</div>
+                                <div style="font-size: 1.2rem; color: white;">{row['wins']}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Win %</div>
+                                <div style="font-size: 1.2rem; color: white;">{row['winning_pct']:.3f}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Power</div>
+                                <div style="font-size: 1.2rem; color: white;">{row['power_score']:.1f}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
-    # Visualization
-    st.subheader("📈 Power Rankings Distribution")
+    # Show remaining teams with similar styling
+    st.markdown("### Complete Power Rankings")
+
+    remaining_teams = rankings_df.iloc[3:]
+    for i, (_, row) in enumerate(remaining_teams.iterrows()):
+        team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
+                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+        team_id = MLB_TEAM_IDS.get(row['team_name'], '')
+        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+
+        st.markdown(f"""
+            <div style="
+                padding: 1rem;
+                background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                border-radius: 10px;
+                margin: 0.5rem 0;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                position: relative;
+                overflow: hidden;
+                animation: slideInUp 0.6s ease-out {(i + 3) * 0.1}s both;
+            ">
+                <div style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); opacity: 0.15;">
+                    <img src="{logo_url}" style="width: 120px; height: 120px;" alt="Team Logo">
+                </div>
+                <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 1rem;">
+                    <div style="background: {team_colors['accent']}; color: {team_colors['primary']}; 
+                         width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; 
+                         justify-content: center; font-weight: bold;">
+                        #{i + 4}
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 600; color: white;">{row['team_name']}</div>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
+                                <span style="color: rgba(255,255,255,0.7);">W:</span>
+                                <span style="color: white;">{row['wins']}</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
+                                <span style="color: rgba(255,255,255,0.7);">%:</span>
+                                <span style="color: white;">{row['winning_pct']:.3f}</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
+                                <span style="color: rgba(255,255,255,0.7);">Power:</span>
+                                <span style="color: white;">{row['power_score']:.1f}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Visualization with enhanced styling
+    st.subheader("📈 Power Score Distribution")
     fig = px.bar(
         rankings_df,
         x='team_name',
@@ -136,11 +229,16 @@ def render(standings_data: pd.DataFrame):
         color_continuous_scale='viridis',
         labels={'team_name': 'Team', 'power_score': 'Power Score'}
     )
+
     fig.update_layout(
         xaxis_tickangle=-45,
         showlegend=False,
-        height=500
+        height=500,
+        template="plotly_dark",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
     )
+
     st.plotly_chart(fig, use_container_width=True)
 
     # Add prospect strength comparison
