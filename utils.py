@@ -11,9 +11,17 @@ def fetch_api_data():
     Returns processed data or None if an error occurs.
     """
     try:
-        # Create a placeholder in the sidebar for status
+        # Create a placeholder in the sidebar for status and show loading animation
         with st.sidebar:
             status_container = st.empty()
+
+            # Add JavaScript to control loading animation
+            st.markdown("""
+                <script>
+                    toggleLoading(true);
+                </script>
+            """, unsafe_allow_html=True)
+
             status_container.info("⌛ Fetching data from API...")
 
             # Initialize API client and data processor
@@ -39,6 +47,13 @@ def fetch_api_data():
             processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
             processed_standings_data = data_processor.process_standings(standings_data)
 
+            # Hide loading animation when done
+            st.markdown("""
+                <script>
+                    toggleLoading(false);
+                </script>
+            """, unsafe_allow_html=True)
+
             # Clear the status message
             status_container.empty()
 
@@ -50,6 +65,12 @@ def fetch_api_data():
     except Exception as e:
         with st.sidebar:
             st.error(f"❌ Error loading data: {str(e)}")
+            # Hide loading animation on error
+            st.markdown("""
+                <script>
+                    toggleLoading(false);
+                </script>
+            """, unsafe_allow_html=True)
         return None
 
 def format_percentage(value: float) -> str:
