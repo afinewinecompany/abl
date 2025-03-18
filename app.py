@@ -3,6 +3,7 @@ from components import league_info, rosters, standings, power_rankings, prospect
 from api_client import FantraxAPI
 from data_processor import DataProcessor
 
+# This must be the first Streamlit command
 st.set_page_config(
     page_title="ABL Analytics",
     page_icon="⚾",
@@ -408,7 +409,8 @@ def main():
             projected_rankings.render(processed_roster_data)
 
     except Exception as e:
-        st.error(f"An error occurred while loading data. Please try refreshing.")
+        st.error(f"An error occurred while loading data: {str(e)}")
+        st.info("Using mock data for development...")
 
 if __name__ == "__main__":
     main()
