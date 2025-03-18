@@ -6,8 +6,7 @@ import pandas as pd
 import time
 import unicodedata
 
-@st.cache_data
-def fetch_api_data(_status_container=None):
+def fetch_api_data():
     """
     Fetch all required data from API and process it.
     Returns processed data or None if an error occurs.
@@ -17,44 +16,16 @@ def fetch_api_data(_status_container=None):
         api_client = FantraxAPI()
         data_processor = DataProcessor()
 
-        def update_status(message):
-            """Helper to update status with animation"""
-            if _status_container:
-                _status_container.markdown(
-                    f'<div class="status-container visible">{message}</div>',
-                    unsafe_allow_html=True
-                )
-                time.sleep(0.1)  # Small delay for visual feedback
-
-        # Fetch all required data with status updates
-        update_status("⌛ Initializing data fetch...")
-
-        update_status("📊 Loading league information...")
+        # Fetch all required data
         league_data = api_client.get_league_info()
-
-        update_status("👥 Loading team rosters...")
         roster_data = api_client.get_team_rosters()
-
-        update_status("🏆 Loading standings...")
         standings_data = api_client.get_standings()
-
-        update_status("🎯 Loading player details...")
         player_ids = api_client.get_player_ids()
 
         # Process data
-        update_status("⚙️ Processing data...")
         processed_league_data = data_processor.process_league_info(league_data)
         processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
         processed_standings_data = data_processor.process_standings(standings_data)
-
-        # Clear status container
-        if _status_container:
-            _status_container.markdown(
-                '<div class="status-container">Data loaded successfully!</div>',
-                unsafe_allow_html=True
-            )
-            time.sleep(1)  # Show success message briefly
-            _status_container.empty()
 
         return {
             'league_data': processed_league_data,
@@ -62,13 +33,7 @@ def fetch_api_data(_status_container=None):
             'standings_data': processed_standings_data
         }
     except Exception as e:
-        if _status_container:
-            _status_container.markdown(
-                f'<div class="status-container visible">❌ Error: {str(e)}</div>',
-                unsafe_allow_html=True
-            )
-            time.sleep(3)  # Show error message for longer
-        return None
+        raise Exception(f"Error fetching data: {str(e)}")
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""

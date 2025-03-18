@@ -154,18 +154,6 @@ st.markdown("""
                 size: "cover"
             }
         });
-
-        // Add status container visibility control
-        const updateStatusContainer = (show) => {
-            const container = document.querySelector('.status-container');
-            if (container) {
-                container.classList.toggle('visible', show);
-            }
-        };
-
-        // Listen for custom events to show/hide status
-        window.addEventListener('showStatus', () => updateStatusContainer(true));
-        window.addEventListener('hideStatus', () => updateStatusContainer(false));
     });
     </script>
 """, unsafe_allow_html=True)
@@ -195,36 +183,60 @@ def main():
             "📈 Projected Rankings"
         ])
 
-        # Create a hidden status container at the bottom
+        # Create a status container at the bottom
         status_container = st.empty()
+
+        # Update status message with loading
         status_container.markdown(
-            '<div class="status-container">Loading data...</div>',
+            '<div class="status-container visible">⌛ Loading data...</div>',
             unsafe_allow_html=True
         )
 
-        # Fetch all data using the utility function
-        data = fetch_api_data(status_container)
+        try:
+            # Fetch data
+            data = fetch_api_data()
 
-        if data:
-            with tab1:
-                league_info.render(data['league_data'])
+            # Update status for success
+            status_container.markdown(
+                '<div class="status-container visible">✅ Data loaded successfully!</div>',
+                unsafe_allow_html=True
+            )
 
-            with tab2:
-                rosters.render(data['roster_data'])
+            # Clear status after brief delay
+            import time
+            time.sleep(1)
+            status_container.empty()
 
-            with tab3:
-                power_rankings.render(data['standings_data'])
+            if data:
+                with tab1:
+                    league_info.render(data['league_data'])
 
-            with tab4:
-                prospects.render(data['roster_data'])
+                with tab2:
+                    rosters.render(data['roster_data'])
 
-            with tab5:
-                projected_rankings.render(data['roster_data'])
-        else:
-            st.info("Using mock data for development...")
+                with tab3:
+                    power_rankings.render(data['standings_data'])
+
+                with tab4:
+                    prospects.render(data['roster_data'])
+
+                with tab5:
+                    projected_rankings.render(data['roster_data'])
+            else:
+                st.info("Using mock data for development...")
+
+        except Exception as e:
+            # Update status for error
+            status_container.markdown(
+                f'<div class="status-container visible">❌ Error: {str(e)}</div>',
+                unsafe_allow_html=True
+            )
+            time.sleep(3)  # Show error message longer
+            status_container.empty()
+            st.error(f"An error occurred while loading data: {str(e)}")
 
     except Exception as e:
-        st.error(f"An error occurred while loading data: {str(e)}")
+        st.error(f"An error occurred: {str(e)}")
         st.info("Using mock data for development...")
 
 if __name__ == "__main__":
