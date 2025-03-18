@@ -600,22 +600,60 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     """Render the animated TOP 100 header and scrollable list"""
     st.markdown("""
         <style>
+        @keyframes gradientText {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .top-100-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(45deg, #1a1c23, #2d2f36);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            animation: float 6s ease-in-out infinite;
+        }
+        .top-100-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff4d4d, #4169E1, #ff4d4d);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientText 3s linear infinite;
+            margin: 0;
+            padding: 0;
+        }
+        .top-100-subtitle {
+            color: #ffffff;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 1rem;
+        }
         .prospect-card {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;  /* Added left padding for rank */
+            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
             margin: 1rem 0;
             position: relative;
-            overflow: visible;  /* Changed from hidden to show rank */
+            overflow: visible;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
         }
         .rank-number {
             position: absolute;
-            left: -10px;  /* Adjusted position */
+            left: -10px;
             top: 50%;
             transform: translateY(-50%);
             width: 45px;
@@ -674,7 +712,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             transform: translateY(-50%) scale(1.1) rotate(5deg);
         }
         .player-headshot img {
-            width60px;
+            width:60px;
             height: 60px;
             border-radius: 50%;
             object-fit: cover;
@@ -682,7 +720,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         .player-initials {
             width: 60px;
             height: 60px;
-            minwidth: 60px;
+            min-width: 60px;
             border-radius: 50%;
             background-color: #1a1c23;            display: flex;
             align-items: center;
@@ -694,16 +732,30 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             font-weight: bold;
         }
         </style>
+
+        <div class="top-100-header">
+            <h1 class="top-100-title">ABL TOP 100</h1>
+            <p class="top-100-subtitle">Fantasy Baseball's Elite Prospects</p>
+        </div>
     """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
+    max_score = top_100['prospect_score'].max()
+    min_score = top_100['prospect_score'].min()
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
+        # Calculate score color (red for highest, blue for lowest)
+        score_percentage = (prospect.prospect_score - min_score) / (max_score - min_score)
+        r = int(220 * score_percentage + 65 * (1 - score_percentage))  # Red component
+        b = int(65 * score_percentage + 220 * (1 - score_percentage))  # Blue component
+        g = 20  # Keep green low for vibrant colors
+        score_color = f"#{r:02x}{g:02x}{b:02x}"
+
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                      {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+                                          {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
@@ -729,7 +781,9 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                             <span>|</span>
                             <span>{prospect.position}</span>
                         </div>
-                        <div class="prospect-score" style="color: {team_colors['accent']}">Score: {prospect.prospect_score:.2f}</div>
+                        <div class="prospect-score" style="color: {score_color}; font-weight: 700;">
+                            Score: {prospect.prospect_score:.2f}
+                        </div>
                     </div>
                 </div>
             </div>
