@@ -31,59 +31,110 @@ st.markdown("""
     <script>
     window.addEventListener('DOMContentLoaded', (event) => {
         tsParticles.load("tsparticles", {
+            fpsLimit: 60,
             particles: {
                 number: {
-                    value: 20,
+                    value: 40,
                     density: {
                         enable: true,
                         value_area: 800
                     }
                 },
                 color: {
-                    value: "#ffffff"
+                    value: ["#ffffff"]
                 },
                 shape: {
                     type: "circle"
                 },
                 opacity: {
-                    value: 0.15,
-                    random: false
+                    value: 0.25,
+                    random: true,
+                    anim: {
+                        enable: true,
+                        speed: 1,
+                        opacity_min: 0.1,
+                        sync: false
+                    }
                 },
                 size: {
-                    value: 12,
-                    random: true
+                    value: 5,
+                    random: true,
+                    anim: {
+                        enable: true,
+                        speed: 2,
+                        size_min: 1,
+                        sync: false
+                    }
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#ffffff",
+                    opacity: 0.1,
+                    width: 1
                 },
                 move: {
                     enable: true,
-                    speed: 1.5,
+                    speed: 2,
                     direction: "none",
                     random: true,
                     straight: false,
-                    outModes: {
-                        default: "bounce"
-                    },
+                    out_mode: "bounce",
+                    bounce: true,
                     attract: {
-                        enable: false,
+                        enable: true,
                         rotateX: 600,
                         rotateY: 1200
                     }
                 }
             },
             interactivity: {
-                detectsOn: "window",
+                detect_on: "window",
                 events: {
-                    onHover: {
+                    onhover: {
                         enable: true,
-                        mode: "repulse"
+                        mode: ["grab", "bubble", "repulse"]
+                    },
+                    onclick: {
+                        enable: true,
+                        mode: "push"
                     },
                     resize: true
                 },
                 modes: {
+                    grab: {
+                        distance: 200,
+                        line_linked: {
+                            opacity: 0.3
+                        }
+                    },
+                    bubble: {
+                        distance: 300,
+                        size: 12,
+                        duration: 2,
+                        opacity: 0.2,
+                        speed: 2
+                    },
                     repulse: {
-                        distance: 100,
+                        distance: 150,
                         duration: 0.4
+                    },
+                    push: {
+                        particles_nb: 4
+                    },
+                    attract: {
+                        distance: 200,
+                        duration: 0.4,
+                        factor: 5
                     }
                 }
+            },
+            retina_detect: true,
+            background: {
+                color: "transparent",
+                position: "50% 50%",
+                repeat: "no-repeat",
+                size: "cover"
             }
         });
     });

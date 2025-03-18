@@ -7,91 +7,8 @@ from typing import Dict
 import unicodedata
 from pathlib import Path
 
-# CSS and JS as constants
-PARTICLES_CSS_JS = """
-    <style>
-    .stApp {
-        background: rgba(26, 28, 35, 0.95);
-        backdrop-filter: blur(5px);
-    }
-    #tsparticles {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        z-index: -1;
-    }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
-    <div id="tsparticles"></div>
-    <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
-        tsParticles.load("tsparticles", {
-            particles: {
-                number: {
-                    value: 20,
-                    density: {
-                        enable: true,
-                        value_area: 800
-                    }
-                },
-                color: {
-                    value: "#ffffff"
-                },
-                shape: {
-                    type: "circle"
-                },
-                opacity: {
-                    value: 0.5,
-                    random: false
-                },
-                size: {
-                    value: 15,
-                    random: true
-                },
-                move: {
-                    enable: true,
-                    speed: 2,
-                    direction: "none",
-                    random: true,
-                    straight: false,
-                    outModes: {
-                        default: "bounce"
-                    },
-                    attract: {
-                        enable: false,
-                        rotateX: 600,
-                        rotateY: 1200
-                    }
-                }
-            },
-            interactivity: {
-                detectsOn: "window",
-                events: {
-                    onHover: {
-                        enable: true,
-                        mode: "repulse"
-                    },
-                    resize: true
-                },
-                modes: {
-                    repulse: {
-                        distance: 100,
-                        duration: 0.4
-                    }
-                }
-            }
-        });
-    });
-    </script>
-"""
-
 def render(roster_data: pd.DataFrame):
     """Main render function for prospects page"""
-    # Add baseball particles background at the start of render
-    st.markdown(PARTICLES_CSS_JS, unsafe_allow_html=True)
-
     st.header("🌟 Prospect Analysis")
 
     # Load division data
@@ -130,14 +47,15 @@ def render(roster_data: pd.DataFrame):
 
     # Calculate team rankings
     team_scores = ranked_prospects.groupby('team').agg({
-        'prospect_score': ['sum', 'mean']        }).reset_index()
+        'prospect_score': ['sum', 'mean']
+    }).reset_index()
 
     team_scores.columns = ['team', 'total_score', 'avg_score']
     team_scores = team_scores.sort_values('total_score', ascending=False)
     team_scores = team_scores.reset_index(drop=True)
     team_scores.index = team_scores.index + 1
 
-    # Create and display sunburst visualization with increased size
+    # Create and display sunburst visualization
     fig = create_sunburst_visualization(team_scores, division_mapping)
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
@@ -149,7 +67,6 @@ def render(roster_data: pd.DataFrame):
     - **Hierarchy**: League → Division → Team
     - Click on segments to zoom in/out
     """)
-
 
     # Display top 3 teams
     st.subheader("🏆 Top Prospect Systems")
@@ -183,21 +100,84 @@ def render(roster_data: pd.DataFrame):
             'mlb_team': row['team']
         }, i + 4, team_prospects, player_id_cache)
 
-    # Add legend for color scale
-    st.markdown("### Color Scale Legend")
-    st.markdown("""
-    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
-        <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #4169E1 100%);"></div>
-        <div style="display: flex; justify-content: space-between;">
-            <span>#1 Rank</span>
-            <span>#15</span>
-            <span>#30 Rank</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     # Add handbook viewer at the bottom
     render_handbook_viewer()
+
+def render_handbook_viewer():
+    """Render the PDF handbook viewer section"""
+    try:
+        import streamlit as st
+        from streamlit_pdf_viewer import pdf_viewer
+        from pathlib import Path
+
+        st.markdown("""
+            <style>
+            .handbook-section {
+                margin-top: 3rem;
+                padding: 2rem;
+                background: rgba(26, 28, 35, 0.3);
+                border-radius: 10px;
+                text-align: center;
+                position: relative;
+                z-index: 1;
+            }
+            .handbook-content {
+                margin-top: 2rem;
+                padding: 2rem;
+                background: rgba(26, 28, 35, 0.5);
+                border-radius: 8px;
+                overflow: hidden;
+                position: relative;
+                z-index: 1;
+            }
+            .pdf-viewer {
+                width: 100%;
+                min-height: 800px;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }
+            </style>
+            <div class="handbook-section">
+                <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
+                <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+                    Dive deep into our comprehensive prospect analysis with the official handbook.
+                    Use the page controls below to navigate through the handbook.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+        pdf_path = Path("attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf")
+
+        if not pdf_path.exists():
+            st.warning("Handbook PDF file not found. Please ensure the file is present in the assets folder.")
+            return
+
+        try:
+            with st.container():
+                st.markdown('<div class="handbook-content">', unsafe_allow_html=True)
+                pdf_viewer(
+                    pdf_path.as_posix(),
+                    width=800,
+                    height=800,
+                    show_navigation=True,
+                    show_toolbar=True
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        except Exception as e:
+            st.error(f"Error displaying PDF: {str(e)}")
+            st.info("Please make sure the PDF file is not corrupted and try again.")
+
+    except ImportError as e:
+        st.error(f"Required libraries not found: {str(e)}")
+        st.info("Installing required packages...")
+        try:
+            from replit import packaging
+            packaging.install('streamlit-pdf-viewer')
+            st.experimental_rerun()
+        except Exception as e:
+            st.error(f"Failed to install required packages: {str(e)}")
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -363,592 +343,6 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
-    """Normalize values within groups to 0-1 range"""
-    return df.groupby(group_col)[value_col].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
-
-def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
-    """Create the sunburst visualization with league-wide team comparisons"""
-    # Add team abbreviations and division info
-    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
-    team_scores['division'] = team_scores['team'].map(division_mapping)
-
-    # Create division-level aggregates
-    division_scores = team_scores.groupby('division').agg({
-        'avg_score': 'mean',
-        'total_score': 'sum'
-    }).reset_index()
-
-    # Create league-level aggregates
-    league_total = team_scores['total_score'].sum()
-    league_avg = team_scores['avg_score'].mean()
-
-    # Normalize team scores against all teams in the league
-    team_scores['normalized_score'] = (team_scores['avg_score'] - team_scores['avg_score'].min()) / \
-                                    (team_scores['avg_score'].max() - team_scores['avg_score'].min())
-
-    # Normalize division scores against other divisions
-    division_scores['normalized_score'] = (division_scores['avg_score'] - division_scores['avg_score'].min()) / \
-                                        (division_scores['avg_score'].max() - division_scores['avg_score'].min())
-
-    # Create hierarchical data for sunburst
-    data = []
-
-    # Add league level
-    data.append({
-        'id': 'league',
-        'parent': '',
-        'label': 'League',
-        'value': league_total,
-        'color': 0.5,  # Middle of color scale for root
-        'avg_score': league_avg
-    })
-
-    # Add division level
-    for _, div in division_scores.iterrows():
-        data.append({
-            'id': f"div_{div['division']}",
-            'parent': 'league',
-            'label': div['division'],
-            'value': div['total_score'],
-            'color': div['normalized_score'],
-            'avg_score': div['avg_score']
-        })
-
-    # Add team level
-    for _, team in team_scores.iterrows():
-        data.append({
-            'id': f"team_{team['team_abbrev']}",
-            'parent': f"div_{team['division']}",
-            'label': team['team_abbrev'],
-            'value': team['total_score'],
-            'color': team['normalized_score'],
-            'avg_score': team['avg_score']
-        })
-
-    # Convert to DataFrame for easier handling
-    df = pd.DataFrame(data)
-
-    # Create sunburst chart with increased size and mobile optimization
-    fig = go.Figure(go.Sunburst(
-        ids=df['id'],
-        labels=df['label'],
-        parents=df['parent'],
-        values=df['value'],
-        branchvalues='total',
-        textinfo='label',
-        marker=dict(
-            colors=df['color'],
-            colorscale='RdYlBu_r',  # Red to Blue color scale
-            showscale=True,
-            colorbar=dict(
-                title=dict(
-                    text='Relative Prospect Score',
-                    font=dict(color='white', size=12)
-                ),
-                tickfont=dict(color='white', size=10),
-                len=0.6,  # Slightly longer colorbar
-                yanchor='top',  # Position from top
-                y=-0.12,  # Move down below the plot
-                xanchor='center',
-                x=0.5,  # Center horizontally
-                orientation='h',  # Horizontal colorbar
-                thickness=20,  # Slightly thicker bar
-                bgcolor='rgba(0,0,0,0)'  # Transparent background
-            )
-        ),
-        customdata=df[['avg_score']],
-        hovertemplate="""
-        <b>%{label}</b><br>
-        Total Score: %{value:.1f}<br>
-        Average Score: %{customdata[0]:.2f}<br>
-        Relative Position: %{color:.2f}
-        <extra></extra>
-        """
-    ))
-
-    # Update layout with mobile-responsive settings
-    fig.update_layout(
-        title=dict(
-            text='Prospect System Hierarchy',
-            font=dict(color='white', size=24),
-            x=0.5,
-            xanchor='center',
-            y=0.98
-        ),
-        width=None,  # Allow width to be responsive
-        height=700,  # Fixed height that works well on both desktop and mobile
-        font=dict(color='white'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(
-            t=50,   # Top margin
-            l=10,   # Left margin
-            r=10,   # Right margin
-            b=150,  # Increased bottom margin for colorbar
-            pad=0   # No padding
-        ),
-        autosize=True,
-        # Ensure the plot maintains aspect ratio
-        xaxis=dict(
-            scaleanchor='y',
-            scaleratio=1
-        ),
-        yaxis=dict(
-            scaleanchor='x',
-            scaleratio=1
-        )
-    )
-
-    return fig
-
-# Add team abbreviation mapping
-TEAM_ABBREVIATIONS = {
-    "Baltimore Orioles": "BAL",
-    "Boston Red Sox": "BOS",
-    "New York Yankees": "NYY",
-    "Tampa Bay Rays": "TB",
-    "Toronto Blue Jays": "TOR",
-    "Chicago White Sox": "CHW",
-    "Cleveland Guardians": "CLE",
-    "Detroit Tigers": "DET",
-    "Kansas City Royals": "KC",
-    "Minnesota Twins": "MIN",
-    "Houston Astros": "HOU",
-    "Los Angeles Angels": "LAA",
-    "Athletics": "ATH",
-    "Oakland Athletics": "ATH",
-    "Seattle Mariners": "SEA",
-    "Texas Rangers": "TEX",
-    "Atlanta Braves": "ATL",
-    "Miami Marlins": "MIA",
-    "New York Mets": "NYM",
-    "Philadelphia Phillies": "PHI",
-    "Washington Nationals": "WSH",
-    "Chicago Cubs": "CHC",
-    "Cincinnati Reds": "CIN",
-    "Milwaukee Brewers": "MIL",
-    "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",
-    "Saint Louis Cardinals": "STL",
-    "St Louis Cardinals": "STL",
-    "St. Louis Cardinals": "STL",
-    "Arizona Diamondbacks": "ARI",
-    "Colorado Rockies": "COL",
-    "Los Angeles Dodgers": "LAD",
-    "San Diego Padres": "SD",
-    "San Francisco Giants": "SF"
-}
-
-# Add MLB team ID mapping after TEAM_ABBREVIATIONS
-MLB_TEAM_IDS = {
-    "Los Angeles Angels": "108",
-    "Arizona Diamondbacks": "109",
-    "Baltimore Orioles": "110",
-    "Boston Red Sox": "111",
-    "Chicago Cubs": "112",
-    "Cincinnati Reds": "113",
-    "Cleveland Guardians": "114",
-    "Colorado Rockies": "115",
-    "Detroit Tigers": "116",
-    "Houston Astros": "117",
-    "Kansas City Royals": "118",
-    "Los Angeles Dodgers": "119",
-    "Washington Nationals": "120",
-    "New York Mets": "121",
-    "Oakland Athletics": "133",
-    "Athletics": "133",  # Add alternative name
-    "Pittsburgh Pirates": "134",
-    "San Diego Padres": "135",
-    "Seattle Mariners": "136",
-    "San Francisco Giants": "137",
-    "St. Louis Cardinals": "138",
-    "Saint Louis Cardinals": "138",
-    "St Louis Cardinals": "138",
-    "Cardinals": "138",  # Add all variations of Cardinals name
-    "Tampa Bay Rays": "139",
-    "Texas Rangers": "140",
-    "Toronto Blue Jays": "141",
-    "Minnesota Twins": "142",
-    "Philadelphia Phillies": "143",
-    "Atlanta Braves": "144",
-    "Chicago White Sox": "145",
-    "Miami Marlins": "146",
-    "New York Yankees": "147",
-    "Milwaukee Brewers": "158"
-}
-
-def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
-    """Render the animated TOP 100 header and scrollable list"""
-    # CSS for animated header and cards
-    st.markdown("""
-        <style>
-        @keyframes gradient {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
-        .top-100-header {
-            background: linear-gradient(-45deg, #dc143c, #4169e1, #1e90ff, #dc143c);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .prospect-card {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.6s ease forwards;
-            background: rgba(26, 28, 35, 0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            transition: all 0.3s ease;
-        }
-        .prospect-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Animation Options */
-        .fade-in {
-            animation: fadeIn 0.6s ease forwards;
-        }
-        .slide-up {
-            animation: slideUp 0.6s ease forwards;
-        }
-        .slide-in {
-            animation: slideIn 0.6s ease forwards;
-        }
-        .scale-up {
-            animation: scaleUp 0.6s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes scaleUp {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        </style>
-
-        <script>
-        const observerCallback = (entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        };
-
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const observer = new IntersectionObserver(observerCallback, observerOptions);
-            document.querySelectorAll('.prospect-card').forEach(card => {
-                observer.observe(card);
-                card.style.opacity = '0';
-            });
-        });
-        </script>
-        <div class="top-100-header">
-            <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
-            <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Get top 100 prospects sorted by score
-    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
-
-    # Display all top 100 prospects
-    st.markdown("### 🌟 Top 100 Prospects")
-
-    # Display prospects in order
-    for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Get color based on rank (normalize to 100 ranks)
-        rank_color = get_color_for_rank(idx, 100)
-
-        # Get headshot HTML for the prospect using the cache
-        headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
-
-        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
-        st.markdown(prospect_card, unsafe_allow_html=True)
-
-    st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-
-def render_handbook_viewer():
-    """Render the PDF handbook viewer section"""
-    try:
-        import streamlit as st
-        from streamlit_pdf_viewer import pdf_viewer
-        from pathlib import Path
-
-        # Add enhanced particle animation for handbook page
-        st.markdown("""
-            <style>
-            .handbook-section {
-                margin-top: 3rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.3);
-                border-radius: 10px;
-                text-align: center;
-                position: relative;
-                z-index: 1;
-            }
-            .handbook-content {
-                margin-top: 2rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.5);
-                border-radius: 8px;
-                overflow: hidden;
-                position: relative;
-                z-index: 1;
-            }
-            .pdf-viewer {
-                width: 100%;
-                min-height: 800px;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            }
-            #handbook-particles {
-                position: fixed;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                z-index: 0;
-                pointer-events: none;
-            }
-            </style>
-            <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
-            <div id="handbook-particles"></div>
-            <script>
-            window.addEventListener('DOMContentLoaded', (event) => {
-                tsParticles.load("handbook-particles", {
-                    fpsLimit: 60,
-                    particles: {
-                        number: {
-                            value: 50,
-                            density: {
-                                enable: true,
-                                value_area: 800
-                            }
-                        },
-                        color: {
-                            value: ["#ff0000", "#00ff00", "#0000ff"]
-                        },
-                        shape: {
-                            type: "circle"
-                        },
-                        opacity: {
-                            value: 0.25,
-                            random: true,
-                            anim: {
-                                enable: true,
-                                speed: 1,
-                                opacity_min: 0.1,
-                                sync: false
-                            }
-                        },
-                        size: {
-                            value: 5,
-                            random: true,
-                            anim: {
-                                enable: true,
-                                speed: 2,
-                                size_min: 1,
-                                sync: false
-                            }
-                        },
-                        line_linked: {
-                            enable: true,
-                            distance: 150,
-                            color: "#ffffff",
-                            opacity: 0.1,
-                            width: 1
-                        },
-                        move: {
-                            enable: true,
-                            speed: 2,
-                            direction: "none",
-                            random: true,
-                            straight: false,
-                            out_mode: "bounce",
-                            bounce: true,
-                            attract: {
-                                enable: true,
-                                rotateX: 600,
-                                rotateY: 1200
-                            }
-                        }
-                    },
-                    interactivity: {
-                        detect_on: "window",
-                        events: {
-                            onhover: {
-                                enable: true,
-                                mode: ["grab", "bubble", "repulse"]
-                            },
-                            onclick: {
-                                enable: true,
-                                mode: "push"
-                            },
-                            resize: true,
-                            scroll: {
-                                enable: true,
-                                mode: ["grab", "attract"]
-                            }
-                        },
-                        modes: {
-                            grab: {
-                                distance: 200,
-                                line_linked: {
-                                    opacity: 0.3
-                                }
-                            },
-                            bubble: {
-                                distance: 300,
-                                size: 12,
-                                duration: 2,
-                                opacity: 0.2,
-                                speed: 2
-                            },
-                            repulse: {
-                                distance: 150,
-                                duration: 0.4
-                            },
-                            push: {
-                                particles_nb: 4
-                            },
-                            attract: {
-                                distance: 200,
-                                duration: 0.4,
-                                factor: 5
-                            }
-                        }
-                    },
-                    retina_detect: true,
-                    background: {
-                        color: "transparent",
-                        image: "",
-                        position: "50% 50%",
-                        repeat: "no-repeat",
-                        size: "cover"
-                    }
-                });
-
-                // Add enhanced scroll interaction
-                let lastScrollTop = 0;
-                window.addEventListener('scroll', () => {
-                    const particles = document.querySelector("#handbook-particles");
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    const scrollDirection = scrollTop > lastScrollTop ? 'down' : 'up';
-                    const rate = scrollTop * 0.3;
-
-                    if (particles) {
-                        // Add parallax effect based on scroll direction
-                        particles.style.transform = `translate3d(0px, ${rate}px, 0px)`;
-
-                        // Update particle movement based on scroll
-                        const particleSystem = tsParticles.domItem(0);
-                        if (particleSystem) {
-                            particleSystem.particles.forEach((p) => {
-                                if (scrollDirection === 'down') {
-                                    p.velocity.y += 0.1;
-                                } else {
-                                    p.velocity.y -= 0.1;
-                                }
-                            });
-                        }
-                    }
-                    lastScrollTop = scrollTop;
-                });
-            });
-            </script>
-
-            <div class="handbook-section">
-                <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-                <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-                    Dive deep into our comprehensive prospect analysis with the official handbook.
-                    Use the page controls below to navigate through the handbook.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        pdf_path = Path("attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf")
-
-        if not pdf_path.exists():
-            st.warning("Handbook PDF file not found. Please ensure the file is present in the assets folder.")
-            return
-
-        try:
-            with st.container():
-                st.markdown('<div class="handbook-content">', unsafe_allow_html=True)
-                # Display PDF using streamlit-pdf-viewer with increased size for better readability
-                pdf_viewer(
-                    pdf_path.as_posix(),
-                    width=800,
-                    height=800,
-                    show_navigation=True,
-                    show_toolbar=True
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
-
-        except Exception as e:
-            st.error(f"Error displaying PDF: {str(e)}")
-            st.info("Please make sure the PDF file is not corrupted and try again.")
-
-    except ImportError as e:
-        st.error(f"Required libraries not found: {str(e)}")
-        st.info("Installing required packages...")
-        try:
-            from replit import packaging
-            packaging.install('streamlit-pdf-viewer')
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Failed to install required packages: {str(e)}")
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
