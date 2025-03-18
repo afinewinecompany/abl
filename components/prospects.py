@@ -239,14 +239,40 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
-    prospects_html = []
+    # Add the global JavaScript function for image fallback
+    script = """
+    <script>
+    if (!window.imageHandlerAdded) {
+        window.handleProspectImage = function(img, id) {
+            const fallbackUrls = [
+                `https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/${id}/headshot/67/current`,
+                `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current`,
+                `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/${id}/headshot/67/current`
+            ];
+
+            let currentIndex = 0;
+            img.onerror = function() {
+                if (currentIndex < fallbackUrls.length) {
+                    img.src = fallbackUrls[currentIndex++];
+                } else {
+                    img.onerror = null;
+                }
+            };
+            img.onerror();
+        };
+        window.imageHandlerAdded = true;
+    }
+    </script>
+    """
+
+    # Start with the script and average score
     avg_score = prospects_df['prospect_score'].mean()
-    prospects_html.append(
+    prospects_html = [
+        script,
         f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    )
+    ]
 
     for _, prospect in prospects_df.iterrows():
-        # Get player ID and generate URLs
         search_name = normalize_name(prospect['player_name'])
         mlbam_id = player_id_cache.get(search_name)
 
@@ -256,24 +282,8 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onload="this.dataset.loaded='true'"
-                         onerror="handleImageError(this, '{mlbam_id}')"
+                         onerror="handleProspectImage(this, '{mlbam_id}')"
                          alt="{prospect['player_name']} headshot">
-                    <script>
-                        function handleImageError(img, id) {{
-                            if (!img.dataset.loaded) {{
-                                const urls = [
-                                    `https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/${{id}}/headshot/67/current`,
-                                    `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${{id}}/headshot/67/current`,
-                                    `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/${{id}}/headshot/67/current`
-                                ];
-                                const nextUrl = urls.shift();
-                                if (nextUrl) {{
-                                    img.src = nextUrl;
-                                }}
-                            }}
-                        }}
-                    </script>
                 </div>
             """
         else:
@@ -646,7 +656,7 @@ MLB_TEAM_COLORS = {
         'accent': '#C4CED4'  # Silver
     },
     "Saint Louis Cardinals": {
-        'primary': '#C41E3A',  # Red
+        'primary':'#C41E3A',  # Red
         'secondary': '#0C2340',  # Navy Blue
         'accent': '#FEDB00'  # Yellow
     },
