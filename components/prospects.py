@@ -229,37 +229,33 @@ def get_headshot_url(mlbam_id: str) -> str:
 def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
     """Get player headshot HTML if available"""
     try:
-        # Players known to have broken image links
-        broken_image_players = {
-            'sloan ryan',
-            'griffin konnor',
-            'celesten felnin'
-        }
+        # Default fallback MLBAMID for missing headshots
+        fallback_mlbamid = "805805"
 
         # Normalize name for lookup
         search_name = normalize_name(player_name)
 
-        # Check if player is in the known broken images list
-        if search_name in broken_image_players:
-            # Use initials for these players
-            parts = player_name.split()
-            initials = ''.join(part[0].upper() for part in parts[:2] if part)
-            return f"""<div class="player-initials"><div class="initials-text">{initials}</div></div>"""
+        # Get player's MLBAMID if available, otherwise use fallback
+        mlbam_id = player_id_cache.get(search_name, fallback_mlbamid)
 
-        mlbam_id = player_id_cache.get(search_name)
+        # Use a single fallback URL that's known to be reliable
+        headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
-        if mlbam_id:
-            # Use a single fallback URL that's known to be reliable
-            fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
-            return f"""<div class="player-headshot"><img src="{fallback_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot"></div>"""
-        else:
-            # Generate initials for players without photos
-            parts = player_name.split()
-            initials = ''.join(part[0].upper() for part in parts[:2] if part)
-            return f"""<div class="player-initials"><div class="initials-text">{initials}</div></div>"""
+        return f"""<div class="player-headshot">
+            <img src="{headshot_url}" 
+                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
+                alt="{player_name} headshot"
+                onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';">
+            </div>"""
+
     except Exception as e:
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
-        return ""
+        # Still use the fallback image instead of initials
+        return f"""<div class="player-headshot">
+            <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" 
+                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
+                alt="Default headshot">
+            </div>"""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float) -> str:
     """Generate HTML for team prospects list"""
@@ -624,10 +620,9 @@ TEAM_ABBREVIATIONS = {
     "Cincinnati Reds": "CIN",
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",
-    "Saint Louis Cardinals": "STL",
+    "Cardinals": "STL","Saint Louis Cardinals": "STL",
     "St Louis Cardinals": "STL",
-"St. Louis Cardinals": "STL",
+    "St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
     "Los Angeles Dodgers": "LAD",
