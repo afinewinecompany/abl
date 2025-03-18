@@ -182,7 +182,11 @@ def render_handbook_viewer():
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
-        name = name.lower()
+        # Handle None or float values
+        if name is None or isinstance(name, float):
+            return ""
+
+        name = str(name).lower()
         name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
         if ',' in name:
             last, first = name.split(',', 1)
@@ -192,8 +196,9 @@ def normalize_name(name: str) -> str:
         name = name.replace('.', '').strip()
         name = ' '.join(name.split())
         return name
-    except:
-        return name.strip().lower()
+    except Exception as e:
+        st.error(f"Error normalizing name: {str(e)}")
+        return ""
 
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """Create a cache of normalized player names to MLBAMID"""
@@ -205,7 +210,8 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
             name = normalize_name(f"{row['First']} {row['Last']}")
             if name and not pd.isna(row['MLBAMID']):
                 cache[name] = str(row['MLBAMID'])
-        except Exception:
+        except Exception as e:
+            st.error(f"Error creating player ID cache: {str(e)}")
             continue
     return cache
 
@@ -695,4 +701,4 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
         st.markdown(prospect_card, unsafe_allow_html=True)
 
-    st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 2rem;'>", unsafe_allow_html=True)
