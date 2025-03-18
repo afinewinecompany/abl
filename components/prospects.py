@@ -238,9 +238,15 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     return cache
 
 def get_headshot_url(mlbam_id: str) -> str:
-    """Generate MLB headshot URL from player ID"""
+    """Generate MLB/MILB headshot URL from player ID"""
     try:
-        return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+        # Try MILB format first for prospects
+        milb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current"
+
+        # Fallback to MLB format if MILB doesn't work
+        mlb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+
+        return milb_url  # Prioritize MILB format for prospects
     except Exception:
         return ""
 
@@ -256,15 +262,15 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="{get_headshot_url(mlbam_id)}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIzMCIgZmlsbD0iIzFhMWMyMyIvPjx0ZXh0IHg9IjMwIiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjIwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj57aW5pdGlhbHN9PC90ZXh0Pjwvc3ZnPg==';"
+                         onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current';"
                          alt="{player_name} headshot">
                 </div>
             """
         else:
-            # Split name and get initials in First Last order
-            name_parts = player_name.split(',')  # Split on comma
-            if len(name_parts) == 2:
-                last_name, first_name = name_parts
+            # Split name and get initials
+            parts = player_name.split(',')  # Split on comma
+            if len(parts) == 2:
+                last_name, first_name = parts
                 initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
             else:
                 # Fallback to regular split for names without comma
