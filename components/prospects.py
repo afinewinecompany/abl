@@ -1,3 +1,4 @@
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -5,7 +6,29 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
-from pathlib import Path
+
+def normalize_name(name: str) -> str:
+    """Normalize player name for comparison"""
+    try:
+        # Handle non-string input, including NA/None values
+        if pd.isna(name):
+            return ""
+        if not isinstance(name, str):
+            return str(name).strip()
+
+        name = name.lower()
+        name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
+        if ',' in name:
+            last, first = name.split(',', 1)
+            name = f"{first.strip()} {last.strip()}"
+        name = name.split('(')[0].strip()
+        name = name.split(' - ')[0].strip()
+        name = name.replace('.', '').strip()
+        name = ' '.join(name.split())
+        return name
+    except Exception as e:
+        st.error(f"Error normalizing name '{name}': {str(e)}")
+        return str(name).strip() if name is not None else ""
 
 def render(roster_data: pd.DataFrame):
     """Main render function for prospects page"""
@@ -19,89 +42,94 @@ def render(roster_data: pd.DataFrame):
     mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
     player_id_cache = create_player_id_cache(mlb_ids_df)
 
-    # Read and process prospect scores
-    prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
-    prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
+    try:
+        # Read and process prospect scores with error handling
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
+        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-    # Get all minor league players (ensure no duplicates)
-    minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
-    minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
-    minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
+        # Get all minor league players (ensure no duplicates)
+        minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
+        minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
+        minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
-    # Merge with import data
-    ranked_prospects = pd.merge(
-        minors_players,
-        prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
-        left_on='clean_name',
-        right_on='Name',
-        how='left'
-    )
+        # Merge with import data
+        ranked_prospects = pd.merge(
+            minors_players,
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+            left_on='clean_name',
+            right_on='Name',
+            how='left'
+        )
 
-    # Set prospect score from Unique score
-    ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
-    ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
-    ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+        # Set prospect score from Unique score
+        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
+        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-    # Render top 100 header and scrollable list
-    render_top_100_header(ranked_prospects, player_id_cache)
+        # Render top 100 header and scrollable list
+        render_top_100_header(ranked_prospects, player_id_cache)
 
-    # Calculate team rankings
-    team_scores = ranked_prospects.groupby('team').agg({
-        'prospect_score': ['sum', 'mean']
-    }).reset_index()
+        # Calculate team rankings
+        team_scores = ranked_prospects.groupby('team').agg({
+            'prospect_score': ['sum', 'mean']
+        }).reset_index()
 
-    team_scores.columns = ['team', 'total_score', 'avg_score']
-    team_scores = team_scores.sort_values('total_score', ascending=False)
-    team_scores = team_scores.reset_index(drop=True)
-    team_scores.index = team_scores.index + 1
+        team_scores.columns = ['team', 'total_score', 'avg_score']
+        team_scores = team_scores.sort_values('total_score', ascending=False)
+        team_scores = team_scores.reset_index(drop=True)
+        team_scores.index = team_scores.index + 1
 
-    # Create and display sunburst visualization
-    fig = create_sunburst_visualization(team_scores, division_mapping)
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        # Create and display sunburst visualization
+        fig = create_sunburst_visualization(team_scores, division_mapping)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Add explanation
-    st.markdown("""
-    #### Understanding the Visualization
-    - **Size**: Represents total prospect value
-    - **Color**: Indicates average prospect quality
-    - **Hierarchy**: League → Division → Team
-    - Click on segments to zoom in/out
-    """)
+        # Add explanation
+        st.markdown("""
+        #### Understanding the Visualization
+        - **Size**: Represents total prospect value
+        - **Color**: Indicates average prospect quality
+        - **Hierarchy**: League → Division → Team
+        - Click on segments to zoom in/out
+        """)
 
-    # Display top 3 teams
-    st.subheader("🏆 Top Prospect Systems")
-    col1, col2, col3 = st.columns(3)
+        # Display top 3 teams
+        st.subheader("🏆 Top Prospect Systems")
+        col1, col2, col3 = st.columns(3)
 
-    columns = [col1, col2, col3]
-    for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
-        with columns[idx]:
+        columns = [col1, col2, col3]
+        for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
+            with columns[idx]:
+                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                    'prospect_score', ascending=False
+                )
+                render_prospect_preview({
+                    'player_name': f"#{idx + 1} {row['team']}",
+                    'position': division_mapping.get(row['team'], "Unknown"),
+                    'prospect_score': row['total_score'],
+                    'mlb_team': row['team']
+                }, idx + 1, team_prospects, player_id_cache)
+
+        # Show remaining teams
+        st.markdown("### Remaining Teams")
+        remaining_teams = team_scores.iloc[3:]
+
+        for i, (_, row) in enumerate(remaining_teams.iterrows()):
             team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
                 'prospect_score', ascending=False
             )
             render_prospect_preview({
-                'player_name': f"#{idx + 1} {row['team']}",
+                'player_name': f"#{i + 4} {row['team']}",
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['total_score'],
                 'mlb_team': row['team']
-            }, idx + 1, team_prospects, player_id_cache)
+            }, i + 4, team_prospects, player_id_cache)
 
-    # Show remaining teams
-    st.markdown("### Remaining Teams")
-    remaining_teams = team_scores.iloc[3:]
+        # Add handbook viewer at the bottom
+        render_handbook_viewer()
 
-    for i, (_, row) in enumerate(remaining_teams.iterrows()):
-        team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-            'prospect_score', ascending=False
-        )
-        render_prospect_preview({
-            'player_name': f"#{i + 4} {row['team']}",
-            'position': division_mapping.get(row['team'], "Unknown"),
-            'prospect_score': row['total_score'],
-            'mlb_team': row['team']
-        }, i + 4, team_prospects, player_id_cache)
-
-    # Add handbook viewer at the bottom
-    render_handbook_viewer()
+    except Exception as e:
+        st.error(f"Error processing prospect data: {str(e)}")
+        return
 
 def render_handbook_viewer():
     """Render the PDF handbook viewer section"""
@@ -178,22 +206,6 @@ def render_handbook_viewer():
             st.experimental_rerun()
         except Exception as e:
             st.error(f"Failed to install required packages: {str(e)}")
-
-def normalize_name(name: str) -> str:
-    """Normalize player name for comparison"""
-    try:
-        name = name.lower()
-        name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
-        if ',' in name:
-            last, first = name.split(',', 1)
-            name = f"{first.strip()} {last.strip()}"
-        name = name.split('(')[0].strip()
-        name = name.split(' - ')[0].strip()
-        name = name.replace('.', '').strip()
-        name = ' '.join(name.split())
-        return name
-    except:
-        return name.strip().lower()
 
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """Create a cache of normalized player names to MLBAMID"""
@@ -692,7 +704,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Get headshot HTML for the prospect using the cache
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
+        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
