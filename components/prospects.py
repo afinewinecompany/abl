@@ -287,49 +287,143 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None):
-    """Render a single prospect preview card with native Streamlit expander"""
+    """Render a single prospect preview card with enhanced styling and animations"""
     color = get_color_for_rank(rank)
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    background_style = f"""
-        background-image: url('{logo_url}');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: right;
-        background-color: rgba(26, 28, 35, 0.5);
-    """ if logo_url else "background-color: rgba(26, 28, 35, 0.5);"
+    # Get team colors - using a mix of traditional team colors
+    team_colors = {
+        'NYY': {'primary': '#003087', 'secondary': '#E4002C'},
+        'BOS': {'primary': '#BD3039', 'secondary': '#0C2340'},
+        'TB': {'primary': '#092C5C', 'secondary': '#8FBCE6'},
+        'TOR': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
+        'BAL': {'primary': '#DF4601', 'secondary': '#000000'},
+        # Add more team colors here
+    }.get(TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), ''), 
+         {'primary': '#1a1c23', 'secondary': '#2d2f36'})
+
+    st.markdown(f"""
+        <style>
+        @keyframes slideInUp {{
+            from {{
+                transform: translateY(50px);
+                opacity: 0;
+            }}
+            to {{
+                transform: translateY(0);
+                opacity: 1;
+            }}
+        }}
+        @keyframes fadeIn {{
+            from {{ opacity: 0; }}
+            to {{ opacity: 1; }}
+        }}
+        @keyframes pulse {{
+            0% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.05); }}
+            100% {{ transform: scale(1); }}
+        }}
+        .team-card-{rank} {{
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 0.5rem 0;
+            background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
+        }}
+        .team-card-{rank}:hover {{
+            animation: pulse 1s ease-in-out infinite;
+        }}
+        .team-logo-{rank} {{
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 180px;
+            height: 180px;
+            opacity: 0.15;
+            animation: fadeIn 1s ease-out {rank * 0.2}s both;
+        }}
+        .rank-badge-{rank} {{
+            position: absolute;
+            left: -10px;
+            top: -10px;
+            background: {color};
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.8s ease-out {rank * 0.15}s both;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
 
     st.markdown(
-        f'<div style="padding: 0.75rem; border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; {background_style}">',
-        unsafe_allow_html=True
+        f'<div class="team-card-{rank}">', unsafe_allow_html=True
     )
+
+    # Add rank badge
+    st.markdown(
+        f'<div class="rank-badge-{rank}">#{rank}</div>', unsafe_allow_html=True
+    )
+
+    if logo_url:
+        st.markdown(
+            f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">', 
+            unsafe_allow_html=True
+        )
 
     # Display team header
     st.markdown(
         f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <div style="flex-grow: 1;">
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; color: #fafafa;">
-                    {prospect['player_name']}
-                </div>
-                <div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">
-                    {prospect['position']} | Score: {prospect['prospect_score']:.1f}
-                </div>
+        <div style="position: relative; z-index: 1;">
+            <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
+                {prospect['player_name']}
             </div>
-            <div style="text-align: right; font-size: 0.85rem; color: rgba(250, 250, 250, 0.6);">
-                {TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), '')}
+            <div style="font-size: 1rem; color: rgba(255, 255, 255, 0.9); margin-bottom: 0.2rem;">
+                {prospect['position']}
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                Total Score: {prospect['prospect_score']:.1f}
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # Show prospects in expander
+    # Show prospects in expander with animation
     if team_prospects is not None:
         with st.expander("Show Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
-            st.markdown(prospects_html, unsafe_allow_html=True)
+            st.markdown(f"""
+                <style>
+                @keyframes fadeInRight {{
+                    from {{
+                        opacity: 0;
+                        transform: translateX(-20px);
+                    }}
+                    to {{
+                        opacity: 1;
+                        transform: translateX(0);
+                    }}
+                }}
+                .prospect-list-{rank} {{
+                    animation: fadeInRight 0.5s ease-out;
+                }}
+                </style>
+                <div class="prospect-list-{rank}">
+                    {prospects_html}
+                </div>
+            """, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
