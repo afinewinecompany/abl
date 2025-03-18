@@ -476,6 +476,64 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
+def render_handbook_viewer():
+    """Render the PDF handbook viewer section"""
+    st.markdown("""
+        <style>
+        .handbook-section {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(26, 28, 35, 0.3);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .handbook-button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(-45deg, #dc143c, #4169e1);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .handbook-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .pdf-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 90%;
+            background: white;
+            z-index: 1000;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: auto; /* added to allow scrolling within the modal */
+        }
+        </style>
+        <div class="handbook-section">
+            <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+                Dive deep into our comprehensive prospect analysis with the official handbook
+            </p>
+            <button class="handbook-button" onclick="document.querySelector('.pdf-modal').style.display = 'block';">📖 Open Handbook</button>
+        </div>
+    """, unsafe_allow_html=True)
+
+
+    st.markdown("""
+        <div class="pdf-modal" style="display:none;">
+            <button style="position: absolute; top: 10px; right: 10px; background-color: #f44336; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; cursor: pointer; border-radius: 5px;" onclick="document.querySelector('.pdf-modal').style.display = 'none';">Close</button>
+        </div>
+    """, unsafe_allow_html=True)
+
+
+
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
     try:
@@ -583,6 +641,9 @@ def render(roster_data: pd.DataFrame):
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        # Add handbook viewer at the bottom
+        render_handbook_viewer()
 
     except Exception as e:
         st.error(f"An error occurred while processing prospect data: {str(e)}")
