@@ -231,28 +231,15 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         if mlbam_id:
             # Primary URL to try first
             primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-
-            # Single fallback URL for simplicity and reliability
+            # Single fallback URL
             fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
-            return f"""
-                <div class="player-headshot">
-                    <img src="{primary_url}"
-                         style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;"
-                         onerror="this.onerror=null; this.src='{fallback_url}';"
-                         alt="{player_name} headshot">
-                </div>
-            """
+            return f"""<div class="player-headshot"><img src="{primary_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" onerror="this.onerror=null; this.src='{fallback_url}';" alt="{player_name} headshot"></div>"""
         else:
             # Generate initials for players without photos
             parts = player_name.split()
             initials = ''.join(part[0].upper() for part in parts[:2] if part)
-
-            return f"""
-                <div class="player-initials">
-                    <div class="initials-text">{initials}</div>
-                </div>
-            """
+            return f"""<div class="player-initials"><div class="initials-text">{initials}</div></div>"""
     except Exception as e:
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
         return ""
@@ -601,31 +588,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     """Render the animated TOP 100 header and scrollable list"""
     st.markdown("""
         <style>
-        .player-headshot {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
-            margin-right: 1rem;
-            border-radius: 50%;
-            overflow: hidden;
-            background-color: #1a1c23;
-        }
-        .player-initials {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
-            margin-right: 1rem;
-            border-radius: 50%;
-            background-color: #1a1c23;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .initials-text {
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
         .prospect-card {
             background: var(--card-bg);
             border-radius: 12px;
@@ -642,6 +604,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         .prospect-content {
             display: flex;
             align-items: center;
+            gap: 1rem;
             position: relative;
             z-index: 2;
         }
@@ -655,10 +618,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             margin-bottom: 0.25rem;
         }
         .prospect-details {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.8);
             display: flex;
             gap: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.8);
             margin-bottom: 0.25rem;
         }
         .prospect-score {
@@ -674,11 +637,11 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             height: 120px;
             opacity: 0.1;
             z-index: 1;
-            transition: transform 0.3s ease, opacity 0.3s ease;
+            transition: all 0.3s ease;
         }
         .prospect-card:hover .team-logo-bg {
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
             opacity: 0.15;
+            transform: translateY(-50%) scale(1.1) rotate(5deg);
         }
         .rank-number {
             position: absolute;
@@ -695,6 +658,27 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             z-index: 3;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .player-headshot img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .player-initials {
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            border-radius: 50%;
+            background-color: #1a1c23;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .initials-text {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -720,10 +704,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
 
         st.markdown(f"""
-            <div class="prospect-card" style="--card-bg: {gradient};">
-                <div class="rank-number" style="background: {rank_color}; color: white;">
-                    {idx}
-                </div>
+            <div class="prospect-card" style="--card-bg: {gradient}">
+                <div class="rank-number" style="background: {rank_color}; color: white">{idx}</div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
@@ -734,9 +716,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                             <span>|</span>
                             <span>{prospect.position}</span>
                         </div>
-                        <div class="prospect-score" style="color: {team_colors['accent']}">
-                            Score: {prospect.prospect_score:.2f}
-                        </div>
+                        <div class="prospect-score" style="color: {team_colors['accent']}">Score: {prospect.prospect_score:.2f}</div>
                     </div>
                 </div>
             </div>
