@@ -655,9 +655,24 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         st.markdown(f"""
             <div class="prospect-card" style="--card-bg: {gradient};">
-                <div class="rank-number" style="background: {rank_color}; color: white">
-                    {idx}
-                </div>
+                <div style="
+                    position: absolute;
+                    left: -10px;
+                    top: -10px;
+                    width: 45px;
+                    height: 45px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    z-index: 3;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    color: white;
+                ">{idx}</div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
