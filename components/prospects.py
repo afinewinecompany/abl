@@ -243,16 +243,17 @@ def get_headshot_url(mlbam_id: str) -> str:
         if not mlbam_id:
             return ""
 
-        # Try MILB format first for prospects with larger dimensions
-        milb_urls = [
+        # Try different URL formats
+        urls = [
+            # MILB format
             f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
-            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,h_320,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current"
+            # MLB format with 67
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current",
+            # Fallback MLB format
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
         ]
 
-        # MLB format as fallback
-        mlb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
-
-        return milb_urls[0]  # Return primary MILB URL
+        return urls[0]  # Return primary URL, let onerror handler try others
 
     except Exception as e:
         st.warning(f"Error generating headshot URL for ID {mlbam_id}: {str(e)}")
@@ -266,14 +267,23 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            milb_url = get_headshot_url(mlbam_id)
-            mlb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+            # Get all possible URLs
+            urls = [
+                f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
+                f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current",
+                f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+            ]
+
+            # Build the onerror chain to try all URLs
+            onerror_chain = '; '.join([
+                f"this.src='{url}'" for url in urls[1:]
+            ])
 
             return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="{milb_url}"
+                    <img src="{urls[0]}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.onerror=null; this.src='{mlb_url}';"
+                         onerror="this.onerror=null; {onerror_chain};"
                          alt="{player_name} headshot">
                 </div>
             """
@@ -718,7 +728,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             const observer = new IntersectionObserver(observerCallback, observerOptions);
             document.querySelectorAll('.prospect-card').forEach(card => {
                 observer.observe(card);
-                card.style.opacity = '0';
+                card.style.opacity = ''0';
             });
         });
         </script>
