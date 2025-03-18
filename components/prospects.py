@@ -102,7 +102,10 @@ def render(roster_data: pd.DataFrame):
         ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-        # Calculate team rankings using average score instead of total
+        # First render the Top 100 prospects list
+        render_top_100_header(ranked_prospects, player_id_cache)
+
+        # Calculate team rankings using average score
         team_scores = ranked_prospects.groupby('team').agg({
             'prospect_score': ['sum', 'mean', 'count']
         }).reset_index()
@@ -679,8 +682,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             height: 60px;
             min-width: 60px;
             border-radius: 50%;
-            background-color: #1a1c23;
-            display: flex;
+            background-color: #1a1c23;            display: flex;
             align-items: center;
             justify-content: center;
         }
