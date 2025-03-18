@@ -7,6 +7,42 @@ import numpy as np
 from typing import Dict
 import unicodedata
 
+# Add GM mapping at the top of the file with other constants
+GM_MAPPING = {
+    "Pittsburgh Pirates": "Duke",
+    "Toronto Blue Jays": "Gary",
+    "Milwaukee Brewers": "Zack",
+    "San Francisco Giants": "Rourke",
+    "Los Angeles Angels": "Cal",
+    "Oakland Athletics": "Dylan",
+    "Athletics": "Dylan",  # Handle both variations
+    "Arizona Diamondbacks": "Carpy",
+    "Tampa Bay Rays": "Kevin",
+    "Baltimore Orioles": "Steve",
+    "Detroit Tigers": "John",
+    "Miami Marlins": "Other Frank",
+    "Cincinnati Reds": "Linny",
+    "New York Mets": "Matt",
+    "Los Angeles Dodgers": "Joe",
+    "Chicago Cubs": "Frank",
+    "Philadelphia Phillies": "Adam",
+    "New York Yankees": "Gary",
+    "Texas Rangers": "Sam",
+    "Atlanta Braves": "Aidan",
+    "Colorado Rockies": "Allen",
+    "Kansas City Royals": "Brendan",
+    "San Diego Padres": "Greg",
+    "Chicago White Sox": "Tom",
+    "Washington Nationals": "Jordan & Cim",
+    "Houston Astros": "Evan",
+    "St. Louis Cardinals": "Jeff",
+    "Cardinals": "Jeff",  # Handle variations
+    "Boston Red Sox": "Don",
+    "Minnesota Twins": "Tyler",
+    "Cleveland Guardians": "Mark",
+    "Seattle Mariners": "Seth"
+}
+
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
@@ -328,9 +364,10 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Get team colors from the comprehensive mapping
+    # Get team colors and GM info
     team_colors = MLB_TEAM_COLORS.get(str(prospect.get('mlb_team', '')), 
                                     {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+    gm_name = GM_MAPPING.get(str(prospect.get('mlb_team', '')), 'Unknown')
 
     st.markdown(f"""
         <style>
@@ -429,22 +466,14 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             display: inline-block;
             margin-top: 0.5rem;
         }}
-        .prospect-container {{
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-top: 1rem;
-            animation: fadeInRight 0.5s ease-out;
-        }}
-        @keyframes fadeInRight {{
-            from {{
-                opacity: 0;
-                transform: translateX(-20px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateX(0);
-            }}
+        .gm-info-{rank} {{
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: inline-block;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -464,7 +493,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             unsafe_allow_html=True
         )
 
-    # Display team header with enhanced styling
+    # Display team header with enhanced styling and GM info
     st.markdown(
         f"""
         <div class="prospect-content-{rank}">
@@ -476,6 +505,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             </div>
             <div class="prospect-score-{rank}">
                 Total Score: {prospect['prospect_score']:.1f}
+            </div>
+            <div class="gm-info-{rank}">
+                General Manager: {gm_name}
             </div>
         </div>
         """,
