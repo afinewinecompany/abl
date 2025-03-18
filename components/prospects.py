@@ -317,10 +317,19 @@ def get_score_color(score: float, max_score: float, min_score: float) -> str:
     g = 20  # Keep green low for vibrant colors
     return f"#{r:02x}{g:02x}{b:02x}"
 
+def get_rank_color(rank: int, total_ranks: int = 100) -> str:
+    """Calculate color for rank number on a red-to-blue gradient scale"""
+    # Convert rank to a score percentage (rank 1 = 100%, rank 100 = 0%)
+    rank_percentage = (total_ranks - rank) / (total_ranks - 1)
+    r = int(220 * rank_percentage + 65 * (1 - rank_percentage))  # Red component
+    b = int(65 * rank_percentage + 220 * (1 - rank_percentage))  # Blue component
+    g = 20  # Keep green low for vibrant colors
+    return f"#{r:02x}{g:02x}{b:02x}"
+
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
-    # Calculate rank color using the score instead of rank
-    rank_color = get_score_color(prospect['prospect_score'], global_max_score, global_min_score)
+    # Calculate color for rank badge
+    rank_color = get_rank_color(rank, 3)  # Use 3 for total teams instead of 100
 
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
@@ -332,31 +341,8 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
 
     st.markdown(f"""
         <style>
-        @keyframes slideInUp {{
-            from {{
-                transform: translateY(50px);
-                opacity: 0;
-            }}
-            to {{
-                transform: translateY(0);
-                opacity: 1;
-            }}
-        }}
-        @keyframes fadeIn {{
-            from {{ opacity: 0; }}
-            to {{ opacity: 1; }}
-        }}
-        @keyframes pulse {{
-            0% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.02); }}
-            100% {{ transform: scale(1); }}
-        }}
-        @keyframes shimmer {{
-            0% {{ background-position: -200% center; }}
-            100% {{ background-position: 200% center; }}
-        }}
         .team-card-{rank} {{
-            padding: 2rem 2rem 2rem 3.5rem;  /* Added left padding for rank */
+            padding: 2rem 2rem 2rem 3.5rem;
             border-radius: 16px;
             margin: 1rem 0;
             background: linear-gradient(135deg,
@@ -365,13 +351,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                 {team_colors['accent']} 100%);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             position: relative;
-            overflow: visible;  /* Changed from hidden to show rank */
+            overflow: visible;
             animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
             transition: all 0.3s ease;
-        }}
-        .team-card-{rank}:hover {{
-            transform: translateY(-5px);
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
         }}
         .rank-badge-{rank} {{
             position: absolute;
@@ -391,68 +373,27 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             background: {rank_color};
             color: white;
         }}
-        .team-logo-{rank} {{
-            position: absolute;
-            right: -30px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 220px;
-            height: 220px;
-            opacity: 0.12;
-            animation: fadeIn 1s ease-out {rank * 0.2}s both;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-        }}
-        .prospect-content-{rank} {{
-            position: relative;
-            z-index: 1;
-        }}
-        .prospect-header-{rank} {{
-            font-weight: 800;
-            font-size: 1.8rem;
-            margin-bottom: 0.8rem;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        .prospect-subheader-{rank} {{
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 0.4rem;
-        }}
-        .prospect-score-{rank} {{
-            font-size: 1rem;
-            color: {rank_color};
-            background: rgba(0, 0, 0, 0.2);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 0.5rem;
-            font-weight: 700;
-        }}
         </style>
-    """, unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
         <div class="team-card-{rank}">
             <div class="rank-badge-{rank}">#{rank}</div>
-            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
-            <div class="prospect-content-{rank}">
-                <div class="prospect-header-{rank}">
+            {f'<img src="{logo_url}" style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 220px; height: 220px; opacity: 0.12;" alt="Team Logo">' if logo_url else ''}
+            <div style="position: relative; z-index: 1;">
+                <div style="font-weight: 800; font-size: 1.8rem; margin-bottom: 0.8rem; color: white;">
                     {prospect['player_name']}
                 </div>
-                <div class="prospect-subheader-{rank}">
+                <div style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 0.4rem;">
                     {prospect['position']}
                     <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
                 </div>
-                <div class="prospect-score-{rank}">
+                <div style="font-size: 1rem; color: {rank_color}; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
                     Avg Score: {prospect['prospect_score']:.1f}
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
 
-    # Show prospects in expander with enhanced animation
+    # Show prospects in expander
     if team_prospects is not None:
         with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache, global_max_score, global_min_score)
@@ -617,95 +558,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             opacity: 0.9;
             margin-top: 1rem;
         }
-        .prospect-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: visible;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .rank-number {
-            position: absolute;
-            left: -10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: var(--rank-color);
-            color: white;
-        }
-        .prospect-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            z-index: 2;
-        }
-        .prospect-info {
-            flex-grow: 1;
-        }
-        .prospect-name {
-            font-size: 1.2rem;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-details {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 0.25rem;
-        }
-        .prospect-score {
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        .team-logo-bg {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 120px;
-            height: 120px;
-            opacity: 0.1;
-            z-index: 1;
-            transition: all 0.3s ease;        }
-        .prospect-card:hover .team-logo-bg {
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
-        }
-        .player-headshot img {
-            width:60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .player-initials {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
-            border-radius: 50%;
-            background-color: #1a1c23;            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .initials-text {
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
         </style>
 
         <div class="top-100-header">
@@ -721,15 +573,14 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Calculate score color
         score_color = get_score_color(prospect.prospect_score, global_max_score, global_min_score)
+        # Calculate rank color
+        rank_color = get_rank_color(idx)
 
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                          {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
-
-        # Calculate rank color
-        rank_color = get_color_for_rank(idx, 100)
 
         # Get headshot HTML
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
@@ -738,21 +589,45 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
 
         st.markdown(f"""
-            <div class="prospect-card" style="--card-bg: {gradient}; --rank-color: {rank_color};">
-                <div class="rank-number" style="background: {rank_color}; color: white">
-                    {idx}
-                </div>
-                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content">
+            <div style="
+                background: {gradient};
+                border-radius: 12px;
+                padding: 1.25rem 1.25rem 1.25rem 3.5rem;
+                margin: 1rem 0;
+                position: relative;
+                overflow: visible;
+            ">
+                <div style="
+                    position: absolute;
+                    left: -10px;
+                    top: -10px;
+                    width: 45px;
+                    height: 45px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    z-index: 3;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    background: {rank_color};
+                    color: white;
+                ">{idx}</div>
+                {f'<img src="{logo_url}" style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); width: 120px; height: 120px; opacity: 0.1; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                <div style="display: flex; align-items: center; gap: 1rem; position: relative; z-index: 2;">
                     {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{prospect.player_name}</div>
-                        <div class="prospect-details">
+                    <div style="flex-grow: 1;">
+                        <div style="font-size: 1.2rem; color: white; font-weight: 600; margin-bottom: 0.25rem;">
+                            {prospect.player_name}
+                        </div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); display: flex; gap: 1rem; margin-bottom: 0.25rem;">
                             <span>{prospect.team}</span>
                             <span>|</span>
                             <span>{prospect.position}</span>
                         </div>
-                        <div class="prospect-score" style="color: {score_color}; font-weight: 700;">
+                        <div style="font-size: 1rem; color: {score_color}; font-weight: 700;">
                             Score: {prospect.prospect_score:.2f}
                         </div>
                     </div>
