@@ -138,11 +138,11 @@ st.markdown("""
         const loader = document.getElementById('loading-animation');
         if (show) {
             loader.style.display = 'flex';
+            loader.style.opacity = '1';
         } else {
             loader.style.opacity = '0';
             setTimeout(() => {
                 loader.style.display = 'none';
-                loader.style.opacity = '1';
             }, 500);
         }
     }
@@ -254,14 +254,6 @@ st.markdown("""
                 repeat: "no-repeat",
                 size: "cover"
             }
-        });
-
-        // Show loading animation on page load
-        toggleLoading(true);
-
-        // Hide loading animation when content is loaded
-        window.addEventListener('load', () => {
-            toggleLoading(false);
         });
     });
     </script>
