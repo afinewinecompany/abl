@@ -72,15 +72,16 @@ def calculate_hot_cold_modifier(recent_record: float) -> float:
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
     """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
     # Calculate weekly average score
-    weekly_avg = row['total_points'] / row['weeks_played']
-    
+    weekly_avg = row['total_points'] / max(row['weeks_played'], 1)  # Prevent division by zero
+
     # Calculate points modifier
     points_mod = calculate_points_modifier(row['total_points'], all_teams_data['total_points'])
-    
+
     # Calculate hot/cold modifier based on recent record
-    recent_record = row['recent_wins'] / (row['recent_wins'] + row['recent_losses'])
+    total_recent_games = row['recent_wins'] + row['recent_losses']
+    recent_record = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5  # Default to 0.5 if no games
     hot_cold_mod = calculate_hot_cold_modifier(recent_record)
-    
+
     return (weekly_avg * points_mod) * hot_cold_mod
 
 def render(standings_data: pd.DataFrame):
