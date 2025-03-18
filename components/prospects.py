@@ -527,14 +527,14 @@ def render_handbook_viewer():
         .page {
             width: 50%;
             height: 100%;
-            background: white;
             position: absolute;
             right: 0;
             transform-origin: left;
             transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
             cursor: pointer;
-            background-size: cover;
-            background-position: center;
+            background: white;
+            padding: 2rem;
+            overflow-y: auto;
         }
         .page.flipped {
             transform: rotateY(-180deg);
@@ -575,92 +575,111 @@ def render_handbook_viewer():
             margin: 0 1rem;
         }
         </style>
+        """, unsafe_allow_html=True)
 
-        <script>
-        function initializeBookViewer() {
-            const modal = document.querySelector('.pdf-modal');
-            const book = document.querySelector('.book-container');
-            let currentPage = 0;
-            const totalPages = 100; // We'll update this dynamically
+    # Load and parse PDF content
+    import PyPDF2
+    import base64
+    from io import BytesIO
 
-            function updatePageNumber() {
-                document.querySelector('.page-number').textContent = `Page ${currentPage + 1} of ${totalPages}`;
-            }
-
-            function flipPage(direction) {
-                const pages = document.querySelectorAll('.page');
-                const currentPageEl = pages[currentPage];
-
-                if (direction === 'next' && currentPage < totalPages - 1) {
-                    currentPageEl.classList.add('flipped');
-                    currentPage++;
-                    updatePageNumber();
-                } else if (direction === 'prev' && currentPage > 0) {
-                    const prevPage = pages[currentPage - 1];
-                    prevPage.classList.remove('flipped');
-                    currentPage--;
-                    updatePageNumber();
-                }
-            }
-
-            // Event Listeners
-            document.querySelector('.next-button').addEventListener('click', () => flipPage('next'));
-            document.querySelector('.prev-button').addEventListener('click', () => flipPage('prev'));
-
-            // Initialize
-            updatePageNumber();
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const openButton = document.querySelector('.handbook-button');
-            const modal = document.querySelector('.pdf-modal');
-            const closeButton = document.querySelector('.close-button');
-
-            openButton.addEventListener('click', function() {
-                modal.style.display = 'flex';
-                initializeBookViewer();
-            });
-
-            closeButton.addEventListener('click', function() {
-                modal.style.display = 'none';
-            });
-        });
-        </script>
-
-        <div class="handbook-section">
-            <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-            <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-                Dive deep into our comprehensive prospect analysis with the official handbook
-            </p>
-            <button class="handbook-button">📖 Open Handbook</button>
-        </div>
-
-        <div class="pdf-modal">
-            <button class="close-button" style="position: absolute; top: 10px; right: 10px; background: #f44336; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
-
-            <div class="book-container">
-                <!-- Pages will be dynamically added here -->
-            </div>
-
-            <div class="page-controls">
-                <button class="page-button prev-button">← Previous</button>
-                <span class="page-number">Page 1 of 100</span>
-                <button class="page-button next-button">Next →</button>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Load PDF pages using st.cache_data
-    @st.cache_data
-    def load_pdf_pages():
-        import PyPDF2
-        from pdf2image import convert_from_path
-
+    def get_pdf_content():
         pdf_path = "attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf"
-        return pdf_path
+        pdf_text = []
+        try:
+            with open(pdf_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                num_pages = len(pdf_reader.pages)
+                for page in range(num_pages):
+                    pdf_text.append(pdf_reader.pages[page].extract_text())
+        except Exception as e:
+            st.error(f"Error loading PDF: {str(e)}")
+            return []
+        return pdf_text
 
-    # Initialize PDF viewer
-    load_pdf_pages()
+    pdf_content = get_pdf_content()
+    total_pages = len(pdf_content)
+
+    # Create JavaScript for page flip functionality
+    js_code = f"""
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        const modal = document.querySelector('.pdf-modal');
+        const book = document.querySelector('.book-container');
+        let currentPage = 0;
+        const totalPages = {total_pages};
+        const pdfContent = {pdf_content};
+
+        function updatePageNumber() {{
+            document.querySelector('.page-number').textContent = `Page ${{currentPage + 1}} of ${{totalPages}}`;
+        }}
+
+        function createPage(pageNum) {{
+            const page = document.createElement('div');
+            page.className = 'page';
+            page.innerHTML = `<div class="page-content">${{pdfContent[pageNum]}}</div>`;
+            return page;
+        }}
+
+        function initializeBook() {{
+            book.innerHTML = '';
+            for(let i = 0; i < totalPages; i++) {{
+                book.appendChild(createPage(i));
+            }}
+            updatePageNumber();
+        }}
+
+        function flipPage(direction) {{
+            const pages = document.querySelectorAll('.page');
+            if (direction === 'next' && currentPage < totalPages - 1) {{
+                pages[currentPage].classList.add('flipped');
+                currentPage++;
+                updatePageNumber();
+            }} else if (direction === 'prev' && currentPage > 0) {{
+                pages[currentPage - 1].classList.remove('flipped');
+                currentPage--;
+                updatePageNumber();
+            }}
+        }}
+
+        // Event Listeners
+        document.querySelector('.handbook-button').addEventListener('click', function() {{
+            modal.style.display = 'flex';
+            initializeBook();
+        }});
+
+        document.querySelector('.close-button').addEventListener('click', function() {{
+            modal.style.display = 'none';
+        }});
+
+        document.querySelector('.next-button').addEventListener('click', () => flipPage('next'));
+        document.querySelector('.prev-button').addEventListener('click', () => flipPage('prev'));
+    }});
+    </script>
+
+    <div class="handbook-section">
+        <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
+        <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+            Dive deep into our comprehensive prospect analysis with the official handbook
+        </p>
+        <button class="handbook-button">📖 Open Handbook</button>
+    </div>
+
+    <div class="pdf-modal">
+        <button class="close-button" style="position: absolute; top: 10px; right: 10px; background: #f44336; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
+
+        <div class="book-container">
+            <!-- Pages will be dynamically added here -->
+        </div>
+
+        <div class="page-controls">
+            <button class="page-button prev-button">← Previous</button>
+            <span class="page-number">Page 1 of {total_pages}</span>
+            <button class="page-button next-button">Next →</button>
+        </div>
+    </div>
+    """
+
+    st.markdown(js_code, unsafe_allow_html=True)
 
 def render(roster_data: pd.DataFrame):
     """Render prospects analysis section"""
@@ -702,7 +721,7 @@ def render(roster_data: pd.DataFrame):
         render_top_100_header(ranked_prospects, player_id_cache)
 
         # Calculate team rankings
-        team_scores = ranked_prospects.groupby('team').agg({
+        teamscores = ranked_prospects.groupby('team').agg({
             'prospect_score': ['sum', 'mean']
         }).reset_index()
 
