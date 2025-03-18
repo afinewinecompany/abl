@@ -381,7 +381,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             100% {{ background-position: 200% center; }}
         }}
         .team-card-{rank} {{
-            padding: 2rem;
+            padding: 2rem 2rem 2rem 3.5rem;  /* Added left padding for rank */
             border-radius: 16px;
             margin: 1rem 0;
             background: linear-gradient(135deg,
@@ -390,13 +390,32 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                 {team_colors['accent']} 100%);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             position: relative;
-            overflow: hidden;
+            overflow: visible;  /* Changed from hidden to show rank */
             animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
             transition: all 0.3s ease;
         }}
         .team-card-{rank}:hover {{
             transform: translateY(-5px);
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+        }}
+        .rank-badge-{rank} {{
+            position: absolute;
+            left: -10px;  /* Adjusted position */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 3;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: {color};
+            color: white;
         }}
         .team-logo-{rank} {{
             position: absolute;
@@ -408,24 +427,6 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             opacity: 0.12;
             animation: fadeIn 1s ease-out {rank * 0.2}s both;
             filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-        }}
-        .rank-badge-{rank} {{
-            position: absolute;
-            left: -15px;
-            top: -15px;
-            background: {color};
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.4rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.8s ease-out {rank * 0.15}s both;
-            border: 2px solid rgba(255, 255, 255, 0.2);
         }}
         .prospect-content-{rank} {{
             position: relative;
@@ -674,7 +675,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             transform: translateY(-50%) scale(1.1) rotate(5deg);
         }
         .player-headshot img {
-            width: 60px;
+            width60px;
             height: 60px;
             border-radius: 50%;
             object-fit: cover;
