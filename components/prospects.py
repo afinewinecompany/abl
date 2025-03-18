@@ -6,15 +6,8 @@ import numpy as np
 from typing import Dict
 import unicodedata
 
-# Add baseball particle animation to page config
-st.set_page_config(
-    page_title="ABL Prospects",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Add baseball particles background
-st.markdown("""
+# CSS and JS as constants
+PARTICLES_CSS_JS = """
     <style>
     .stApp {
         background: rgba(26, 28, 35, 0.95);
@@ -70,22 +63,6 @@ st.markdown("""
                         rotateX: 600,
                         rotateY: 1200
                     }
-                },
-                rotate: {
-                    value: 0,
-                    random: true,
-                    direction: "clockwise",
-                    animation: {
-                        enable: true,
-                        speed: 5,
-                        sync: false
-                    }
-                },
-                backgroundMask: {
-                    enable: true,
-                    cover: {
-                        color: "#1a1c23"
-                    }
                 }
             },
             interactivity: {
@@ -107,7 +84,119 @@ st.markdown("""
         });
     });
     </script>
-""", unsafe_allow_html=True)
+"""
+
+def render(roster_data: pd.DataFrame):
+    """Main render function for prospects page"""
+    # Add baseball particles background at the start of render
+    st.markdown(PARTICLES_CSS_JS, unsafe_allow_html=True)
+
+    st.header("🌟 Prospect Analysis")
+
+    # Load division data
+    divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
+    division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
+
+    # Load MLB player IDs and create cache
+    mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
+    player_id_cache = create_player_id_cache(mlb_ids_df)
+
+    # Read and process prospect scores
+    prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
+    prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
+
+    # Get all minor league players (ensure no duplicates)
+    minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
+    minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
+    minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
+
+    # Merge with import data
+    ranked_prospects = pd.merge(
+        minors_players,
+        prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+        left_on='clean_name',
+        right_on='Name',
+        how='left'
+    )
+
+    # Set prospect score from Unique score
+    ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+    ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
+    ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+
+    # Render top 100 header and scrollable list
+    render_top_100_header(ranked_prospects, player_id_cache)
+
+    # Calculate team rankings
+    team_scores = ranked_prospects.groupby('team').agg({
+        'prospect_score': ['sum', 'mean']        }).reset_index()
+
+    team_scores.columns = ['team', 'total_score', 'avg_score']
+    team_scores = team_scores.sort_values('total_score', ascending=False)
+    team_scores = team_scores.reset_index(drop=True)
+    team_scores.index = team_scores.index + 1
+
+    # Create and display sunburst visualization with increased size
+    fig = create_sunburst_visualization(team_scores, division_mapping)
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Add explanation
+    st.markdown("""
+    #### Understanding the Visualization
+    - **Size**: Represents total prospect value
+    - **Color**: Indicates average prospect quality
+    - **Hierarchy**: League → Division → Team
+    - Click on segments to zoom in/out
+    """)
+
+
+    # Display top 3 teams
+    st.subheader("🏆 Top Prospect Systems")
+    col1, col2, col3 = st.columns(3)
+
+    columns = [col1, col2, col3]
+    for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
+        with columns[idx]:
+            team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+                'prospect_score', ascending=False
+            )
+            render_prospect_preview({
+                'player_name': f"#{idx + 1} {row['team']}",
+                'position': division_mapping.get(row['team'], "Unknown"),
+                'prospect_score': row['total_score'],
+                'mlb_team': row['team']
+            }, idx + 1, team_prospects, player_id_cache)
+
+    # Show remaining teams
+    st.markdown("### Remaining Teams")
+    remaining_teams = team_scores.iloc[3:]
+
+    for i, (_, row) in enumerate(remaining_teams.iterrows()):
+        team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
+            'prospect_score', ascending=False
+        )
+        render_prospect_preview({
+            'player_name': f"#{i + 4} {row['team']}",
+            'position': division_mapping.get(row['team'], "Unknown"),
+            'prospect_score': row['total_score'],
+            'mlb_team': row['team']
+        }, i + 4, team_prospects, player_id_cache)
+
+    # Add legend for color scale
+    st.markdown("### Color Scale Legend")
+    st.markdown("""
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
+        <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #4169E1 100%);"></div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>#1 Rank</span>
+            <span>#15</span>
+            <span>#30 Rank</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Add handbook viewer at the bottom
+    render_handbook_viewer()
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -1367,116 +1456,3 @@ def render_handbook_viewer():
     """
 
     st.markdown(js_code, unsafe_allow_html=True)
-
-def render(roster_data: pd.DataFrame):
-    """Render prospects analysis section"""
-    try:
-        st.header("📚 Prospect Analysis")
-
-        # Load division data
-        divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
-        division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
-
-        # Load MLB player IDs and create cache
-        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
-        player_id_cache = create_player_id_cache(mlb_ids_df)
-
-        # Read and process prospect scores
-        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
-        prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
-
-        # Get all minor league players (ensure no duplicates)
-        minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
-        minors_players['clean_name'] = minors_players['player_name'].apply(normalize_name)
-        minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
-
-        # Merge with import data
-        ranked_prospects = pd.merge(
-            minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
-            left_on='clean_name',
-            right_on='Name',
-            how='left'
-        )
-
-        # Set prospect score from Unique score
-        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
-        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
-        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
-
-        # Render top 100 header and scrollable list
-        render_top_100_header(ranked_prospects, player_id_cache)
-
-        # Calculate team rankings
-        team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean']        }).reset_index()
-
-        team_scores.columns = ['team', 'total_score', 'avg_score']
-        team_scores = team_scores.sort_values('total_score', ascending=False)
-        team_scores = team_scores.reset_index(drop=True)
-        team_scores.index = team_scores.index + 1
-
-        # Create and display sunburst visualization with increased size
-        fig = create_sunburst_visualization(team_scores, division_mapping)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-        # Add explanation
-        st.markdown("""
-        #### Understanding the Visualization
-        - **Size**: Represents total prospect value
-        - **Color**: Indicates average prospect quality
-        - **Hierarchy**: League → Division → Team
-        - Click on segments to zoom in/out
-        """)
-
-
-        # Display top 3 teams
-        st.subheader("🏆 Top Prospect Systems")
-        col1, col2, col3 = st.columns(3)
-
-        columns = [col1, col2, col3]
-        for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
-            with columns[idx]:
-                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                    'prospect_score', ascending=False
-                )
-                render_prospect_preview({
-                    'player_name': f"#{idx + 1} {row['team']}",
-                    'position': division_mapping.get(row['team'], "Unknown"),
-                    'prospect_score': row['total_score'],
-                    'mlb_team': row['team']
-                }, idx + 1, team_prospects, player_id_cache)
-
-        # Show remaining teams
-        st.markdown("### Remaining Teams")
-        remaining_teams = team_scores.iloc[3:]
-
-        for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                'prospect_score', ascending=False
-            )
-            render_prospect_preview({
-                'player_name': f"#{i + 4} {row['team']}",
-                'position': division_mapping.get(row['team'], "Unknown"),
-                'prospect_score': row['total_score'],
-                'mlb_team': row['team']
-            }, i + 4, team_prospects, player_id_cache)
-
-        # Add legend for color scale
-        st.markdown("### Color Scale Legend")
-        st.markdown("""
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
-            <div style="display: flex; height: 2rem; border-radius: 4px; background: linear-gradient(90deg, #DC143C 0%, #4169E1 100%);"></div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>#1 Rank</span>
-                <span>#15</span>
-                <span>#30 Rank</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Add handbook viewer at the bottom
-        render_handbook_viewer()
-
-    except Exception as e:
-        st.error(f"An error occurred while processing prospect data: {str(e)}")
