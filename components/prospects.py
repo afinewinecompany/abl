@@ -562,7 +562,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 1.25rem 1.25rem 1.25rem 3.5rem;
             margin: 1rem 0;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             transition: all 0.3s ease;
         }
         .prospect-card:hover {
@@ -631,7 +631,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
-    """, unsafe_allow_html=True)
+    """, unsafeallow_html=True)
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
