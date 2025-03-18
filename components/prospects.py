@@ -182,7 +182,13 @@ def render_handbook_viewer():
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
-        name = name.lower()
+        # Handle float/numeric values
+        if isinstance(name, (float, int)):
+            if pd.isna(name):
+                return ""
+            name = str(name)
+
+        name = str(name).lower()
         name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
         if ',' in name:
             last, first = name.split(',', 1)
@@ -193,7 +199,7 @@ def normalize_name(name: str) -> str:
         name = ' '.join(name.split())
         return name
     except:
-        return name.strip().lower()
+        return str(name).strip().lower()
 
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """Create a cache of normalized player names to MLBAMID"""
