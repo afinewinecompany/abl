@@ -124,88 +124,9 @@ def render(roster_data: pd.DataFrame):
                 'mlb_team': row['team']
             }, i + 4, team_prospects, player_id_cache)
 
-        # Add handbook viewer at the bottom
-        render_handbook_viewer()
-
     except Exception as e:
         st.error(f"Error processing prospect data: {str(e)}")
         return
-
-def render_handbook_viewer():
-    """Render the PDF handbook viewer section"""
-    try:
-        import streamlit as st
-        from streamlit_pdf_viewer import pdf_viewer
-        from pathlib import Path
-
-        st.markdown("""
-            <style>
-            .handbook-section {
-                margin-top: 3rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.3);
-                border-radius: 10px;
-                text-align: center;
-                position: relative;
-                z-index: 1;
-            }
-            .handbook-content {
-                margin-top: 2rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.5);
-                border-radius: 8px;
-                overflow: hidden;
-                position: relative;
-                z-index: 1;
-            }
-            .pdf-viewer {
-                width: 100%;
-                min-height: 800px;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            }
-            </style>
-            <div class="handbook-section">
-                <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-                <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-                    Dive deep into our comprehensive prospect analysis with the official handbook.
-                    Use the page controls below to navigate through the handbook.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        pdf_path = Path("attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf")
-
-        if not pdf_path.exists():
-            st.warning("Handbook PDF file not found. Please ensure the file is present in the assets folder.")
-            return
-
-        try:
-            with st.container():
-                st.markdown('<div class="handbook-content">', unsafe_allow_html=True)
-                pdf_viewer(
-                    pdf_path.as_posix(),
-                    width=800,
-                    height=800,
-                    show_navigation=True,
-                    show_toolbar=True
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
-
-        except Exception as e:
-            st.error(f"Error displaying PDF: {str(e)}")
-            st.info("Please make sure the PDF file is not corrupted and try again.")
-
-    except ImportError as e:
-        st.error(f"Required libraries not found: {str(e)}")
-        st.info("Installing required packages...")
-        try:
-            from replit import packaging
-            packaging.install('streamlit-pdf-viewer')
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Failed to install required packages: {str(e)}")
 
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """Create a cache of normalized player names to MLBAMID"""
@@ -403,6 +324,81 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+# Add team abbreviation mapping
+TEAM_ABBREVIATIONS = {
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "New York Yankees": "NYY",
+    "Tampa Bay Rays": "TB",
+    "Toronto Blue Jays": "TOR",
+    "Chicago White Sox": "CHW",
+    "Cleveland Guardians": "CLE",
+    "Detroit Tigers": "DET",
+    "Kansas City Royals": "KC",
+    "Minnesota Twins": "MIN",
+    "Houston Astros": "HOU",
+    "Los Angeles Angels": "LAA",
+    "Athletics": "ATH",
+    "Oakland Athletics": "ATH",
+    "Seattle Mariners": "SEA",
+    "Texas Rangers": "TEX",
+    "Atlanta Braves": "ATL",
+    "Miami Marlins": "MIA",
+    "New York Mets": "NYM",
+    "Philadelphia Phillies": "PHI",
+    "Washington Nationals": "WSH",
+    "Chicago Cubs": "CHC",
+    "Cincinnati Reds": "CIN",
+    "Milwaukee Brewers": "MIL",
+    "Pittsburgh Pirates": "PIT",
+    "Cardinals": "STL",
+    "Saint Louis Cardinals": "STL",
+    "St Louis Cardinals": "STL",
+    "St. Louis Cardinals": "STL",
+    "Arizona Diamondbacks": "ARI",
+    "Colorado Rockies": "COL",
+    "Los Angeles Dodgers": "LAD",
+    "San Diego Padres": "SD",
+    "San Francisco Giants": "SF"
+}
+
+# Add MLB team ID mapping after TEAM_ABBREVIATIONS
+MLB_TEAM_IDS = {
+    "Los Angeles Angels": "108",
+    "Arizona Diamondbacks": "109",
+    "Baltimore Orioles": "110",
+    "Boston Red Sox": "111",
+    "Chicago Cubs": "112",
+    "Cincinnati Reds": "113",
+    "Cleveland Guardians": "114",
+    "Colorado Rockies": "115",
+    "Detroit Tigers": "116",
+    "Houston Astros": "117",
+    "Kansas City Royals": "118",
+    "Los Angeles Dodgers": "119",
+    "Washington Nationals": "120",
+    "New York Mets": "121",
+    "Oakland Athletics": "133",
+    "Athletics": "133",  # Add alternative name
+    "Pittsburgh Pirates": "134",
+    "San Diego Padres": "135",
+    "Seattle Mariners": "136",
+    "San Francisco Giants": "137",
+    "St. Louis Cardinals": "138",
+    "Saint Louis Cardinals": "138",
+    "St Louis Cardinals": "138",
+    "Cardinals": "138",  # Add all variations of Cardinals name
+    "Tampa Bay Rays": "139",
+    "Texas Rangers": "140",
+    "Toronto Blue Jays": "141",
+    "Minnesota Twins": "142",
+    "Philadelphia Phillies": "143",
+    "Atlanta Braves": "144",
+    "Chicago White Sox": "145",
+    "Miami Marlins": "146",
+    "New York Yankees": "147",
+    "Milwaukee Brewers": "158"
+}
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
@@ -543,82 +539,6 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
 
     return fig
 
-# Add team abbreviation mapping
-TEAM_ABBREVIATIONS = {
-    "Baltimore Orioles": "BAL",
-    "Boston Red Sox": "BOS",
-    "New York Yankees": "NYY",
-    "Tampa Bay Rays": "TB",
-    "Toronto Blue Jays": "TOR",
-    "Chicago White Sox": "CHW",
-    "Cleveland Guardians": "CLE",
-    "Detroit Tigers": "DET",
-    "Kansas City Royals": "KC",
-    "Minnesota Twins": "MIN",
-    "Houston Astros": "HOU",
-    "Los Angeles Angels": "LAA",
-    "Athletics": "ATH",
-    "Oakland Athletics": "ATH",
-    "Seattle Mariners": "SEA",
-    "Texas Rangers": "TEX",
-    "Atlanta Braves": "ATL",
-    "Miami Marlins": "MIA",
-    "New York Mets": "NYM",
-    "Philadelphia Phillies": "PHI",
-    "Washington Nationals": "WSH",
-    "Chicago Cubs": "CHC",
-    "Cincinnati Reds": "CIN",
-    "Milwaukee Brewers": "MIL",
-    "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",
-    "Saint Louis Cardinals": "STL",
-    "St Louis Cardinals": "STL",
-    "St. Louis Cardinals": "STL",
-    "Arizona Diamondbacks": "ARI",
-    "Colorado Rockies": "COL",
-    "Los Angeles Dodgers": "LAD",
-    "San Diego Padres": "SD",
-    "San Francisco Giants": "SF"
-}
-
-# Add MLB team ID mapping after TEAM_ABBREVIATIONS
-MLB_TEAM_IDS = {
-    "Los Angeles Angels": "108",
-    "Arizona Diamondbacks": "109",
-    "Baltimore Orioles": "110",
-    "Boston Red Sox": "111",
-    "Chicago Cubs": "112",
-    "Cincinnati Reds": "113",
-    "Cleveland Guardians": "114",
-    "Colorado Rockies": "115",
-    "Detroit Tigers": "116",
-    "Houston Astros": "117",
-    "Kansas City Royals": "118",
-    "Los Angeles Dodgers": "119",
-    "Washington Nationals": "120",
-    "New York Mets": "121",
-    "Oakland Athletics": "133",
-    "Athletics": "133",  # Add alternative name
-    "Pittsburgh Pirates": "134",
-    "San Diego Padres": "135",
-    "Seattle Mariners": "136",
-    "San Francisco Giants": "137",
-    "St. Louis Cardinals": "138",
-    "Saint Louis Cardinals": "138",
-    "St Louis Cardinals": "138",
-    "Cardinals": "138",  # Add all variations of Cardinals name
-    "Tampa Bay Rays": "139",
-    "Texas Rangers": "140",
-    "Toronto Blue Jays": "141",
-    "Minnesota Twins": "142",
-    "Philadelphia Phillies": "143",
-    "Atlanta Braves": "144",
-    "Chicago White Sox": "145",
-    "Miami Marlins": "146",
-    "New York Yankees": "147",
-    "Milwaukee Brewers": "158"
-}
-
 def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
     """Render the animated TOP 100 header and scrollable list"""
     # CSS for animated header and cards
@@ -728,7 +648,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             const observer = new IntersectionObserver(observerCallback, observerOptions);
             document.querySelectorAll('.prospect-card').forEach(card => {
                 observer.observe(card);
-                card.style.opacity = ''0';
+                card.style.opacity = '0';
             });
         });
         </script>
@@ -756,3 +676,218 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
+
+# Add team abbreviation mapping
+TEAM_ABBREVIATIONS = {
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "New York Yankees": "NYY",
+    "Tampa Bay Rays": "TB",
+    "Toronto Blue Jays": "TOR",
+    "Chicago White Sox": "CHW",
+    "Cleveland Guardians": "CLE",
+    "Detroit Tigers": "DET",
+    "Kansas City Royals": "KC",
+    "Minnesota Twins": "MIN",
+    "Houston Astros": "HOU",
+    "Los Angeles Angels": "LAA",
+    "Athletics": "ATH",
+    "Oakland Athletics": "ATH",
+    "Seattle Mariners":"SEA",
+    "Texas Rangers": "TEX",
+    "Atlanta Braves": "ATL",
+    "Miami Marlins": "MIA",
+    "New York Mets": "NYM",
+    "Philadelphia Phillies": "PHI",
+    "Washington Nationals": "WSH",
+    "Chicago Cubs": "CHC",
+    "Cincinnati Reds": "CIN",
+    "Milwaukee Brewers": "MIL",
+    "Pittsburgh Pirates": "PIT",
+    "Cardinals": "STL",
+    "Saint Louis Cardinals": "STL",
+    "St Louis Cardinals": "STL",
+    "St. Louis Cardinals": "STL",
+    "Arizona Diamondbacks": "ARI",
+    "Colorado Rockies": "COL",
+    "Los Angeles Dodgers": "LAD",
+    "San Diego Padres": "SD",
+    "San Francisco Giants": "SF"
+}
+
+# Add MLB team ID mapping after TEAM_ABBREVIATIONS
+MLB_TEAM_IDS = {
+    "Los Angeles Angels": "108",
+    "Arizona Diamondbacks": "109",
+    "Baltimore Orioles": "110",
+    "Boston Red Sox": "111",
+    "Chicago Cubs": "112",
+    "Cincinnati Reds": "113",
+    "Cleveland Guardians": "114",
+    "Colorado Rockies": "115",
+    "Detroit Tigers": "116",
+    "Houston Astros": "117",
+    "Kansas City Royals": "118",
+    "Los Angeles Dodgers": "119",
+    "Washington Nationals": "120",
+    "New York Mets": "121",
+    "Oakland Athletics": "133",
+    "Athletics": "133",  # Add alternative name
+    "Pittsburgh Pirates": "134",
+    "San Diego Padres": "135",
+    "Seattle Mariners": "136",
+    "San Francisco Giants": "137",
+    "St. Louis Cardinals": "138",
+    "Saint Louis Cardinals": "138",
+    "St Louis Cardinals": "138",
+    "Cardinals": "138",  # Add all variations of Cardinals name
+    "Tampa Bay Rays": "139",
+    "Texas Rangers": "140",
+    "Toronto Blue Jays": "141",
+    "Minnesota Twins": "142",
+    "Philadelphia Phillies": "143",
+    "Atlanta Braves": "144",
+    "Chicago White Sox": "145",
+    "Miami Marlins": "146",
+    "New York Yankees": "147",
+    "Milwaukee Brewers": "158"
+}
+
+def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
+    """Normalize values within groups to 0-1 range"""
+    return df.groupby(group_col)[value_col].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: Dict[str, str]):
+    """Create the sunburst visualization with league-wide team comparisons"""
+    # Add team abbreviations and division info
+    team_scores['team_abbrev'] = team_scores['team'].map(TEAM_ABBREVIATIONS)
+    team_scores['division'] = team_scores['team'].map(division_mapping)
+
+    # Create division-level aggregates
+    division_scores = team_scores.groupby('division').agg({
+        'avg_score': 'mean',
+        'total_score': 'sum'
+    }).reset_index()
+
+    # Create league-level aggregates
+    league_total = team_scores['total_score'].sum()
+    league_avg = team_scores['avg_score'].mean()
+
+    # Normalize team scores against all teams in the league
+    team_scores['normalized_score'] = (team_scores['avg_score'] - team_scores['avg_score'].min()) / \
+                                    (team_scores['avg_score'].max() - team_scores['avg_score'].min())
+
+    # Normalize division scores against other divisions
+    division_scores['normalized_score'] = (division_scores['avg_score'] - division_scores['avg_score'].min()) / \
+                                        (division_scores['avg_score'].max() - division_scores['avg_score'].min())
+
+    # Create hierarchical data for sunburst
+    data = []
+
+    # Add league level
+    data.append({
+        'id': 'league',
+        'parent': '',
+        'label': 'League',
+        'value': league_total,
+        'color': 0.5,  # Middle of color scale for root
+        'avg_score': league_avg
+    })
+
+    # Add division level
+    for _, div in division_scores.iterrows():
+        data.append({
+            'id': f"div_{div['division']}",
+            'parent': 'league',
+            'label': div['division'],
+            'value': div['total_score'],
+            'color': div['normalized_score'],
+            'avg_score': div['avg_score']
+        })
+
+    # Add team level
+    for _, team in team_scores.iterrows():
+        data.append({
+            'id': f"team_{team['team_abbrev']}",
+            'parent': f"div_{team['division']}",
+            'label': team['team_abbrev'],
+            'value': team['total_score'],
+            'color': team['normalized_score'],
+            'avg_score': team['avg_score']
+        })
+
+    # Convert to DataFrame for easier handling
+    df = pd.DataFrame(data)
+
+    # Create sunburst chart with increased size and mobile optimization
+    fig = go.Figure(go.Sunburst(
+        ids=df['id'],
+        labels=df['label'],
+        parents=df['parent'],
+        values=df['value'],
+        branchvalues='total',
+        textinfo='label',
+        marker=dict(
+            colors=df['color'],
+            colorscale='RdYlBu_r',  # Red to Blue color scale
+            showscale=True,
+            colorbar=dict(
+                title=dict(
+                    text='Relative Prospect Score',
+                    font=dict(color='white', size=12)
+                ),
+                tickfont=dict(color='white', size=10),
+                len=0.6,  # Slightly longer colorbar
+                yanchor='top',  # Position from top
+                y=-0.12,  # Move down below the plot
+                xanchor='center',
+                x=0.5,  # Center horizontally
+                orientation='h',  # Horizontal colorbar
+                thickness=20,  # Slightly thicker bar
+                bgcolor='rgba(0,0,0,0)'  # Transparent background
+            )
+        ),
+        customdata=df[['avg_score']],
+        hovertemplate="""
+        <b>%{label}</b><br>
+        Total Score: %{value:.1f}<br>
+        Average Score: %{customdata[0]:.2f}<br>
+        Relative Position: %{color:.2f}
+        <extra></extra>
+        """
+    ))
+
+    # Update layout with mobile-responsive settings
+    fig.update_layout(
+        title=dict(
+            text='Prospect System Hierarchy',
+            font=dict(color='white', size=24),
+            x=0.5,
+            xanchor='center',
+            y=0.98
+        ),
+        width=None,  # Allow width to be responsive
+        height=700,  # Fixed height that works well on both desktop and mobile
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(
+            t=50,   # Top margin
+            l=10,   # Left margin
+            r=10,   # Right margin
+            b=150,  # Increased bottom margin for colorbar
+            pad=0   # No padding
+        ),
+        autosize=True,
+        # Ensure the plot maintains aspect ratio
+        xaxis=dict(
+            scaleanchor='y',
+            scaleratio=1
+        ),
+        yaxis=dict(
+            scaleanchor='x',
+            scaleratio=1
+        )
+    )
+
+    return fig
