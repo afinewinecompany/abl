@@ -400,9 +400,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         }}
         .rank-badge-{rank} {{
             position: absolute;
-            left: -10px;  /* Adjusted position */
-            top: 50%;
-            transform: translateY(-50%);
+            left: -10px;
+            top: -10px;  /* Changed from 50% to -10px */
+            transform: none;  /* Removed translateY */
             width: 45px;
             height: 45px;
             border-radius: 50%;
@@ -668,8 +668,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             height: 120px;
             opacity: 0.1;
             z-index: 1;
-            transition: all 0.3s ease;
-        }
+            transition: all 0.3s ease;        }
         .prospect-card:hover .team-logo-bg {
             opacity: 0.15;
             transform: translateY(-50%) scale(1.1) rotate(5deg);
