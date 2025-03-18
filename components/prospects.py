@@ -210,24 +210,44 @@ def render_handbook_viewer():
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """Create a cache of normalized player names to MLBAMID"""
     cache = {}
-    for _, row in mlb_ids_df.iterrows():
-        try:
-            if pd.isna(row['Last']) or pd.isna(row['First']):
+    try:
+        for _, row in mlb_ids_df.iterrows():
+            try:
+                # Handle empty or NA values
+                if pd.isna(row['Last']) or pd.isna(row['First']) or pd.isna(row['MLBAMID']):
+                    continue
+
+                # Create full name from First and Last
+                name = normalize_name(f"{row['First']} {row['Last']}")
+
+                # Only add if we have a valid name and MLBAMID
+                if name and str(row['MLBAMID']).strip():
+                    cache[name] = str(row['MLBAMID'])
+
+                    # Add alternative name formats
+                    alt_name = normalize_name(f"{row['Last']}, {row['First']}")
+                    if alt_name:
+                        cache[alt_name] = str(row['MLBAMID'])
+
+            except Exception as e:
+                st.warning(f"Error processing player ID row: {str(e)}")
                 continue
-            name = normalize_name(f"{row['First']} {row['Last']}")
-            if name and not pd.isna(row['MLBAMID']):
-                cache[name] = str(row['MLBAMID'])
-        except Exception:
-            continue
+
+    except Exception as e:
+        st.error(f"Error creating player ID cache: {str(e)}")
     return cache
 
 def get_headshot_url(mlbam_id: str) -> str:
     """Generate MLB headshot URL from player ID"""
-    return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+    try:
+        return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+    except Exception:
+        return ""
 
 def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
     """Get player headshot HTML if available"""
     try:
+        # Normalize name for lookup
         search_name = normalize_name(player_name)
         mlbam_id = player_id_cache.get(search_name)
 
@@ -249,7 +269,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
             else:
                 # Fallback to regular split for names without comma
                 parts = player_name.split()
-                initials = ''.join(part[0].upper() for part in parts[:2])
+                initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
             return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
@@ -257,8 +277,8 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 </div>
             """
     except Exception as e:
-        pass
-    return ""
+        st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
+        return ""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
@@ -704,7 +724,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Get headshot HTML for the prospect using the cache
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
+        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight:500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
