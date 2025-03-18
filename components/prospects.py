@@ -240,14 +240,22 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
 def get_headshot_url(mlbam_id: str) -> str:
     """Generate MLB/MILB headshot URL from player ID"""
     try:
-        # Try MILB format first for prospects
-        milb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current"
+        if not mlbam_id:
+            return ""
 
-        # Fallback to MLB format if MILB doesn't work
+        # Try MILB format first for prospects with larger dimensions
+        milb_urls = [
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,h_320,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current"
+        ]
+
+        # MLB format as fallback
         mlb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
-        return milb_url  # Prioritize MILB format for prospects
-    except Exception:
+        return milb_urls[0]  # Return primary MILB URL
+
+    except Exception as e:
+        st.warning(f"Error generating headshot URL for ID {mlbam_id}: {str(e)}")
         return ""
 
 def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
@@ -258,16 +266,19 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
+            milb_url = get_headshot_url(mlbam_id)
+            mlb_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
+
             return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="{get_headshot_url(mlbam_id)}"
+                    <img src="{milb_url}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current';"
+                         onerror="this.onerror=null; this.src='{mlb_url}';"
                          alt="{player_name} headshot">
                 </div>
             """
         else:
-            # Split name and get initials
+            # Generate initials for players without photos
             parts = player_name.split(',')  # Split on comma
             if len(parts) == 2:
                 last_name, first_name = parts
@@ -277,6 +288,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 parts = player_name.split()
                 initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
+            # Create initials circle
             return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
                     <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
