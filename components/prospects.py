@@ -265,19 +265,54 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     </script>
     """
 
-    # Start with the script and average score
+    # Add CSS styles
+    styles = """
+    <style>
+    .prospect-list {
+        animation: fadeInRight 0.5s ease-out;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .prospect-card {
+        padding: 0.75rem;
+        margin: 0.25rem 0;
+        background: rgba(26, 28, 35, 0.3);
+        border-radius: 4px;
+    }
+    .prospect-score {
+        font-size: 0.9rem;
+        color: #fafafa;
+        margin-bottom: 0.5rem;
+    }
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    </style>
+    """
+
+    # Start with styles, script and average score
     avg_score = prospects_df['prospect_score'].mean()
     prospects_html = [
+        styles,
         script,
-        f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
+        f'<div class="prospect-score">Team Average Score: {avg_score:.2f}</div>'
     ]
 
+    # Add prospect cards
     for _, prospect in prospects_df.iterrows():
         search_name = normalize_name(prospect['player_name'])
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Create the headshot element with proper fallback handling
             headshot_html = f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
@@ -302,21 +337,22 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 </div>
             """
 
-        # Create the prospect card with the headshot
-        prospects_html.append(
-            f'<div style="padding: 0.75rem; margin: 0.25rem 0; background: rgba(26, 28, 35, 0.3); border-radius: 4px;">'
-            f'<div style="display: flex; align-items: center; gap: 1rem;">'
-            f'{headshot_html}'
-            f'<div style="flex-grow: 1;">'
-            f'<div style="font-size: 0.95rem; color: #fafafa; font-weight: 500;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.85rem; color: rgba(250, 250, 250, 0.7);">'
-            f'{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
-            f'</div>'
-            f'</div>'
-            f'</div>'
-        )
+        prospects_html.append(f"""
+            <div class="prospect-card">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    {headshot_html}
+                    <div style="flex-grow: 1;">
+                        <div style="font-size: 1rem; color: white; font-weight:500;">{prospect['player_name']}</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                            {prospect['position']} | Score: {prospect['prospect_score']:.1f}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """)
 
-    return "".join(prospects_html)
+    # Wrap all prospect cards in a container
+    return '<div class="prospect-list">' + ''.join(prospects_html) + '</div>'
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -640,7 +676,7 @@ MLB_TEAM_COLORS = {
         'secondary': '#FDB827',  # Yellow
         'accent': '#FFFFFF'  # White
     },
-    "San Diego Padres": {
+"San Diego Padres": {
         'primary': '#2F241D',  # Brown
         'secondary': '#FFC425',  # Gold
         'accent': '#FFFFFF'  # White
