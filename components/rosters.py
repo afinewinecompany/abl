@@ -143,7 +143,7 @@ def get_position_order(position: str) -> int:
     }
     return position_order.get(position, 99)
 
-def render_player_card(player: Dict, headshot_html: str, team_colors: Dict):
+def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: float = None):
     """Render an individual player card"""
     return f"""
         <div style="
@@ -180,6 +180,7 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict):
                     <span>{player['mlb_team']}</span>
                     <span>|</span>
                     <span>${player['salary']:,.0f}</span>
+                    {f'<span>|</span><span>Score: {prospect_score:.1f}</span>' if prospect_score is not None else ''}
                 </div>
             </div>
             <div style="
@@ -245,6 +246,10 @@ def render(roster_data: pd.DataFrame):
             right_on='Name',
             how='left'
         )
+
+        # Create prospect score lookup dictionary
+        prospect_scores = dict(zip(minors_players['clean_name'], minors_players['Unique score']))
+
         prospect_stats = {
             'total_score': minors_players['Unique score'].fillna(0).sum(),
             'avg_score': minors_players['Unique score'].fillna(0).mean(),
@@ -313,7 +318,8 @@ def render(roster_data: pd.DataFrame):
             st.subheader("⭐ Minor League Players")
             for _, player in minors_roster.iterrows():
                 headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
-                st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
+                prospect_score = prospect_scores.get(normalize_name(player['player_name']), None)
+                st.markdown(render_player_card(player, headshot_html, team_colors, prospect_score), unsafe_allow_html=True)
 
         # Position breakdown
         st.subheader("Position Distribution")
