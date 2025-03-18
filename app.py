@@ -1,7 +1,4 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
-from api_client import FantraxAPI
-from data_processor import DataProcessor
 
 # Must be the first Streamlit command
 st.set_page_config(
@@ -10,6 +7,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Now we can safely import components
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from api_client import FantraxAPI
+from data_processor import DataProcessor
 
 # Custom styling follows after set_page_config
 st.markdown("""
