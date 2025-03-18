@@ -102,16 +102,14 @@ def render(roster_data: pd.DataFrame):
         ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-        # Render top 100 header and scrollable list
-        render_top_100_header(ranked_prospects, player_id_cache)
-
-        # Calculate team rankings
+        # Calculate team rankings using average score instead of total
         team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean']
+            'prospect_score': ['sum', 'mean', 'count']
         }).reset_index()
 
-        team_scores.columns = ['team', 'total_score', 'avg_score']
-        team_scores = team_scores.sort_values('total_score', ascending=False)
+        team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
+        # Sort by average score instead of total score
+        team_scores = team_scores.sort_values('avg_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
 
@@ -141,7 +139,7 @@ def render(roster_data: pd.DataFrame):
                 render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division_mapping.get(row['team'], "Unknown"),
-                    'prospect_score': row['total_score'],
+                    'prospect_score': row['avg_score'],  # Change this to avg_score
                     'mlb_team': row['team']
                 }, idx + 1, team_prospects, player_id_cache)
 
@@ -156,7 +154,7 @@ def render(roster_data: pd.DataFrame):
             render_prospect_preview({
                 'player_name': f"#{i + 4} {row['team']}",
                 'position': division_mapping.get(row['team'], "Unknown"),
-                'prospect_score': row['total_score'],
+                'prospect_score': row['avg_score'],  # Change this to avg_score
                 'mlb_team': row['team']
             }, i + 4, team_prospects, player_id_cache)
 
@@ -258,14 +256,16 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
-    # Calculate average score
+    # Calculate total and average scores
+    total_score = prospects_df['prospect_score'].sum()
     avg_score = prospects_df['prospect_score'].mean()
+    num_prospects = len(prospects_df)
 
     # Start with container div
     html_parts = [
         '<div style="background: rgba(26, 28, 35, 0.3); border-radius: 8px; padding: 1rem;">',
         f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 1rem;">'
-        f'Team Average Score: {avg_score:.2f}'
+        f'Total System Score: {total_score:.2f} ({num_prospects} prospects)'
         '</div>'
     ]
 
@@ -466,7 +466,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                     <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
                 </div>
                 <div class="prospect-score-{rank}">
-                    Total Score: {prospect['prospect_score']:.1f}
+                    Avg Score: {prospect['prospect_score']:.1f}
                 </div>
             </div>
         </div>
@@ -477,11 +477,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     if team_prospects is not None:
         with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
-            st.markdown(f"""
-                <div class="prospect-container">
-                    {prospects_html}
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown(prospects_html, unsafe_allow_html=True)
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
@@ -670,6 +666,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             z-index: 3;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translate(-25%, -25%);  /* Add this line to adjust position */
         }
         .player-headshot img {
             width: 60px;
