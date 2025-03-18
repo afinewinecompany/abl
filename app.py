@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, handbook
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
@@ -522,7 +522,7 @@ def main():
                 power_rankings.render(data['standings_data'])
 
             with tab4:
-                prospects.render(data['roster_data'])
+                handbook.render()  # Call our new handbook component
 
             with tab5:
                 projected_rankings.render(data['roster_data'])
