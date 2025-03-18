@@ -1,0 +1,307 @@
+# MLB Team Information
+
+Complete Listing of MLB Team Information for MLB Gameday API
+
+<table>
+    <thead>
+        <tr>
+            <th>Team ID</th>
+            <th>Code</th>
+            <th>File Code</th>
+            <th>Abbreviation</th>
+            <th>Name</th>
+            <th>Full Name</th>
+            <th>Brief Name</th>
+        </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>108</td>
+        <td>ana</td>
+        <td>ana</td>
+        <td>LAA</td>
+        <td>LA Angels</td>
+        <td>Los Angeles Angels</td>
+        <td>Angels</td>
+    </tr>
+    <tr>
+        <td>109</td>
+        <td>ari</td>
+        <td>ari</td>
+        <td>ARI</td>
+        <td>Arizona</td>
+        <td>Arizona Diamondbacks</td>
+        <td>D-backs</td>
+    </tr>
+    <tr>
+        <td>110</td>
+        <td>bal</td>
+        <td>bal</td>
+        <td>BAL</td>
+        <td>Baltimore</td>
+        <td>Baltimore Orioles</td>
+        <td>Orioles</td>
+    </tr>
+    <tr>
+        <td>111</td>
+        <td>bos</td>
+        <td>bos</td>
+        <td>BOS</td>
+        <td>Boston</td>
+        <td>Boston Red Sox</td>
+        <td>Red Sox</td>
+    </tr>
+    <tr>
+        <td>112</td>
+        <td>chn</td>
+        <td>chc</td>
+        <td>CHC</td>
+        <td>Chi Cubs</td>
+        <td>Chicago Cubs</td>
+        <td>Cubs</td>
+    </tr>
+    <tr>
+        <td>113</td>
+        <td>cin</td>
+        <td>cin</td>
+        <td>CIN</td>
+        <td>Cincinnati</td>
+        <td>Cincinnati Reds</td>
+        <td>Reds</td>
+    </tr>
+    <tr>
+        <td>114</td>
+        <td>cle</td>
+        <td>cle</td>
+        <td>CLE</td>
+        <td>Cleveland</td>
+        <td>Cleveland Indians</td>
+        <td>Indians</td>
+    </tr>
+    <tr>
+        <td>115</td>
+        <td>col</td>
+        <td>col</td>
+        <td>COL</td>
+        <td>Colorado</td>
+        <td>Colorado Rockies</td>
+        <td>Rockies</td>
+    </tr>
+    <tr>
+        <td>116</td>
+        <td>det</td>
+        <td>det</td>
+        <td>DET</td>
+        <td>Detroit</td>
+        <td>Detroit Tigers</td>
+        <td>Tigers</td>
+    </tr>
+    <tr>
+        <td>117</td>
+        <td>hou</td>
+        <td>hou</td>
+        <td>HOU</td>
+        <td>Houston</td>
+        <td>Houston Astros</td>
+        <td>Astros</td>
+    </tr>
+    <tr>
+        <td>118</td>
+        <td>kca</td>
+        <td>kc</td>
+        <td>KC</td>
+        <td>Kansas City</td>
+        <td>Kansas City Royals</td>
+        <td>Royals</td>
+    </tr>
+    <tr>
+        <td>119</td>
+        <td>lan</td>
+        <td>la</td>
+        <td>LAD</td>
+        <td>LA Dodgers</td>
+        <td>Los Angeles Dodgers</td>
+        <td>Dodgers</td>
+    </tr>
+    <tr>
+        <td>120</td>
+        <td>was</td>
+        <td>was</td>
+        <td>WSH</td>
+        <td>Washington</td>
+        <td>Washington Nationals</td>
+        <td>Nationals</td>
+    </tr>
+    <tr>
+        <td>121</td>
+        <td>nyn</td>
+        <td>nym</td>
+        <td>NYM</td>
+        <td>NY Mets</td>
+        <td>New York Mets</td>
+        <td>Mets</td>
+    </tr>
+    <tr>
+        <td>133</td>
+        <td>oak</td>
+        <td>oak</td>
+        <td>OAK</td>
+        <td>Oakland</td>
+        <td>Oakland Athletics</td>
+        <td>Athletics</td>
+    </tr>
+    <tr>
+        <td>134</td>
+        <td>pit</td>
+        <td>pit</td>
+        <td>PIT</td>
+        <td>Pittsburgh</td>
+        <td>Pittsburgh Pirates</td>
+        <td>Pirates</td>
+    </tr>
+    <tr>
+        <td>135</td>
+        <td>sdn</td>
+        <td>sd</td>
+        <td>SD</td>
+        <td>San Diego</td>
+        <td>San Diego Padres</td>
+        <td>Padres</td>
+    </tr>
+    <tr>
+        <td>136</td>
+        <td>sea</td>
+        <td>sea</td>
+        <td>SEA</td>
+        <td>Seattle</td>
+        <td>Seattle Mariners</td>
+        <td>Mariners</td>
+    </tr>
+    <tr>
+        <td>137</td>
+        <td>sfn</td>
+        <td>sf</td>
+        <td>SF</td>
+        <td>San Francisco</td>
+        <td>San Francisco Giants</td>
+        <td>Giants</td>
+    </tr>
+    <tr>
+        <td>138</td>
+        <td>sln</td>
+        <td>stl</td>
+        <td>STL</td>
+        <td>St. Louis</td>
+        <td>St. Louis Cardinals</td>
+        <td>Cardinals</td>
+    </tr>
+    <tr>
+        <td>139</td>
+        <td>tba</td>
+        <td>tb</td>
+        <td>TB</td>
+        <td>Tampa Bay</td>
+        <td>Tampa Bay Rays</td>
+        <td>Rays</td>
+    </tr>
+    <tr>
+        <td>140</td>
+        <td>tex</td>
+        <td>tex</td>
+        <td>TEX</td>
+        <td>Texas</td>
+        <td>Texas Rangers</td>
+        <td>Rangers</td>
+    </tr>
+    <tr>
+        <td>141</td>
+        <td>tor</td>
+        <td>tor</td>
+        <td>TOR</td>
+        <td>Toronto</td>
+        <td>Toronto Blue Jays</td>
+        <td>Blue Jays</td>
+    </tr>
+    <tr>
+        <td>142</td>
+        <td>min</td>
+        <td>min</td>
+        <td>MIN</td>
+        <td>Minnesota</td>
+        <td>Minnesota Twins</td>
+        <td>Twins</td>
+    </tr>
+    <tr>
+        <td>143</td>
+        <td>phi</td>
+        <td>phi</td>
+        <td>PHI</td>
+        <td>Philadelphia</td>
+        <td>Philadelphia Phillies</td>
+        <td>Phillies</td>
+    </tr>
+    <tr>
+        <td>144</td>
+        <td>atl</td>
+        <td>atl</td>
+        <td>ATL</td>
+        <td>Atlanta</td>
+        <td>Atlanta Braves</td>
+        <td>Braves</td>
+    </tr>
+    <tr>
+        <td>145</td>
+        <td>cha</td>
+        <td>cws</td>
+        <td>CWS</td>
+        <td>Chi White Sox</td>
+        <td>Chicago White Sox</td>
+        <td>White Sox</td>
+    </tr>
+    <tr>
+        <td>146</td>
+        <td>mia</td>
+        <td>mia</td>
+        <td>MIA</td>
+        <td>Miami</td>
+        <td>Miami Marlins</td>
+        <td>Marlins</td>
+    </tr>
+    <tr>
+        <td>147</td>
+        <td>nya</td>
+        <td>nyy</td>
+        <td>NYY</td>
+        <td>NY Yankees</td>
+        <td>New York Yankees</td>
+        <td>Yankees</td>
+    </tr>
+    <tr>
+        <td>158</td>
+        <td>mil</td>
+        <td>mil</td>
+        <td>MIL</td>
+        <td>Milwaukee</td>
+        <td>Milwaukee Brewers</td>
+        <td>Brewers</td>
+    </tr>
+    <tr>
+        <td>159</td>
+        <td>aas</td>
+        <td>al</td>
+        <td>AL</td>
+        <td>AL All-Stars</td>
+        <td>American League All-Stars</td>
+        <td>AL All-Stars</td>
+    </tr>
+    <tr>
+        <td>160</td>
+        <td>nas</td>
+        <td>nl</td>
+        <td>NL</td>
+        <td>NL All-Stars</td>
+        <td>National League All-Stars</td>
+        <td>NL All-Stars</td>
+    </tr>
+    </tbody>
+</table>

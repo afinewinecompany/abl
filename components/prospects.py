@@ -319,9 +319,19 @@ def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None):
     """Render a single prospect preview card with native Streamlit expander"""
     color = get_color_for_rank(rank)
+    team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
+    logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+
+    background_style = f"""
+        background-image: url('{logo_url}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: right;
+        background-color: rgba(26, 28, 35, 0.5);
+    """ if logo_url else "background-color: rgba(26, 28, 35, 0.5);"
 
     st.markdown(
-        f'<div style="padding: 0.75rem; background-color: rgba(26, 28, 35, 0.5); border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color};">',
+        f'<div style="padding: 0.75rem; border-radius: 8px; margin: 0.25rem 0; border-left: 3px solid {color}; {background_style}">',
         unsafe_allow_html=True
     )
 
@@ -529,6 +539,40 @@ TEAM_ABBREVIATIONS = {
     "Los Angeles Dodgers": "LAD",
     "San Diego Padres": "SD",
     "San Francisco Giants": "SF"
+}
+
+# Add MLB team ID mapping after TEAM_ABBREVIATIONS
+MLB_TEAM_IDS = {
+    "Los Angeles Angels": "108",
+    "Arizona Diamondbacks": "109",
+    "Baltimore Orioles": "110",
+    "Boston Red Sox": "111",
+    "Chicago Cubs": "112",
+    "Cincinnati Reds": "113",
+    "Cleveland Guardians": "114",
+    "Colorado Rockies": "115",
+    "Detroit Tigers": "116",
+    "Houston Astros": "117",
+    "Kansas City Royals": "118",
+    "Los Angeles Dodgers": "119",
+    "Washington Nationals": "120",
+    "New York Mets": "121",
+    "Oakland Athletics": "133",
+    "Pittsburgh Pirates": "134",
+    "San Diego Padres": "135",
+    "Seattle Mariners": "136",
+    "San Francisco Giants": "137",
+    "St. Louis Cardinals": "138",
+    "Tampa Bay Rays": "139",
+    "Texas Rangers": "140",
+    "Toronto Blue Jays": "141",
+    "Minnesota Twins": "142",
+    "Philadelphia Phillies": "143",
+    "Atlanta Braves": "144",
+    "Chicago White Sox": "145",
+    "Miami Marlins": "146",
+    "New York Yankees": "147",
+    "Milwaukee Brewers": "158"
 }
 
 def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
