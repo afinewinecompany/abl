@@ -7,7 +7,7 @@ import time
 import unicodedata
 
 @st.cache_data
-def fetch_api_data(status_container=None):
+def fetch_api_data(_status_container=None):
     """
     Fetch all required data from API and process it.
     Returns processed data or None if an error occurs.
@@ -19,8 +19,8 @@ def fetch_api_data(status_container=None):
 
         def update_status(message):
             """Helper to update status with animation"""
-            if status_container:
-                status_container.markdown(
+            if _status_container:
+                _status_container.markdown(
                     f'<div class="status-container visible">{message}</div>',
                     unsafe_allow_html=True
                 )
@@ -48,13 +48,13 @@ def fetch_api_data(status_container=None):
         processed_standings_data = data_processor.process_standings(standings_data)
 
         # Clear status container
-        if status_container:
-            status_container.markdown(
+        if _status_container:
+            _status_container.markdown(
                 '<div class="status-container">Data loaded successfully!</div>',
                 unsafe_allow_html=True
             )
             time.sleep(1)  # Show success message briefly
-            status_container.empty()
+            _status_container.empty()
 
         return {
             'league_data': processed_league_data,
@@ -62,8 +62,8 @@ def fetch_api_data(status_container=None):
             'standings_data': processed_standings_data
         }
     except Exception as e:
-        if status_container:
-            status_container.markdown(
+        if _status_container:
+            _status_container.markdown(
                 f'<div class="status-container visible">❌ Error: {str(e)}</div>',
                 unsafe_allow_html=True
             )
