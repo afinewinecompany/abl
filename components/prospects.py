@@ -555,7 +555,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                 padding: 1.25rem 1.25rem 1.25rem 3.5rem;
                 margin: 1rem 0;
                 position: relative;
-                overflow: visible;
+                overflow: hidden;
             ">
                 <div style="
                     position: absolute;
@@ -627,7 +627,7 @@ TEAM_ABBREVIATIONS = {
     "Cardinals": "STL",
     "Saint Louis Cardinals": "STL",
     "St Louis Cardinals": "STL",
-    "St. Louis Cardinals": "STL",
+"St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
     "Los Angeles Dodgers": "LAD",
