@@ -146,7 +146,7 @@ def get_position_order(position: str) -> int:
 def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: float = None):
     """Render an individual player card"""
     return f"""
-        <div style="
+        <div class="player-card" style="
             background: linear-gradient(135deg, 
                 {team_colors['primary']} 0%,
                 {team_colors['secondary']} 100%);
@@ -162,33 +162,20 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
             onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
             onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
             {headshot_html}
-            <div style="flex-grow: 1;">
-                <div style="font-size: 1rem; color: white; font-weight: 600;">
-                    {player['player_name']}
-                </div>
-                <div style="
-                    display: flex;
-                    gap: 0.75rem;
-                    font-size: 0.8rem;
-                    color: rgba(255,255,255,0.8);
-                    margin-top: 0.15rem;">
-                    <span>{player['position']}</span>
-                    <span>|</span>
-                    <span>{player['mlb_team']}</span>
-                    <span>|</span>
-                    <span>${player['salary']:,.0f}</span>
-                    {f'<span>|</span><span>Score: {prospect_score:.1f}</span>' if prospect_score is not None else ''}
+            <div style="flex-grow: 1; color: white;">
+                <div style="font-size: 1rem; font-weight: 600;">{player['player_name']}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.15rem;">
+                    {player['position']} | {player['mlb_team']} | ${player['salary']:,.0f}{f' | Score: {prospect_score:.1f}' if prospect_score is not None else ''}
                 </div>
             </div>
-            <div style="
+            <span style="
                 background: rgba(255,255,255,0.1);
                 padding: 0.25rem 0.75rem;
                 border-radius: 15px;
-                color: white;
                 font-weight: 600;
                 font-size: 0.8rem;">
                 {player['status'].upper()}
-            </div>
+            </span>
         </div>
     """
 
