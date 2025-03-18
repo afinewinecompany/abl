@@ -181,7 +181,6 @@ def get_headshot_url(mlbam_id: str) -> str:
         ]
 
         return urls[0]  # Return primary URL, let onerror handler try others
-
     except Exception as e:
         st.warning(f"Error generating headshot URL for ID {mlbam_id}: {str(e)}")
         return ""
@@ -240,40 +239,46 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
+    prospects_html = []
     avg_score = prospects_df['prospect_score'].mean()
-    prospects_html = [
+    prospects_html.append(
         f'<div style="font-size: 0.9rem; color: #fafafa; margin-bottom: 0.5rem;">Team Average Score: {avg_score:.2f}</div>'
-    ]
+    )
 
     for _, prospect in prospects_df.iterrows():
-        # Get all possible URLs for the prospect's headshot
+        # Get player ID and generate URLs
         search_name = normalize_name(prospect['player_name'])
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Define all possible image URLs
-            primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-
+            # Create the headshot element with proper fallback handling
             headshot_html = f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="{primary_url}"
+                    <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="if (!this.retries) {{ 
-                            this.retries = 1;
-                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current';
-                         }} else if (this.retries === 1) {{
-                            this.retries = 2;
-                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current';
-                         }} else {{
-                            this.onerror = null;
-                            this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current';
-                         }}"
+                         onload="this.dataset.loaded='true'"
+                         onerror="handleImageError(this, '{mlbam_id}')"
                          alt="{prospect['player_name']} headshot">
+                    <script>
+                        function handleImageError(img, id) {{
+                            if (!img.dataset.loaded) {{
+                                const urls = [
+                                    `https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/${{id}}/headshot/67/current`,
+                                    `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${{id}}/headshot/67/current`,
+                                    `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/${{id}}/headshot/67/current`
+                                ];
+                                const nextUrl = urls.shift();
+                                if (nextUrl) {{
+                                    img.src = nextUrl;
+                                }}
+                            }}
+                        }}
+                    </script>
                 </div>
             """
         else:
             # Generate initials for players without photos
-            parts = prospect['player_name'].split(',')  # Split on comma
+            parts = prospect['player_name'].split(',')
             if len(parts) == 2:
                 last_name, first_name = parts
                 initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
