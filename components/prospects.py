@@ -344,9 +344,28 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                 {team_colors['primary']} 100%);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             position: relative;
-            overflow: visible;
+            overflow: hidden;
             animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
             transition: all 0.3s ease;
+        }}
+        .team-card-{rank}:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+        }}
+        .team-card-{rank}:hover .team-logo-{rank} {{
+            opacity: 0.15;
+            transform: translateY(-50%) scale(1.05) rotate(2deg);
+        }}
+        .team-logo-{rank} {{
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 140px;
+            height: 140px;
+            opacity: 0.12;
+            transition: all 0.3s ease;
+            z-index: 1;
         }}
         .rank-badge-{rank} {{
             position: absolute;
@@ -366,73 +385,12 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             background: {rank_color};
             color: white;
         }}
-        @keyframes slideInUp {{
-            from {{
-                transform: translateY(100%);
-                opacity: 0;
-            }}
-            to {{
-                transform: translateY(0);
-                opacity: 1;
-            }}
-        }}
-        .prospect-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-        .prospect-card:hover .team-logo-bg {
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
-        }
-        .team-card {
-            padding: 2rem 2rem 2rem 3.5rem;
-            border-radius: 16px;
-            margin: 1rem 0;
-            background: var(--card-bg);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: visible;
-            animation: slideInUp 0.6s ease-out var(--delay) both;
-            transition: all 0.3s ease;
-        }
-        .team-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-        }
-        .team-card:hover .team-logo {
-            opacity: 0.18;
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
-        }
-        .team-logo {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 120px;
-            height: 120px;
-            opacity: 0.1;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
         </style>
 
-        <div class="team-card-{rank}" style="--card-bg: linear-gradient(135deg, 
-            {team_colors['primary']} 0%,
-            {team_colors['secondary']} 60%,
-            {team_colors['primary']} 100%);
-            --delay: {rank * 0.1}s;">
+        <div class="team-card-{rank}">
             <div class="rank-badge-{rank}">#{rank}</div>
-            {f'<img src="{logo_url}" class="team-logo" style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 220px; height: 220px; opacity: 0.12;" alt="Team Logo">' if logo_url else ''}
-            <div style="position: relative; z-index: 1;">
+            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
+            <div style="position: relative; z-index: 2;">
                 <div style="font-weight: 800; font-size: 1.8rem; margin-bottom: 0.8rem; color: white;">
                     {prospect['player_name']}
                 </div>
@@ -575,11 +533,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
         @keyframes glow {
             0% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
             50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
@@ -610,7 +563,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             margin: 1rem 0;
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
         .prospect-card:hover {
             transform: translateY(-5px);
@@ -618,34 +571,15 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         }
         .prospect-card:hover .team-logo-bg {
             opacity: 0.15;
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
+            transform: translateY(-50%) scale(1.05) rotate(2deg);
         }
-        .team-card {
-            padding: 2rem 2rem 2rem 3.5rem;
-            border-radius: 16px;
-            margin: 1rem 0;
-            background: var(--card-bg);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: visible;
-            animation: slideInUp 0.6s ease-out var(--delay) both;
-            transition: all 0.3s ease;
-        }
-        .team-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-        }
-        .team-card:hover .team-logo {
-            opacity: 0.18;
-            transform: translateY(-50%) scale(1.1) rotate(5deg);
-        }
-        .team-logo {
+        .team-logo-bg {
             position: absolute;
             right: -20px;
             top: 50%;
             transform: translateY(-50%);
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             opacity: 0.1;
             z-index: 1;
             transition: all 0.3s ease;
@@ -691,6 +625,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         }
         .prospect-score {
             font-size: 1rem;
+            color: white;
+            font-weight: 700;
         }
         </style>
 
@@ -732,13 +668,12 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                             <span>|</span>
                             <span>{prospect.position}</span>
                         </div>
-                        <div class="prospect-score" style="color: white; font-weight: 700;">
+                        <div class="prospect-score">
                             Score: {prospect.prospect_score:.2f}
                         </div>
                     </div>
                 </div>
             </div>
-
         """, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
