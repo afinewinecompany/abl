@@ -278,9 +278,6 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
-        # Calculate score color
-        score_color = get_score_color(prospect['prospect_score'], global_max_score, global_min_score)
-
         search_name = normalize_name(prospect['player_name'])
         mlbam_id = player_id_cache.get(search_name)
 
@@ -297,7 +294,7 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
             f'<div style="flex-grow: 1;">'
             f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{prospect["player_name"]}</div>'
             f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">{prospect["position"]}</div>'
-            f'<div style="font-size: 0.9rem; color: {score_color}; font-weight: 700;">Score: {prospect["prospect_score"]:.2f}</div>'
+            f'<div style="font-size: 0.9rem; color: white; font-weight: 700;">Score: {prospect["prospect_score"]:.2f}</div>'
             f'</div>'
         )
 
@@ -340,41 +337,6 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     gm_name = GM_MAPPING.get(str(prospect.get('mlb_team', '')), 'Unknown')
 
     st.markdown(f"""
-        <style>
-        .team-card-{rank} {{
-            padding: 2rem 2rem 2rem 3.5rem;
-            border-radius: 16px;
-            margin: 1rem 0;
-            background: linear-gradient(135deg,
-                {team_colors['primary']} 0%,
-                {team_colors['secondary']} 70%,
-                {team_colors['accent']} 100%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: visible;
-            animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
-            transition: all 0.3s ease;
-        }}
-        .rank-badge-{rank} {{
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: {rank_color};
-            color: white;
-        }}
-        </style>
-
         <div class="team-card-{rank}">
             <div class="rank-badge-{rank}">#{rank}</div>
             {f'<img src="{logo_url}" style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 220px; height: 220px; opacity: 0.12;" alt="Team Logo">' if logo_url else ''}
@@ -386,7 +348,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                     {prospect['position']}
                     <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
                 </div>
-                <div style="font-size: 1rem; color: {rank_color}; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
+                <div style="font-size: 1rem; color: white; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
                     Avg Score: {prospect['prospect_score']:.1f}
                 </div>
             </div>
@@ -571,8 +533,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Calculate score color
-        score_color = get_score_color(prospect.prospect_score, global_max_score, global_min_score)
         # Calculate rank color
         rank_color = get_rank_color(idx)
 
@@ -627,7 +587,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                             <span>|</span>
                             <span>{prospect.position}</span>
                         </div>
-                        <div style="font-size: 1rem; color: {score_color}; font-weight: 700;">
+                        <div style="font-size: 1rem; color: white; font-weight: 700;">
                             Score: {prospect.prospect_score:.2f}
                         </div>
                     </div>
