@@ -10,28 +10,37 @@ def fetch_api_data():
     Returns processed data or None if an error occurs.
     """
     try:
-        # Initialize API client and data processor
-        api_client = FantraxAPI()
-        data_processor = DataProcessor()
+        # Create a placeholder in the sidebar for status
+        with st.sidebar:
+            status_container = st.empty()
+            status_container.info("Fetching data...")
 
-        # Fetch all required data
-        league_data = api_client.get_league_info()
-        roster_data = api_client.get_team_rosters()
-        standings_data = api_client.get_standings()
-        player_ids = api_client.get_player_ids()
+            # Initialize API client and data processor
+            api_client = FantraxAPI()
+            data_processor = DataProcessor()
 
-        # Process data
-        processed_league_data = data_processor.process_league_info(league_data)
-        processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
-        processed_standings_data = data_processor.process_standings(standings_data)
+            # Fetch all required data
+            league_data = api_client.get_league_info()
+            roster_data = api_client.get_team_rosters()
+            standings_data = api_client.get_standings()
+            player_ids = api_client.get_player_ids()
 
-        return {
-            'league_data': processed_league_data,
-            'roster_data': processed_roster_data,
-            'standings_data': processed_standings_data
-        }
+            # Process data
+            processed_league_data = data_processor.process_league_info(league_data)
+            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
+            processed_standings_data = data_processor.process_standings(standings_data)
+
+            # Clear the status message
+            status_container.empty()
+
+            return {
+                'league_data': processed_league_data,
+                'roster_data': processed_roster_data,
+                'standings_data': processed_standings_data
+            }
     except Exception as e:
-        st.error(f"An error occurred while loading data: {str(e)}")
+        with st.sidebar:
+            st.error(f"An error occurred while loading data: {str(e)}")
         return None
 
 def format_percentage(value: float) -> str:

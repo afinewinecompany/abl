@@ -767,39 +767,47 @@ def render_handbook_viewer():
             <script>
             window.addEventListener('DOMContentLoaded', (event) => {
                 tsParticles.load("handbook-particles", {
+                    fpsLimit: 60,
                     particles: {
                         number: {
-                            value: 30,
+                            value: 50,
                             density: {
                                 enable: true,
                                 value_area: 800
                             }
                         },
                         color: {
-                            value: "#ffffff"
+                            value: ["#ff0000", "#00ff00", "#0000ff"]
                         },
                         shape: {
                             type: "circle"
                         },
                         opacity: {
-                            value: 0.15,
+                            value: 0.25,
                             random: true,
-                            animation: {
+                            anim: {
                                 enable: true,
                                 speed: 1,
-                                minimumValue: 0.1,
+                                opacity_min: 0.1,
                                 sync: false
                             }
                         },
                         size: {
-                            value: 8,
+                            value: 5,
                             random: true,
-                            animation: {
+                            anim: {
                                 enable: true,
                                 speed: 2,
-                                minimumValue: 3,
+                                size_min: 1,
                                 sync: false
                             }
+                        },
+                        line_linked: {
+                            enable: true,
+                            distance: 150,
+                            color: "#ffffff",
+                            opacity: 0.1,
+                            width: 1
                         },
                         move: {
                             enable: true,
@@ -807,9 +815,8 @@ def render_handbook_viewer():
                             direction: "none",
                             random: true,
                             straight: false,
-                            outModes: {
-                                default: "bounce"
-                            },
+                            out_mode: "bounce",
+                            bounce: true,
                             attract: {
                                 enable: true,
                                 rotateX: 600,
@@ -818,48 +825,85 @@ def render_handbook_viewer():
                         }
                     },
                     interactivity: {
-                        detectsOn: "window",
+                        detect_on: "window",
                         events: {
-                            onHover: {
+                            onhover: {
                                 enable: true,
-                                mode: ["grab", "bubble"]
+                                mode: ["grab", "bubble", "repulse"]
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: "push"
                             },
                             resize: true,
                             scroll: {
                                 enable: true,
-                                mode: "repulse"
+                                mode: ["grab", "attract"]
                             }
                         },
                         modes: {
                             grab: {
-                                distance: 150,
-                                links: {
+                                distance: 200,
+                                line_linked: {
                                     opacity: 0.3
                                 }
                             },
                             bubble: {
-                                distance: 200,
+                                distance: 300,
                                 size: 12,
                                 duration: 2,
-                                opacity: 0.25
+                                opacity: 0.2,
+                                speed: 2
                             },
                             repulse: {
-                                distance: 100,
+                                distance: 150,
                                 duration: 0.4
+                            },
+                            push: {
+                                particles_nb: 4
+                            },
+                            attract: {
+                                distance: 200,
+                                duration: 0.4,
+                                factor: 5
                             }
                         }
+                    },
+                    retina_detect: true,
+                    background: {
+                        color: "transparent",
+                        image: "",
+                        position: "50% 50%",
+                        repeat: "no-repeat",
+                        size: "cover"
                     }
                 });
 
-                // Add scroll interaction
+                // Add enhanced scroll interaction
+                let lastScrollTop = 0;
                 window.addEventListener('scroll', () => {
                     const particles = document.querySelector("#handbook-particles");
-                    const scrolled = window.pageYOffset;
-                    const rate = scrolled * 0.5;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const scrollDirection = scrollTop > lastScrollTop ? 'down' : 'up';
+                    const rate = scrollTop * 0.3;
 
                     if (particles) {
+                        // Add parallax effect based on scroll direction
                         particles.style.transform = `translate3d(0px, ${rate}px, 0px)`;
+
+                        // Update particle movement based on scroll
+                        const particleSystem = tsParticles.domItem(0);
+                        if (particleSystem) {
+                            particleSystem.particles.forEach((p) => {
+                                if (scrollDirection === 'down') {
+                                    p.velocity.y += 0.1;
+                                } else {
+                                    p.velocity.y -= 0.1;
+                                }
+                            });
+                        }
                     }
+                    lastScrollTop = scrollTop;
                 });
             });
             </script>
