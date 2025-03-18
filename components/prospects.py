@@ -8,17 +8,14 @@ import unicodedata
 
 def render(roster_data: Dict):
     """Main render function for prospects page"""
-    # Apply styles only when component is rendered
-    apply_styles()
+    st.markdown("## 🌟 Prospect Analysis")
 
     # Process data
     mlb_ids_df = pd.DataFrame()  # TODO: Replace with actual MLB IDs data
     player_id_cache = create_player_id_cache(mlb_ids_df)
 
-    # Create visualizations and render content
-    st.markdown("## 🌟 Prospect Analysis")
-
-    # Render handbook viewer
+    # Only apply styles and render components when explicitly called
+    apply_styles()
     render_handbook_viewer()
 
     # Process and display prospects
