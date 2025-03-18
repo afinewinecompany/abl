@@ -2,9 +2,6 @@ import pandas as pd
 from typing import Dict, List, Union
 import unicodedata
 import streamlit as st
-import logging
-
-logger = logging.getLogger(__name__)
 
 class DataProcessor:
     def normalize_name(self, name: str) -> str:
@@ -23,7 +20,7 @@ class DataProcessor:
             name = ' '.join(name.split())
             return name
         except Exception as e:
-            logger.error(f"Error normalizing name '{name}': {str(e)}")
+            st.error(f"Error normalizing name '{name}': {str(e)}")
             return str(name).strip().lower() if name else ""
 
     def process_rosters(self, roster_data: Dict, player_ids: Dict) -> pd.DataFrame:
@@ -33,11 +30,10 @@ class DataProcessor:
             seen_players = {}  # Track players globally across all teams
 
             if not roster_data or not isinstance(roster_data, dict):
-                logger.warning("Invalid roster data format, returning empty DataFrame")
+                st.error("Invalid roster data format")
                 return pd.DataFrame(columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team'])
 
             rosters = roster_data.get('rosters', {})
-            logger.debug(f"Processing {len(rosters)} teams")
 
             for team_id, team_data in rosters.items():
                 team_name = team_data.get('teamName', 'Unknown')
@@ -50,6 +46,7 @@ class DataProcessor:
                     player_id = player.get('id')
                     player_details = player_ids.get(player_id, {})
 
+                    # Get player name and normalize
                     player_name = player_details.get('name', player.get('name', 'Unknown')).strip()
                     if not player_name or player_name == 'Unknown':
                         continue
@@ -58,9 +55,11 @@ class DataProcessor:
                     if not normalized_name:
                         continue
 
+                    # Skip if we've already seen this player
                     if normalized_name in seen_players:
                         continue
 
+                    # Process status
                     status = player.get('status', 'Active')
                     if status.lower() == 'na':
                         status = 'Minors'
@@ -76,14 +75,15 @@ class DataProcessor:
                     roster_list.append(player_info)
                     seen_players[normalized_name] = True
 
+            # Create DataFrame
             df = pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
                 columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
             )
-            logger.debug(f"Processed {len(df)} players")
+
             return df
 
         except Exception as e:
-            logger.error(f"Error processing roster data: {str(e)}")
+            st.error(f"Error processing roster data: {str(e)}")
             return pd.DataFrame(
                 columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
             )
@@ -92,45 +92,39 @@ class DataProcessor:
         """Process league information data"""
         try:
             if not data or not isinstance(data, dict):
-                logger.warning("Invalid league info data, returning default values")
                 return {
-                    'name': 'ABL Season 5',
-                    'season': '2025',
+                    'name': 'N/A',
+                    'season': 'N/A',
                     'sport': 'MLB',
-                    'scoring_type': 'Head to Head',
-                    'teams': 30,
-                    'scoring_period': 'Weekly'
+                    'scoring_type': 'N/A',
+                    'teams': 0
                 }
 
-            logger.debug("Processing league info data")
+            settings = data.get('draftSettings', {})
+            scoring_settings = data.get('scoringSettings', {})
+
             return {
-                'name': data.get('name', 'ABL Season 5'),
-                'season': data.get('season', '2025'),
-                'sport': data.get('sport', 'MLB'),
-                'scoring_type': data.get('scoringType', 'Head to Head'),
-                'teams': data.get('teams', 30),
-                'scoring_period': data.get('scoringPeriod', 'Weekly')
+                'name': "ABL Season 5",
+                'season': "2025",
+                'sport': 'MLB',
+                'scoring_type': "Head to Head",
+                'teams': 30,
+                'scoring_period': scoring_settings.get('scoringPeriod', 'Weekly')
             }
         except Exception as e:
-            logger.error(f"Error processing league info: {str(e)}")
+            st.error(f"Error processing league info: {str(e)}")
             return {
-                'name': 'ABL Season 5',
-                'season': '2025',
+                'name': 'N/A',
+                'season': 'N/A',
                 'sport': 'MLB',
-                'scoring_type': 'Head to Head',
-                'teams': 30,
-                'scoring_period': 'Weekly'
+                'scoring_type': 'N/A',
+                'teams': 0
             }
 
     def process_standings(self, standings_data: List) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
         try:
-            if not isinstance(standings_data, list):
-                logger.warning("Invalid standings data format, returning empty DataFrame")
-                standings_data = []
-
             standings_list = []
-            logger.debug(f"Processing {len(standings_data)} teams in standings")
 
             for team in standings_data:
                 if not isinstance(team, dict):
@@ -155,7 +149,7 @@ class DataProcessor:
                 columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
             )
         except Exception as e:
-            logger.error(f"Error processing standings: {str(e)}")
+            st.error(f"Error processing standings: {str(e)}")
             return pd.DataFrame(
                 columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
             )
