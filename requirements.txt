@@ -13,3 +13,4 @@ streamlit-pdf-viewer
 trafilatura
 openai
 trafilatura
+openai

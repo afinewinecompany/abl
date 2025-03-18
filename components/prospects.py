@@ -319,7 +319,9 @@ def get_score_color(score: float, max_score: float, min_score: float) -> str:
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
-    color = get_color_for_rank(rank)
+    # Calculate rank color using the score instead of rank
+    rank_color = get_score_color(prospect['prospect_score'], global_max_score, global_min_score)
+
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
@@ -374,8 +376,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         .rank-badge-{rank} {{
             position: absolute;
             left: -10px;
-            top: -10px;  /* Changed from 50% to -10px */
-            transform: none;  /* Removed translateY */
+            top: -10px;
             width: 45px;
             height: 45px;
             border-radius: 50%;
@@ -387,7 +388,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             z-index: 3;
             border: 2px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: {color};
+            background: {rank_color};
             color: white;
         }}
         .team-logo-{rank} {{
@@ -419,12 +420,13 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         }}
         .prospect-score-{rank} {{
             font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
+            color: {rank_color};
             background: rgba(0, 0, 0, 0.2);
             padding: 0.4rem 0.8rem;
             border-radius: 20px;
             display: inline-block;
             margin-top: 0.5rem;
+            font-weight: 700;
         }}
         </style>
     """, unsafe_allow_html=True)
