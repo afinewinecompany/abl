@@ -223,9 +223,7 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
 
 def get_headshot_url(mlbam_id: str) -> str:
     """Generate MLB headshot URL from player ID"""
-    # Try both URL patterns for maximum compatibility
-    base_url = "https://img.mlbstatic.com/mlb-photos"
-    return f"{base_url}/image/upload/v1/people/{mlbam_id}/headshot/67/current"
+    return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
 
 def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
     """Get player headshot HTML if available"""
@@ -234,12 +232,11 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Add multiple fallback URLs and error handling
             return f"""
                 <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
                     <img src="{get_headshot_url(mlbam_id)}"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/{mlbam_id}/headshot/current';"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIzMCIgZmlsbD0iIzFhMWMyMyIvPjx0ZXh0IHg9IjMwIiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjIwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj57aW5pdGlhbHN9PC90ZXh0Pjwvc3ZnPg==';"
                          alt="{player_name} headshot">
                 </div>
             """
@@ -260,8 +257,8 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 </div>
             """
     except Exception as e:
-        st.error(f"Error generating headshot HTML for {player_name}: {str(e)}")
-        return ""
+        pass
+    return ""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
     """Generate HTML for team prospects list"""
@@ -576,6 +573,123 @@ MLB_TEAM_IDS = {
 
 def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
     """Render the animated TOP 100 header and scrollable list"""
+    # CSS for animated header and cards
+    st.markdown("""
+        <style>
+        @keyframes gradient {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        .top-100-header {
+            background: linear-gradient(-45deg, #dc143c, #4169e1, #1e90ff, #dc143c);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .prospect-card {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+            background: rgba(26, 28, 35, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+        }
+        .prospect-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animation Options */
+        .fade-in {
+            animation: fadeIn 0.6s ease forwards;
+        }
+        .slide-up {
+            animation: slideUp 0.6s ease forwards;
+        }
+        .slide-in {
+            animation: slideIn 0.6s ease forwards;
+        }
+        .scale-up {
+            animation: scaleUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        </style>
+
+        <script>
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        };
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            document.querySelectorAll('.prospect-card').forEach(card => {
+                observer.observe(card);
+                card.style.opacity = '0';
+            });
+        });
+        </script>
+        <div class="top-100-header">
+            <h1 style="margin:0; font-size: 2.5rem; font-weight: 700;">ABL TOP 100</h1>
+            <p style="margin:0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Fantasy Baseball's Elite Prospects</p>
+        </div>
+    """, unsafe_allow_html=True)
+
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
 
@@ -590,7 +704,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Get headshot HTML for the prospect using the cache
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight: 500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
+        prospect_card = f'<div class="prospect-card fade-in" style="border-left: 3px solid {rank_color};"><div style="display: flex; align-items: center; gap: 1rem;"><div style="font-size: 1.5rem; font-weight: 700; color: {rank_color}; min-width: 2rem; text-align: center;">#{idx}</div>{headshot_html}<div style="flex-grow: 1;"><div style="font-size: 1rem; color: white; font-weight500;">{prospect.player_name}</div><div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{prospect.team} | {prospect.position}</div><div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Score: {prospect.prospect_score:.2f}</div></div></div></div>'
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
