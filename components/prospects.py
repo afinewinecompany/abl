@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
+import PyPDF2
+from pathlib import Path
 
 # CSS and JS as constants
 PARTICLES_CSS_JS = """
@@ -669,241 +671,94 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
 def render_handbook_viewer():
-    """Render the PDF handbook viewer section with interactive page flip"""
-    st.markdown("""
-        <style>
-        .handbook-section {
-            margin-top: 3rem;
-            padding: 2rem;
-            background: rgba(26, 28, 35, 0.3);
-            border-radius: 10px;
-            text-align: center;
-        }
-        .handbook-button {
-            display: inline-block;
-            padding: 0.8rem 1.5rem;
-            background: linear-gradient(-45deg, #dc143c, #4169e1);
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .handbook-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        .pdf-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 90%;
-            background: #1a1c23;
-            z-index: 1000;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s, opacity 0.3s linear;
-        }
-        .pdf-modal.active {
-            visibility: visible;
-            opacity: 1;
-            display: flex;
-        }
-        .book-container {
-            width: 100%;
-            height: calc(100% - 60px);
-            position: relative;
-            perspective: 1500px;
-        }
-        .page {
-            width: 50%;
-            height: 100%;
-            position: absolute;
-            right: 0;
-            transform-origin: left;
-            transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
-            cursor: pointer;
-            background: white;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-        .page.flipped {
-            transform: rotateY(-180deg);
-        }
-        .page-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            backface-visibility: hidden;
-            font-size: 14px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .page-controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            z-index: 1001;
-        }
-        .page-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .page-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .page-number {
-            color: white;
-            font-size: 0.9rem;
-            margin: 0 1rem;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    """Render the PDF handbook viewer section"""
+    try:
+        import PyPDF2
+        from pathlib import Path
 
-    # Load and parse PDF content
-    import PyPDF2
-    import json
-    from io import BytesIO
+        st.markdown("""
+            <style>
+            .handbook-section {
+                margin-top: 3rem;
+                padding: 2rem;
+                background: rgba(26, 28, 35, 0.3);
+                border-radius: 10px;
+                text-align: center;
+            }
+            .handbook-content {
+                margin-top: 2rem;
+                padding: 2rem;
+                background: rgba(26, 28, 35, 0.5);
+                border-radius: 8px;
+                max-height: 600px;
+                overflow-y: auto;
+            }
+            .page-controls {
+                margin-top: 1rem;
+                display: flex;
+                justify-content: center;
+                gap: 1rem;
+                align-items: center;
+            }
+            </style>
+            <div class="handbook-section">
+                <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
+                <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+                    Dive deep into our comprehensive prospect analysis with the official handbook
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
-    def get_pdf_content():
-        pdf_path = "attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf"
-        pdf_text = []
+        pdf_path = Path("attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf")
+
+        if not pdf_path.exists():
+            st.warning("Handbook PDF file not found. Please ensure the file is present in the assets folder.")
+            return
+
         try:
-            with open(pdf_path, 'rb') as file:
+            with pdf_path.open('rb') as file:
                 pdf_reader = PyPDF2.PdfReader(file)
                 num_pages = len(pdf_reader.pages)
-                for page in range(num_pages):
-                    pdf_text.append(pdf_reader.pages[page].extract_text())
+
+                # Add page navigation
+                col1, col2, col3 = st.columns([2,6,2])
+                with col2:
+                    page_num = st.slider("Select Page", 1, num_pages, 1)
+
+                # Display PDF content
+                page = pdf_reader.pages[page_num - 1]
+                text_content = page.extract_text()
+
+                st.markdown(
+                    f'<div class="handbook-content">{text_content}</div>',
+                    unsafe_allow_html=True
+                )
+
+                # Page navigation buttons
+                with st.container():
+                    col1, col2, col3 = st.columns([2,6,2])
+                    with col1:
+                        if page_num > 1:
+                            if st.button("← Previous"):
+                                page_num -= 1
+                    with col3:
+                        if page_num < num_pages:
+                            if st.button("Next →"):
+                                page_num += 1
+
         except Exception as e:
-            st.error(f"Error loading PDF: {str(e)}")
-            return []
-        return pdf_text
+            st.error(f"Error reading PDF file: {str(e)}")
+            st.info("Please make sure the PDF file is not corrupted and try again.")
 
-    pdf_content = get_pdf_content()
-    total_pages = len(pdf_content)
-
-    # Convert PDF content to JSON string for JavaScript
-    pdf_content_json = json.dumps(pdf_content)
-
-    # Create JavaScript for page flip functionality
-    js_code = f"""
-    <script>
-    // Initialize variables
-    let modal;
-    let book;
-    let currentPage = 0;
-    const totalPages = {total_pages};
-    const pdfContent = {pdf_content_json};
-
-    // Wait for DOM content to load
-    document.addEventListener('DOMContentLoaded', function() {{
-        modal = document.querySelector('.pdf-modal');
-        book = document.querySelector('.book-container');
-
-        // Initialize event listeners
-        initializeEventListeners();
-    }});
-
-    function initializeEventListeners() {{
-        // Button click handlers
-        document.querySelector('.handbook-button').addEventListener('click', openModal);
-        document.querySelector('.close-button').addEventListener('click', closeModal);
-        document.querySelector('.next-button').addEventListener('click', () => flipPage('next'));
-        document.querySelector('.prev-button').addEventListener('click', () => flipPage('prev'));
-    }}
-
-    function openModal() {{
-        modal.classList.add('active');
-        initializeBook();
-    }}
-
-    function closeModal() {{
-        modal.classList.remove('active');
-    }}
-
-    function updatePageNumber() {{
-        document.querySelector('.page-number').textContent = `Page ${{currentPage + 1}} of ${{totalPages}}`;
-    }}
-
-    function createPage(pageNum) {{
-        const page = document.createElement('div');
-        page.className = 'page';
-        page.innerHTML = `<div class="page-content">${{pdfContent[pageNum]}}</div>`;
-        return page;
-    }}
-
-    function initializeBook() {{
-        // Clear existing pages
-        book.innerHTML = '';
-
-        // Create pages
-        for(let i = 0; i < totalPages; i++) {{
-            book.appendChild(createPage(i));
-        }}
-
-        // Reset to first page
-        currentPage = 0;
-        updatePageNumber();
-    }}
-
-    function flipPage(direction) {{
-        const pages = document.querySelectorAll('.page');
-        if (direction === 'next' && currentPage < totalPages - 1) {{
-            pages[currentPage].classList.add('flipped');
-            currentPage++;
-            updatePageNumber();
-        }} else if (direction === 'prev' && currentPage > 0) {{
-            pages[currentPage - 1].classList.remove('flipped');
-            currentPage--;
-            updatePageNumber();
-        }}
-    }}
-    </script>
-
-    <div class="handbook-section">
-        <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-        <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-            Dive deep into our comprehensive prospect analysis with the official handbook
-        </p>
-        <button class="handbook-button">📖 Open Handbook</button>
-    </div>
-
-    <div class="pdf-modal">
-        <button class="close-button" style="position: absolute; top: 10px; right: 10px; background: #f44336; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
-
-        <div class="book-container">
-            <!-- Pages will be dynamically added here -->
-        </div>
-
-        <div class="page-controls">
-            <button class="page-button prev-button">← Previous</button>
-            <span class="page-number">Page 1 of {total_pages}</span>
-            <button class="page-button next-button">Next →</button>
-        </div>
-    </div>
-    """
-
-    st.markdown(js_code, unsafe_allow_html=True)
+    except ImportError:
+        st.error("Required PDF libraries not found. Please ensure PyPDF2 is installed.")
+        st.info("Installing required packages...")
+        try:
+            from replit import packaging
+            packaging.install('PyPDF2')
+            st.experimental_rerun()
+        except Exception as e:
+            st.error(f"Failed to install required packages: {str(e)}")
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
     """Normalize values within groups to 0-1 range"""
@@ -1219,240 +1074,3 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-
-def render_handbook_viewer():
-    """Render the PDF handbook viewer section with interactive page flip"""
-    st.markdown("""
-        <style>
-        .handbook-section {
-            margin-top: 3rem;
-            padding: 2rem;
-            background: rgba(26, 28, 35, 0.3);
-            border-radius: 10px;
-            text-align: center;
-        }
-        .handbook-button {
-            display: inline-block;
-            padding: 0.8rem 1.5rem;
-            background: linear-gradient(-45deg, #dc143c, #4169e1);
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .handbook-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        .pdf-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 90%;
-            background: #1a1c23;
-            z-index: 1000;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s, opacity 0.3s linear;
-        }
-        .pdf-modal.active {
-            visibility: visible;
-            opacity: 1;
-            display: flex;
-        }
-        .book-container {
-            width: 100%;
-            height: calc(100% - 60px);
-            position: relative;
-            perspective: 1500px;
-        }
-        .page {
-            width: 50%;
-            height: 100%;
-            position: absolute;
-            right: 0;
-            transform-origin: left;
-            transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
-            cursor: pointer;
-            background: white;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-        .page.flipped {
-            transform: rotateY(-180deg);
-        }
-        .page-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            backface-visibility: hidden;
-            font-size: 14px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .page-controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            z-index: 1001;
-        }
-        .page-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .page-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .page-number {
-            color: white;
-            font-size: 0.9rem;
-            margin: 0 1rem;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Load and parse PDF content
-    import PyPDF2
-    import json
-    from io import BytesIO
-
-    def get_pdf_content():
-        pdf_path = "attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf"
-        pdf_text = []
-        try:
-            with open(pdf_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                num_pages = len(pdf_reader.pages)
-                for page in range(num_pages):
-                    pdf_text.append(pdf_reader.pages[page].extract_text())
-        except Exception as e:
-            st.error(f"Error loading PDF: {str(e)}")
-            return []
-        return pdf_text
-
-    pdf_content = get_pdf_content()
-    total_pages = len(pdf_content)
-
-    # Convert PDF content to JSON string for JavaScript
-    pdf_content_json = json.dumps(pdf_content)
-
-    # Create JavaScript for page flip functionality
-    js_code = f"""
-    <script>
-    // Initialize variables
-    let modal;
-    let book;
-    let currentPage = 0;
-    const totalPages = {total_pages};
-    const pdfContent = {pdf_content_json};
-
-    // Wait for DOM content to load
-    document.addEventListener('DOMContentLoaded', function() {{
-        modal = document.querySelector('.pdf-modal');
-        book = document.querySelector('.book-container');
-
-        // Initialize event listeners
-        initializeEventListeners();
-    }});
-
-    function initializeEventListeners() {{
-        // Button click handlers
-        document.querySelector('.handbook-button').addEventListener('click', openModal);
-        document.querySelector('.close-button').addEventListener('click', closeModal);
-        document.querySelector('.next-button').addEventListener('click', () => flipPage('next'));
-        document.querySelector('.prev-button').addEventListener('click', () => flipPage('prev'));
-    }}
-
-    function openModal() {{
-        modal.classList.add('active');
-        initializeBook();
-    }}
-
-    function closeModal() {{
-        modal.classList.remove('active');
-    }}
-
-    function updatePageNumber() {{
-        document.querySelector('.page-number').textContent = `Page ${{currentPage + 1}} of ${{totalPages}}`;
-    }}
-
-    function createPage(pageNum) {{
-        const page = document.createElement('div');
-        page.className = 'page';
-        page.innerHTML = `<div class="page-content">${{pdfContent[pageNum]}}</div>`;
-        return page;
-    }}
-
-    function initializeBook() {{
-        // Clear existing pages
-        book.innerHTML = '';
-
-        // Create pages
-        for(let i = 0; i < totalPages; i++) {{
-            book.appendChild(createPage(i));
-        }}
-
-        // Reset to first page
-        currentPage = 0;
-        updatePageNumber();
-    }}
-
-    function flipPage(direction) {{
-        const pages = document.querySelectorAll('.page');
-        if (direction === 'next' && currentPage < totalPages - 1) {{
-            pages[currentPage].classList.add('flipped');
-            currentPage++;
-            updatePageNumber();
-        }} else if (direction === 'prev' && currentPage > 0) {{
-            pages[currentPage - 1].classList.remove('flipped');
-            currentPage--;
-            updatePageNumber();
-        }}
-    }}
-    </script>
-
-    <div class="handbook-section">
-        <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-        <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-            Dive deep into our comprehensive prospect analysis with the official handbook
-        </p>
-        <button class="handbook-button">📖 Open Handbook</button>
-    </div>
-
-    <div class="pdf-modal">
-        <button class="close-button" style="position: absolute; top: 10px; right: 10px; background: #f44336; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
-
-        <div class="book-container">
-            <!-- Pages will be dynamically added here -->
-        </div>
-
-        <div class="page-controls">
-            <button class="page-button prev-button">← Previous</button>
-            <span class="page-number">Page 1 of {total_pages}</span>
-            <button class="page-button next-button">Next →</button>
-        </div>
-    </div>
-    """
-
-    st.markdown(js_code, unsafe_allow_html=True)

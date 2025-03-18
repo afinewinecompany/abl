@@ -11,6 +11,86 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Add baseball particles animation
+st.markdown("""
+    <style>
+    .stApp {
+        background: rgba(26, 28, 35, 0.95);
+        backdrop-filter: blur(5px);
+    }
+    #tsparticles {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
+    <div id="tsparticles"></div>
+    <script>
+    window.addEventListener('DOMContentLoaded', (event) => {
+        tsParticles.load("tsparticles", {
+            particles: {
+                number: {
+                    value: 20,
+                    density: {
+                        enable: true,
+                        value_area: 800
+                    }
+                },
+                color: {
+                    value: "#ffffff"
+                },
+                shape: {
+                    type: "circle"
+                },
+                opacity: {
+                    value: 0.15,
+                    random: false
+                },
+                size: {
+                    value: 12,
+                    random: true
+                },
+                move: {
+                    enable: true,
+                    speed: 1.5,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    outModes: {
+                        default: "bounce"
+                    },
+                    attract: {
+                        enable: false,
+                        rotateX: 600,
+                        rotateY: 1200
+                    }
+                }
+            },
+            interactivity: {
+                detectsOn: "window",
+                events: {
+                    onHover: {
+                        enable: true,
+                        mode: "repulse"
+                    },
+                    resize: true
+                },
+                modes: {
+                    repulse: {
+                        distance: 100,
+                        duration: 0.4
+                    }
+                }
+            }
+        });
+    });
+    </script>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -21,7 +101,7 @@ st.markdown("""
 
     .main {
         padding: 1rem 2rem;
-        background: #0e1117;
+        background: rgba(14, 17, 23, 0.8);
     }
 
     /* Mobile-first approach */
