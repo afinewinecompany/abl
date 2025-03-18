@@ -44,21 +44,44 @@ TEAM_ABBREVIATIONS = {
     "San Francisco Giants": "SF"
 }
 
-def calculate_power_score(row: pd.Series) -> float:
-    """Calculate power score based on multiple factors"""
-    win_weight = 0.4
-    pct_weight = 0.4
-    gb_weight = 0.2
+def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) -> float:
+    """Calculate points modifier based on total points ranking"""
+    # Sort all teams by points and split into 10 groups of 3
+    sorted_points = all_teams_points.sort_values(ascending=False)
+    group_size = len(sorted_points) // 10
+    rank = sorted_points[sorted_points >= total_points].index.min()
+    group = rank // group_size
+    return 1 + (0.1 * (9 - group))  # 1.9x for top group, 1.0x for bottom group
 
-    # Normalize games back (inverse because lower is better)
-    max_gb = row['games_back'].max() if isinstance(row['games_back'], pd.Series) else row['games_back']
-    gb_score = 1 - (row['games_back'] / (max_gb + 1))
+def calculate_hot_cold_modifier(recent_record: float) -> float:
+    """Calculate hot/cold modifier based on recent performance"""
+    # Split into 6 groups, with modifiers from 1.5x to 1.0x
+    if recent_record >= 0.800:  # Group 1
+        return 1.5
+    elif recent_record >= 0.650:  # Group 2
+        return 1.4
+    elif recent_record >= 0.500:  # Group 3
+        return 1.3
+    elif recent_record >= 0.350:  # Group 4
+        return 1.2
+    elif recent_record >= 0.200:  # Group 5
+        return 1.1
+    else:  # Group 6
+        return 1.0
 
-    return (
-        (row['wins'] * win_weight) + 
-        (row['winning_pct'] * 100 * pct_weight) + 
-        (gb_score * 100 * gb_weight)
-    )
+def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
+    """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
+    # Calculate weekly average score
+    weekly_avg = row['total_points'] / row['weeks_played']
+    
+    # Calculate points modifier
+    points_mod = calculate_points_modifier(row['total_points'], all_teams_data['total_points'])
+    
+    # Calculate hot/cold modifier based on recent record
+    recent_record = row['recent_wins'] / (row['recent_wins'] + row['recent_losses'])
+    hot_cold_mod = calculate_hot_cold_modifier(recent_record)
+    
+    return (weekly_avg * points_mod) * hot_cold_mod
 
 def render(standings_data: pd.DataFrame):
     """Render power rankings section"""
@@ -109,7 +132,15 @@ def render(standings_data: pd.DataFrame):
 
     # Calculate power rankings
     rankings_df = standings_data.copy()
-    rankings_df['power_score'] = rankings_df.apply(calculate_power_score, axis=1)
+    
+    # Add required fields for new power score calculation
+    rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
+    rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
+    rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
+    
+    # Calculate power scores
+    rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
 
