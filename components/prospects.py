@@ -292,16 +292,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Get team colors - using a mix of traditional team colors
-    team_colors = {
-        'NYY': {'primary': '#003087', 'secondary': '#E4002C'},
-        'BOS': {'primary': '#BD3039', 'secondary': '#0C2340'},
-        'TB': {'primary': '#092C5C', 'secondary': '#8FBCE6'},
-        'TOR': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
-        'BAL': {'primary': '#DF4601', 'secondary': '#000000'},
-        # Add more team colors here
-    }.get(TEAM_ABBREVIATIONS.get(str(prospect.get('mlb_team', '')), ''), 
-         {'primary': '#1a1c23', 'secondary': '#2d2f36'})
+    # Get team colors from the comprehensive mapping
+    team_colors = MLB_TEAM_COLORS.get(str(prospect.get('mlb_team', '')), 
+                                    {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
 
     st.markdown(f"""
         <style>
@@ -321,48 +314,99 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         }}
         @keyframes pulse {{
             0% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.05); }}
+            50% {{ transform: scale(1.02); }}
             100% {{ transform: scale(1); }}
         }}
+        @keyframes shimmer {{
+            0% {{ background-position: -200% center; }}
+            100% {{ background-position: 200% center; }}
+        }}
         .team-card-{rank} {{
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin: 0.5rem 0;
-            background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            border-radius: 16px;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, 
+                {team_colors['primary']} 0%, 
+                {team_colors['secondary']} 70%, 
+                {team_colors['accent']} 100%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: hidden;
             animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
+            transition: all 0.3s ease;
         }}
         .team-card-{rank}:hover {{
-            animation: pulse 1s ease-in-out infinite;
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+        }}
+        .team-card-{rank}::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.1), 
+                transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite;
+            pointer-events: none;
         }}
         .team-logo-{rank} {{
             position: absolute;
-            right: -20px;
+            right: -30px;
             top: 50%;
             transform: translateY(-50%);
-            width: 180px;
-            height: 180px;
-            opacity: 0.15;
+            width: 220px;
+            height: 220px;
+            opacity: 0.12;
             animation: fadeIn 1s ease-out {rank * 0.2}s both;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
         }}
         .rank-badge-{rank} {{
             position: absolute;
-            left: -10px;
-            top: -10px;
+            left: -15px;
+            top: -15px;
             background: {color};
             color: white;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             animation: fadeIn 0.8s ease-out {rank * 0.15}s both;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }}
+        .prospect-content-{rank} {{
+            position: relative;
+            z-index: 1;
+        }}
+        .prospect-header-{rank} {{
+            font-weight: 800;
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }}
+        .prospect-subheader-{rank} {{
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.4rem;
+        }}
+        .prospect-score-{rank} {{
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 0.5rem;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -382,17 +426,17 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             unsafe_allow_html=True
         )
 
-    # Display team header
+    # Display team header with enhanced styling
     st.markdown(
         f"""
-        <div style="position: relative; z-index: 1;">
-            <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
+        <div class="prospect-content-{rank}">
+            <div class="prospect-header-{rank}">
                 {prospect['player_name']}
             </div>
-            <div style="font-size: 1rem; color: rgba(255, 255, 255, 0.9); margin-bottom: 0.2rem;">
+            <div class="prospect-subheader-{rank}">
                 {prospect['position']}
             </div>
-            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+            <div class="prospect-score-{rank}">
                 Total Score: {prospect['prospect_score']:.1f}
             </div>
         </div>
@@ -400,9 +444,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
         unsafe_allow_html=True
     )
 
-    # Show prospects in expander with animation
+    # Show prospects in expander with enhanced animation
     if team_prospects is not None:
-        with st.expander("Show Prospects"):
+        with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
             st.markdown(f"""
                 <style>
@@ -418,6 +462,10 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                 }}
                 .prospect-list-{rank} {{
                     animation: fadeInRight 0.5s ease-out;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-top: 1rem;
                 }}
                 </style>
                 <div class="prospect-list-{rank}">
@@ -427,80 +475,158 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Add team abbreviation mapping
-TEAM_ABBREVIATIONS = {
-    "Baltimore Orioles": "BAL",
-    "Boston Red Sox": "BOS",
-    "New York Yankees": "NYY",
-    "Tampa Bay Rays": "TB",
-    "Toronto Blue Jays": "TOR",
-    "Chicago White Sox": "CHW",
-    "Cleveland Guardians": "CLE",
-    "Detroit Tigers": "DET",
-    "Kansas City Royals": "KC",
-    "Minnesota Twins": "MIN",
-    "Houston Astros": "HOU",
-    "Los Angeles Angels": "LAA",
-    "Athletics": "ATH",
-    "Oakland Athletics": "ATH",
-    "Seattle Mariners":"SEA",
-    "Texas Rangers": "TEX",
-    "Atlanta Braves": "ATL",
-    "Miami Marlins": "MIA",
-    "New York Mets": "NYM",
-    "Philadelphia Phillies": "PHI",
-    "Washington Nationals": "WSH",
-    "Chicago Cubs": "CHC",
-    "Cincinnati Reds": "CIN",
-    "Milwaukee Brewers": "MIL",
-    "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",
-    "Saint Louis Cardinals": "STL",
-    "St Louis Cardinals": "STL",
-    "St. Louis Cardinals": "STL",
-    "Arizona Diamondbacks": "ARI",
-    "Colorado Rockies": "COL",
-    "Los Angeles Dodgers": "LAD",
-    "San Diego Padres": "SD",
-    "San Francisco Giants": "SF"
-}
-
-# Add MLB team ID mapping after TEAM_ABBREVIATIONS
-MLB_TEAM_IDS = {
-    "Los Angeles Angels": "108",
-    "Arizona Diamondbacks": "109",
-    "Baltimore Orioles": "110",
-    "Boston Red Sox": "111",
-    "Chicago Cubs": "112",
-    "Cincinnati Reds": "113",
-    "Cleveland Guardians": "114",
-    "Colorado Rockies": "115",
-    "Detroit Tigers": "116",
-    "Houston Astros": "117",
-    "Kansas City Royals": "118",
-    "Los Angeles Dodgers": "119",
-    "Washington Nationals": "120",
-    "New York Mets": "121",
-    "Oakland Athletics": "133",
-    "Athletics": "133",  # Add alternative name
-    "Pittsburgh Pirates": "134",
-    "San Diego Padres": "135",
-    "Seattle Mariners": "136",
-    "San Francisco Giants": "137",
-    "St. Louis Cardinals": "138",
-    "Saint Louis Cardinals": "138",
-    "St Louis Cardinals": "138",
-    "Cardinals": "138",  # Add all variations of Cardinals name
-    "Tampa Bay Rays": "139",
-    "Texas Rangers": "140",
-    "Toronto Blue Jays": "141",
-    "Minnesota Twins": "142",
-    "Philadelphia Phillies": "143",
-    "Atlanta Braves": "144",
-    "Chicago White Sox": "145",
-    "Miami Marlins": "146",
-    "New York Yankees": "147",
-    "Milwaukee Brewers": "158"
+# Add comprehensive MLB team colors mapping after existing mappings
+MLB_TEAM_COLORS = {
+    "Arizona Diamondbacks": {
+        'primary': '#A71930',  # Sedona Red
+        'secondary': '#E3D4AD',  # Sonoran Sand
+        'accent': '#000000'  # Black
+    },
+    "Atlanta Braves": {
+        'primary': '#CE1141',  # Scarlet
+        'secondary': '#13274F',  # Navy Blue
+        'accent': '#EAAA00'  # Yellow
+    },
+    "Baltimore Orioles": {
+        'primary': '#DF4601',  # Orange
+        'secondary': '#000000',  # Black
+        'accent': '#FFFFFF'  # White
+    },
+    "Boston Red Sox": {
+        'primary': '#BD3039',  # Red
+        'secondary': '#0C2340',  # Blue
+        'accent': '#FFFFFF'  # White
+    },
+    "Chicago Cubs": {
+        'primary': '#0E3386',  # Blue
+        'secondary': '#CC3433',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Chicago White Sox": {
+        'primary': '#27251F',  # Black
+        'secondary': '#C4CED4',  # Silver
+        'accent': '#FFFFFF'  # White
+    },
+    "Cincinnati Reds": {
+        'primary': '#C6011F',  # Red
+        'secondary': '#000000',  # Black
+        'accent': '#FFFFFF'  # White
+    },
+    "Cleveland Guardians": {
+        'primary': '#0C2340',  # Navy Blue
+        'secondary': '#E31937',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Colorado Rockies": {
+        'primary': '#33006F',  # Rockies Purple
+        'secondary': '#C4CED4',  # Silver
+        'accent': '#000000'  # Black
+    },
+    "Detroit Tigers": {
+        'primary': '#0C2340',  # Navy Blue
+        'secondary': '#FA4616',  # Orange
+        'accent': '#FFFFFF'  # White
+    },
+    "Houston Astros": {
+        'primary': '#002D62',  # Navy Blue
+        'secondary': '#EB6E1F',  # Orange
+        'accent': '#F4911E'  # Light Orange
+    },
+    "Kansas City Royals": {
+        'primary': '#004687',  # Royal Blue
+        'secondary': '#BD9B60',  # Gold
+        'accent': '#FFFFFF'  # White
+    },
+    "Los Angeles Angels": {
+        'primary': '#003263',  # Blue
+        'secondary': '#BA0021',  # Red
+        'accent': '#862633'  # Maroon
+    },
+    "Los Angeles Dodgers": {
+        'primary': '#005A9C',  # Dodger Blue
+        'secondary': '#EF3E42',  # Red
+        'accent': '#A5ACAF'  # Silver
+    },
+    "Miami Marlins": {
+        'primary': '#00A3E0',  # Miami Blue
+        'secondary': '#FF6B00',  # Caliente Red
+        'accent': '#000000'  # Midnight Black
+    },
+    "Milwaukee Brewers": {
+        'primary': '#12284B',  # Navy Blue
+        'secondary': '#FFC52F',  # Yellow
+        'accent': '#FFFFFF'  # White
+    },
+    "Minnesota Twins": {
+        'primary': '#002B5C',  # Twins Navy Blue
+        'secondary': '#D31145',  # Scarlet Red
+        'accent': '#B4975A'  # Kasota Gold
+    },
+    "New York Mets": {
+        'primary': '#002D72',  # Blue
+        'secondary': '#FF5910',  # Orange
+        'accent': '#FFFFFF'  # White
+    },
+    "New York Yankees": {
+        'primary': '#003087',  # Blue
+        'secondary': '#E4002B',  # Red
+        'accent': '#0C2340'  # Navy Blue
+    },
+    "Athletics": {
+        'primary': '#003831',  # Green
+        'secondary': '#EFB21E',  # Gold
+        'accent': '#A2AAAD'  # Gray
+    },
+    "Philadelphia Phillies": {
+        'primary': '#E81828',  # Red
+        'secondary': '#002D72',  # Blue
+        'accent': '#FFFFFF'  # White
+    },
+    "Pittsburgh Pirates": {
+        'primary': '#27251F',  # Black
+        'secondary': '#FDB827',  # Yellow
+        'accent': '#FFFFFF'  # White
+    },
+    "San Diego Padres": {
+        'primary': '#2F241D',  # Brown
+        'secondary': '#FFC425',  # Gold
+        'accent': '#FFFFFF'  # White
+    },
+    "San Francisco Giants": {
+        'primary': '#FD5A1E',  # Orange
+        'secondary': '#27251F',  # Black
+        'accent': '#EFD19F'  # Beige
+    },
+    "Seattle Mariners": {
+        'primary': '#0C2C56',  # Navy Blue
+        'secondary': '#005C5C',  # Northwest Green
+        'accent': '#C4CED4'  # Silver
+    },
+    "Saint Louis Cardinals": {
+        'primary': '#C41E3A',  # Red
+        'secondary': '#0C2340',  # Navy Blue
+        'accent': '#FEDB00'  # Yellow
+    },
+    "Tampa Bay Rays": {
+        'primary': '#092C5C',  # Navy Blue
+        'secondary': '#8FBCE6',  # Columbia Blue
+        'accent': '#F5D130'  # Yellow
+    },
+    "Texas Rangers": {
+        'primary': '#003278',  # Blue
+        'secondary': '#C0111F',  # Red
+        'accent': '#FFFFFF'  # White
+    },
+    "Toronto Blue Jays": {
+        'primary': '#134A8E',  # Blue
+        'secondary': '#1D2D5C',  # Navy Blue
+        'accent': '#E8291C'  # Red
+    },
+    "Washington Nationals": {
+        'primary': '#AB0003',  # Red
+        'secondary': '#14225A',  # Navy Blue
+        'accent': '#FFFFFF'  # White
+    }
 }
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
