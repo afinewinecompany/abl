@@ -3,6 +3,7 @@ from components import league_info, rosters, standings, power_rankings, prospect
 from api_client import FantraxAPI
 from data_processor import DataProcessor
 
+# Must be the first Streamlit command
 st.set_page_config(
     page_title="ABL Analytics",
     page_icon="⚾",
@@ -10,6 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Custom styling follows after set_page_config
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

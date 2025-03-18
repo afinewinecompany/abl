@@ -6,14 +6,8 @@ import numpy as np
 from typing import Dict
 import unicodedata
 
-# Add baseball particle animation to page config
-st.set_page_config(
-    page_title="ABL Prospects",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Add baseball particles background
+# Remove the page config as it's now in app.py
+# Adding baseball particle animation
 st.markdown("""
     <style>
     .stApp {
@@ -793,7 +787,7 @@ def render_handbook_viewer():
 
     <div class="handbook-section">
         <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-        <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+        <p style="color: rgba(255,255,255,0.8); margin-bottom:2rem;">
             Dive deep into our comprehensive prospect analysis with the official handbook
         </p>
         <button class="handbook-button">📖 Open Handbook</button>
