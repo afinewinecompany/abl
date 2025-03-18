@@ -15,62 +15,78 @@ def fetch_api_data():
         with st.sidebar:
             status_container = st.empty()
 
-            # Add JavaScript to control loading animation
+            # Show loading animation at start of data fetch
             st.markdown("""
                 <script>
-                    toggleLoading(true);
+                    (function() {
+                        if (typeof toggleLoading === 'function') {
+                            toggleLoading(true);
+                        }
+                    })();
                 </script>
             """, unsafe_allow_html=True)
 
             status_container.info("⌛ Fetching data from API...")
 
-            # Initialize API client and data processor
-            api_client = FantraxAPI()
-            data_processor = DataProcessor()
+            try:
+                # Initialize API client and data processor
+                api_client = FantraxAPI()
+                data_processor = DataProcessor()
 
-            # Fetch all required data
-            status_container.info("📊 Loading league information...")
-            league_data = api_client.get_league_info()
+                # Fetch all required data
+                status_container.info("📊 Loading league information...")
+                league_data = api_client.get_league_info()
 
-            status_container.info("👥 Loading team rosters...")
-            roster_data = api_client.get_team_rosters()
+                status_container.info("👥 Loading team rosters...")
+                roster_data = api_client.get_team_rosters()
 
-            status_container.info("🏆 Loading standings...")
-            standings_data = api_client.get_standings()
+                status_container.info("🏆 Loading standings...")
+                standings_data = api_client.get_standings()
 
-            status_container.info("🎯 Loading player details...")
-            player_ids = api_client.get_player_ids()
+                status_container.info("🎯 Loading player details...")
+                player_ids = api_client.get_player_ids()
 
-            # Process data
-            status_container.info("⚙️ Processing data...")
-            processed_league_data = data_processor.process_league_info(league_data)
-            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
-            processed_standings_data = data_processor.process_standings(standings_data)
+                # Process data
+                status_container.info("⚙️ Processing data...")
+                processed_league_data = data_processor.process_league_info(league_data)
+                processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
+                processed_standings_data = data_processor.process_standings(standings_data)
 
-            # Hide loading animation when done
-            st.markdown("""
-                <script>
-                    toggleLoading(false);
-                </script>
-            """, unsafe_allow_html=True)
+                # Hide loading animation and clear status
+                st.markdown("""
+                    <script>
+                        (function() {
+                            if (typeof toggleLoading === 'function') {
+                                toggleLoading(false);
+                            }
+                        })();
+                    </script>
+                """, unsafe_allow_html=True)
 
-            # Clear the status message
-            status_container.empty()
+                status_container.empty()
 
-            return {
-                'league_data': processed_league_data,
-                'roster_data': processed_roster_data,
-                'standings_data': processed_standings_data
-            }
+                return {
+                    'league_data': processed_league_data,
+                    'roster_data': processed_roster_data,
+                    'standings_data': processed_standings_data
+                }
+
+            except Exception as e:
+                # Hide loading on error
+                st.markdown("""
+                    <script>
+                        (function() {
+                            if (typeof toggleLoading === 'function') {
+                                toggleLoading(false);
+                            }
+                        })();
+                    </script>
+                """, unsafe_allow_html=True)
+                raise e
+
     except Exception as e:
         with st.sidebar:
             st.error(f"❌ Error loading data: {str(e)}")
-            # Hide loading animation on error
-            st.markdown("""
-                <script>
-                    toggleLoading(false);
-                </script>
-            """, unsafe_allow_html=True)
         return None
 
 def format_percentage(value: float) -> str:

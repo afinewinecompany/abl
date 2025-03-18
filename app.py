@@ -49,13 +49,14 @@ st.markdown("""
         left: 0;
         width: 100%;
         height: 100%;
-        display: flex;
+        display: none;
+        opacity: 0;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         background: rgba(26, 28, 35, 0.95);
         z-index: 9999;
-        transition: opacity 0.5s;
+        transition: opacity 0.3s ease-in-out;
     }
 
     .mascot {
@@ -121,7 +122,7 @@ st.markdown("""
     }
 
     </style>
-    <div id="loading-animation" class="loading-container" style="display: none;">
+    <div id="loading-animation" class="loading-container">
         <div class="mascot">
             <div class="baseball"></div>
             <div class="bat"></div>
@@ -138,12 +139,16 @@ st.markdown("""
         const loader = document.getElementById('loading-animation');
         if (show) {
             loader.style.display = 'flex';
-            loader.style.opacity = '1';
+            // Use requestAnimationFrame to ensure display change is processed before opacity
+            requestAnimationFrame(() => {
+                loader.style.opacity = '1';
+            });
         } else {
             loader.style.opacity = '0';
+            // Wait for opacity transition to complete before hiding
             setTimeout(() => {
                 loader.style.display = 'none';
-            }, 500);
+            }, 300); // Match transition duration
         }
     }
 
