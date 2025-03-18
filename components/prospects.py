@@ -249,7 +249,6 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current`,
                 `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/${id}/headshot/67/current`
             ];
-
             let currentIndex = 0;
             img.onerror = function() {
                 if (currentIndex < fallbackUrls.length) {
@@ -265,44 +264,9 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     </script>
     """
 
-    # Add CSS styles
-    styles = """
-    <style>
-    .prospect-list {
-        animation: fadeInRight 0.5s ease-out;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 12px;
-        padding: 1rem;
-        margin-top: 1rem;
-    }
-    .prospect-card {
-        padding: 0.75rem;
-        margin: 0.25rem 0;
-        background: rgba(26, 28, 35, 0.3);
-        border-radius: 4px;
-    }
-    .prospect-score {
-        font-size: 0.9rem;
-        color: #fafafa;
-        margin-bottom: 0.5rem;
-    }
-    @keyframes fadeInRight {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-    </style>
-    """
-
-    # Start with styles, script and average score
+    # Start with the script and average score
     avg_score = prospects_df['prospect_score'].mean()
     prospects_html = [
-        styles,
         script,
         f'<div class="prospect-score">Team Average Score: {avg_score:.2f}</div>'
     ]
@@ -314,7 +278,7 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
 
         if mlbam_id:
             headshot_html = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                <div class="prospect-headshot">
                     <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
                          style="width: 100%; height: 100%; object-fit: cover;"
                          onerror="handleProspectImage(this, '{mlbam_id}')"
@@ -332,18 +296,18 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
             headshot_html = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
-                    <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
+                <div class="prospect-headshot prospect-initials">
+                    <div class="initials">{initials}</div>
                 </div>
             """
 
         prospects_html.append(f"""
             <div class="prospect-card">
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="prospect-content">
                     {headshot_html}
-                    <div style="flex-grow: 1;">
-                        <div style="font-size: 1rem; color: white; font-weight:500;">{prospect['player_name']}</div>
-                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                    <div class="prospect-info">
+                        <div class="prospect-name">{prospect['player_name']}</div>
+                        <div class="prospect-details">
                             {prospect['position']} | Score: {prospect['prospect_score']:.1f}
                         </div>
                     </div>
@@ -351,8 +315,65 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
             </div>
         """)
 
-    # Wrap all prospect cards in a container
-    return '<div class="prospect-list">' + ''.join(prospects_html) + '</div>'
+    # Add CSS styles
+    styles = """
+    <style>
+    .prospect-score {
+        font-size: 0.9rem;
+        color: #fafafa;
+        margin-bottom: 1rem;
+    }
+    .prospect-card {
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        background: rgba(26, 28, 35, 0.3);
+        border-radius: 8px;
+        transition: transform 0.2s ease;
+    }
+    .prospect-card:hover {
+        transform: translateX(5px);
+    }
+    .prospect-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .prospect-headshot {
+        width: 60px;
+        height: 60px;
+        min-width: 60px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #1a1c23;
+    }
+    .prospect-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .initials {
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .prospect-info {
+        flex-grow: 1;
+    }
+    .prospect-name {
+        font-size: 1rem;
+        color: white;
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+    }
+    .prospect-details {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    </style>
+    """
+
+    # Combine everything into a single container
+    return styles + ''.join(prospects_html)
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -539,6 +560,13 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
             st.markdown(f"""
                 <style>
+                .prospect-list {{
+                    animation: fadeInRight 0.5s ease-out;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-top: 1rem;
+                }}
                 @keyframes fadeInRight {{
                     from {{
                         opacity: 0;
@@ -549,17 +577,8 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                         transform: translateX(0);
                     }}
                 }}
-                .prospect-list-{rank} {{
-                    animation: fadeInRight 0.5s ease-out;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 12px;
-                    padding: 1rem;
-                    margin-top: 1rem;
-                }}
                 </style>
-                <div class="prospect-list-{rank}">
-                    {prospects_html}
-                </div>
+                {prospects_html}
             """, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -676,7 +695,7 @@ MLB_TEAM_COLORS = {
         'secondary': '#FDB827',  # Yellow
         'accent': '#FFFFFF'  # White
     },
-"San Diego Padres": {
+    "San Diego Padres": {
         'primary': '#2F241D',  # Brown
         'secondary': '#FFC425',  # Gold
         'accent': '#FFFFFF'  # White
