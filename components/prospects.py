@@ -102,8 +102,12 @@ def render(roster_data: pd.DataFrame):
         ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
+        # Calculate global min/max scores for consistent color scaling
+        global_max_score = ranked_prospects['prospect_score'].max()
+        global_min_score = ranked_prospects['prospect_score'].min()
+
         # First render the Top 100 prospects list
-        render_top_100_header(ranked_prospects, player_id_cache)
+        render_top_100_header(ranked_prospects, player_id_cache, global_max_score, global_min_score)
 
         # Calculate team rankings using average score
         team_scores = ranked_prospects.groupby('team').agg({
@@ -144,7 +148,7 @@ def render(roster_data: pd.DataFrame):
                     'position': division_mapping.get(row['team'], "Unknown"),
                     'prospect_score': row['avg_score'],  # Change this to avg_score
                     'mlb_team': row['team']
-                }, idx + 1, team_prospects, player_id_cache)
+                }, idx + 1, team_prospects, player_id_cache, global_max_score, global_min_score)
 
         # Show remaining teams
         st.markdown("### Remaining Teams")
@@ -159,7 +163,7 @@ def render(roster_data: pd.DataFrame):
                 'position': division_mapping.get(row['team'], "Unknown"),
                 'prospect_score': row['avg_score'],  # Change this to avg_score
                 'mlb_team': row['team']
-            }, i + 4, team_prospects, player_id_cache)
+            }, i + 4, team_prospects, player_id_cache, global_max_score, global_min_score)
 
     except Exception as e:
         st.error(f"Error processing prospect data: {str(e)}")
@@ -257,7 +261,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
         return ""
 
-def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str]) -> str:
+def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float) -> str:
     """Generate HTML for team prospects list"""
     # Calculate total and average scores
     total_score = prospects_df['prospect_score'].sum()
@@ -274,6 +278,9 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
+        # Calculate score color
+        score_color = get_score_color(prospect['prospect_score'], global_max_score, global_min_score)
+
         search_name = normalize_name(prospect['player_name'])
         mlbam_id = player_id_cache.get(search_name)
 
@@ -282,35 +289,15 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         html_parts.append('<div style="display: flex; align-items: center;">')
 
         # Add headshot or initials
-        if mlbam_id:
-            headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
-            html_parts.append(
-                f'<div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">'
-                f'<img src="{headshot_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="{prospect["player_name"]}">'
-                f'</div>'
-            )
-        else:
-            # Generate initials
-            parts = prospect['player_name'].split(',')
-            if len(parts) == 2:
-                last_name, first_name = parts
-                initials = f"{first_name.strip()[0]}{last_name.strip()[0]}"
-            else:
-                parts = prospect['player_name'].split()
-                initials = ''.join(part[0].upper() for part in parts[:2] if part)
-
-            html_parts.append(
-                f'<div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; '
-                f'background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">'
-                f'<div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>'
-                f'</div>'
-            )
+        headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
+        html_parts.append(headshot_html)
 
         # Add prospect info
         html_parts.append(
             f'<div style="flex-grow: 1;">'
             f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">{prospect["position"]} | Score: {prospect["prospect_score"]:.1f}</div>'
+            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">{prospect["position"]}</div>'
+            f'<div style="font-size: 0.9rem; color: {score_color}; font-weight: 700;">Score: {prospect["prospect_score"]:.2f}</div>'
             f'</div>'
         )
 
@@ -320,31 +307,17 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     # Close container div
     html_parts.append('</div>')
 
-    # Join all parts with newlines for better formatting
     return '\n'.join(html_parts)
 
-def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
-    """Generate color based on rank position (1 = most red, 30 = most blue)"""
-    # Normalize rank to 0-1 range (reverse it so 1 = 1.0 and 30 = 0.0)
-    normalized = 1 - ((rank - 1) / (total_teams - 1))
-
-    # Direct red to blue transition
-    # Red: #DC143C (Crimson)
-    # Blue: #4169E1 (Royal Blue)
-
-    # Start color (Crimson)
-    r1, g1, b1 = 220, 20, 60
-    # End color (Royal Blue)
-    r2, g2, b2 = 65, 105, 225
-
-    # Linear interpolation between the two colors
-    r = int(r1 * normalized + r2 * (1 - normalized))
-    g = int(g1 * normalized + g2 * (1 - normalized))
-    b = int(b1 * normalized + b2 * (1 - normalized))
-
+def get_score_color(score: float, max_score: float, min_score: float) -> str:
+    """Calculate color for prospect score on a red-to-blue gradient scale"""
+    score_percentage = (score - min_score) / (max_score - min_score) if max_score != min_score else 0
+    r = int(220 * score_percentage + 65 * (1 - score_percentage))  # Red component
+    b = int(65 * score_percentage + 220 * (1 - score_percentage))  # Blue component
+    g = 20  # Keep green low for vibrant colors
     return f"#{r:02x}{g:02x}{b:02x}"
 
-def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None):
+def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
     color = get_color_for_rank(rank)
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
@@ -480,7 +453,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     # Show prospects in expander with enhanced animation
     if team_prospects is not None:
         with st.expander("View Team Prospects"):
-            prospects_html = get_team_prospects_html(team_prospects, player_id_cache)
+            prospects_html = get_team_prospects_html(team_prospects, player_id_cache, global_max_score, global_min_score)
             st.markdown(prospects_html, unsafe_allow_html=True)
 
 def normalize_within_groups(df: pd.DataFrame, group_col: str, value_col: str) -> pd.Series:
@@ -596,7 +569,7 @@ def create_sunburst_visualization(team_scores: pd.DataFrame, division_mapping: D
 
     return fig
 
-def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str]):
+def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float):
     """Render the animated TOP 100 header and scrollable list"""
     st.markdown("""
         <style>
@@ -741,17 +714,11 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
-    max_score = top_100['prospect_score'].max()
-    min_score = top_100['prospect_score'].min()
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Calculate score color (red for highest, blue for lowest)
-        score_percentage = (prospect.prospect_score - min_score) / (max_score - min_score)
-        r = int(220 * score_percentage + 65 * (1 - score_percentage))  # Red component
-        b = int(65 * score_percentage + 220 * (1 - score_percentage))  # Blue component
-        g = 20  # Keep green low for vibrant colors
-        score_color = f"#{r:02x}{g:02x}{b:02x}"
+        # Calculate score color
+        score_color = get_score_color(prospect.prospect_score, global_max_score, global_min_score)
 
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
@@ -770,7 +737,9 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         st.markdown(f"""
             <div class="prospect-card" style="--card-bg: {gradient}; --rank-color: {rank_color};">
-                <div class="rank-number">{idx}</div>
+                <div class="rank-number" style="background: {rank_color}; color: white">
+                    {idx}
+                </div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
