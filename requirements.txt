@@ -1,0 +1,11 @@
+
+components>=0.0.1a0
+pandas>=2.2.3
+plotly>=6.0.0
+requests>=2.32.3
+streamlit-pdf-viewer>=0.0.21
+streamlit>=1.43.0
+trafilatura>=2.0.0
+twilio>=9.4.6
+pypdf2>=3.0.1
+pdf2image>=1.17.0
