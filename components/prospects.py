@@ -529,44 +529,32 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .top-100-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 2rem;
-            background: linear-gradient(45deg, #1a1c23, #2d2f36);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            animation: float 6s ease-in-out infinite;
+        @keyframes glow {
+            0% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
+            50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
         }
         .top-100-title {
-            font-size: 3rem;
+            font-size: 5rem;  /* Increased from 3rem */
             font-weight: 800;
-            background: linear-gradient(90deg, #ff4d4d, #4169E1, #ff4d4d);
+            background: linear-gradient(90deg, 
+                #ff4d4d 0%, 
+                #4169E1 50%, 
+                #ff4d4d 100%);
             background-size: 200% auto;
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: gradientText 3s linear infinite;
-            margin: 0;
+            animation: 
+                gradientText 3s linear infinite,
+                glow 2s ease-in-out infinite;
+            margin: 2rem 0;
             padding: 0;
-        }
-        .top-100-subtitle {
-            color: #ffffff;
-            font-size: 1.2rem;
-            opacity: 0.9;
-            margin-top: 1rem;
+            text-align: center;
         }
         </style>
 
-        <div class="top-100-header">
-            <h1 class="top-100-title">ABL TOP 100</h1>
-            <p class="top-100-subtitle">Fantasy Baseball's Elite Prospects</p>
-        </div>
+        <h1 class="top-100-title">ABL TOP 100</h1>
     """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by score
@@ -623,7 +611,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                         <div style="font-size: 1.2rem; color: white; font-weight: 600; margin-bottom: 0.25rem;">
                             {prospect.player_name}
                         </div>
-                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); display: flex; gap: 1rem; margin-bottom: 0.25rem;">
+                        <div style="font-size: 0.9rem; colorrgba(255,255,255,0.8); display: flex; gap: 1rem; margin-bottom: 0.25rem;">
                             <span>{prospect.team}</span>
                             <span>|</span>
                             <span>{prospect.position}</span>
