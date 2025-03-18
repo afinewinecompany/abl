@@ -224,17 +224,29 @@ def get_headshot_url(mlbam_id: str) -> str:
 def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) -> str:
     """Get player headshot HTML if available"""
     try:
+        # Players known to have broken image links
+        broken_image_players = {
+            'sloan ryan',
+            'griffin konnor',
+            'celesten felnin'
+        }
+
         # Normalize name for lookup
         search_name = normalize_name(player_name)
+
+        # Check if player is in the known broken images list
+        if search_name in broken_image_players:
+            # Use initials for these players
+            parts = player_name.split()
+            initials = ''.join(part[0].upper() for part in parts[:2] if part)
+            return f"""<div class="player-initials"><div class="initials-text">{initials}</div></div>"""
+
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Primary URL to try first
-            primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-            # Single fallback URL
+            # Use a single fallback URL that's known to be reliable
             fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
-
-            return f"""<div class="player-headshot"><img src="{primary_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" onerror="this.onerror=null; this.src='{fallback_url}';" alt="{player_name} headshot"></div>"""
+            return f"""<div class="player-headshot"><img src="{fallback_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot"></div>"""
         else:
             # Generate initials for players without photos
             parts = player_name.split()
@@ -675,7 +687,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             align-items: center;
             justify-content: center;
         }
-        .initials-text {
+        `.initials-text {
             color: white;
             font-size: 20px;
             font-weight: bold;
