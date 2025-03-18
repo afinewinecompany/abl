@@ -321,7 +321,7 @@ def get_rank_color(rank: int, total_ranks: int = 100) -> str:
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
-    # Calculate color for rank badge
+    # Calculate rank color
     rank_color = get_rank_color(rank, 3)  # Use 3 for total teams instead of 100
 
     team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
@@ -333,6 +333,51 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     gm_name = GM_MAPPING.get(str(prospect.get('mlb_team', '')), 'Unknown')
 
     st.markdown(f"""
+        <style>
+        .team-card-{rank} {{
+            padding: 2rem 2rem 2rem 3.5rem;
+            border-radius: 16px;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, 
+                {team_colors['primary']} 0%,
+                {team_colors['secondary']} 60%,
+                {team_colors['primary']} 100%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: visible;
+            animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
+            transition: all 0.3s ease;
+        }}
+        .rank-badge-{rank} {{
+            position: absolute;
+            left: -10px;
+            top: -10px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 3;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: {rank_color};
+            color: white;
+        }}
+        @keyframes slideInUp {{
+            from {{
+                transform: translateY(100%);
+                opacity: 0;
+            }}
+            to {{
+                transform: translateY(0);
+                opacity: 1;
+            }}
+        }}
+        </style>
+
         <div class="team-card-{rank}">
             <div class="rank-badge-{rank}">#{rank}</div>
             {f'<img src="{logo_url}" style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 220px; height: 220px; opacity: 0.12;" alt="Team Logo">' if logo_url else ''}
