@@ -721,9 +721,8 @@ def render(roster_data: pd.DataFrame):
         render_top_100_header(ranked_prospects, player_id_cache)
 
         # Calculate team rankings
-        teamscores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean']
-        }).reset_index()
+        team_scores = ranked_prospects.groupby('team').agg({
+            'prospect_score': ['sum', 'mean']        }).reset_index()
 
         team_scores.columns = ['team', 'total_score', 'avg_score']
         team_scores = team_scores.sort_values('total_score', ascending=False)
