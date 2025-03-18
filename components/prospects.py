@@ -564,7 +564,9 @@ MLB_TEAM_IDS = {
     "Seattle Mariners": "136",
     "San Francisco Giants": "137",
     "St. Louis Cardinals": "138",
-    "Cardinals": "138",  # Add alternative name
+    "Saint Louis Cardinals": "138",
+    "St Louis Cardinals": "138",
+    "Cardinals": "138",  # Add all variations of Cardinals name
     "Tampa Bay Rays": "139",
     "Texas Rangers": "140",
     "Toronto Blue Jays": "141",
@@ -1104,7 +1106,9 @@ MLB_TEAM_IDS = {
     "Seattle Mariners": "136",
     "San Francisco Giants": "137",
     "St. Louis Cardinals": "138",
-    "Cardinals": "138",  # Add alternative name
+    "Saint Louis Cardinals": "138",
+    "St Louis Cardinals": "138",
+    "Cardinals": "138",  # Add all variations of Cardinals name
     "Tampa Bay Rays": "139",
     "Texas Rangers": "140",
     "Toronto Blue Jays": "141",
@@ -1254,192 +1258,3 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         st.markdown(prospect_card, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-
-def render_handbook_viewer():
-    """Render the PDF handbook viewer section"""
-    try:
-        import streamlit as st
-        from streamlit_pdf_viewer import pdf_viewer
-        from pathlib import Path
-
-        # Add enhanced particle animation for handbook page
-        st.markdown("""
-            <style>
-            .handbook-section {
-                margin-top: 3rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.3);
-                border-radius: 10px;
-                text-align: center;
-                position: relative;
-                z-index: 1;
-            }
-            .handbook-content {
-                margin-top: 2rem;
-                padding: 2rem;
-                background: rgba(26, 28, 35, 0.5);
-                border-radius: 8px;
-                overflow: hidden;
-                position: relative;
-                z-index: 1;
-            }
-            .pdf-viewer {
-                width: 100%;
-                min-height: 800px;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            }
-            #handbook-particles {
-                position: fixed;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                z-index: 0;
-                pointer-events: none;
-            }
-            </style>
-            <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
-            <div id="handbook-particles"></div>
-            <script>
-            window.addEventListener('DOMContentLoaded', (event) => {
-                tsParticles.load("handbook-particles", {
-                    particles: {
-                        number: {
-                            value: 30,
-                            density: {
-                                enable: true,
-                                value_area: 800
-                            }
-                        },
-                        color: {
-                            value: "#ffffff"
-                        },
-                        shape: {
-                            type: "circle"
-                        },
-                        opacity: {
-                            value: 0.15,
-                            random: true,
-                            animation: {
-                                enable: true,
-                                speed: 1,
-                                minimumValue: 0.1,
-                                sync: false
-                            }
-                        },
-                        size: {
-                            value: 8,
-                            random: true,
-                            animation: {
-                                enable: true,
-                                speed: 2,
-                                minimumValue: 3,
-                                sync: false
-                            }
-                        },
-                        move: {
-                            enable: true,
-                            speed: 2,
-                            direction: "none",
-                            random: true,
-                            straight: false,
-                            outModes: {
-                                default: "bounce"
-                            },
-                            attract: {
-                                enable: true,
-                                rotateX: 600,
-                                rotateY: 1200
-                            }
-                        }
-                    },
-                    interactivity: {
-                        detectsOn: "window",
-                        events: {
-                            onHover: {
-                                enable: true,
-                                mode: ["grab", "bubble"]
-                            },
-                            resize: true,
-                            scroll: {
-                                enable: true,
-                                mode: "repulse"
-                            }
-                        },
-                        modes: {
-                            grab: {
-                                distance: 150,
-                                links: {
-                                    opacity: 0.3
-                                }
-                            },
-                            bubble: {
-                                distance: 200,
-                                size: 12,
-                                duration: 2,
-                                opacity: 0.25
-                            },
-                            repulse: {
-                                distance: 100,
-                                duration: 0.4
-                            }
-                        }
-                    }
-                });
-
-                // Add scroll interaction
-                window.addEventListener('scroll', () => {
-                    const particles = document.querySelector("#handbook-particles");
-                    const scrolled = window.pageYOffset;
-                    const rate = scrolled * 0.5;
-
-                    if (particles) {
-                        particles.style.transform = `translate3d(0px, ${rate}px, 0px)`;
-                    }
-                });
-            });
-            </script>
-
-            <div class="handbook-section">
-                <h2 style="color: white; margin-bottom: 1rem;">📚 2024 ABL Prospect Handbook</h2>
-                <p style="color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
-                    Dive deep into our comprehensive prospect analysis with the official handbook.
-                    Use the page controls below to navigate through the handbook.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        pdf_path = Path("attached_assets/2024 ABL Prospect Handbook - Google Docs.pdf")
-
-        if not pdf_path.exists():
-            st.warning("Handbook PDF file not found. Please ensure the file is present in the assets folder.")
-            return
-
-        try:
-            with st.container():
-                st.markdown('<div class="handbook-content">', unsafe_allow_html=True)
-                # Display PDF using streamlit-pdf-viewer with increased size for better readability
-                pdf_viewer(
-                    pdf_path.as_posix(),
-                    width=800,
-                    height=800,
-                    show_navigation=True,
-                    show_toolbar=True
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
-
-        except Exception as e:
-            st.error(f"Error displaying PDF: {str(e)}")
-            st.info("Please make sure the PDF file is not corrupted and try again.")
-
-    except ImportError as e:
-        st.error(f"Required libraries not found: {str(e)}")
-        st.info("Installing required packages...")
-        try:
-            from replit import packaging
-            packaging.install('streamlit-pdf-viewer')
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Failed to install required packages: {str(e)}")
