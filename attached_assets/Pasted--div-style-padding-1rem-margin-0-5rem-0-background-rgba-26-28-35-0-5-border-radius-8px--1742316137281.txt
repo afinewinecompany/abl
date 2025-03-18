@@ -1,0 +1,371 @@
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/694357/headshot/milb/current" 
+             style="width: 100%; height: 100%; object-fit: cover;"
+             onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/694357/headshot/67/current';"
+             alt="Tiedemann, Ricky">
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Tiedemann, Ricky
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 9.7
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/691730/headshot/milb/current" 
+             style="width: 100%; height: 100%; object-fit: cover;"
+             onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/691730/headshot/67/current';"
+             alt="Rosario, Alejandro">
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Rosario, Alejandro
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 9.5
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/682982/headshot/milb/current" 
+             style="width: 100%; height: 100%; object-fit: cover;"
+             onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/682982/headshot/67/current';"
+             alt="Espino, Daniel">
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Espino, Daniel
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 9.3
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">LS</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Sterling, Levi
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 8.8
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">DC</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Crisantes, Demetrio
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 8.6
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">MA</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Arroyo, Michael
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 8.5
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">DH</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Hill, Dasan
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 8.4
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">YC</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Castillo, Yolfran
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 7.9
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">JH</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Haynes, Jagger
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 7.9
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">LM</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Maroudis, Landen
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 7.9
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">LC</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Cova, Luis
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                3B | Score: 7.5
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">MC</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Coret, Maykel
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                CF | Score: 7.5
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">CC</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Crow, Coleman
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 7.4
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">AV</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Valor, Andres
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                CF | Score: 7.3
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">AS</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Salas, Andrew
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 7.2
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">JR</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Rodriguez, Jeremy
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 6.8
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">EL</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Lantigua, Edward
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                CF | Score: 6.6
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/694358/headshot/milb/current" 
+             style="width: 100%; height: 100%; object-fit: cover;"
+             onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/694358/headshot/67/current';"
+             alt="Roby, Tekoah">
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Roby, Tekoah
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SP | Score: 6.3
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">AA</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Andujar, Ashly
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                SS | Score: 6.2
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+
+    <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+        <div style="color: white; font-size: 20px; font-weight: bold;">TW</div>
+    </div>
+
+        <div style="flex-grow: 1;">
+            <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                Walton, TJayy
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                CF | Score: 4.4
+            </div>
+        </div>
+    </div>
+</div>

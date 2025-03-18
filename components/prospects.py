@@ -242,13 +242,16 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
     # Calculate average score
     avg_score = prospects_df['prospect_score'].mean()
 
-    # Build the HTML with proper CSS styling
-    html = f"""
-        <div style="background: rgba(26, 28, 35, 0.3); border-radius: 8px; padding: 1rem;">
-            <div style="font-size: 1rem; color: #fafafa; margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; background: rgba(0, 0, 0, 0.2);">
-                Team Average Score: {avg_score:.2f}
-            </div>
-    """
+    # Start HTML content
+    html_parts = []
+
+    # Add header
+    html_parts.append(f"""
+        <div style="font-size: 1rem; color: #fafafa; margin-bottom: 1rem; padding: 0.5rem; 
+                    border-radius: 4px; background: rgba(0, 0, 0, 0.2);">
+            Team Average Score: {avg_score:.2f}
+        </div>
+    """)
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
@@ -256,15 +259,13 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         mlbam_id = player_id_cache.get(search_name)
 
         if mlbam_id:
-            # Use a simpler fallback approach for images
-            primary_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
-            fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current"
-
-            headshot_html = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
-                    <img src="{primary_url}" 
+            # Create the image element with simplified fallback
+            headshot = f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
+                           overflow: hidden; margin-right: 1rem; background-color: #1a1c23;">
+                    <img src="https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current"
                          style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror="this.onerror=null; this.src='{fallback_url}';"
+                         onerror="this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{mlbam_id}/headshot/67/current'"
                          alt="{prospect['player_name']}">
                 </div>
             """
@@ -278,18 +279,23 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                 parts = prospect['player_name'].split()
                 initials = ''.join(part[0].upper() for part in parts[:2] if part)
 
-            headshot_html = f"""
-                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; background-color: #1a1c23; display: flex; align-items: center; justify-content: center;">
+            headshot = f"""
+                <div style="width: 60px; height: 60px; min-width: 60px; border-radius: 50%; 
+                           overflow: hidden; margin-right: 1rem; background-color: #1a1c23; 
+                           display: flex; align-items: center; justify-content: center;">
                     <div style="color: white; font-size: 20px; font-weight: bold;">{initials}</div>
                 </div>
             """
 
-        html += f"""
-            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px; transition: transform 0.2s ease;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    {headshot_html}
+        # Create prospect card
+        html_parts.append(f"""
+            <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); 
+                        border-radius: 8px; transition: transform 0.2s ease;">
+                <div style="display: flex; align-items: center;">
+                    {headshot}
                     <div style="flex-grow: 1;">
-                        <div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">
+                        <div style="font-size: 1rem; color: white; font-weight: 500; 
+                                  margin-bottom: 0.25rem;">
                             {prospect['player_name']}
                         </div>
                         <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
@@ -298,10 +304,10 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
                     </div>
                 </div>
             </div>
-        """
+        """)
 
-    html += "</div>"
-    return html
+    # Combine all HTML parts
+    return ''.join(html_parts)
 
 def get_color_for_rank(rank: int, total_teams: int = 30) -> str:
     """Generate color based on rank position (1 = most red, 30 = most blue)"""
@@ -675,8 +681,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         .fade-in {
             animation: fadeIn 0.6s ease forwards;
         }
-        .slide-up {
-            animation: slideUp 0.6s ease forwards;
+        .slide-up {animation: slideUp 0.6s ease forwards;
         }
         .slide-in {
             animation: slideIn 0.6s ease forwards;
