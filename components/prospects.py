@@ -365,7 +365,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
     # Get team colors and GM info
-    team_colors = MLB_TEAM_COLORS.get(str(prospect.get('mlb_team', '')), 
+    team_colors = MLB_TEAM_COLORS.get(str(prospect.get('mlb_team', '')),
                                     {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
     gm_name = GM_MAPPING.get(str(prospect.get('mlb_team', '')), 'Unknown')
 
@@ -398,9 +398,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             padding: 2rem;
             border-radius: 16px;
             margin: 1rem 0;
-            background: linear-gradient(135deg, 
-                {team_colors['primary']} 0%, 
-                {team_colors['secondary']} 70%, 
+            background: linear-gradient(135deg,
+                {team_colors['primary']} 0%,
+                {team_colors['secondary']} 70%,
                 {team_colors['accent']} 100%);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             position: relative;
@@ -466,15 +466,6 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             display: inline-block;
             margin-top: 0.5rem;
         }}
-        .gm-info-{rank} {{
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-top: 0.5rem;
-            padding: 0.4rem 0.8rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            display: inline-block;
-        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -489,7 +480,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
 
     if logo_url:
         st.markdown(
-            f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">', 
+            f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">',
             unsafe_allow_html=True
         )
 
@@ -502,12 +493,10 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             </div>
             <div class="prospect-subheader-{rank}">
                 {prospect['position']}
+                <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
             </div>
             <div class="prospect-score-{rank}">
                 Total Score: {prospect['prospect_score']:.1f}
-            </div>
-            <div class="gm-info-{rank}">
-                General Manager: {gm_name}
             </div>
         </div>
         """,
@@ -667,7 +656,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             background: rgba(26, 28, 35, 0.3);
             border-radius: 8px;
             padding: 1rem;
-            margin: 1rem 0;
+            margin: 1rem 0;`
             transition: all 0.3s ease;
         }
         .prospect-card.visible {
