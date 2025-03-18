@@ -631,7 +631,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
-    """, unsafeallow_html=True)
+    """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by score
     top_100 = ranked_prospects.nlargest(100, 'prospect_score')
