@@ -4,54 +4,7 @@ import plotly.express as px
 from typing import Dict
 from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points
 import unicodedata
-
-def normalize_name(name: str) -> str:
-    """Normalize player name for comparison"""
-    try:
-        # Handle non-string input, including NA/None values
-        if pd.isna(name):
-            return ""
-        if not isinstance(name, str):
-            return str(name).strip()
-
-        # Convert diacritics to ASCII
-        name = ''.join(c for c in unicodedata.normalize('NFKD', name)
-                      if not unicodedata.combining(c))
-
-        if ',' in name:
-            last, first = name.split(',', 1)
-            name = f"{first.strip()} {last.strip()}"
-
-        # Handle middle initials by removing them
-        parts = name.strip().split()
-        if len(parts) > 2:
-            # If middle part is an initial (one letter possibly with period)
-            if len(parts[1]) <= 2 and ('.' in parts[1] or len(parts[1]) == 1):
-                name = f"{parts[0]} {parts[-1]}"
-
-        return name.strip()
-    except Exception as e:
-        st.error(f"Error normalizing name '{name}': {str(e)}")
-        return str(name).strip() if name is not None else ""
-
-def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
-    """Calculate total fantasy points for a player, handling special case for Ohtani"""
-    total_points = 0
-
-    # Normalize the player name for comparison
-    player_name = normalize_name(player_name)
-
-    # Check for hitter projections (using normalized names for comparison)
-    hitter_proj = hitters_proj[hitters_proj['Name'].apply(normalize_name) == player_name]
-    if not hitter_proj.empty:
-        total_points += hitter_proj.iloc[0]['fantasy_points']
-
-    # Check for pitcher projections (using normalized names for comparison)
-    pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(normalize_name) == player_name]
-    if not pitcher_proj.empty:
-        total_points += pitcher_proj.iloc[0]['fantasy_points']
-
-    return total_points
+from components.prospects import normalize_name, MLB_TEAM_COLORS, MLB_TEAM_IDS, get_player_headshot_html
 
 def get_salary_penalty(team: str) -> float:
     """Get salary cap penalty for a team"""
@@ -70,6 +23,166 @@ def get_salary_penalty(team: str) -> float:
     }
     return penalties.get(team, 0)
 
+def calculate_dynascore(power_rank: float, total_prospect_score: float) -> float:
+    """Calculate Dynascore - combines power ranking and prospect strength"""
+    # Normalize power rank (higher rank = lower number, so we invert it)
+    normalized_power = (30 - power_rank) / 29  # Will be between 0 and 1
+
+    # Normalize prospect score (assuming max possible is around 1000)
+    normalized_prospects = min(total_prospect_score / 1000, 1)
+
+    # Combine with weights (60% power rank, 40% prospects)
+    dynascore = (normalized_power * 0.6 + normalized_prospects * 0.4) * 100
+
+    return round(dynascore, 1)
+
+def render_team_header(
+    team: str,
+    total_players: int,
+    total_salary: float,
+    salary_penalty: float,
+    prospect_stats: Dict,
+    power_rank: float,
+    team_colors: Dict
+):
+    """Render the team dashboard header"""
+    dynascore = calculate_dynascore(power_rank, prospect_stats.get('total_score', 0))
+
+    st.markdown(f"""
+        <style>
+        .team-header {{
+            background: linear-gradient(135deg, 
+                {team_colors['primary']} 0%,
+                {team_colors['secondary']} 60%,
+                {team_colors['primary']} 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }}
+        .team-name {{
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 1rem;
+        }}
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }}
+        .stat-card {{
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }}
+        .stat-label {{
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }}
+        .stat-value {{
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 0.25rem;
+        }}
+        </style>
+
+        <div class="team-header">
+            <div class="team-name">{team}</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Dynascore™</div>
+                    <div class="stat-value">{dynascore}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Power Rank</div>
+                    <div class="stat-value">#{power_rank:.0f}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Players</div>
+                    <div class="stat-value">{total_players}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Salary</div>
+                    <div class="stat-value">${total_salary:,.2f}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Salary Penalty</div>
+                    <div class="stat-value">${salary_penalty:,.2f}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Prospect Score</div>
+                    <div class="stat-value">{prospect_stats.get('total_score', 0):.1f}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Prospect Score</div>
+                    <div class="stat-value">{prospect_stats.get('avg_score', 0):.1f}</div>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+def render_player_card(player: Dict, headshot_html: str, team_colors: Dict):
+    """Render an individual player card"""
+    return f"""
+        <div style="
+            background: linear-gradient(135deg, 
+                {team_colors['primary']} 0%,
+                {team_colors['secondary']} 100%);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        "
+        onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 8px 12px rgba(0,0,0,0.2)';"
+        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';"
+        >
+            {headshot_html}
+            <div style="flex-grow: 1;">
+                <div style="font-size: 1.2rem; color: white; font-weight: 600;">
+                    {player['player_name']}
+                </div>
+                <div style="
+                    display: flex;
+                    gap: 1rem;
+                    font-size: 0.9rem;
+                    color: rgba(255,255,255,0.8);
+                    margin-top: 0.25rem;
+                ">
+                    <span>{player['position']}</span>
+                    <span>|</span>
+                    <span>{player['mlb_team']}</span>
+                </div>
+                <div style="
+                    color: white;
+                    font-weight: 500;
+                    margin-top: 0.5rem;
+                    font-size: 0.9rem;
+                ">
+                    ${player['salary']:,.2f}
+                </div>
+            </div>
+            <div style="
+                background: rgba(255,255,255,0.1);
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                color: white;
+                font-weight: 700;
+                font-size: 0.9rem;
+            ">
+                {player['status'].upper()}
+            </div>
+        </div>
+    """
+
 def render(roster_data: pd.DataFrame):
     """Render roster information section"""
     st.header("Team Rosters")
@@ -83,6 +196,15 @@ def render(roster_data: pd.DataFrame):
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
+        # Load MLB player IDs for headshots
+        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
+        player_id_cache = {}
+        for _, row in mlb_ids_df.iterrows():
+            if pd.notna(row['Last']) and pd.notna(row['First']) and pd.notna(row['MLBAMID']):
+                name = normalize_name(f"{row['First']} {row['Last']}")
+                if name:
+                    player_id_cache[name] = str(row['MLBAMID'])
+
         # Normalize names in projection data
         hitters_proj['Name'] = hitters_proj['Name'].fillna('').astype(str).apply(normalize_name)
         pitchers_proj['Name'] = pitchers_proj['Name'].fillna('').astype(str).apply(normalize_name)
@@ -95,13 +217,46 @@ def render(roster_data: pd.DataFrame):
         teams = roster_data['team'].unique()
         selected_team = st.selectbox("Select Team", teams)
 
+        # Get team colors
+        team_colors = MLB_TEAM_COLORS.get(selected_team, {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+
         # Filter data by selected team and create a copy
         team_roster = roster_data[roster_data['team'] == selected_team].copy()
         team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
 
-        # Add projected points to team roster
-        team_roster['projected_points'] = team_roster['clean_name'].apply(
-            lambda x: calculate_total_points(x, hitters_proj, pitchers_proj)
+        # Calculate prospect stats
+        minors_players = team_roster[team_roster['status'].str.upper() == 'MINORS'].copy()
+        minors_players = pd.merge(
+            minors_players,
+            prospect_import[['Name', 'Unique score']],
+            left_on='clean_name',
+            right_on='Name',
+            how='left'
+        )
+        prospect_stats = {
+            'total_score': minors_players['Unique score'].fillna(0).sum(),
+            'avg_score': minors_players['Unique score'].fillna(0).mean(),
+            'count': len(minors_players)
+        }
+
+        # Calculate salary info
+        salary_penalty = get_salary_penalty(selected_team)
+        non_minors_roster = team_roster[team_roster['status'].str.upper() != 'MINORS']
+        total_salary = non_minors_roster['salary'].sum() + salary_penalty
+
+        # Get power rank (assuming 15 is middle if not found)
+        power_rank = 15.0  # Default value
+        # You would normally get this from your power rankings calculation
+
+        # Render team header
+        render_team_header(
+            selected_team,
+            len(team_roster),
+            total_salary,
+            salary_penalty,
+            prospect_stats,
+            power_rank,
+            team_colors
         )
 
         # Split roster by status
@@ -111,109 +266,25 @@ def render(roster_data: pd.DataFrame):
             ~team_roster['status'].str.upper().isin(['ACTIVE', 'MINORS'])
         ]
 
-        # Calculate total salary excluding MINORS players
-        non_minors_roster = team_roster[team_roster['status'].str.upper() != 'MINORS']
-        salary_penalty = get_salary_penalty(selected_team)
-        total_salary = non_minors_roster['salary'].sum() + salary_penalty
-
-        # Display roster statistics
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total Players", len(team_roster))
-        with col2:
-            st.metric("Active Players", len(active_roster))
-        with col3:
-            st.metric(
-                "Total Salary",
-                f"${total_salary:,.2f}",
-                help=f"Includes ${salary_penalty:.2f} cap penalty" if salary_penalty > 0 else None
-            )
-        with col4:
-            st.metric("Positions", len(team_roster['position'].unique()))
-
-        # Add prospect scores to minors players
-        minors_roster = pd.merge(
-            minors_roster,
-            prospect_import[['Name', 'Unique score']],
-            left_on='clean_name',
-            right_on='Name',
-            how='left'
-        )
-        minors_roster['prospect_score'] = minors_roster['Unique score'].fillna(0)
-
-        # Display columns for different roster sections
-        active_display_columns = ['player_name', 'position', 'salary', 'projected_points', 'mlb_team']
-        minors_display_columns = ['player_name', 'position', 'salary', 'prospect_score', 'projected_points', 'mlb_team']
-
         # Active Roster Section
         st.subheader("📋 Active Roster")
-        st.dataframe(
-            active_roster[active_display_columns],
-            column_config={
-                "player_name": "Player",
-                "position": "Position",
-                "salary": st.column_config.NumberColumn(
-                    "Salary",
-                    format="$%.2f"
-                ),
-                "projected_points": st.column_config.NumberColumn(
-                    "Projected Points",
-                    format="%.1f",
-                    help="Projected fantasy points for the season"
-                ),
-                "mlb_team": "MLB Team"
-            },
-            hide_index=True
-        )
+        for _, player in active_roster.iterrows():
+            headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+            st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
 
         # Reserve Roster Section
         if not reserve_roster.empty:
             st.subheader("🔄 Reserve Roster")
-            st.dataframe(
-                reserve_roster[active_display_columns],
-                column_config={
-                    "player_name": "Player",
-                    "position": "Position",
-                    "salary": st.column_config.NumberColumn(
-                        "Salary",
-                        format="$%.2f"
-                    ),
-                    "projected_points": st.column_config.NumberColumn(
-                        "Projected Points",
-                        format="%.1f",
-                        help="Projected fantasy points for the season"
-                    ),
-                    "mlb_team": "MLB Team"
-                },
-                hide_index=True
-            )
+            for _, player in reserve_roster.iterrows():
+                headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+                st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
 
         # Minors/Prospects Section
         if not minors_roster.empty:
             st.subheader("⭐ Minor League Players")
-            st.dataframe(
-                minors_roster[minors_display_columns],
-                column_config={
-                    "player_name": "Player",
-                    "position": "Position",
-                    "salary": st.column_config.NumberColumn(
-                        "Salary",
-                        format="$%.2f"
-                    ),
-                    "prospect_score": st.column_config.NumberColumn(
-                        "Prospect Score",
-                        format="%.1f",
-                        help="Unique prospect score (higher is better)"
-                    ),
-                    "projected_points": st.column_config.NumberColumn(
-                        "Projected Points",
-                        format="%.1f",
-                        help="Projected fantasy points for the season"
-                    ),
-                    "mlb_team": "MLB Team"
-                },
-                hide_index=True
-            )
+            for _, player in minors_roster.iterrows():
+                headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+                st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
 
         # Position breakdown
         st.subheader("Position Distribution")
