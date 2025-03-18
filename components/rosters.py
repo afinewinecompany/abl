@@ -8,6 +8,12 @@ import unicodedata
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
+        # Handle non-string input, including NA/None values
+        if pd.isna(name):
+            return ""
+        if not isinstance(name, str):
+            return str(name).strip()
+
         # Convert diacritics to ASCII
         name = ''.join(c for c in unicodedata.normalize('NFKD', name)
                       if not unicodedata.combining(c))
@@ -24,8 +30,9 @@ def normalize_name(name: str) -> str:
                 name = f"{parts[0]} {parts[-1]}"
 
         return name.strip()
-    except:
-        return name.strip()
+    except Exception as e:
+        st.error(f"Error normalizing name '{name}': {str(e)}")
+        return str(name).strip() if name is not None else ""
 
 def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
     """Calculate total fantasy points for a player, handling special case for Ohtani"""
@@ -68,17 +75,17 @@ def render(roster_data: pd.DataFrame):
     st.header("Team Rosters")
 
     try:
-        # Load projections data
-        hitters_proj = pd.read_csv("attached_assets/batx-hitters.csv")
-        pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers-2.csv")
+        # Load projections data with proper NA handling
+        hitters_proj = pd.read_csv("attached_assets/batx-hitters.csv", na_values=['NA', ''], keep_default_na=True)
+        pitchers_proj = pd.read_csv("attached_assets/oopsy-pitchers-2.csv", na_values=['NA', ''], keep_default_na=True)
 
         # Load prospect scores
-        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
-        prospect_import['Name'] = prospect_import['Name'].apply(normalize_name)
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
+        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Normalize names in projection data
-        hitters_proj['Name'] = hitters_proj['Name'].apply(normalize_name)
-        pitchers_proj['Name'] = pitchers_proj['Name'].apply(normalize_name)
+        hitters_proj['Name'] = hitters_proj['Name'].fillna('').astype(str).apply(normalize_name)
+        pitchers_proj['Name'] = pitchers_proj['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Calculate fantasy points for projections
         hitters_proj['fantasy_points'] = hitters_proj.apply(calculate_hitter_points, axis=1)
@@ -90,7 +97,7 @@ def render(roster_data: pd.DataFrame):
 
         # Filter data by selected team and create a copy
         team_roster = roster_data[roster_data['team'] == selected_team].copy()
-        team_roster['clean_name'] = team_roster['player_name'].apply(normalize_name)
+        team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
 
         # Add projected points to team roster
         team_roster['projected_points'] = team_roster['clean_name'].apply(
