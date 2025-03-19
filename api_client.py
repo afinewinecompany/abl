@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, Any, List, Union
+from typing import Dict, Any
 import streamlit as st
 import time
 from requests.adapters import HTTPAdapter
@@ -21,7 +21,7 @@ class FantraxAPI:
         self.session = requests.Session()
         self.session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
 
-    def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict, List]:
+    def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
         """Make API request with error handling and retries"""
         try:
             response = self.session.get(
@@ -30,21 +30,16 @@ class FantraxAPI:
                 timeout=10
             )
             response.raise_for_status()
-            data = response.json()
-
-            # Validate response data
-            if data is None:
-                raise ValueError(f"No data received from {endpoint}")
-
-            return data
+            return response.json()
         except requests.exceptions.RequestException as e:
+            st.warning(f"API request to {endpoint} failed, using mock data")
             # Return mock data based on the endpoint
             return self._get_mock_data(endpoint)
-        except (ValueError, TypeError) as e:
-            # Return mock data if JSON parsing fails or data is invalid
+        except ValueError as e:
+            st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
             return self._get_mock_data(endpoint)
 
-    def _get_mock_data(self, endpoint: str) -> Union[Dict, List]:
+    def _get_mock_data(self, endpoint: str) -> Dict:
         """Return mock data for development when API is unavailable"""
         if endpoint == "getLeagueInfo":
             return {
@@ -87,7 +82,7 @@ class FantraxAPI:
                     "gamesBack": 0.0
                 }
             ]
-        return {} if endpoint != "getStandings" else []
+        return {}
 
     def get_player_ids(self) -> Dict:
         """Fetch player IDs"""
@@ -100,8 +95,8 @@ class FantraxAPI:
     def get_team_rosters(self) -> Dict:
         """Fetch team rosters"""
         return self._make_request("getTeamRosters", 
-                               {"leagueId": self.league_id, "period": "1"})
+                              {"leagueId": self.league_id, "period": "1"})
 
-    def get_standings(self) -> List:
+    def get_standings(self) -> Dict:
         """Fetch standings data"""
         return self._make_request("getStandings", {"leagueId": self.league_id})

@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, countdown
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
@@ -522,10 +522,7 @@ def main():
                 power_rankings.render(data['standings_data'])
 
             with tab4:
-                # Check if content should be shown or blurred with countdown
-                should_blur = countdown.render_countdown()
-                if not should_blur:  # If countdown is finished, show content
-                    prospects.render(data['roster_data'])
+                prospects.render(data['roster_data'])
 
             with tab5:
                 projected_rankings.render(data['roster_data'])

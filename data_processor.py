@@ -137,16 +137,10 @@ class DataProcessor:
                 if not isinstance(team, dict):
                     continue
 
-                # Default to '0-0-0' if points not found or malformed
+                # Default to '0-0-0' if points not found
                 points_str = team.get('points', '0-0-0')
-                if not isinstance(points_str, str):
-                    points_str = '0-0-0'
-
                 try:
-                    if '-' in points_str:
-                        wins, losses, ties = map(int, points_str.split('-'))
-                    else:
-                        wins, losses, ties = 0, 0, 0
+                    wins, losses, ties = map(int, points_str.split('-'))
                 except (ValueError, AttributeError):
                     wins, losses, ties = 0, 0, 0
 
@@ -157,8 +151,8 @@ class DataProcessor:
                     'wins': wins,
                     'losses': losses,
                     'ties': ties,
-                    'winning_pct': float(team.get('winPercentage', 0.0)),
-                    'games_back': float(team.get('gamesBack', 0.0))
+                    'winning_pct': team.get('winPercentage', 0.0),
+                    'games_back': team.get('gamesBack', 0.0)
                 }
                 standings_list.append(team_stats)
 
