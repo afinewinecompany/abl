@@ -784,43 +784,48 @@ def get_player_mlb_stats(mlbam_id: str) -> dict:
         player_stats = statsapi.player_stat_data(
             personId=int(mlbam_id),
             group="hitting",
-            type="season",
-            sportId=1,
-            season=current_year
+            type="yearByYear",
+            sportId=1
         )
 
         # If no hitting stats, try pitching stats
-        if not player_stats:
+        if not player_stats or not player_stats.get('stats'):
             player_stats = statsapi.player_stat_data(
                 personId=int(mlbam_id),
                 group="pitching",
-                type="season",
-                sportId=1,
-                season=current_year
+                type="yearByYear",
+                sportId=1
             )
 
         # Format stats for display
         formatted_stats = {}
-        if player_stats:
-            stats = player_stats['stats'][0]['stats'] if player_stats.get('stats') else {}
-            # For hitters
-            if 'avg' in stats:
-                formatted_stats = {
-                    'AVG': f"{stats.get('avg', '.000'):.3f}",
-                    'HR': stats.get('homeRuns', 0),
-                    'RBI': stats.get('rbi', 0),
-                    'SB': stats.get('stolenBases', 0),
-                    'OPS': f"{stats.get('ops', '.000'):.3f}"
-                }
-            # For pitchers
-            elif 'era' in stats:
-                formatted_stats = {
-                    'ERA': f"{stats.get('era', '0.00'):.2f}",
-                    'W-L': f"{stats.get('wins', 0)}-{stats.get('losses', 0)}",
-                    'SO': stats.get('strikeOuts', 0),
-                    'WHIP': f"{stats.get('whip', '0.00'):.2f}",
-                    'IP': f"{stats.get('inningsPitched', '0.0')}"
-                }
+        if player_stats and player_stats.get('stats'):
+            # Get most recent year's stats
+            current_year_stats = None
+            for stat_group in player_stats['stats']:
+                if stat_group.get('season') == str(current_year):
+                    current_year_stats = stat_group.get('stats', {})
+                    break
+
+            if current_year_stats:
+                # For hitters
+                if 'avg' in current_year_stats:
+                    formatted_stats = {
+                        'AVG': f"{current_year_stats.get('avg', '.000'):.3f}",
+                        'HR': current_year_stats.get('homeRuns', 0),
+                        'RBI': current_year_stats.get('rbi', 0),
+                        'SB': current_year_stats.get('stolenBases', 0),
+                        'OPS': f"{current_year_stats.get('ops', '.000'):.3f}"
+                    }
+                # For pitchers
+                elif 'era' in current_year_stats:
+                    formatted_stats = {
+                        'ERA': f"{current_year_stats.get('era', '0.00'):.2f}",
+                        'W-L': f"{current_year_stats.get('wins', 0)}-{current_year_stats.get('losses', 0)}",
+                        'SO': current_year_stats.get('strikeOuts', 0),
+                        'WHIP': f"{current_year_stats.get('whip', '0.00'):.2f}",
+                        'IP': f"{current_year_stats.get('inningsPitched', '0.0')}"
+                    }
 
         return formatted_stats
     except Exception as e:
