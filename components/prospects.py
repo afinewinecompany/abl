@@ -292,23 +292,21 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
 
     # Add each prospect
     for _, prospect in prospects_df.iterrows():
-        search_name = normalize_name(prospect['player_name'])
-        mlbam_id = player_id_cache.get(search_name)
+        # Ensure we get clean string values
+        player_name = str(prospect.get('player_name', ''))
+        position = str(prospect.get('position', ''))
+        prospect_score = float(prospect.get('prospect_score', 0))
 
         # Start prospect card
         html_parts.append('<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px;">')
         html_parts.append('<div style="display: flex; align-items: center;">')
 
-        # Add headshot or initials
-        headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
-        html_parts.append(headshot_html)
-
         # Add prospect info
         html_parts.append(
             f'<div style="flex-grow: 1;">'
-            f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Position: {prospect["position"]}</div>'
-            f'<div style="font-size: 0.9rem; color: white; font-weight: 700;">Score: {prospect["prospect_score"]:.2f}</div>'
+            f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{player_name}</div>'
+            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Position: {position}</div>'
+            f'<div style="font-size: 0.9rem; color: white; font-weight: 700;">Score: {prospect_score:.2f}</div>'
             f'</div>'
         )
 
