@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 import numpy as np
 from typing import Dict
 import unicodedata
+import statsapi
+import datetime
 
 # Add GM mapping at the top of the file with other constants
 GM_MAPPING = {
@@ -594,6 +596,77 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
             100% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
         }
+
+        /* Card Flip Animation */
+        .prospect-card {
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .prospect-card:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .card-front {
+            background: inherit;
+            color: white;
+        }
+
+        .card-back {
+            background: inherit;
+            color: white;
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Rest of your existing styles */
         .hover-card:hover {
             transform: translateY(-3px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
@@ -624,16 +697,31 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Get top 100 prospects sorted by Rank
     top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
 
-    # Displayprospects in order
+    # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                       {'primary': '#1a1c23', 'secondary': '#2df36', 'accent': '#FFFFFF'})
+                                       {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
         # Get headshot HTML
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
+
+        # Get player stats
+        mlbam_id = player_id_cache.get(normalize_name(prospect.player_name))
+        player_stats = get_player_mlb_stats(mlbam_id) if mlbam_id else {}
+
+        # Create stats HTML
+        stats_html = '<div class="stats-grid">'
+        for stat_label, stat_value in player_stats.items():
+            stats_html += f"""
+                <div class="stat-item">
+                    <div class="stat-label">{stat_label}</div>
+                    <div class="stat-value">{stat_value}</div>
+                </div>
+            """
+        stats_html += '</div>'
 
         st.markdown(f"""
             <div class="prospect-card hover-card" style="
@@ -644,36 +732,100 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                 position: relative;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                <div style="
-                    position: absolute;
-                    left: -8px;
-                    top: -8px;
-                    width: 30px;
-                    height: 30px;
-                    background: {team_colors['primary']};
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    border: 2px solid {team_colors['secondary']};
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">#{idx}</div>
-                {f'<img src="{logo_url}" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 0.75rem;">
-                    {headshot_html}
-                    <div style="flex-grow: 1;">
-                        <div style="font-size: 0.95rem; font-weight: 600; color: white;">{prospect.player_name}</div>
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.1rem;">
-                            {prospect.team} | {str(prospect.position).replace('position ', '').split(',')[0].strip()} | Score: {prospect.prospect_score:.2f}
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div style="
+                            position: absolute;
+                            left: -8px;
+                            top: -8px;
+                            width: 30px;
+                            height: 30px;
+                            background: {team_colors['primary']};
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 0.9rem;
+                            font-weight: bold;
+                            border: 2px solid {team_colors['secondary']};
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">#{idx}</div>
+                        {f'<img src="{logo_url}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                        <div class="prospect-content" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 0.75rem;">
+                            {headshot_html}
+                            <div style="flex-grow: 1;">
+                                <div style="font-size: 0.95rem; font-weight: 600; color: white;">{prospect.player_name}</div>
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.1rem;">
+                                    {prospect.team} | {str(prospect.position).split(',')[0].strip()} | Score: {prospect.prospect_score:.2f}
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    <div class="card-back">
+                        <div style="font-size: 1.2rem; font-weight: 600; color: white; margin-bottom: 1rem;">
+                            2024 Season Stats
+                        </div>
+                        {stats_html if player_stats else '<div style="color: rgba(255,255,255,0.7);">No MLB stats available for 2024</div>'}
                     </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
+
+def get_player_mlb_stats(mlbam_id: str) -> dict:
+    """Fetch 2024 MLB stats for a player"""
+    try:
+        if not mlbam_id:
+            return {}
+
+        # Get current season stats
+        current_year = 2024
+        player_stats = statsapi.player_stat_data(
+            personId=int(mlbam_id),
+            group="hitting",
+            type="season",
+            sportId=1,
+            season=current_year
+        )
+
+        # If no hitting stats, try pitching stats
+        if not player_stats:
+            player_stats = statsapi.player_stat_data(
+                personId=int(mlbam_id),
+                group="pitching",
+                type="season",
+                sportId=1,
+                season=current_year
+            )
+
+        # Format stats for display
+        formatted_stats = {}
+        if player_stats:
+            stats = player_stats['stats'][0]['stats'] if player_stats.get('stats') else {}
+            # For hitters
+            if 'avg' in stats:
+                formatted_stats = {
+                    'AVG': f"{stats.get('avg', '.000'):.3f}",
+                    'HR': stats.get('homeRuns', 0),
+                    'RBI': stats.get('rbi', 0),
+                    'SB': stats.get('stolenBases', 0),
+                    'OPS': f"{stats.get('ops', '.000'):.3f}"
+                }
+            # For pitchers
+            elif 'era' in stats:
+                formatted_stats = {
+                    'ERA': f"{stats.get('era', '0.00'):.2f}",
+                    'W-L': f"{stats.get('wins', 0)}-{stats.get('losses', 0)}",
+                    'SO': stats.get('strikeOuts', 0),
+                    'WHIP': f"{stats.get('whip', '0.00'):.2f}",
+                    'IP': f"{stats.get('inningsPitched', '0.0')}"
+                }
+
+        return formatted_stats
+    except Exception as e:
+        st.warning(f"Error fetching stats for player {mlbam_id}: {str(e)}")
+        return {}
 
 # Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
