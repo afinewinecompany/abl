@@ -400,11 +400,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                             font-size: 0.9rem;
                             color: rgba(255, 255, 255, 0.8);
                             ">
-                            <span>{team_name}</span>
-                            <span style="margin: 0 0.5rem;">|</span>
-                            <span>{prospect['position']}</span>
-                            <span style="margin: 0 0.5rem;">|</span>
-                            <span>Score: {prospect['prospect_score']:.2f}</span>
+                            <span style="font-weight: 700;">Score: {prospect['prospect_score']:.2f}</span>
                             <div style="margin-top: 0.5rem; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
                                 GM: {gm_name}
                             </div>
