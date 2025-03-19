@@ -54,13 +54,23 @@ def normalize_name(name: str) -> str:
 
         name = name.lower()
         name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
+
+        # Handle special cases first
+        if "de jesus gonzalez" in name or "gonzalez, josuar" in name:
+            return "josuar gonzalez"
+
         if ',' in name:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
+
+        # Remove parentheses content and everything after
         name = name.split('(')[0].strip()
         name = name.split(' - ')[0].strip()
+
+        # Remove periods and extra spaces
         name = name.replace('.', '').strip()
         name = ' '.join(name.split())
+
         return name
     except Exception as e:
         st.error(f"Error normalizing name '{name}': {str(e)}")
@@ -88,6 +98,15 @@ def render(roster_data: pd.DataFrame):
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
+        # Debug: Print normalized names for problematic players
+        st.warning("🔍 Debugging name normalization:")
+        for name in ["Matt Shaw", "Josuar de Jesus Gonzalez", "Josuar Gonzalez"]:
+            normalized = normalize_name(name)
+            st.warning(f"Original: {name} -> Normalized: {normalized}")
+            matching_players = minors_players[minors_players['clean_name'] == normalized]
+            if not matching_players.empty:
+                st.warning(f"Found in minors_players: {matching_players['player_name'].tolist()}")
+
         # Merge with import data - ensure we keep all ranked players
         ranked_prospects = pd.merge(
             minors_players,
@@ -108,6 +127,14 @@ def render(roster_data: pd.DataFrame):
             subset=['Name'], 
             keep='first'
         )
+
+        # Debug: Display problematic players in ranked_prospects
+        st.warning("📊 Checking problematic players in ranked_prospects:")
+        problem_players = ranked_prospects[
+            ranked_prospects['Name'].str.contains('Shaw|Gonzalez', case=False, na=False)
+        ]
+        if not problem_players.empty:
+            st.write(problem_players[['Name', 'Rank', 'Score', 'player_name', 'clean_name']])
 
 
         # Rename columns for consistency
