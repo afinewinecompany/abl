@@ -1,5 +1,4 @@
 import requests
-import statsapi
 from typing import Dict, Any
 import streamlit as st
 import time
