@@ -54,14 +54,25 @@ def normalize_name(name: str) -> str:
 
         name = name.lower()
         name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
+
+        # Handle comma-separated format (Last, First)
         if ',' in name:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
+
+        # Special case handling for known variations
+        known_variations = {
+            "matthew shaw": "matt shaw",
+            "jackson chourio": "jaison chourio"
+        }
         name = name.split('(')[0].strip()
         name = name.split(' - ')[0].strip()
         name = name.replace('.', '').strip()
-        name = ' '.join(name.split())
-        return name
+        name = ' '.join(name.split())  # Normalize whitespace
+
+        # Check for known variations after basic normalization
+        return known_variations.get(name, name)
+
     except Exception as e:
         st.error(f"Error normalizing name '{name}': {str(e)}")
         return str(name).strip() if name is not None else ""
@@ -81,12 +92,23 @@ def render(roster_data: pd.DataFrame):
     try:
         # Read and process prospect scores with error handling
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
+
+        # Add debug logging for prospect data
+        st.sidebar.write("Debug: Processing prospect data")
+        prospect_import['Original_Name'] = prospect_import['Name']  # Keep original name for reference
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Get all minor league players (ensure no duplicates)
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
+        minors_players['original_name'] = minors_players['player_name']  # Keep original name for reference
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
+
+        # Debug: Show name matching results
+        with st.sidebar.expander("Debug: Name Matching"):
+            st.write("Looking for:", "matt shaw", "jaison chourio")
+            st.write("Prospect Import Names:", prospect_import[prospect_import['Name'].str.contains('shaw|chourio', case=False, na=False)][['Original_Name', 'Name']])
+            st.write("Roster Names:", minors_players[minors_players['clean_name'].str.contains('shaw|chourio', case=False, na=False)][['original_name', 'clean_name']])
 
         # Merge with import data
         ranked_prospects = pd.merge(
@@ -597,7 +619,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             font-weight: bold;
             font-size: 1.2rem;
             z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255,0.3);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         .prospect-content {
