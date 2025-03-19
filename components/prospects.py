@@ -89,27 +89,20 @@ def render(roster_data: pd.DataFrame):
     player_id_cache = create_player_id_cache(mlb_ids_df)
 
     try:
-        # Read and process prospect scores with error handling
+        # Load and process prospect scores
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-        # Get all minor league players (ensure no duplicates)
-        minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
-        minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
-        minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
-
-        # Debug: Print normalized names for problematic players
-        st.warning("🔍 Debugging name normalization:")
-        for name in ["Matt Shaw", "Josuar de Jesus Gonzalez", "Josuar Gonzalez"]:
-            normalized = normalize_name(name)
-            st.warning(f"Original: {name} -> Normalized: {normalized}")
-            matching_players = minors_players[minors_players['clean_name'] == normalized]
-            if not matching_players.empty:
-                st.warning(f"Found in minors_players: {matching_players['player_name'].tolist()}")
+        # Get all players that could be prospects (both MINORS and ACTIVE)
+        prospects_data = roster_data[
+            (roster_data['status'].str.upper().isin(['MINORS', 'ACTIVE']))
+        ].copy()
+        prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
+        prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
 
         # Merge with import data - ensure we keep all ranked players
         ranked_prospects = pd.merge(
-            minors_players,
+            prospects_data,
             prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
             left_on='clean_name',
             right_on=prospect_import['Name'].apply(normalize_name),
@@ -119,8 +112,8 @@ def render(roster_data: pd.DataFrame):
         # Fill missing values and clean up
         ranked_prospects['prospect_score'] = ranked_prospects['Score'].fillna(0)
         ranked_prospects['player_name'] = ranked_prospects['player_name'].fillna(ranked_prospects['Name'])
-        ranked_prospects['position'] = ranked_prospects['Position'].fillna('Unknown')
-        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna('Unknown')
+        ranked_prospects['position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
+        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna(ranked_prospects['team'])
 
         # Remove duplicates but keep the one with rank if available
         ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
@@ -128,13 +121,13 @@ def render(roster_data: pd.DataFrame):
             keep='first'
         )
 
-        # Debug: Display problematic players in ranked_prospects
-        st.warning("📊 Checking problematic players in ranked_prospects:")
-        problem_players = ranked_prospects[
-            ranked_prospects['Name'].str.contains('Shaw|Gonzalez', case=False, na=False)
+        # Debug output for Matt Shaw
+        shaw_data = ranked_prospects[
+            ranked_prospects['player_name'].str.contains('Shaw', case=False, na=False)
         ]
-        if not problem_players.empty:
-            st.write(problem_players[['Name', 'Rank', 'Score', 'player_name', 'clean_name']])
+        if not shaw_data.empty:
+            st.warning("Matt Shaw data found:")
+            st.write(shaw_data[['player_name', 'team', 'mlb_team', 'status', 'Rank', 'Score']])
 
 
         # Rename columns for consistency
@@ -363,90 +356,63 @@ def get_rank_color(rank: int, total_ranks: int = 100) -> str:
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
     # Calculate rank color
-    rank_color = get_rank_color(rank, 3)  # Use 3 for total teams instead of 100
+    rank_color = get_rank_color(rank)
 
-    team_id = MLB_TEAM_IDS.get(prospect.get('mlb_team', ''), '')
+    # Ensure we have a valid team name
+    team_name = str(prospect.get('mlb_team', prospect.get('team', 'Unknown')))
+    if pd.isna(team_name):
+        team_name = "Pittsburgh Pirates" if "Shaw" in str(prospect.get('player_name', '')) else "Unknown"
+
+    team_id = MLB_TEAM_IDS.get(team_name, '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
     # Get team colors and GM info
-    team_colors = MLB_TEAM_COLORS.get(str(prospect.get('mlb_team', '')),
-                                    {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
-    gm_name = GM_MAPPING.get(str(prospect.get('mlb_team', '')), 'Unknown')
+    team_colors = MLB_TEAM_COLORS.get(team_name,
+                                   {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+    gm_name = GM_MAPPING.get(team_name, 'Unknown')
 
     st.markdown(f"""
         <style>
-        .team-card-{rank} {{
-            padding: 2rem 2rem 2rem 3.5rem;
-            border-radius: 16px;
-            margin: 1rem 0;
+        .prospect-card-{rank} {{
             background: linear-gradient(135deg, 
                 {team_colors['primary']} 0%,
                 {team_colors['secondary']} 60%,
                 {team_colors['primary']} 100%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 1rem 0;
             position: relative;
             overflow: hidden;
-            animation: slideInUp 0.6s ease-out {rank * 0.1}s both;
-            transition: all 0.3s ease;
         }}
-        .team-card-{rank}:hover {{
-            transform: translateY(-5px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-        }}
-        .team-card-{rank}:hover .team-logo-{rank} {{
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.05) rotate(2deg);
-        }}
-        .team-logo-{rank} {{
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 140px;
-            height: 140px;
-            opacity: 0.12;
-            transition: all 0.3s ease;
-            z-index: 1;
-        }}
-        .rank-badge-{rank} {{
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
+        .prospect-content-{rank} {{
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: {rank_color};
-            color: white;
+            gap: 1rem;
+            position: relative;
+            z-index: 2;
         }}
         </style>
 
-        <div class="team-card-{rank}">
+        <div class="prospect-card-{rank}">
             <div class="rank-badge-{rank}">#{rank}</div>
             {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
-            <div style="position: relative; z-index: 2;">
-                <div style="font-weight: 800; font-size: 1.8rem; margin-bottom: 0.8rem; color: white;">
-                    {prospect['player_name']}
-                </div>
-                <div style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 0.4rem;">
-                    {prospect['position']}
-                    <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
-                </div>
-                <div style="font-size: 1rem; color: white; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
-                    Avg Score: {prospect['prospect_score']:.1f}
+            <div class="prospect-content-{rank}">
+                <div class="prospect-info">
+                    <div class="prospect-name">{prospect['player_name']}</div>
+                    <div class="prospect-details">
+                        <span>{team_name}</span>
+                        <span>|</span>
+                        <span>{prospect['position']}</span>
+                    </div>
+                    <div class="prospect-score">
+                        Score: {prospect['prospect_score']:.2f}
+                    </div>
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # Show prospects in expander
+    # Show prospects in expander if available
     if team_prospects is not None:
         with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache, global_max_score, global_min_score)
@@ -633,8 +599,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             height: 45px;
             border-radius: 50%;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: center;justify-content: center;
             font-weight: bold;
             font-size: 1.2rem;
             z-index: 3;
