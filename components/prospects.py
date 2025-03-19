@@ -93,10 +93,34 @@ def render(roster_data: pd.DataFrame):
         # Read and process prospect scores with error handling
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
 
-        # Add debug logging for prospect data
-        st.sidebar.write("Debug: Processing prospect data")
-        prospect_import['Original_Name'] = prospect_import['Name']  # Keep original name for reference
-        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
+        # Select only the columns we need, regardless of their position
+        required_columns = ['Name', 'Position', 'MLB Team', 'Unique score']
+        if all(col in prospect_import.columns for col in required_columns):
+            prospect_subset = prospect_import[required_columns]
+        else:
+            # Get the actual column names for debugging
+            st.sidebar.write("Available columns:", prospect_import.columns.tolist())
+            # Try to find columns by partial matches
+            column_mapping = {}
+            for col in prospect_import.columns:
+                if 'name' in col.lower():
+                    column_mapping['Name'] = col
+                elif 'position' in col.lower():
+                    column_mapping['Position'] = col
+                elif 'mlb' in col.lower() and 'team' in col.lower():
+                    column_mapping['MLB Team'] = col
+                elif 'unique' in col.lower() and 'score' in col.lower():
+                    column_mapping['Unique score'] = col
+
+            if len(column_mapping) == len(required_columns):
+                prospect_subset = prospect_import[list(column_mapping.values())].copy()
+                prospect_subset.columns = list(column_mapping.keys())
+            else:
+                raise ValueError(f"Could not find all required columns. Found: {column_mapping}")
+
+        # Continue with name normalization
+        prospect_subset['Original_Name'] = prospect_subset['Name']  # Keep original name for reference
+        prospect_subset['Name'] = prospect_subset['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Get all minor league players (ensure no duplicates)
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
@@ -107,13 +131,13 @@ def render(roster_data: pd.DataFrame):
         # Debug: Show name matching results
         with st.sidebar.expander("Debug: Name Matching"):
             st.write("Looking for:", "matt shaw", "jaison chourio")
-            st.write("Prospect Import Names:", prospect_import[prospect_import['Name'].str.contains('shaw|chourio', case=False, na=False)][['Original_Name', 'Name']])
+            st.write("Prospect Import Names:", prospect_subset[prospect_subset['Name'].str.contains('shaw|chourio', case=False, na=False)][['Original_Name', 'Name']])
             st.write("Roster Names:", minors_players[minors_players['clean_name'].str.contains('shaw|chourio', case=False, na=False)][['original_name', 'clean_name']])
 
         # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+            prospect_subset[['Name', 'Position', 'MLB Team', 'Unique score']],
             left_on='clean_name',
             right_on='Name',
             how='left'
