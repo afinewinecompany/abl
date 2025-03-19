@@ -594,6 +594,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
             100% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
         }
+        .hover-card:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
         .top-100-title {
             font-size: 5rem;
             font-weight: 800;
@@ -620,7 +624,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Get top 100 prospects sorted by Rank
     top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
 
-    # Display prospects in order
+    # Displayprospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
@@ -632,25 +636,14 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
         st.markdown(f"""
-            <div class="prospect-card" style="
+            <div class="prospect-card hover-card" style="
                 background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
                 border-radius: 8px;
                 padding: 0.75rem;
                 margin: 0.5rem 0;
                 position: relative;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                transition: transform 0.3s ease, box-shadow 0.3s ease;"
-                class="hover-card">
-                <style>
-                .hover-card {
-                    transform: translateY(0);
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
-                }
-                .hover-card:hover {
-                    transform: translateY(-3px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                }
-                </style>
+                transition: transform 0.3s ease, box-shadow 0.3s ease;">
                 <div style="
                     position: absolute;
                     left: -8px;
