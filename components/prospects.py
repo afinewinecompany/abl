@@ -643,6 +643,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                 class="hover-card">
                 <style>
                 .hover-card:hover {
+                    -webkit-transform: translateY(-3px);
                     transform: translateY(-3px);
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                 }
