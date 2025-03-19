@@ -61,9 +61,6 @@ def normalize_name(name: str) -> str:
         name = name.split(' - ')[0].strip()
         name = name.replace('.', '').strip()
         name = ' '.join(name.split())
-
-        # Capitalize first letter of each word
-        name = ' '.join(word.capitalize() for word in name.split())
         return name
     except Exception as e:
         st.error(f"Error normalizing name '{name}': {str(e)}")
@@ -86,33 +83,24 @@ def render(roster_data: pd.DataFrame):
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-        # Create a list of all prospects from the import file that have a score
-        all_prospects = prospect_import[prospect_import['Unique score'].notna()].copy()
-        all_prospects = all_prospects.sort_values('Unique score', ascending=False)
-
-        # Get all minor league players from roster data
+        # Get all minor league players (ensure no duplicates)
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
-        # Get the ranked prospects list from all prospects (not just minors)
-        ranked_prospects = all_prospects.copy()
+        # Merge with import data
         ranked_prospects = pd.merge(
-            ranked_prospects,
-            minors_players[['clean_name', 'team', 'position', 'status', 'salary', 'mlb_team']],
-            left_on='Name',
-            right_on='clean_name',
+            minors_players,
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+            left_on='clean_name',
+            right_on='Name',
             how='left'
         )
 
-        # Fill in missing team/position info from the import file
-        ranked_prospects['team'] = ranked_prospects['team'].fillna('Free Agent')
-        ranked_prospects['position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
-        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna(ranked_prospects['mlb_team'])
-        ranked_prospects['status'] = ranked_prospects['status'].fillna('MINORS')
-        ranked_prospects['salary'] = ranked_prospects['salary'].fillna(0)
-        ranked_prospects['player_name'] = ranked_prospects['Name']
-        ranked_prospects['prospect_score'] = ranked_prospects['Unique score']
+        # Set prospect score from Unique score
+        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
+        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
@@ -257,9 +245,8 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
             <img src="{headshot_url}" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
                 alt="{player_name} headshot"
-                onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';" />
-        </div>
-        <div class="prospect-info">
+                onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';">
+            </div>"""
 
     except Exception as e:
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
@@ -267,8 +254,8 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         return f"""<div class="player-headshot">
             <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
-                alt="Default headshot" />
-        </div>"""
+                alt="Default headshot">
+            </div>"""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float) -> str:
     """Generate HTML for team prospects list"""
@@ -380,42 +367,41 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             transition: all 0.3s ease;
             z-index: 1;
         }}
-        .prospect-name {{
-            font-size: 1.2rem;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }}
-        .prospect-details {{
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+        .rank-badge-{rank} {{
+            position: absolute;
+            left: -10px;
+            top: -10px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
             display: flex;
-            gap: 1rem;
-            margin-bottom: 0.25rem;
-        }}
-        .prospect-score {{
-            font-size: 1rem;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 3;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: {rank_color};
             color: white;
-            font-weight: 700;
         }}
         </style>
 
         <div class="team-card-{rank}">
-            <div class="prospect-content">
-                {get_player_headshot_html(prospect['player_name'], player_id_cache)}
-                <div class="prospect-info">
-                    <div class="prospect-name">{prospect['player_name']}</div>
-                    <div class="prospect-details">
-                        <span>{prospect['position']}</span>
-                        <span>|</span>
-                        <span>{prospect['mlb_team']}</span>
-                    </div>
-                    <div class="prospect-score">
-                        Score: {prospect['prospect_score']:.2f}
-                    </div>
+            <div class="rank-badge-{rank}">#{rank}</div>
+            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
+            <div style="position: relative; z-index: 2;">
+                <div style="font-weight: 800; font-size: 1.8rem; margin-bottom: 0.8rem; color: white;">
+                    {prospect['player_name']}
+                </div>
+                <div style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 0.4rem;">
+                    {prospect['position']}
+                    <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
+                </div>
+                <div style="font-size: 1rem; color: white; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
+                    Avg Score: {prospect['prospect_score']:.1f}
                 </div>
             </div>
-            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
         </div>
     """, unsafe_allow_html=True)
 
@@ -625,7 +611,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             flex-grow: 1;
         }
         .prospect-name {
-            fontsize: 1.2rem;
+            font-size: 1.2rem;
             color: white;
             font-weight: 600;
             margin-bottom: 0.25rem;
@@ -641,7 +627,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             font-size: 1rem;
             color: white;
             font-weight: 700;
-                }
+        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
