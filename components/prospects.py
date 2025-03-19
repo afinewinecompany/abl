@@ -634,38 +634,34 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         st.markdown(f"""
             <div class="prospect-card" style="
                 background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
-                border-radius: 10px;
-                padding: 1.5rem;
-                margin: 1rem 0;
+                border-radius: 8px;
+                padding: 0.75rem;
+                margin: 0.5rem 0;
                 position: relative;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
                 <div style="
                     position: absolute;
-                    left: -10px;
-                    top: -10px;
-                    width: 40px;
-                    height: 40px;
+                    left: -8px;
+                    top: -8px;
+                    width: 30px;
+                    height: 30px;
                     background: {team_colors['primary']};
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: white;
+                    font-size: 0.9rem;
                     font-weight: bold;
                     border: 2px solid {team_colors['secondary']};
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{idx}</div>
-                {f'<img src="{logo_url}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content" style="position: relative; z-index: 2;">
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">#{idx}</div>
+                {f'<img src="{logo_url}" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                <div class="prospect-content" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 0.75rem;">
                     {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{prospect.player_name}</div>
-                        <div class="prospect-details">
-                            <span>{prospect.team}</span>
-                            <span>|</span>
-                            <span>{str(prospect.position).replace('position ', '').split(',')[0].strip()}</span>
-                        </div>
-                        <div class="prospect-score">
-                            Score: {prospect.prospect_score:.2f}
+                    <div style="flex-grow: 1;">
+                        <div style="font-size: 0.95rem; font-weight: 600; color: white;">{prospect.player_name}</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.1rem;">
+                            {prospect.team} | {str(prospect.position).replace('position ', '').split(',')[0].strip()} | Score: {prospect.prospect_score:.2f}
                         </div>
                     </div>
                 </div>
