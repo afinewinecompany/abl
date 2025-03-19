@@ -145,6 +145,9 @@ def get_position_order(position: str) -> int:
 
 def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: float = None):
     """Render an individual player card"""
+    projected_points = player.get('projected_points', 0)
+    points_display = f"| {projected_points:.1f} pts" if projected_points > 0 else ""
+
     return f"""
         <div class="player-card" style="
             background: linear-gradient(135deg, 
@@ -165,7 +168,7 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
             <div style="flex-grow: 1; color: white;">
                 <div style="font-size: 1rem; font-weight: 600;">{player['player_name']}</div>
                 <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.15rem;">
-                    {player['position']} | {player['mlb_team']} | ${player['salary']:,.0f}{f' | Score: {prospect_score:.1f}' if prospect_score is not None else ''}
+                    {player['position']} | {player['mlb_team']} | ${player['salary']:,.0f}{points_display}{f' | Score: {prospect_score:.1f}' if prospect_score is not None else ''}
                 </div>
             </div>
             <span style="
@@ -178,6 +181,23 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
             </span>
         </div>
     """
+
+def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
+    """Calculate total fantasy points for a player"""
+    total_points = 0
+    player_name = normalize_name(player_name)
+
+    # Check for hitter projections
+    hitter_proj = hitters_proj[hitters_proj['Name'].apply(normalize_name) == player_name]
+    if not hitter_proj.empty:
+        total_points += hitter_proj.iloc[0]['fantasy_points']
+
+    # Check for pitcher projections
+    pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(normalize_name) == player_name]
+    if not pitcher_proj.empty:
+        total_points += pitcher_proj.iloc[0]['fantasy_points']
+
+    return total_points
 
 def render(roster_data: pd.DataFrame):
     """Render roster information section"""
@@ -219,6 +239,12 @@ def render(roster_data: pd.DataFrame):
         # Filter data by selected team and create a copy
         team_roster = roster_data[roster_data['team'] == selected_team].copy()
         team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
+
+        # Calculate projected points for each player
+        team_roster['projected_points'] = team_roster['player_name'].apply(
+            lambda x: calculate_total_points(x, hitters_proj, pitchers_proj)
+        )
+
 
         # Calculate prospect stats
         minors_players = team_roster[team_roster['status'].str.upper() == 'MINORS'].copy()
