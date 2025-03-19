@@ -354,6 +354,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     is_team_card = '#' in str(prospect.get('player_name', ''))
 
     if is_team_card:
+        # Get GM name
+        gm_name = GM_MAPPING.get(team_name, 'Unknown')
+
         # Team card styling
         st.markdown(f"""
             <div class="prospect-card" style="
@@ -396,11 +399,15 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                             <span>{prospect['position']}</span>
                             <span style="margin: 0 0.5rem;">|</span>
                             <span>Score: {prospect['prospect_score']:.2f}</span>
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                                GM: {gm_name}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
+
     else:
         # Individual player card styling remains the same
         headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
