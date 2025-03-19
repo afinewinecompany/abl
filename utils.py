@@ -11,35 +11,29 @@ def fetch_api_data():
     Returns processed data or None if an error occurs.
     """
     try:
-        # Create a placeholder in the sidebar for status
+        # Create a placeholder in the sidebar for a single loading indicator
         with st.sidebar:
             status_container = st.empty()
-            status_container.info("⌛ Fetching data from API...")
+            status_container.progress(0)
 
             # Initialize API client and data processor
             api_client = FantraxAPI()
             data_processor = DataProcessor()
 
-            # Fetch all required data
-            status_container.info("📊 Loading league information...")
+            # Fetch and process all data with a single progress indicator
+            status_container.progress(25)
             league_data = api_client.get_league_info()
-
-            status_container.info("👥 Loading team rosters...")
-            roster_data = api_client.get_team_rosters()
-
-            status_container.info("🏆 Loading standings...")
-            standings_data = api_client.get_standings()
-
-            status_container.info("🎯 Loading player details...")
-            player_ids = api_client.get_player_ids()
-
-            # Process data
-            status_container.info("⚙️ Processing data...")
             processed_league_data = data_processor.process_league_info(league_data)
-            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
+
+            status_container.progress(50)
+            roster_data = api_client.get_team_rosters()
+            processed_roster_data = data_processor.process_rosters(roster_data, api_client.get_player_ids())
+
+            status_container.progress(75)
+            standings_data = api_client.get_standings()
             processed_standings_data = data_processor.process_standings(standings_data)
 
-            # Clear the status message
+            # Clear the progress bar
             status_container.empty()
 
             return {

@@ -24,7 +24,6 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
         """Make API request with error handling and retries"""
         try:
-            st.info(f"Fetching data from {endpoint}...")
             response = self.session.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
