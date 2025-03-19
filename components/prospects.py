@@ -258,7 +258,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
                 alt="{player_name} headshot"
                 onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';" />
-            </div>"""
+        </div>"""
 
     except Exception as e:
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
@@ -267,7 +267,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
             <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
                 alt="Default headshot" />
-            </div>"""
+        </div>"""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float) -> str:
     """Generate HTML for team prospects list"""
@@ -379,41 +379,42 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             transition: all 0.3s ease;
             z-index: 1;
         }}
-        .rank-badge-{rank} {{
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
+        .prospect-name {{
             font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: {rank_color};
             color: white;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }}
+        .prospect-details {{
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.25rem;
+        }}
+        .prospect-score {{
+            font-size: 1rem;
+            color: white;
+            font-weight: 700;
         }}
         </style>
 
         <div class="team-card-{rank}">
-            <div class="rank-badge-{rank}">#{rank}</div>
-            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
-            <div style="position: relative; z-index: 2;">
-                <div style="font-weight: 800; font-size: 1.8rem; margin-bottom: 0.8rem; color: white;">
-                    {prospect['player_name']}
-                </div>
-                <div style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 0.4rem;">
-                    {prospect['position']}
-                    <div style="font-size: 0.9em; margin-top: 0.2rem; opacity: 0.9;">GM: {gm_name}</div>
-                </div>
-                <div style="font-size: 1rem; color: white; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; display: inline-block; margin-top: 0.5rem; font-weight: 700;">
-                    Avg Score: {prospect['prospect_score']:.1f}
+            <div class="prospect-content">
+                {get_player_headshot_html(prospect['player_name'], player_id_cache)}
+                <div class="prospect-info">
+                    <div class="prospect-name">{prospect['player_name']}</div>
+                    <div class="prospect-details">
+                        <span>{prospect['position']}</span>
+                        <span>|</span>
+                        <span>{prospect['mlb_team']}</span>
+                    </div>
+                    <div class="prospect-score">
+                        Score: {prospect['prospect_score']:.2f}
+                    </div>
                 </div>
             </div>
+            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
         </div>
     """, unsafe_allow_html=True)
 
@@ -639,7 +640,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             font-size: 1rem;
             color: white;
             font-weight: 700;
-        }
+                }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
