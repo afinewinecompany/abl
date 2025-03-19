@@ -634,7 +634,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by Rank
-    top_100 = rankedprospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
+    top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
 
     # Validate rank ordering and check for missing ranks
     if not top_100.empty:
@@ -660,7 +660,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             # Show the surrounding ranks for context
             for missing_rank in sorted(list(missing_ranks)):
                 surrounding = top_100[
-                    (top_100['Rank'] >= missing_rank - 2) & 
+                    (top_100['Rank'] >= missing_rank - 2) &
                     (top_100['Rank'] <= missing_rank + 2)
                 ].sort_values('Rank')
 
