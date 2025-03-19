@@ -83,24 +83,33 @@ def render(roster_data: pd.DataFrame):
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-        # Get all minor league players (ensure no duplicates)
+        # Create a list of all prospects from the import file that have a score
+        all_prospects = prospect_import[prospect_import['Unique score'].notna()].copy()
+        all_prospects = all_prospects.sort_values('Unique score', ascending=False)
+
+        # Get all minor league players from roster data
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
-        # Merge with import data
+        # Get the ranked prospects list from all prospects (not just minors)
+        ranked_prospects = all_prospects.copy()
         ranked_prospects = pd.merge(
-            minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
-            left_on='clean_name',
-            right_on='Name',
+            ranked_prospects,
+            minors_players[['clean_name', 'team', 'position', 'status', 'salary', 'mlb_team']],
+            left_on='Name',
+            right_on='clean_name',
             how='left'
         )
 
-        # Set prospect score from Unique score
-        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
-        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
-        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+        # Fill in missing team/position info from the import file
+        ranked_prospects['team'] = ranked_prospects['team'].fillna('Free Agent')
+        ranked_prospects['position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
+        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna(ranked_prospects['mlb_team'])
+        ranked_prospects['status'] = ranked_prospects['status'].fillna('MINORS')
+        ranked_prospects['salary'] = ranked_prospects['salary'].fillna(0)
+        ranked_prospects['player_name'] = ranked_prospects['Name']
+        ranked_prospects['prospect_score'] = ranked_prospects['Unique score']
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
