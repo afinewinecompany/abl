@@ -23,14 +23,21 @@ def fetch_api_data():
             # Fetch and process all data with a single progress indicator
             status_container.progress(25)
             league_data = api_client.get_league_info()
+            if not isinstance(league_data, dict):
+                raise ValueError("Invalid league data format")
             processed_league_data = data_processor.process_league_info(league_data)
 
             status_container.progress(50)
             roster_data = api_client.get_team_rosters()
-            processed_roster_data = data_processor.process_rosters(roster_data, api_client.get_player_ids())
+            player_ids = api_client.get_player_ids()
+            if not isinstance(roster_data, dict):
+                raise ValueError("Invalid roster data format")
+            processed_roster_data = data_processor.process_rosters(roster_data, player_ids)
 
             status_container.progress(75)
             standings_data = api_client.get_standings()
+            if not isinstance(standings_data, list):
+                raise ValueError("Invalid standings data format")
             processed_standings_data = data_processor.process_standings(standings_data)
 
             # Clear the progress bar
@@ -43,7 +50,7 @@ def fetch_api_data():
             }
     except Exception as e:
         with st.sidebar:
-            st.error(f"❌ Error loading data: {str(e)}")
+            st.error(f"Error loading data: {str(e)}")
         return None
 
 def format_percentage(value: float) -> str:
