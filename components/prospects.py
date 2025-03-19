@@ -809,10 +809,12 @@ def get_player_mlb_stats(mlbam_id: str) -> dict:
         ]
 
         # Try getting player info first
-        player_info = statsapi.lookup_player(mlbam_id)
-        if not player_info:
-            st.warning(f"No player info found for ID: {mlbam_id}")
-            return {}
+        try:
+            player_info = statsapi.lookup_player(mlbam_id)
+            if not player_info:
+                return {'Level': 'N/A', 'Status': 'Stats Not Available'}
+        except Exception:
+            return {'Level': 'N/A', 'Status': 'Stats Not Available'}
 
         # Check each level for stats
         for sport_id, level in sport_levels:
