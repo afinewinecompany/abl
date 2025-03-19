@@ -81,7 +81,7 @@ def render(roster_data: pd.DataFrame):
     division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
     # Load MLB player IDs and create cache
-    mlb_ids_df = pd.read_csv("attached_assets/mlb-player-ids-2.csv")
+    mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
     player_id_cache = create_player_id_cache(mlb_ids_df)
 
     try:
