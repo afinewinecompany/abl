@@ -91,7 +91,7 @@ def render(roster_data: pd.DataFrame):
         # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score', 'rank']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score', 'Rank']],
             left_on='clean_name',
             right_on='Name',
             how='left'
@@ -568,13 +568,13 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         # Only consider prospects with valid rank (1-100)
         prospect_import = prospect_import[
-            prospect_import['rank'].notna() & 
-            (prospect_import['rank'] >= 1) & 
-            (prospect_import['rank'] <= 100)
+            prospect_import['Rank'].notna() & 
+            (prospect_import['Rank'] >= 1) & 
+            (prospect_import['Rank'] <= 100)
         ].copy()
 
         # Sort by rank
-        prospect_import = prospect_import.sort_values('rank')
+        prospect_import = prospect_import.sort_values('Rank')
 
         # Get team roster info for these prospects
         for idx, prospect in prospect_import.iterrows():
@@ -591,7 +591,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                 position = prospect['Position'] if 'Position' in prospect.index else "Unknown"
 
             # Calculate rank color
-            rank_color = get_rank_color(int(prospect['rank']))
+            rank_color = get_rank_color(int(prospect['Rank']))
 
             # Get team colors and logo
             team_colors = MLB_TEAM_COLORS.get(team, {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
@@ -619,11 +619,12 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                         font-weight: bold;
                         font-size: 1.2rem;
                         z-index: 3;
-                        border: 2px solid rgba(255, 255, 255, 255, 0.3);
+                        border: 2px solid rgba(255, 255, 255, 0.3);
                         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                         background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                        color: white;">
-                        {int(prospect['rank'])}
+                        color: white;
+                        ">
+                        {int(prospect['Rank'])}
                     </div>
                     {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                     <div class="prospect-content">
