@@ -625,7 +625,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Get team colors and logo
-        team_colors = MLB_TEAM_COLORS.getget(prospect.team,
+        team_colors = MLB_TEAM_COLORS.get(prospect.team,
                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
