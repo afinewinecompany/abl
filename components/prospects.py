@@ -35,7 +35,7 @@ GM_MAPPING = {
     "Chicago White Sox": "Tom",
     "Washington Nationals": "Jordan & Cim",
     "Houston Astros": "Evan",
-    "St. Louis Cardinals": "Jeff",
+    "Saint Louis Cardinals": "Jeff",
     "Cardinals": "Jeff",  # Handle variations
     "Boston Red Sox": "Don",
     "Minnesota Twins": "Tyler",
@@ -307,7 +307,7 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         html_parts.append(
             f'<div style="flex-grow: 1;">'
             f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{prospect["player_name"]}</div>'
-            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">{prospect["position"]}</div>'
+            f'<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Position: {prospect["position"]}</div>'
             f'<div style="font-size: 0.9rem; color: white; font-weight: 700;">Score: {prospect["prospect_score"]:.2f}</div>'
             f'</div>'
         )
