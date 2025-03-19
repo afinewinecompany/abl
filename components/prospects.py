@@ -378,7 +378,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                     font-weight: bold;
                     border: 2px solid {team_colors['secondary']};
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{rank}</div>
-                {f'<img src="{logo_url}" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 120px; height: 120px; opacity: 0.25; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                {f'<img src="{logo_url}" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 120px; height: 120px; opacity: 0.45; z-index: 1;" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content" style="position: relative; z-index: 2;">
                     <div style="flex-grow: 1;">
                         <div style="
@@ -402,7 +402,7 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Individual player card styling
+        # Individual player card styling remains the same
         headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
         st.markdown(f"""
             <div class="prospect-card" style="
@@ -617,7 +617,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
-        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+        logo_url = f"https://www.mlbstatic.com/team-logos/teamcap-on-dark/{team_id}.svg" if team_id else ""
 
         # Get headshot HTML
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
