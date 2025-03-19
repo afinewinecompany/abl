@@ -580,7 +580,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         st.markdown(f"""
             <div class="prospect-card" style="
-                background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
                 border-radius: 10px;
                 padding: 1.5rem;
                 margin: 1rem 0;
@@ -601,8 +601,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                     font-weight: bold;
                     border: 2px solid {team_colors['secondary']};
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{idx}</div>
-                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content">
+                {f'<img src="{logo_url}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                <div class="prospect-content" style="position: relative; z-index: 2;">
                     {headshot_html}
                     <div class="prospect-info">
                         <div class="prospect-name">{prospect.player_name}</div>
@@ -636,7 +636,7 @@ TEAM_ABBREVIATIONS = {
     "Houston Astros": "HOU",
     "Los Angeles Angels": "LAA",
     "Athletics": "ATH",
-    "Oakland Athletics": "ATH",
+"Oakland Athletics": "ATH",
     "Seattle Mariners":"SEA",
     "Texas Rangers": "TEX",
     "Atlanta Braves": "ATL",
