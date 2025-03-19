@@ -105,7 +105,7 @@ def render_team_header(
             color: white;
         }}
         .help-icon:hover::after {{
-            content: "Dynascore is Dylan's custom formulation of a team's True Dynasty Rank, this score will become active once the season is underway.";
+            content: "Dynasty Dominance Index is Dylan's custom formulation of a team's True Dynasty Rank, this score will become active once the season is underway.";
             position: absolute;
             bottom: 100%;
             left: 50%;
@@ -129,7 +129,7 @@ def render_team_header(
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">
-                        Dynascore™
+                        DDI™
                         <span class="help-icon">?</span>
                     </div>
                     <div class="stat-value">{dynascore}</div>
