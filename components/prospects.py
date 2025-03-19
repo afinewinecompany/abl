@@ -682,6 +682,23 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             for start, end in rank_gaps:
                 st.warning(f"Gap between ranks {start} and {end}")
 
+        # Debug: Check raw data for specific players
+        st.warning("🔍 Debugging missing players:")
+        # Load and display raw data from ABL-Import.csv
+        raw_import = pd.read_csv("attached_assets/ABL-Import.csv")
+
+        # Search for Shaw
+        shaw_data = raw_import[raw_import['Name'].str.contains('Shaw', case=False, na=False)]
+        if not shaw_data.empty:
+            st.warning("Found Shaw entries in raw data:")
+            st.write(shaw_data[['Name', 'Rank', 'Score']])
+
+        # Search for de Jesus Gonzalez
+        gonzalez_data = raw_import[raw_import['Name'].str.contains('Jesus|Gonzalez', case=False, na=False)]
+        if not gonzalez_data.empty:
+            st.warning("Found de Jesus Gonzalez entries in raw data:")
+            st.write(gonzalez_data[['Name', 'Rank', 'Score']])
+
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Calculate rank color
@@ -689,7 +706,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+                                       {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
