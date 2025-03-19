@@ -81,6 +81,9 @@ def render_team_header(
         .stat-label {{
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }}
         .stat-value {{
             font-size: 1.5rem;
@@ -88,13 +91,47 @@ def render_team_header(
             color: white;
             margin-top: 0.25rem;
         }}
+        .help-icon {{
+            cursor: help;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            font-size: 12px;
+            color: white;
+        }}
+        .help-icon:hover::after {{
+            content: "Dynascore is Dylan's custom formulation of a team's True Dynasty Rank, this score will become active once the season is underway.";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            width: max-content;
+            max-width: 250px;
+            margin-bottom: 0.5rem;
+            z-index: 1000;
+            text-align: center;
+            white-space: normal;
+        }}
         </style>
 
         <div class="team-header">
             <div class="team-name">{team}</div>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Dynascore™</div>
+                    <div class="stat-label">
+                        Dynascore™
+                        <span class="help-icon">?</span>
+                    </div>
                     <div class="stat-value">{dynascore}</div>
                 </div>
                 <div class="stat-card">
