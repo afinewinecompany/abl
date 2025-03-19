@@ -308,7 +308,8 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         html_parts.append(headshot_html)
 
         # Add prospect info
-        clean_position = str(position).replace('position ', '').split('Name:')[0].strip()
+        # Clean up position by taking the first occurrence of position code
+        clean_position = str(position).replace('position ', '').split('Name:')[0].strip().split()[0]
         html_parts.append(
             f'<div style="flex-grow: 1;">'
             f'<div style="font-size: 1rem; color: white; font-weight: 500; margin-bottom: 0.25rem;">{player_name}</div>'
