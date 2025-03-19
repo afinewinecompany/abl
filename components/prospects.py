@@ -258,7 +258,8 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
                 alt="{player_name} headshot"
                 onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';" />
-        </div>"""
+        </div>
+        <div class="prospect-info">"""
 
     except Exception as e:
         st.warning(f"Error generating headshot HTML for {player_name}: {str(e)}")
