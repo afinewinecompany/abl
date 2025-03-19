@@ -633,10 +633,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             background: inherit;
             color: white;
             transform: rotateY(180deg);
-            display: flex;
+            display:flex;
             flex-direction: column;
             justify-content: center;
-            alignitems: center;
+            align-items: center;
             padding: 1rem;
         }
 
@@ -689,6 +689,16 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 0;
             text-align: center;
         }
+        .stat-item.level {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .stat-status {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 1rem;
+        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
@@ -714,13 +724,24 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
         # Create stats HTML
         stats_html = '<div class="stats-grid">'
-        for stat_label, stat_value in player_stats.items():
-            stats_html += f"""
-                <div class="stat-item">
-                    <div class="stat-label">{stat_label}</div>
-                    <div class="stat-value">{stat_value}</div>
-                </div>
-            """
+        if 'Status' in player_stats:
+            stats_html += f'<div class="stat-status">{player_stats["Status"]}</div>'
+        else:
+            if 'Level' in player_stats:
+                stats_html += f"""
+                    <div class="stat-item level">
+                        <div class="stat-label">Level</div>
+                        <div class="stat-value">{player_stats['Level']}</div>
+                    </div>
+                """
+            for stat_label, stat_value in player_stats.items():
+                if stat_label not in ['Level', 'Status']:
+                    stats_html += f"""
+                        <div class="stat-item">
+                            <div class="stat-label">{stat_label}</div>
+                            <div class="stat-value">{stat_value}</div>
+                        </div>
+                    """
         stats_html += '</div>'
 
         st.markdown(f"""
@@ -765,7 +786,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                         <div style="font-size: 1.2rem; font-weight: 600; color: white; margin-bottom: 1rem;">
                             2024 Season Stats
                         </div>
-                        {stats_html if player_stats else '<div style="color: rgba(255,255,255,0.7);">No MLB stats available for 2024</div>'}
+                        {stats_html}
                     </div>
                 </div>
             </div>
@@ -774,71 +795,80 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
 def get_player_mlb_stats(mlbam_id: str) -> dict:
-    """Fetch 2024 MLB stats for a player"""
+    """Fetch 2024 MLB and MiLB stats for a player"""
     try:
         if not mlbam_id:
             return {}
 
         current_year = 2024
 
-        # Debug info
-        st.debug(f"Fetching stats for player ID: {mlbam_id}")
+        # Sport IDs for different levels
+        sport_levels = [
+            (11, 'AAA'), (12, 'AA'), (13, 'A+'), 
+            (14, 'A'), (16, 'ROK'), (1, 'MLB')
+        ]
 
-        # Get player info first
+        # Try getting player info first
         player_info = statsapi.lookup_player(mlbam_id)
         if not player_info:
-            st.debug(f"No player info found for ID: {mlbam_id}")
+            st.warning(f"No player info found for ID: {mlbam_id}")
             return {}
 
-        player = player_info[0]
-        st.debug(f"Found player: {player['fullName']}")
+        # Check each level for stats
+        for sport_id, level in sport_levels:
+            try:
+                # Try hitting stats first
+                hitting_stats = statsapi.player_stats(
+                    personId=mlbam_id,
+                    stats="season",
+                    group="hitting",
+                    gameType="R",
+                    season=current_year,
+                    sportId=sport_id
+                )
 
-        # Try getting hitting stats first
-        hitting_stats = statsapi.player_stats(
-            personId=mlbam_id,
-            stats="season",
-            group="hitting",
-            gameType="R",
-            season=current_year
-        )
-        st.debug(f"Hitting stats response: {hitting_stats}")
+                if hitting_stats and hitting_stats.get('stats') and hitting_stats['stats'][0]:
+                    stats = hitting_stats['stats'][0]
+                    return {
+                        'Level': level,
+                        'AVG': f"{stats.get('avg', '.000')}",
+                        'HR': stats.get('homeRuns', 0),
+                        'RBI': stats.get('rbi', 0),
+                        'SB': stats.get('stolenBases', 0),
+                        'OPS': f"{stats.get('ops', '.000')}"
+                    }
 
-        # If no hitting stats, try pitching
-        if not hitting_stats or hitting_stats.get('stats') == []:
-            pitching_stats = statsapi.player_stats(
-                personId=mlbam_id,
-                stats="season",
-                group="pitching",
-                gameType="R",
-                season=current_year
-            )
-            st.debug(f"Pitching stats response: {pitching_stats}")
+                # Try pitching stats
+                pitching_stats = statsapi.player_stats(
+                    personId=mlbam_id,
+                    stats="season",
+                    group="pitching",
+                    gameType="R",
+                    season=current_year,
+                    sportId=sport_id
+                )
 
-            if pitching_stats and pitching_stats.get('stats'):
-                stats = pitching_stats['stats'][0] if pitching_stats.get('stats') else {}
-                return {
-                    'ERA': f"{stats.get('era', '0.00')}",
-                    'W-L': f"{stats.get('wins', 0)}-{stats.get('losses', 0)}",
-                    'SO': stats.get('strikeOuts', 0),
-                    'WHIP': f"{stats.get('whip', '0.00')}",
-                    'IP': f"{stats.get('inningsPitched', '0.0')}"
-                }
-        else:
-            if hitting_stats and hitting_stats.get('stats'):
-                stats = hitting_stats['stats'][0] if hitting_stats.get('stats') else {}
-                return {
-                    'AVG': f"{stats.get('avg', '.000')}",
-                    'HR': stats.get('homeRuns', 0),
-                    'RBI': stats.get('rbi', 0),
-                    'SB': stats.get('stolenBases', 0),
-                    'OPS': f"{stats.get('ops', '.000')}"
-                }
+                if pitching_stats and pitching_stats.get('stats') and pitching_stats['stats'][0]:
+                    stats = pitching_stats['stats'][0]
+                    return {
+                        'Level': level,
+                        'ERA': f"{stats.get('era', '0.00')}",
+                        'W-L': f"{stats.get('wins', 0)}-{stats.get('losses', 0)}",
+                        'SO': stats.get('strikeOuts', 0),
+                        'WHIP': f"{stats.get('whip', '0.00')}",
+                        'IP': f"{stats.get('inningsPitched', '0.0')}"
+                    }
 
-        return {}
+            except Exception as e:
+                # Log error but continue checking other levels
+                st.warning(f"Error checking {level} stats: {str(e)}")
+                continue
+
+        return {'Level': 'N/A', 'Status': 'No 2024 Stats Available'}
+
     except Exception as e:
         st.warning(f"Error fetching stats for player {mlbam_id}: {str(e)}")
-        st.debug(f"Full error: {str(e)}")
-        return {}
+        return {'Level': 'Error', 'Status': 'Stats Unavailable'}
 
 # Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
