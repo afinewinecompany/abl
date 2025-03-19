@@ -339,8 +339,11 @@ def get_rank_color(rank: int, total_ranks: int = 100) -> str:
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
+    # Get headshot HTML
+    headshot_html = get_player_headshot_html(prospect['player_name'], player_id_cache)
+
     # Ensure we have valid team information
-    team_name = prospect.get('team', prospect.get('mlb_team', 'Unknown'))
+    team_name = str(prospect.get('mlb_team', prospect.get('team', 'Unknown')))
     if pd.isna(team_name) or team_name == 'Unknown':
         if "Shaw" in str(prospect.get('player_name', '')):
             team_name = "Pittsburgh Pirates"
@@ -350,18 +353,14 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
     team_id = MLB_TEAM_IDS.get(team_name, '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Get headshot HTML
-    headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
-
     st.markdown(f"""
         <div class="prospect-card" style="
-            background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+            background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
             border-radius: 10px;
             padding: 1.5rem;
             margin: 1rem 0;
             position: relative;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            ">
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <div style="
                 position: absolute;
                 left: -10px;
@@ -376,15 +375,9 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                 color: white;
                 font-weight: bold;
                 border: 2px solid {team_colors['secondary']};
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                ">#{rank}</div>
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                position: relative;
-                z-index: 2;
-                ">
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{rank}</div>
+            {f'<img src="{logo_url}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+            <div class="prospect-content" style="position: relative; z-index: 2;">
                 {headshot_html}
                 <div style="flex-grow: 1;">
                     <div style="
@@ -392,16 +385,16 @@ def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_
                         font-weight: 600;
                         color: white;
                         margin-bottom: 0.25rem;
-                        ">{prospect.player_name}</div>
+                        ">{prospect['player_name']}</div>
                     <div style="
                         font-size: 0.9rem;
                         color: rgba(255, 255, 255, 0.8);
                         ">
                         <span>{team_name}</span>
                         <span style="margin: 0 0.5rem;">|</span>
-                        <span>{prospect.position}</span>
+                        <span>{prospect['position']}</span>
                         <span style="margin: 0 0.5rem;">|</span>
-                        <span>Score: {prospect.prospect_score:.2f}</span>
+                        <span>Score: {prospect['prospect_score']:.2f}</span>
                     </div>
                 </div>
             </div>
