@@ -636,7 +636,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
+            alignitems: center;
             padding: 1rem;
         }
 
@@ -779,57 +779,65 @@ def get_player_mlb_stats(mlbam_id: str) -> dict:
         if not mlbam_id:
             return {}
 
-        # Get current season stats
         current_year = 2024
-        player_stats = statsapi.player_stat_data(
-            personId=int(mlbam_id),
+
+        # Debug info
+        st.debug(f"Fetching stats for player ID: {mlbam_id}")
+
+        # Get player info first
+        player_info = statsapi.lookup_player(mlbam_id)
+        if not player_info:
+            st.debug(f"No player info found for ID: {mlbam_id}")
+            return {}
+
+        player = player_info[0]
+        st.debug(f"Found player: {player['fullName']}")
+
+        # Try getting hitting stats first
+        hitting_stats = statsapi.player_stats(
+            personId=mlbam_id,
+            stats="season",
             group="hitting",
-            type="yearByYear",
-            sportId=1
+            gameType="R",
+            season=current_year
         )
+        st.debug(f"Hitting stats response: {hitting_stats}")
 
-        # If no hitting stats, try pitching stats
-        if not player_stats or not player_stats.get('stats'):
-            player_stats = statsapi.player_stat_data(
-                personId=int(mlbam_id),
+        # If no hitting stats, try pitching
+        if not hitting_stats or hitting_stats.get('stats') == []:
+            pitching_stats = statsapi.player_stats(
+                personId=mlbam_id,
+                stats="season",
                 group="pitching",
-                type="yearByYear",
-                sportId=1
+                gameType="R",
+                season=current_year
             )
+            st.debug(f"Pitching stats response: {pitching_stats}")
 
-        # Format stats for display
-        formatted_stats = {}
-        if player_stats and player_stats.get('stats'):
-            # Get most recent year's stats
-            current_year_stats = None
-            for stat_group in player_stats['stats']:
-                if stat_group.get('season') == str(current_year):
-                    current_year_stats = stat_group.get('stats', {})
-                    break
+            if pitching_stats and pitching_stats.get('stats'):
+                stats = pitching_stats['stats'][0] if pitching_stats.get('stats') else {}
+                return {
+                    'ERA': f"{stats.get('era', '0.00')}",
+                    'W-L': f"{stats.get('wins', 0)}-{stats.get('losses', 0)}",
+                    'SO': stats.get('strikeOuts', 0),
+                    'WHIP': f"{stats.get('whip', '0.00')}",
+                    'IP': f"{stats.get('inningsPitched', '0.0')}"
+                }
+        else:
+            if hitting_stats and hitting_stats.get('stats'):
+                stats = hitting_stats['stats'][0] if hitting_stats.get('stats') else {}
+                return {
+                    'AVG': f"{stats.get('avg', '.000')}",
+                    'HR': stats.get('homeRuns', 0),
+                    'RBI': stats.get('rbi', 0),
+                    'SB': stats.get('stolenBases', 0),
+                    'OPS': f"{stats.get('ops', '.000')}"
+                }
 
-            if current_year_stats:
-                # For hitters
-                if 'avg' in current_year_stats:
-                    formatted_stats = {
-                        'AVG': f"{current_year_stats.get('avg', '.000'):.3f}",
-                        'HR': current_year_stats.get('homeRuns', 0),
-                        'RBI': current_year_stats.get('rbi', 0),
-                        'SB': current_year_stats.get('stolenBases', 0),
-                        'OPS': f"{current_year_stats.get('ops', '.000'):.3f}"
-                    }
-                # For pitchers
-                elif 'era' in current_year_stats:
-                    formatted_stats = {
-                        'ERA': f"{current_year_stats.get('era', '0.00'):.2f}",
-                        'W-L': f"{current_year_stats.get('wins', 0)}-{current_year_stats.get('losses', 0)}",
-                        'SO': current_year_stats.get('strikeOuts', 0),
-                        'WHIP': f"{current_year_stats.get('whip', '0.00'):.2f}",
-                        'IP': f"{current_year_stats.get('inningsPitched', '0.0')}"
-                    }
-
-        return formatted_stats
+        return {}
     except Exception as e:
         st.warning(f"Error fetching stats for player {mlbam_id}: {str(e)}")
+        st.debug(f"Full error: {str(e)}")
         return {}
 
 # Add team abbreviation mapping
