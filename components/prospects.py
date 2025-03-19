@@ -54,25 +54,14 @@ def normalize_name(name: str) -> str:
 
         name = name.lower()
         name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
-
-        # Handle comma-separated format (Last, First)
         if ',' in name:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
-
-        # Special case handling for known variations
-        known_variations = {
-            "matthew shaw": "matt shaw",
-            "jackson chourio": "jaison chourio"
-        }
         name = name.split('(')[0].strip()
         name = name.split(' - ')[0].strip()
         name = name.replace('.', '').strip()
-        name = ' '.join(name.split())  # Normalize whitespace
-
-        # Check for known variations after basic normalization
-        return known_variations.get(name, name)
-
+        name = ' '.join(name.split())
+        return name
     except Exception as e:
         st.error(f"Error normalizing name '{name}': {str(e)}")
         return str(name).strip() if name is not None else ""
@@ -92,52 +81,17 @@ def render(roster_data: pd.DataFrame):
     try:
         # Read and process prospect scores with error handling
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
-
-        # Select only the columns we need, regardless of their position
-        required_columns = ['Name', 'Position', 'MLB Team', 'Unique score']
-        if all(col in prospect_import.columns for col in required_columns):
-            prospect_subset = prospect_import[required_columns]
-        else:
-            # Get the actual column names for debugging
-            st.sidebar.write("Available columns:", prospect_import.columns.tolist())
-            # Try to find columns by partial matches
-            column_mapping = {}
-            for col in prospect_import.columns:
-                if 'name' in col.lower():
-                    column_mapping['Name'] = col
-                elif 'position' in col.lower():
-                    column_mapping['Position'] = col
-                elif 'mlb' in col.lower() and 'team' in col.lower():
-                    column_mapping['MLB Team'] = col
-                elif 'unique' in col.lower() and 'score' in col.lower():
-                    column_mapping['Unique score'] = col
-
-            if len(column_mapping) == len(required_columns):
-                prospect_subset = prospect_import[list(column_mapping.values())].copy()
-                prospect_subset.columns = list(column_mapping.keys())
-            else:
-                raise ValueError(f"Could not find all required columns. Found: {column_mapping}")
-
-        # Continue with name normalization
-        prospect_subset['Original_Name'] = prospect_subset['Name']  # Keep original name for reference
-        prospect_subset['Name'] = prospect_subset['Name'].fillna('').astype(str).apply(normalize_name)
+        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Get all minor league players (ensure no duplicates)
         minors_players = roster_data[roster_data['status'].str.upper() == 'MINORS'].copy()
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
-        minors_players['original_name'] = minors_players['player_name']  # Keep original name for reference
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
-
-        # Debug: Show name matching results
-        with st.sidebar.expander("Debug: Name Matching"):
-            st.write("Looking for:", "matt shaw", "jaison chourio")
-            st.write("Prospect Import Names:", prospect_subset[prospect_subset['Name'].str.contains('shaw|chourio', case=False, na=False)][['Original_Name', 'Name']])
-            st.write("Roster Names:", minors_players[minors_players['clean_name'].str.contains('shaw|chourio', case=False, na=False)][['original_name', 'clean_name']])
 
         # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_subset[['Name', 'Position', 'MLB Team', 'Unique score']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
             left_on='clean_name',
             right_on='Name',
             how='left'
@@ -643,7 +597,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             font-weight: bold;
             font-size: 1.2rem;
             z-index: 3;
-            border: 2px solid rgba(255, 255, 255,0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         .prospect-content {
