@@ -91,7 +91,7 @@ def render(roster_data: pd.DataFrame):
         # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score', 'rank']],
             left_on='clean_name',
             right_on='Name',
             how='left'
@@ -556,140 +556,95 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 0;
             text-align: center;
         }
-        .prospect-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: visible;
-            transition: all 0.3s ease;
-        }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-        .prospect-card:hover .team-logo-bg {
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.05) rotate(2deg);
-        }
-        .team-logo-bg {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 100px;
-            height: 100px;
-            opacity: 0.1;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        .rank-number {
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        .prospect-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            z-index: 2;
-        }
-        .prospect-info {
-            flex-grow: 1;
-        }
-        .prospect-name {
-            font-size: 1.2rem;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-details {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-score {
-            font-size: 1rem;
-            color: white;
-            font-weight: 700;
-        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
     """, unsafe_allow_html=True)
 
-    # Get top 100 prospects sorted by score
-    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
+    try:
+        # Load prospect rankings from ABL-Import.csv
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv")
+        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-    # Display prospects in order
-    for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Calculate rank color
-        rank_color = get_rank_color(idx)
+        # Only consider prospects with valid rank (1-100)
+        prospect_import = prospect_import[
+            prospect_import['rank'].notna() & 
+            (prospect_import['rank'] >= 1) & 
+            (prospect_import['rank'] <= 100)
+        ].copy()
 
-        # Get team colors and logo
-        team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
-        team_id = MLB_TEAM_IDS.get(prospect.team, '')
-        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+        # Sort by rank
+        prospect_import = prospect_import.sort_values('rank')
 
-        # Get headshot HTML
-        headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
+        # Get team roster info for these prospects
+        for idx, prospect in prospect_import.iterrows():
+            # Find prospect in roster data
+            prospect_roster = ranked_prospects[
+                ranked_prospects['clean_name'] == prospect['Name']
+            ]
 
-        # Generate gradient background
-        gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
+            if not prospect_roster.empty:
+                team = prospect_roster.iloc[0]['team']
+                position = prospect_roster.iloc[0]['position']
+            else:
+                team = prospect['MLB Team'] if 'MLB Team' in prospect.index else "Unknown"
+                position = prospect['Position'] if 'Position' in prospect.index else "Unknown"
 
-        st.markdown(f"""
-            <div class="prospect-card" style="--card-bg: {gradient};">
-                <div style="
-                    position: absolute;
-                    left: -10px;
-                    top: -10px;
-                    width: 45px;
-                    height: 45px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: bold;
-                    font-size: 1.2rem;
-                    z-index: 3;
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                    color: white;
-                ">{idx}</div>
-                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content">
-                    {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{prospect.player_name}</div>
-                        <div class="prospect-details">
-                            <span>{prospect.team}</span>
-                            <span>|</span>
-                            <span>{prospect.position}</span>
-                        </div>
-                        <div class="prospect-score">
-                            Score: {prospect.prospect_score:.2f}
+            # Calculate rank color
+            rank_color = get_rank_color(int(prospect['rank']))
+
+            # Get team colors and logo
+            team_colors = MLB_TEAM_COLORS.get(team, {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+            team_id = MLB_TEAM_IDS.get(team, '')
+            logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+
+            # Get headshot HTML
+            headshot_html = get_player_headshot_html(prospect['Name'], player_id_cache)
+
+            # Generate gradient background
+            gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
+
+            st.markdown(f"""
+                <div class="prospect-card" style="--card-bg: {gradient};">
+                    <div style="
+                        position: absolute;
+                        left: -10px;
+                        top: -10px;
+                        width: 45px;
+                        height: 45px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 1.2rem;
+                        z-index: 3;
+                        border: 2px solid rgba(255, 255, 255, 255, 0.3);
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                        background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                        color: white;">
+                        {int(prospect['rank'])}
+                    </div>
+                    {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
+                    <div class="prospect-content">
+                        {headshot_html}
+                        <div class="prospect-info">
+                            <div class="prospect-name">{prospect['Name']}</div>
+                            <div class="prospect-details">
+                                <span>{team}</span>
+                                <span>|</span>
+                                <span>{position}</span>
+                            </div>
+                            <div class="prospect-score">
+                                Score: {prospect['Unique score']:.2f}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+
+    except Exception as e:
+        st.error(f"Error displaying top prospects: {str(e)}")
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
