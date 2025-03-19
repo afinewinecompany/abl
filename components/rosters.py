@@ -262,18 +262,18 @@ def render(roster_data: pd.DataFrame):
         minors_players = team_roster[team_roster['status'].str.upper() == 'MINORS'].copy()
         minors_players = pd.merge(
             minors_players,
-            prospect_import[['Name', 'Unique score']],
+            prospect_import[['Name', 'Score']],  # Changed from 'Unique score' to 'Score'
             left_on='clean_name',
             right_on='Name',
             how='left'
         )
 
         # Create prospect score lookup dictionary
-        prospect_scores = dict(zip(minors_players['clean_name'], minors_players['Unique score']))
+        prospect_scores = dict(zip(minors_players['clean_name'], minors_players['Score']))  # Changed from 'Unique score' to 'Score'
 
         prospect_stats = {
-            'total_score': minors_players['Unique score'].fillna(0).sum(),
-            'avg_score': minors_players['Unique score'].fillna(0).mean(),
+            'total_score': minors_players['Score'].fillna(0).sum(),  # Changed from 'Unique score' to 'Score'
+            'avg_score': minors_players['Score'].fillna(0).mean(),   # Changed from 'Unique score' to 'Score'
             'count': len(minors_players)
         }
 

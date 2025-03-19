@@ -91,14 +91,14 @@ def render(roster_data: pd.DataFrame):
         # Merge with import data
         ranked_prospects = pd.merge(
             minors_players,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Unique score']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
             left_on='clean_name',
             right_on='Name',
             how='left'
         )
 
-        # Set prospect score from Unique score
-        ranked_prospects['prospect_score'] = ranked_prospects['Unique score'].fillna(0)
+        # Set prospect score from Score column
+        ranked_prospects['prospect_score'] = ranked_prospects['Score'].fillna(0)
         ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
@@ -633,8 +633,12 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         <h1 class="top-100-title">ABL TOP 100</h1>
     """, unsafe_allow_html=True)
 
-    # Get top 100 prospects sorted by score
-    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
+    # Get top 100 prospects sorted by Rank
+    top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
+
+    # Validate rank ordering
+    if not all(top_100['Rank'].diff().dropna() > 0):
+        st.warning("Warning: Some prospects may have duplicate or missing ranks. Please check the rankings in the import file.")
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
