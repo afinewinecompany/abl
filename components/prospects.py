@@ -115,14 +115,6 @@ def render(roster_data: pd.DataFrame):
             keep='first'
         )
 
-        # Debug output for Matt Shaw
-        shaw_data = ranked_prospects[
-            ranked_prospects['player_name'].str.contains('Shaw', case=False, na=False)
-        ]
-        if not shaw_data.empty:
-            st.warning("Matt Shaw data found:")
-            st.write(shaw_data[['player_name', 'team', 'mlb_team', 'status', 'Rank', 'Score']])
-
         # Rename columns for consistency
         ranked_prospects.rename(columns={
             'MLB Team': 'mlb_team',
@@ -172,7 +164,7 @@ def render(roster_data: pd.DataFrame):
                 render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division_mapping.get(row['team'], "Unknown"),
-                    'prospect_score': row['avg_score'],  # Change this to avg_score
+                    'prospect_score': row['avg_score'],
                     'mlb_team': row['team']
                 }, idx + 1, team_prospects, player_id_cache, global_max_score, global_min_score)
 
@@ -187,7 +179,7 @@ def render(roster_data: pd.DataFrame):
             render_prospect_preview({
                 'player_name': f"#{i + 4} {row['team']}",
                 'position': division_mapping.get(row['team'], "Unknown"),
-                'prospect_score': row['avg_score'],  # Change this to avg_score
+                'prospect_score': row['avg_score'],
                 'mlb_team': row['team']
             }, i + 4, team_prospects, player_id_cache, global_max_score, global_min_score)
 
@@ -567,76 +559,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 0;
             text-align: center;
         }
-        .prospect-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: visible;
-            transition: all 0.3s ease;
-        }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-        .prospect-card:hover .team-logo-bg {
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.05) rotate(2deg);
-        }
-        .team-logo-bg {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 100px;
-            height: 100px;
-            opacity: 0.1;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        .rank-number {
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        .prospect-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            z-index: 2;
-        }
-        .prospect-info {
-            flex-grow: 1;
-        }
-        .prospect-name {
-            font-size: 1.2rem;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-details {
-            font-size: 0.9rem;            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-score {
-            font-size: 1rem;
-            color: white;
-            font-weight: 700;
-        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
@@ -645,66 +567,8 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Get top 100 prospects sorted by Rank
     top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
 
-    # Validate rank ordering and check for missing ranks
-    if not top_100.empty:
-        # Convert rank to numeric, handling any non-numeric values
-        top_100['Rank'] = pd.to_numeric(top_100['Rank'], errors='coerce')
-
-        # Check for duplicate ranks
-        duplicate_ranks = top_100[top_100['Rank'].duplicated()]
-        if not duplicate_ranks.empty:
-            st.warning("⚠️ Duplicate ranks detected:")
-            for _, player in duplicate_ranks.iterrows():
-                st.warning(f"Rank {player['Rank']}: {player['player_name']}")
-
-        # Find missing ranks in 1-100 sequence
-        expected_ranks = set(range(1, 101))
-        actual_ranks = set(top_100['Rank'].dropna().astype(int))
-        missing_ranks = expected_ranks - actual_ranks
-
-        if missing_ranks:
-            st.warning("⚠️ Missing ranks detected:")
-            st.warning(f"Missing ranks: {sorted(list(missing_ranks))}")
-
-            # Show the surrounding ranks for context
-            for missing_rank in sorted(list(missing_ranks)):
-                surrounding = top_100[
-                    (top_100['Rank'] >= missing_rank - 2) &
-                    (top_100['Rank'] <= missing_rank + 2)
-                ].sort_values('Rank')
-
-                if not surrounding.empty:
-                    st.warning(f"\nProspects around rank {missing_rank}:")
-                    for _, player in surrounding.iterrows():
-                        st.warning(f"Rank {int(player['Rank'])}: {player['player_name']}")
-
-        # Debug: Check raw data for specific players
-        st.warning("🔍 Debugging missing players:")
-        # Load raw data from ABL-Import.csv
-        raw_import = pd.read_csv("attached_assets/ABL-Import.csv")
-
-        # Search for Shaw
-        shaw_data = raw_import[raw_import['Name'].str.contains('Shaw', case=False, na=False)]
-        if not shaw_data.empty:
-            st.warning("Found Shaw entries in raw data:")
-            st.write(shaw_data[['Name', 'Rank', 'Score']])
-
-        # Search for de Jesus Gonzalez
-        gonzalez_data = raw_import[raw_import['Name'].str.contains('Jesus|Gonzalez', case=False, na=False)]
-        if not gonzalez_data.empty:
-            st.warning("Found de Jesus Gonzalez entries in raw data:")
-            st.write(gonzalez_data[['Name', 'Rank', 'Score']])
-
-        # Display all ranked players for debugging
-        st.warning("📊 All Players with Ranks:")
-        ranked_players = raw_import[pd.notna(raw_import['Rank'])].sort_values('Rank')
-        st.write(ranked_players[['Name', 'Rank', 'Score']])
-
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Calculate rank color
-        rank_color = get_rank_color(idx)
-
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
@@ -714,29 +578,29 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Get headshot HTML
         headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        # Generate gradient background
-        gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
-
         st.markdown(f"""
-            <div class="prospect-card" style="--card-bg: {gradient};">
+            <div class="prospect-card" style="
+                background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                border-radius: 10px;
+                padding: 1.5rem;
+                margin: 1rem 0;
+                position: relative;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                 <div style="
                     position: absolute;
                     left: -10px;
                     top: -10px;
-                    width: 45px;
-                    height: 45px;
+                    width: 40px;
+                    height: 40px;
+                    background: {team_colors['primary']};
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-weight: bold;
-                    font-size: 1.2rem;
-                    z-index: 3;
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
                     color: white;
-                ">{idx}</div>
+                    font-weight: bold;
+                    border: 2px solid {team_colors['secondary']};
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{idx}</div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
