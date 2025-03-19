@@ -556,91 +556,19 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 0;
             text-align: center;
         }
-        .prospect-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: visible;
-            transition: all 0.3s ease;
-        }
-        .prospect-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-        .prospect-card:hover .team-logo-bg {
-            opacity: 0.15;
-            transform: translateY(-50%) scale(1.05) rotate(2deg);
-        }
-        .team-logo-bg {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 100px;
-            height: 100px;
-            opacity: 0.1;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        .rank-number {
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 3;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        .prospect-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            z-index: 2;
-        }
-        .prospect-info {
-            flex-grow: 1;
-        }
-        .prospect-name {
-            font-size: 1.2rem;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-details {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        .prospect-score {
-            font-size: 1rem;
-            color: white;
-            font-weight: 700;
-        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
     """, unsafe_allow_html=True)
 
-    # Get top 100 prospects sorted by score
-    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
+    # Add prospect ranks to the DataFrame
+    ranked_prospects['prospect_rank'] = ranked_prospects['player_name'].apply(get_prospect_rank)
+
+    # Get top 100 prospects sorted by new ranking system
+    top_100 = ranked_prospects.sort_values('prospect_rank').head(100)
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Calculate rank color
-        rank_color = get_rank_color(idx)
-
         # Get team colors and logo
         team_colors = MLB_TEAM_COLORS.get(prospect.team,
                                         {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
@@ -671,13 +599,12 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                     border: 2px solid rgba(255, 255, 255, 0.3);
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                     background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                    color: white;
-                ">{idx}</div>
+                    color: white;">{prospect.prospect_rank}</div>
                 {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
                 <div class="prospect-content">
                     {headshot_html}
                     <div class="prospect-info">
-                        <div class="prospect-name">{prospect.player_name}</div>
+                        <div class="prospectname">{prospect.player_name}</div>
                         <div class="prospect-details">
                             <span>{prospect.team}</span>
                             <span>|</span>
@@ -920,3 +847,213 @@ MLB_TEAM_COLORS = {
         'accent': '#FFFFFF'  # White
     }
 }
+
+# Add this after the MLB_TEAM_COLORS dictionary
+
+PROSPECT_RANKINGS = {
+    "Roman Anthony": 1,
+    "Noah Schultz": 2,
+    "Andrew Painter": 3,
+    "Bubba Chandler": 4,
+    "Walker Jenkins": 5,
+    "Chase Dollander": 6,
+    "Chase Burns": 7,
+    "Sebastian Walcott": 8,
+    "Thomas White": 9,
+    "Hagen Smith": 10,
+    "Bryce Eldridge": 11,
+    "Travis Bazzana": 12,
+    "Leodalis De Vries": 13,
+    "Max Clark": 14,
+    "Konnor Griffin": 15,
+    "Carson Williams": 16,
+    "Colson Montgomery": 17,
+    "Samuel Basallo": 18,
+    "Kristian Campbell": 19,
+    "Cade Horton": 20,
+    "Jett Williams": 21,
+    "Jarlin Susana": 22,
+    "Jesus Made": 23,
+    "Emmanuel Rodriguez": 24,
+    "Ricky Tiedemann": 25,
+    "Dalton Rushing": 26,
+    "Kevin McGonigle": 27,
+    "Charlie Condon": 28,
+    "Bryce Rainer": 29,
+    "Felnin Celesten": 30,
+    "Aidan Miller": 31,
+    "Santiago Suarez": 32,
+    "JJ Wetherholt": 33,
+    "Jac Caglianone": 34,
+    "Nick Kurtz": 35,
+    "Xavier Isaac": 36,
+    "Brailer Guerrero": 37,
+    "Alejandro Rosario": 38,
+    "Tink Hence": 39,
+    "Jaison Chourio": 40,
+    "Colt Emerson": 41,
+    "Matt Shaw": 42,
+    "Josue De Paula": 43,
+    "Moises Ballesteros": 44,
+    "Cole Carrigg": 45,
+    "Gary Gill Hill": 46,
+    "Quinn Mathews": 47,
+    "Alex Freeland": 48,
+    "Starlyn Caba": 49,
+    "Daniel Espino": 50,
+    "Robert Calaz": 51,
+    "Jackson Ferris": 52,
+    "Brady House": 53,
+    "Marcelo Mayer": 54,
+    "Thomas Harrington": 55,
+    "Trevor Harrison": 56,
+    "Luis Perales": 57,
+    "Zyhir Hope": 58,
+    "Cam Smith": 59,
+    "Jacob Misiorowski": 60,
+    "Robby Snelling": 61,
+    "Ethan Salas": 62,
+    "Moises Chace": 63,
+    "Chase Petty": 64,
+    "Jonny Farmelo": 65,
+    "Travis Sykora": 66,
+    "Levi Sterling": 67,
+    "Brandon Sproat": 68,
+    "Trey Yesavage": 69,
+    "Ryan Sloan": 70,
+    "Theo Gillen": 71,
+    "Nolan McLean": 72,
+    "Braylon Doughty": 73,
+    "Eric Bitonti": 74,
+    "Braxton Ashcraft": 75,
+    "Owen Caissie": 76,
+    "Blake Mitchell": 77,
+    "Chase DeLauter": 78,
+    "George Lombard Jr.": 79,
+    "Roderick Arias": 80,
+    "Eduardo Quintero": 81,
+    "Cam Caminiti": 82,
+    "Henry Lalane": 83,
+    "Termarr Johnson": 84,
+    "Demetrio Crisantes": 85,
+    "Josuar De Jesus Gonzalez": 86,
+    "Michael Arroyo": 87,
+    "Cris Rodriguez": 88,
+    "Chandler Simpson": 89,
+    "Marco Raya": 90,
+    "Tyson Lewis": 91,
+    "James Triantos": 92,
+    "Seaver King": 93,
+    "Brice Matthews": 94,
+    "Dasan Hill": 95,
+    "Vance Honeycutt": 96,
+    "Eduardo Tait": 97,
+    "Spencer Jones": 98,
+    "David Shields": 99,
+    "Zander Mueth": 100
+}
+
+def get_prospect_rank(name: str) -> int:
+    """Get the prospect's rank from the PROSPECT_RANKINGS dictionary"""
+    normalized_name = normalize_name(name)
+    # Check for exact match first
+    for prospect_name, rank in PROSPECT_RANKINGS.items():
+        if normalize_name(prospect_name) == normalized_name:
+            return rank
+    return 999  # Return high number for unranked prospects
+
+def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float):
+    """Render the animated TOP 100 header and scrollable list"""
+    st.markdown("""
+        <style>
+        @keyframes gradientText {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes glow {
+            0% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
+            50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
+        }
+        .top-100-title {
+            font-size: 5rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, 
+                #ff4d4d 0%, 
+                #4169E1 50%, 
+                #ff4d4d 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: 
+                gradientText 3s linear infinite,
+                glow 2s ease-in-out infinite;
+            margin: 2rem 0;
+            padding: 0;
+            text-align: center;
+        }
+        </style>
+
+        <h1 class="top-100-title">ABL TOP 100</h1>
+    """, unsafe_allow_html=True)
+
+    # Add prospect ranks to the DataFrame
+    ranked_prospects['prospect_rank'] = ranked_prospects['player_name'].apply(get_prospect_rank)
+
+    # Get top 100 prospects sorted by new ranking system
+    top_100 = ranked_prospects.sort_values('prospect_rank').head(100)
+
+    # Display prospects in order
+    for idx, prospect in enumerate(top_100.itertuples(), 1):
+        # Get team colors and logo
+        team_colors = MLB_TEAM_COLORS.get(prospect.team,
+                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+        team_id = MLB_TEAM_IDS.get(prospect.team, '')
+        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+
+        # Get headshot HTML
+        headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
+
+        # Generate gradient background
+        gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
+
+        st.markdown(f"""
+            <div class="prospect-card" style="--card-bg: {gradient};">
+                <div style="
+                    position: absolute;
+                    left: -10px;
+                    top: -10px;
+                    width: 45px;
+                    height: 45px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    z-index: 3;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    color: white;">{prospect.prospect_rank}</div>
+                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
+                <div class="prospect-content">
+                    {headshot_html}
+                    <div class="prospect-info">
+                        <div class="prospect-name">{prospect.player_name}</div>
+                        <div class="prospect-details">
+                            <span>{prospect.team}</span>
+                            <span>|</span>
+                            <span>{prospect.position}</span>
+                        </div>
+                        <div class="prospect-score">
+                            Score: {prospect.prospect_score:.2f}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
