@@ -634,11 +634,53 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by Rank
-    top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
+    top_100 = rankedprospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
 
-    # Validate rank ordering
-    if not all(top_100['Rank'].diff().dropna() > 0):
-        st.warning("Warning: Some prospects may have duplicate or missing ranks. Please check the rankings in the import file.")
+    # Validate rank ordering and check for missing ranks
+    if not top_100.empty:
+        # Convert rank to numeric, handling any non-numeric values
+        top_100['Rank'] = pd.to_numeric(top_100['Rank'], errors='coerce')
+
+        # Check for duplicate ranks
+        duplicate_ranks = top_100[top_100['Rank'].duplicated()]
+        if not duplicate_ranks.empty:
+            st.warning("⚠️ Duplicate ranks detected:")
+            for _, player in duplicate_ranks.iterrows():
+                st.warning(f"Rank {player['Rank']}: {player['player_name']}")
+
+        # Find missing ranks in 1-100 sequence
+        expected_ranks = set(range(1, 101))
+        actual_ranks = set(top_100['Rank'].dropna().astype(int))
+        missing_ranks = expected_ranks - actual_ranks
+
+        if missing_ranks:
+            st.warning("⚠️ Missing ranks detected:")
+            st.warning(f"Missing ranks: {sorted(list(missing_ranks))}")
+
+            # Show the surrounding ranks for context
+            for missing_rank in sorted(list(missing_ranks)):
+                surrounding = top_100[
+                    (top_100['Rank'] >= missing_rank - 2) & 
+                    (top_100['Rank'] <= missing_rank + 2)
+                ].sort_values('Rank')
+
+                if not surrounding.empty:
+                    st.warning(f"\nProspects around rank {missing_rank}:")
+                    for _, player in surrounding.iterrows():
+                        st.warning(f"Rank {int(player['Rank'])}: {player['player_name']}")
+
+        # Check for non-sequential ranks
+        rank_gaps = []
+        prev_rank = None
+        for rank in sorted(actual_ranks):
+            if prev_rank is not None and rank - prev_rank > 1:
+                rank_gaps.append((prev_rank, rank))
+            prev_rank = rank
+
+        if rank_gaps:
+            st.warning("⚠️ Non-sequential ranks detected:")
+            for start, end in rank_gaps:
+                st.warning(f"Gap between ranks {start} and {end}")
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
