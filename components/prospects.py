@@ -638,7 +638,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                 padding: 0.75rem;
                 margin: 0.5rem 0;
                 position: relative;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;"
+                onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+                onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
                 <div style="
                     position: absolute;
                     left: -8px;
