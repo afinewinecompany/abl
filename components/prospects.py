@@ -61,6 +61,9 @@ def normalize_name(name: str) -> str:
         name = name.split(' - ')[0].strip()
         name = name.replace('.', '').strip()
         name = ' '.join(name.split())
+
+        # Capitalize first letter of each word
+        name = ' '.join(word.capitalize() for word in name.split())
         return name
     except Exception as e:
         st.error(f"Error normalizing name '{name}': {str(e)}")
@@ -254,7 +257,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
             <img src="{headshot_url}" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
                 alt="{player_name} headshot"
-                onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';">
+                onerror="this.onerror=null; this.src='https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current';" />
             </div>"""
 
     except Exception as e:
@@ -263,7 +266,7 @@ def get_player_headshot_html(player_name: str, player_id_cache: Dict[str, str]) 
         return f"""<div class="player-headshot">
             <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
-                alt="Default headshot">
+                alt="Default headshot" />
             </div>"""
 
 def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[str, str], global_max_score: float, global_min_score: float) -> str:
@@ -620,7 +623,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             flex-grow: 1;
         }
         .prospect-name {
-            font-size: 1.2rem;
+            fontsize: 1.2rem;
             color: white;
             font-weight: 600;
             margin-bottom: 0.25rem;

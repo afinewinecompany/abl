@@ -1,695 +1,991 @@
-Name,Position,MLB Team,Unique score
-Axiel Plaz,C,PIT,2.97
-Michael Arroyo,2B,SEA,8.51
-Demetrio Crisantes,2B,ARI,8.55
-Ashly Andujar,SS,COL,6.19
-Yolfran Castillo,SS,TEX,7.91
-Elvin Garcia,SS,BAL,4.27
-Jeremy Rodriguez,SS,NYM,6.75
-Tjayy Walton,LF,PHI,4.37
-Luis Cova,CF,MIA,7.50
-Daniel Espino,SP,CLE,9.28
-Tekoah Roby,SP,STL,6.35
-Alejandro Rosario,SP,TEX,9.49
-Nelfy Ynfante,SP,STL,4.05
-Travis Bazzana,2B,CLE,9.86
-JJ Wetherholt,SS,STL,9.60
-Hagen Smith,SP,CHW,9.87
-Chase Burns,SP,CIN,9.91
-Charlie Condon,3B,COL,9.67
-Nick Kurtz,1B,OAK,9.57
-Konnor Griffin,SS,PIT,9.85
-Christian Moore,SS,LAA,8.16
-Bryce Rainer,SS,DET,9.62
-Cam Smith,3B,CHC,9.05
-Jac Caglianone,1B,KC,9.61
-Braden Montgomery,RF,CHW,7.69
-Seaver King,SS,WSH,8.55
-Trey Yesavage,SP,TOR,8.80
-Josuar De Jesus Gonzalez,SS,SF,8.64
-Elian Pena,SS,NYM,8.21
-Cris Rodriguez,CF,DET,8.55
-Theo Gillen,CF,TB,8.79
-Ryan Sloan,SP,SEA,8.83
-Cam Caminiti,SP,ATL,8.72
-Tyson Lewis,LF,CIN,8.55
-Levi Sterling,SP,PIT,8.83
-Kellon Lindsey,SS,LAD,8.18
-Vance Honeycutt,CF,BAL,8.42
-Dasan Hill,SP,MIN,8.44
-Braylon Doughty,SP,CLE,8.73
-Malcolm Moore,C,TEX,6.68
-David Shields,SP,KC,8.46
-Landen Maroudis,SP,TOR,7.86
-Jhonny Severino,3B,PIT,6.41
-Yandel Ricardo,SS,KC,6.74
-Dakota Jordan,RF,SF,6.71
-PJ Morlando,LF,MIA,7.95
-Griffin Burkholder,RF,PHI,8.23
-Patrick Copen,SP,LAD,7.49
-Ryan Forcucci,SP,HOU,7.18
-Caleb Bonemer,SS,CHW,8.12
-Brody Brecht,SP,COL,6.50
-Jagger Haynes,SP,SD,7.90
-Jacob Bresnahan,SP,SF,4.06
-Steven Echavarria,SP,OAK,8.01
-Yorger Bautista,CF,SEA,7.72
-Ryan Waldschmidt,LF,ARI,6.39
-Walbert Urena,SP,LAA,4.06
-Jonathan Santucci,SP,LAD,6.65
-Coleman Crow,SP,MIL,7.40
-Carson Benge,CF,NYM,5.96
-Dylan Dreiling,LF,TEX,6.65
-Tytus Cissell,SS,ARI,6.32
-Joey Oakie,SP,CLE,7.20
-Leanardo Arias,SS,BAL,5.97
-Ruben Santana,1B,ARI,6.90
-Luke Holman,SP,TEX,5.09
-Maykel Coret,CF,TB,7.48
-Kyle DeBarge,SS,MIN,6.09
-James Tibbs,SS,SF,7.33
-Kaelen Culpepper,SS,MIN,7.18
-Kevin Alvarez,CF,HOU,7.32
-Tommy White,3B,OAK,4.89
-Dorian Soto,SS,BOS,6.61
-Slade Caldwell,CF,ARI,7.95
-Bryce Cunningham,SP,NYY,7.05
-Ryan Johnson,SP,LAA,4.22
-Billy Amick,3B,MIN,4.93
-Ben Hess,SP,NYY,6.66
-Andrew Salas,SS,MIA,7.21
-Ramon Ramirez,C,KC,3.65
-Jurrangelo Cijntje,SP,SEA,6.86
-Walker Janek,C,HOU,4.07
-Payton Tolle,SP,BOS,5.22
-Boston Baro,SS,NYM,5.70
-Yoniel Curet,SP,TB,5.86
-Emilien Pitre,2B,TB,4.90
-Josh Knoth,SP,MIL,8.17
-Drew Beam,SP,KC,6.91
-Casey Saucke,RF,CHW,6.37
-Jakob Christian,1B,SF,4.24
-Juan Valera,SP,BOS,6.53
-Will Taylor,CF,PIT,4.14
-Khadim Diaw,C,MIA,3.75
-Zach Ehrhard,RF,BOS,5.54
-Caleb Lomavita,C,WSH,5.88
-Chase Allsup,SP,BAL,4.85
-Rodney Green,CF,OAK,5.11
-Homer Bush,CF,TB,2.78
-Braylon Payne,CF,MIL,7.70
-Carter Johnson,SS,MIA,5.78
-Luke Dickerson,SS,WSH,7.71
-JD Dix,SS,ARI,6.64
-Angel Cepeda,SS,CHC,6.33
-Eriq Swan,SP,LAD,4.15
-Owen Hall,SP,DET,7.19
-Tai Peete,CF,SEA,6.97
-Boston Bateman,SP,SD,6.88
-Thatcher Hurd,SP,NYY,4.78
-Chase Harlan,3B,LAD,5.03
-Andres Valor,CF,MIA,7.34
-Branneli Franco,SP,STL,4.39
-Rainiel Rodriguez,C,STL,4.64
-Carlos Lagrange,SP,NYY,3.91
-Khristian Curtis,SP,PIT,3.60
-Mike Sirota,CF,LAD,7.52
-Bryce Meccage,SP,MIL,7.65
-Enrique Jimenez,C,DET,2.92
-Robert Arias,CF,CLE,5.16
-Teddy McGraw,SP,SEA,5.05
-Sheng-En Lin,SP,CIN,6.43
-George Wolkow,CF,CHW,5.63
-Jeter Martinez,SP,SEA,6.38
-Victor Acosta,2B,CIN,0.83
-Jonathan Mejia,2B,STL,2.51
-Ricardo Cabrera,3B,CIN,8.04
-Robert Hipwell,3B,SF,1.82
-Ryan Ritter,SS,COL,2.32
-Hedbert Perez,CF,MIL,0.64
-Jay Allen,CF,CIN,1.20
-Mason Martin,CF,PIT,0.55
-Austin Hendrick,RF,CIN,0.76
-Cristhian Vaquero,CF,WSH,3.80
-Joshua Kuroda-Grauer,SS,OAK,4.04
-Bryce Hubbart,SP,CIN,0.62
-Ben Kudrna,SP,KC,7.36
-Joe Whitman,SP,SF,6.13
-Brett Wichrowski,SP,MIL,6.30
-Cole Wilcox,SP,TB,1.99
-Jun-Seok Shim,SP,MIA,3.49
-Shane Smith,SP,CHW,1.50
-Trevor McDonald,SP,SF,7.57
-Alfredo Duno,C,CIN,8.45
-Jeferson Quero,C,MIL,7.65
-Aron Estrada,2B,BAL,5.37
-Jeral Perez,2B,CHW,3.84
-James Triantos,2B,CHC,8.47
-Gino Groover,3B,ARI,5.79
-Brady House,3B,WSH,9.11
-Brice Matthews,3B,HOU,8.42
-Chase Meidroth,3B,CHW,4.05
-Arjun Nimmala,SS,TOR,8.06
-Enmanuel Bonilla,CF,TOR,7.27
-Gabriel Gonzalez,RF,MIN,3.87
-Brailer Guerrero,RF,TB,9.50
-A.J. Blubaugh,SP,HOU,3.89
-Thomas Harrington,SP,PIT,8.99
-Brody Hopkins,SP,TB,6.14
-George Klassen,SP,LAA,7.78
-Charlee Soto,SP,MIN,7.96
-Dylan Lesko,SP,TB,6.21
-Nathan Hickey,C,STL,0.64
-Joe Mack,C,MIA,4.22
-Yohandy Morales,1B,WSH,4.75
-Blaze Jordan,1B,BOS,3.28
-Ivan Melendez,1B,ARI,2.59
-Mikey Romero,SS,BOS,4.89
-Ethan Wilson,LF,PHI,0.79
-Enrique Bradfield Jr.,LF,BAL,6.75
-Erick Pena,CF,KC,0.48
-Luis Baez,RF,HOU,6.03
-Justice Bigbie,RF,DET,1.13
-Tyler Gentry,RF,KC,2.18
-George Valera,RF,CLE,3.04
-Braxton Ashcraft,SP,PIT,8.68
-Noah Cameron,SP,KC,5.19
-Matt Canterino,SP,MIN,6.81
-Dom Hamel,SP,NYM,0.39
-Jack Leiter,SP,TEX,4.37
-Luis Perales,SP,BOS,9.09
-Zack Showalter,SP,STL,1.30
-Leonardo Bernal,C,STL,3.35
-Phil Clarke,C,TOR,0.32
-Johanfran Garcia,C,BOS,1.84
-Yunior Severino,1B,MIN,2.29
-Carlson Reed,SP,PIT,4.23
-Oswaldo Osorio,3B,LAD,0.79
-Luis Suisebel,3B,SEA,0.47
-Heriberto Hernandez,LF,MIA,0.76
-John Rave,RF,KC,0.38
-John Cruz,Rf,MIA,0.63
-Mick Abel,SP,PHI,3.37
-Wikelman Gonazlez,SP,CHW,3.81
-Royber Salinas,SP,ATL,0.33
-Harry Ford,C,SEA,7.29
-Deyvison De Los Santos,1B,MIA,5.13
-Xavier Isaac,1B,TB,9.46
-Juan Brito,2B,CLE,4.52
-Alexander Albertus,3B,CHW,4.32
-Cam Collier,3B,CIN,7.73
-Yassel Soler,3B,ARI,4.75
-Marcelo Mayer,SS,BOS,9.17
-Emil Morales,SS,LAD,7.72
-Miguel Bleis,CF,BOS,7.52
-Jhostynxon Garcia,CF,BOS,4.26
-Druw Jones,CF,ARI,7.07
-Arnaldo Lantigua,CF,CIN,0.60
-Logan Evans,SP,SEA,7.79
-Jaden Hamm,SP,DET,8.16
-Alessandro Ercolani,SP,PIT,1.48
-Noble Meyer,SP,MIA,7.43
-Jarlin Susana,SP,WSH,9.68
-Luca Tresh,C,KC,0.33
-Brock Vradenburg,1B,MIA,0.40
-Eddy Diaz,2B,COL,0.27
-Tyler McDonough,2B,BOS,0.46
-Malcom Nunez,1B,PIT,0.73
-Gage Workman,3B,CHC,0.28
-Robert Puason,LF,OAK,0.27
-Sterlin Thompson,LF,COL,2.40
-T.J. White,LF,WSH,0.88
-Hunter Bishop,LF,SF,0.50
-Mason Auer,RF,TB,0.81
-Andrew Dalquist,SP,CHW,0.51
-Dax Fulton,SP,MIA,0.38
-Teddy McGraw,SP,SEA,5.05
-Osiel Rodriguez,SP,NYY,0.26
-Dylan Smith,SP,DET,4.60
-Matthew Thompson,SP,CHC,0.60
-Ryan Rolison,SP,COL,0.28
-CJ Van Eyk,SP,LAD,0.30
-Mike Boeve,1B,MIL,3.44
-Cristofer Torin,2B,ARI,2.65
-Sean Keys,3B,TOR,1.98
-Luis Guanipa,CF,ATL,4.30
-Walker Jenkins,CF,MIN,9.96
-Luis Lara,CF,MIL,4.55
-Jakob Marsee,CF,MIA,5.81
-Yasser Mercedes,CF,MIN,6.82
-Willy Montero,CF,NYY,0.95
-Lonnie White,CF,PIT,7.23
-Drue Hackenberg,SP,ATL,3.08
-Cooper Hjerpe,SP,STL,6.16
-Gunnar Hoglund,SP,OAK,4.56
-Lael Lockhart,SP,DET,1.61
-Hyun-Seok Jang,SP,LAD,6.19
-Ryan Clifford,RF,NYM,5.06
-Bryce Eldridge,1B,SF,9.87
-Jose Salas,SS,MIN,0.89
-Luke Adams,3B,MIL,5.63
-Josh Caron,2B,SEA,2.97
-Ben Cowles,2B,CHC,0.84
-Josh Kasevich,SS,TOR,7.16
-Colin Barber,CF,HOU,0.85
-Matthew Etzel,LF,TB,4.56
-A.J. Vukovich,3B,ARI,5.23
-Travis Honeyman,LF,STL,4.60
-Drew Gilbert,CF,NYM,6.57
-Maddux Bruns,SP,LAD,2.60
-Parker Messick,SP,CLE,4.71
-Jacob Misiorowski,SP,MIL,8.91
-Nick Nastrini,SP,CHW,3.25
-Thomas White,SP,MIA,9.87
-Peyton Pallette,SP,CHW,3.81
-Kash Mayfield,SP,SD,8.20
-Ethan Salas,C,SD,9.08
-Luke Keaschall,2B,MIN,7.72
-Tommy Troy,SS,ARI,5.06
-Carson Williams,SS,TB,9.79
-Austin Gauthier,2B,LAD,1.09
-Emmanuel Rodriguez,CF,MIN,9.68
-Paulino Santana,CF,TEX,6.69
-Kristian Robinson,RF,ARI,0.78
-Mason Barnett,SP,OAK,7.15
-Jose Corniell,SP,TEX,6.37
-Tink Hence,SP,STL,9.42
-Fernando Perez,SP,TOR,4.00
-Darlin Saladin,SP,STL,2.60
-Will Warren,SP,NYY,1.39
-Damiano Palmegiani,1B,TOR,2.14
-Sal Stewart,2B,CIN,6.18
-Brayden Taylor,3B,TB,7.92
-Jesus Baez,3B,NYM,7.58
-Felnin Celesten,SS,SEA,9.64
-Colson Montgomery,SS,CHW,9.80
-Luis Pena,SS,MIL,7.98
-Jacob Melton,CF,HOU,8.11
-Jackson Baumeister,SP,TB,7.96
-Brandon Birdsell,SP,CHC,6.62
-Ryan Gusto,SP,HOU,0.66
-Nolan McLean,SP,NYM,8.67
-Winston Santos,SP,TEX,7.82
-Brandon Sproat,SP,NYM,8.69
-Joander Suarez,SP,NYM,0.63
-Grant Taylor,SP,CHW,7.84
-Samuel Basallo,C,BAL,9.76
-Ralphy Velazquez,1B,CLE,7.24
-Franklin Arias,2B,BOS,8.06
-Fernando Cruz,SS,CHC,7.37
-Yairo Padilla,SS,STL,8.35
-Tai Peete,SS,SEA,6.97
-Joendry Vargas,SS,LAD,8.04
-Yeremi Cabrera,CF,TEX,7.32
-Chase Davis,LF,STL,6.00
-Chase DeLauter,RF,CLE,8.72
-Alan Roden,RF,TOR,6.34
-Mason Adams,SP,CHW,3.16
-Jackson Ferris,SP,LAD,9.12
-Logan Henderson,SP,MIL,6.10
-Keeler Morfe,SP,BAL,5.70
-Zander Mueth,SP,PIT,8.34
-Carson Palmquist,SP,COL,4.76
-Brock Porter,SP,TEX,4.77
-Noah Schultz,SP,CHW,9.97
-Blake Wolters,SP,KC,7.92
-Aroon Escobar,2B,PHI,1.89
-Starlyn Caba,SS,MIA,9.25
-George Lombard Jr.,SS,NYY,8.68
-Sebastian Walcott,3B,TEX,9.90
-Aidan Smith,CF,TB,8.26
-C.J. Culpepper,SP,MIN,6.50
-Bishop Letson,SP,MIL,8.07
-Andrew Painter,SP,PHI,9.97
-Marco Raya,SP,MIN,8.42
-Kendry Rojas,SP,TOR,6.11
-David Sandlin,SP,BOS,5.21
-Josue Briceno,C,DET,6.26
-Kyle Teel,C,CHW,7.62
-Yeiner Fernandez,C,LAD,0.62
-Quinn McDaniel,2B,SF,0.76
-Jorbit Vivas,2B,NYY,1.13
-Sabin Ceballos,3B,SF,2.71
-Keiner Delgado,2B,PIT,5.69
-Jacob Gonzalez,SS,CHW,3.24
-Cooper Pratt,SS,MIL,7.60
-Zyhir Hope,LF,LAD,9.10
-Jud Fabian,LF,BAL,4.64
-Gavin Cross,RF,KC,5.97
-Hector Rodriguez,RF,CHW,2.01
-Brennen Davis,RF,NYY,4.22
-Jake Bloss,SP,TOR,7.08
-Moises Chace,SP,PHI,8.95
-Chase Dollander,SP,COL,9.96
-Tanner Hall,SP,MIN,0.18
-Chase Hampton,SP,NYY,8.16
-Quinn Mathews,SP,STL,9.23
-Ramon Ramirez,C,KC,4.88
-Creed Willems,C,BAL,0.56
-Derniche Valdez,2B,CHC,7.47
-Juan Baez,2B,MIL,1.08
-Austin Charles,3B,KC,5.09
-Dawel Joseph,SS,SEA,0.54
-Jesus Made,SS,MIL,9.75
-Jesus Made,SS,OAK,3.00
-Jose Anderson,CF,MIL,5.46
-A.J. Ewing,CF,NYM,1.97
-Anthony Gutierrez,CF,TEX,2.57
-Victor Mesa Jr.,CF,MIA,2.49
-Isaish Lowe,SP,SD,4.71
-Adolfo Sanchez,CF,CIN,7.14
-Elis Cuevas,RF,BAL,0.78
-Wilfred Veras,LF,CHW,1.81
-George Wolkow,RF,CHW,5.28
-Jhancarlos Lara,SP,ATL,0.58
-Jean Cabrera,SP,PHI,4.95
-Henry Lalane,SP,NYY,8.77
-Santiago Suarez,SP,TB,9.51
-Jadher Areinamo,2B,MIL,3.59
-Cooper Kinney,2B,TB,5.97
-Kahlil Watson,2B,CLE,3.18
-Dameury Pena,2B,MIN,2.49
-Eddinson Paulino,2B,TOR,1.66
-Cayden Wallace,3B,WSH,6.61
-Frederick Bencosme,SS,BAL,0.89
-Rayne Doncon,3B,MIN,3.62
-Franyerber Montilla,2B,DET,5.97
-Max Muncy,SS,OAK,7.28
-Dillon Head,CF,MIA,7.79
-Nelson Rada,CF,LAA,7.11
-Juneiker Caceres,RF,CLE,4.54
-Alex Clemmey,SP,WSH,7.54
-Trevor Martin,SP,TB,6.66
-Ian Seymour,SP,TB,2.53
-Jordy Vargas,SP,COL,5.15
-Agustin Ramirez,C,MIA,6.55
-Kyle Karros,3B,COL,3.84
-Pedro Ramirez,2B,CHC,2.10
-Cristian Hernandez,SS,CHC,2.91
-Daylen Lile,LF,WSH,6.44
-Benny Montgomery,CF,COL,6.98
-Nick Morabito,CF,NYM,6.19
-Yophery Rodriguez,CF,MIL,7.49
-Brandon Barriera,SP,TOR,4.93
-Nick Frasso,SP,LAD,6.62
-Michael Kennedy,SP,STL,4.02
-Adam Macko,SP,TOR,3.94
-Troy Melton,SP,DET,4.84
-Connor Prielipp,SP,MIN,5.72
-Dylan Ray,SP,ARI,5.46
-Anthony Solometo,SP,PIT,5.62
-Wilmer Flores,SP,DET,5.15
-Diego Cartaya,C,MIN,2.17
-Thayron Liranzo,C,DET,7.90
-Edgar Quero,C,CHW,6.95
-David McCabe,1B,ATL,0.74
-Eric Bitonti,3B,MIL,8.80
-Sammy Stafura,SS,CIN,7.62
-Victor Hurtado,CF,WSH,7.09
-Max Clark,LF,DET,9.86
-Jose Ramos,CF,LAD,0.97
-Braylin Tavera,LF,BAL,5.18
-Brandon Winokur,SS,MIN,8.16
-Josue De Paula,RF,LAD,9.34
-Chase Petty,SP,CIN,8.77
-Hurston Waldrep,SP,ATL,4.60
-Carson Whisenhunt,SP,SF,8.31
-Will Simpson,1B,TB,3.46
-Javier Vaz,LF,KC,2.56
-Boston Baro,SS,NYM,5.70
-Mac Horvath,3B,TB,4.36
-Alex Mooney,SS,CLE,5.18
-Brock Wilken,3B,MIL,2.83
-E.J. Exposito,2B,ATL,0.42
-Cooper Bowman,2B,CIN,2.37
-Carlos Jorge,CF,CIN,0.87
-Henry Bolte,CF,OAK,7.84
-Gabriel Rincones Jr.,CF,PHI,3.40
-Ryan Birchard,SP,MIL,0.37
-Will Dion,SP,CLE,0.56
-Didier Fuentes,SP,ATL,3.20
-Ian Mejia,SP,ATL,0.27
-Doug Nikhazy,SP,CLE,3.85
-Elmer Rodriguez-Cruz,SP,NYY,4.31
-Tyler Stuart,SP,WSH,1.87
-Hiro Wyatt,SP,KC,4.51
-Max Anderson,2B,DET,6.06
-Mitch Jebb,2B,PIT,3.79
-Edwin Arroyo,SS,CIN,7.50
-Filippo Di Turi,SS,MIL,1.23
-Jared Serna,2B,MIA,3.87
-Jett Williams,SS,NYM,9.66
-Cole Young,SS,SEA,7.93
-Nazzan Zanetello,SS,BOS,6.02
-Kendall George,CF,LAD,4.64
-Brando Mayea,CF,NYY,4.23
-Chandler Simpson,LF,ARI,8.39
-Jeffry Rosa,CF,NYM,0.93
-Zach Cole Jr.,RF,HOU,5.03
-Yoniel Curet,SP,TB,5.86
-Luis De Leon,SP,BAL,6.13
-Steven Echavarria,SP,OAK,8.01
-Michael Forret,SP,BAL,8.12
-Owen Murphy,SP,ATL,8.07
-Luis Serna,SP,NYY,0.53
-Owen White,SP,CHW,2.91
-Bo Davidson,LF,SF,4.08
-Edgleen Perez,C,NYY,4.75
-Eduardo Tait,C,PHI,8.50
-Abimelec Ortiz,1B,TEX,4.80
-Jordan Viars,1B,PHI,0.72
-Devin Saltiban,2B,PHI,4.28
-Enmanuel Tejeda,SS,NYY,0.81
-Roderick Arias,SS,NYY,8.60
-Yordany De Los Santos,SS,PIT,6.48
-Jansel Luis,2B,ARI,7.54
-Aidan Miller,UT,PHI,NA
-Jefferson Rojas,SS,CHC,6.20
-Justin Crawford,RF,PHI,7.78
-Elijah Green,CF,WSH,6.67
-Spencer Jones,CF,NYY,8.45
-Leonardo Pineda,CF,TB,4.40
-Kala’i Rosario,RF,MIN,3.01
-Yu-Min Lin,SP,ARI,5.62
-Brock Selvidge,SP,NYY,3.83
-Ben Shields,SP,NYY,2.62
-Trystan Vrieling,SP,NYY,2.64
-Moises Ballesteros,C,CHC,9.26
-Jesus Rodriguez,C,NYY,0.05
-Dalton Rushing,C,LAD,9.64
-Jonathon Long,1B,CHC,1.32
-Brennan Milone,3B,OAK,2.19
-Termarr Johnson,2B,PIT,8.41
-Matt Shaw,2B,CHC,9.24
-Colt Emerson,SS,SEA,9.33
-Zac Veen,LF,COL,6.40
-Rayner Arias,RF,SF,6.63
-Jaison Chourio,CF,CLE,9.31
-Eduardo Quintero,CF,LAD,8.65
-Samuel Zavala,RF,CHW,3.97
-Yanquiel Fernandez,RF,COL,6.84
-Lazaro Montes,RF,SEA,7.93
-Hunter Barco,SP,PIT,6.72
-Barrett Kent,SP,LAD,1.18
-Robby Snelling,SP,MIA,8.85
-Blade Tidwell,SP,NYM,7.75
-Jackson Nezuh,SP,HOU,0.68
-Edward Lantigua,RF,NYM,6.64
-Blake Mitchell,C,CHW,8.77
-Rainiel Rodriguez,SS,LAD,5.49
-Tre’ Morgan,1B,LAA,7.19
-Engelth Urena,C,ARI,1.75
-Hao-Yu Lee,2B,STL,3.99
-Yoeilin Cespedes,SS,NYY,6.94
-Welbyn Francisca,SS,NYM,7.13
-Echedry Vargas,SS,CHC,6.43
-Matthew Lugo,SS,KC,3.71
-Colby Thomas,LF,LAD,7.61
-Cole Carrigg,CF,ARI,9.34
-Jonny Farmelo,SS,MIN,8.88
-Robert Calaz,CF,NYM,9.23
-Mitch Bratt,SP,KC,3.16
-Trevor Harrison,SP,TB,9.03
-Yordanny Monegro,SP,LAA,4.28
-Cam Schlittler,SP,ATL,2.61
-Ricardo Olivar,C,MIN,4.96
-Chase Harlan,3B,LAD,5.03
-Caleb Durbin,2B,MIL,1.45
-Tavian Josenberger,2B,BAL,0.85
-Charles McAdoo,2B,TOR,3.99
-Leodalis De Vries,SS,SD,9.87
-Tirso Ornelas,LF,SD,2.71
-Dasan Brown,CF,TOR,3.52
-Robert Hassell,RF,WSH,2.88
-Isaac Coffey,SP,BOS,0.32
-Walter Ford,SP,SEA,0.54
-Tyler Callihan,2B,CIN,5.08
-Andry Lara,SP,WSH,5.47
-Cory Lewis,SP,MIN,3.13
-Andrew Morris,SP,MIN,6.63
-Sem Robberse,SP,STL,2.02
-Joe Rock,SP,TB,1.32
-Miguel Ullola,SP,HOU,5.83
-Chris Cortez,SP,LAA,1.98
-Craig Yoho,SP,MIL,2.12
-Ricky Tiedemann,SP,TOR,9.70
-Jimmy Crooks,C,STL,6.32
-Cooper Ingle,C,CLE,3.11
-Pablo Guerrero,1B,TEX,1.90
-C.J. Kayfus,1B,CLE,6.54
-Payton Eeles,2B,MIN,2.33
-Alex Freeland,SS,LAD,9.18
-Kevin McGonigle,SS,DET,9.58
-Roman Anthony,CF,BOS,9.97
-Lisbel Diaz,RF,KC,0.11
-Hunter Dobbins,SP,SF,4.50
-Kohl Drake,SP,TEX,3.07
-Peter Heubeck,SP,LAD,3.13
-K.C. Hunt,SP,MIL,4.37
-Jedixson Paez,SP,BOS,4.71
-Austin Peterson,SP,CLE,1.33
-Patrick Reilly,SP,BAL,3.62
-Zach Maxwell,SP,CIN,4.86
-Blake Hunt,C,BAL,0.36
-Troy Johnston,1B,MIA,0.37
-Nathan Martorella,1B,MIA,1.48
-Nate Furman,2B,SEA,1.18
-Rainer Nunez,1B,TOR,0.71
-Alexander Vargas,SS,NYY,0.66
-Freddy Zamora,SS,PIT,0.57
-Ivan Johnson,SS,CIN,0.41
-Peyton Wilson,2B,KC,0.39
-Aidan Curry,SP,CIN,5.08
-Colton Gordon,SP,HOU,0.24
-Evan McKendry,SP,MIL,0.21
-Patrick Monteverde,SP,MIA,0.22
-Will Sanders,SP,CHC,1.84
-Jack Leftwich,SP,CLE,0.30
-Christian Roa,SP,MIA,0.25
-Drake Baldwin,C,ATL,6.69
-Carter Jensen,C,KC,6.07
-Luis Merejo,1B,CLE,6.41
-Angel Genao,SS,CLE,7.77
-Jose Perdomo,SS,ATL,4.92
-Denzel Clarke,CF,OAK,7.30
-Dylan Beavers,RF,BAL,8.00
-Trace Bright,SP,BAL,2.98
-Gary Gill Hill,SP,TB,9.17
-Cade Horton,SP,CHC,9.75
-Victor Lizarraga,SP,SD,4.60
-Jack Perkins,SP,OAK,6.46
-J.R. Ritchie,SP,ATL,7.40
-Jonah Tong,SP,NYM,4.25
-Jaxon Wiggins,SP,CHC,4.39
-Brandon Young,SP,BAL,3.47
-Daniel Susac,C,OAK,3.38
-Haydn McGeary,1B,CHC,0.46
-Cutter Coffey,SS,TOR,5.02
-Jack Brannigan,3B,PIT,3.66
-Colin Houck,SS,NYM,3.70
-Dyan Jorge,SS,COL,7.43
-Walker Martin,SS,SF,6.78
-Brian Sanchez,CF,NYY,0.47
-Alex Ramirez,CF,NYM,2.11
-Jacob Berry,3B,MIA,1.74
-Owen Caissie,LF,CHC,8.71
-Yeison Morrobel,LF,TEX,0.09
-Ty Floyd,SP,CIN,4.38
-Joseph Montalvo,SP,DET,4.85
-Sean Sullivan,SP,COL,4.67
-Emiliano Teodo,SP,TEX,5.28
-Yorfran Medina,1B,LAD,0.41
-Alejandro Osuna,CF,TEX,6.48
-Bubba Chandler,SP,PIT,9.96
-Landon Sims,SP,ARI,1.39
-Travis Sykora,SP,WSH,8.84
-Juaron Watts-Brown,SP,TOR,3.34
-Nehomar Ochoa,LF,HOU,4.87
-Brad Lord,SP,WSH,1.52
-Matt Wilkinson,SP,CLE,1.88
-Dominic Keegan,1B,TB,4.70
-Victor Bericoto,RF,SF,0.68
-Justin Gonzales,1B,BOS,0.45
-Evan Reifert,SP,WSH,0.05
-Daiber De Los Santos,SS,MIN,3.92
-Joswa Lugo,SS,LAA,6.43
-Diego Velasquez,SS,SF,2.20
-Aaron Zavala,RF,TEX,0.57
-Kenedy Corona,RF,HOU,0.22
-Eduardo Beltre,RF,MIN,7.24
-Carlos De La Cruz,RF,WSH,0.87
-Braylin Morel,RF,TEX,7.56
-Payton Martin,SP,LAD,6.86
-Frank Mozzicato,SP,KC,2.76
-Carson Coleman,SP,NYY,0.17
-Reggie Crawford,SP,SF,6.00
-Jhonny Level,SS,SF,5.33
-Pedro Catuy,SS,ARI,5.11
-Brendan Tunink,SS,LAD,5.49
-Jose Paulino,SP,MIA,3.53
-Griff O’Ferral,SS,BAL,4.46
-John Gil,SS,ATL,5.43
-Abrahan Ramirez,2B,MIA,4.16
-Nick McLain,CF,CHW,4.61
-Chase Mobley,SP,CLE,5.96
-Kristian Campbell,2B,BOS,9.76
-Nestor German,SP,BAL,3.15
-Shane Sasaki,CF,MIA,0.62
-Ty Johnson,SP,TB,1.46
-Jake Bennett,SP,WSH,4.08
-Shotaro Morii,SS,OAK,5.13
-Brandon Clarke,SP,BOS,0.31
-Johnny King,SP,TOR,6.27
-Owen Wild,SP,TB,7.44
-RJ Schreck,LF,TOR,1.90
-Fenwick Trimble,CF,MIA,3.30
-Blake Burkhalter,SP,ATL,1.07
-Lucas Braun,SP,ATL,2.78
-Jake Miller,SP,DET,0.57
-Brailyn Antunez,CF,MIL,5.33
-Trent Harris,SP,SF,1.16
-Blake Larson,SP,CHW,4.14
-Diego Tornes,CF,ATL,5.55
-Aldrin Batista,SP,CHW,4.59
-Anderson Brito,SP,HOU,6.02
-Eddie Rynders,3B,PIT,7.31
-Cole Mathis,1B,CHC,4.68
-Dante Nori,CF,PHI,4.82
-Carson DeMartini,3B,PHI,1.99
-Eiberson Castellano,SP,MIN,0.57
-Wyatt Sanford,SS,PIT,7.86
-Max Acosta,2B,MIA,0.82
-Gabriel Gonzalez,RF,MIN,3.87
-Conrad Cason,SP,BOS,5.61
-Chen-Wei Lin,SP,STL,5.66
-Cobb Hightower,SS,SD,5.84
-Kale Fountain,3B,SD,5.88
-Jared Thomas,LF,COL,3.20
-Koyo Aoyagi,SP,PHI,NA
-Matt Koperniak,CF,STL,0.15
-Cameron Sullivan,SP,CLE,7.67
-Alfonsin Rosario,CF,CLE,5.95
-Tyson Neighbors,SP,SD,2.55
-Grant Wolfram,SP,MIL,0.33
-Brian Holiday,SP,STL,1.55
-Cole Messina,C,COL,1.44
-Grant Knipp,SP,SEA,2.43
-Nate Dohm,SP,NYM,3.46
-Jhonayker Ugarte,3B,KC,4.59
-Trey Gregory-Alford,SP,LAA,4.15
-Khal Stephen,SP,TOR,3.28
-Chris Levonas,SP,MIL,3.74
-Kevin Parada,C,NYM,1
-Spencer Nivens,LF,KC,1.74
-Zach Agnos,RF,COL,3.82
-Juan Valera,SP,BOS,6.53
-Skylar Hales,SP,TEX,6.02
-Ethan Schiefelbein,SP,DET,6.26
-Nomar Fana,CF,DET,0.51
-Garrett Baumann,SP,ATL,3.56
-Angel Feliz,SS,WSH,3.86
-"Tony Blanco, Jr.",1B,PIT,1.96
-PROXY,RF,SD,0.41
-,,,NA
-,,,NA
-,,,NA
+Rank,Name,Position,MLB Team,Unique score,,,
+1,Roman Anthony,CF,SF,9.98,,,
+2,Noah Schultz,SP,KC,9.97,,,
+3,Walker Jenkins,CF,CLE,9.96,,,
+4,Andrew Painter,SP,OAK,9.96,,,
+5,Bubba Chandler,SP,WSH,9.96,,,
+6,Chase Dollander,SP,LAA,9.95,,,
+7,Sebastian Walcott,3B,OAK,9.91,,,
+8,Chase Burns,SP,DET,9.90,,,
+9,Thomas White,SP,COL,9.89,,,
+10,Bryce Eldridge,1B,COL,9.87,,,
+11,Hagen Smith,SP,MIL,9.86,,,
+12,Leodalis De Vries,SS,SD,9.85,,,
+13,Travis Bazzana,2B,HOU,9.84,,,
+14,Max Clark,LF,MIN,9.84,,,
+15,Konnor Griffin,SS,SF,9.82,,,
+16,Carson Williams,SS,DET,9.80,,,
+17,Colson Montgomery,SS,HOU,9.79,,,
+18,Samuel Basallo,C,KC,9.78,,,
+19,Kristian Campbell,2B,ARI,9.75,,,
+20,Cade Horton,SP,TB,9.71,,,
+21,Jett Williams,SS,NYY,9.69,,,
+22,Emmanuel Rodriguez,CF,DET,9.69,,,
+23,Jarlin Susana,SP,CWS,9.67,,,
+24,Jesus Made,SS,LAD,9.64,,,
+25,Charlie Condon,3B,TOR,9.62,,,
+26,Ricky Tiedemann,SP,BAL,9.59,,,
+27,Dalton Rushing,C,PIT,9.58,,,
+28,Bryce Rainer,SS,KC,9.58,,,
+29,Kevin McGonigle,SS,SF,9.58,,,
+30,Felnin Celesten,SS,HOU,9.54,,,
+31,Jac Caglianone,1B,HOU,9.52,,,
+32,Santiago Suarez,SP,LAD,9.50,,,
+33,Nick Kurtz,1B,CLE,9.50,,,
+34,JJ Wetherholt,SS,BOS,9.48,,,
+35,Xavier Isaac,1B,CWS,9.42,,,
+36,Colt Emerson,SS,PIT,9.35,,,
+37,Brailer Guerrero,RF,ATL,9.34,,,
+38,Alejandro Rosario,SP,BAL,9.31,,,
+39,Tink Hence,SP,DET,9.31,,,
+40,Josue De Paula,RF,MIN,9.30,,,
+41,Matt Shaw,2B,PIT,9.30,,,
+42,Jaison Chourio,CF,PIT,9.30,,,
+43,Moises Ballesteros,C,PIT,9.27,,,
+44,Alex Freeland,SS,SF,9.24,,,
+45,Cole Carrigg,CF,STL,9.23,,,
+46,Brady House,3B,ATL,9.22,,,
+47,Starlyn Caba,SS,OAK,9.19,,,
+48,Robert Calaz,CF,STL,9.18,,,
+49,Gary Gill Hill,SP,TB,9.17,,,
+50,Quinn Mathews,SP,LAA,9.17,,,
+51,Marcelo Mayer,SS,CWS,9.16,,,
+52,Jackson Ferris,SP,KC,9.11,,,
+53,Daniel Espino,SP,BAL,9.09,,,
+54,Cam Smith,3B,SF,9.06,,,
+55,Thomas Harrington,SP,ATL,9.05,,,
+56,Robby Snelling,SP,PIT,9.04,,,
+57,Trevor Harrison,SP,STL,9.00,,,
+58,Zyhir Hope,LF,LAA,8.99,,,
+59,Jacob Misiorowski,SP,COL,8.95,,,
+60,Luis Perales,SP,BOS,8.95,,,
+61,Moises Chace,SP,LAA,8.93,,,
+62,Ethan Salas,C,DET,8.93,,,
+63,Jonny Farmelo,SS,STL,8.88,,,
+64,Chase Petty,SP,MIN,8.86,,,
+65,Travis Sykora,SP,WSH,8.77,,,
+66,Trey Yesavage,SP,CLE,8.75,,,
+67,Levi Sterling,SP,BAL,8.74,,,
+68,Theo Gillen,CF,DET,8.74,,,
+69,Brandon Sproat,SP,HOU,8.73,,,
+70,Ryan Sloan,SP,CIN,8.73,,,
+71,Eric Bitonti,3B,MIN,8.73,,,
+72,Owen Caissie,LF,TOR,8.69,,,
+73,George Lombard Jr.,SS,OAK,8.68,,,
+74,Nolan McLean,SP,HOU,8.68,,,
+75,Chase DeLauter,RF,KC,8.67,,,
+76,Braxton Ashcraft,SP,BOS,8.66,,,
+77,Roderick Arias,SS,PHI,8.66,,,
+78,Blake Mitchell,C,STL,8.65,,,
+79,Braylon Doughty,SP,CLE,8.65,,,
+80,Cam Caminiti,SP,TOR,8.59,,,
+81,Eduardo Quintero,CF,PIT,8.58,,,
+82,Termarr Johnson,2B,PIT,8.56,,,
+83,Demetrio Crisantes,2B,BAL,8.53,,,
+84,Henry Lalane,SP,LAD,8.53,,,
+85,Cris Rodriguez,CF,OAK,8.50,,,
+86,Chandler Simpson,LF,NYY,8.49,,,
+87,Josuar De Jesus Gonzalez,SS,ATL,8.45,,,
+88,Tyson Lewis,LF,BOS,8.45,,,
+89,James Triantos,2B,ATL,8.45,,,
+90,Marco Raya,SP,OAK,8.44,,,
+91,Michael Arroyo,2B,BAL,8.43,,,
+92,Spencer Jones,CF,PHI,8.39,,,
+93,Vance Honeycutt,CF,LAA,8.39,,,
+94,Brice Matthews,3B,ATL,8.38,,,
+95,Seaver King,SS,CIN,8.37,,,
+96,Eduardo Tait,C,PHI,8.36,,,
+97,David Shields,SP,MIA,8.33,,,
+98,Dasan Hill,SP,BAL,8.32,,,
+99,Carson Whisenhunt,SP,MIN,8.31,,,
+100,Aidan Smith,CF,OAK,8.30,,,
+101,Zander Mueth,SP,KC,8.26,,,
+102,Christian Moore,SS,CLE,8.24,,,
+103,Yairo Padilla,SS,KC,8.23,,,
+104,Jacob Melton,CF,HOU,8.22,,,
+105,Jaden Hamm,SP,TOR,8.19,,,
+106,Alfredo Duno,C,ATL,8.18,,,
+107,Michael Forret,SP,NYY,8.15,,,
+108,Kellon Lindsey,SS,ARI,8.11,,,
+109,Cole Young,SS,NYY,8.11,,,
+110,Bishop Letson,SP,OAK,8.09,,,
+111,Franklin Arias,2B,KC,8.07,,,
+112,Josh Knoth,SP,ATL,8.06,,,
+113,Chase Hampton,SP,LAA,8.05,,,
+114,Dylan Beavers,RF,TB,8.04,,,
+115,Brandon Winokur,SS,MIN,8.04,,,
+116,Ricardo Cabrera,3B,ARI,8.03,,,
+117,Brayden Taylor,3B,HOU,8.03,,,
+118,Arjun Nimmala,SS,ATL,8.02,,,
+119,Griffin Burkholder,RF,MIN,8.02,,,
+120,Elian Pena,SS,NYY,8.00,,,
+121,Jackson Baumeister,SP,HOU,8.00,,,
+122,Logan Evans,SP,CWS,7.99,,,
+123,Caleb Bonemer,SS,DET,7.97,,,
+124,Charlee Soto,SP,ATL,7.97,,,
+125,Joendry Vargas,SS,KC,7.96,,,
+126,Slade Caldwell,CF,KC,7.94,,,
+127,Lazaro Montes,RF,PIT,7.91,,,
+128,Henry Bolte,CF,NYM,7.91,,,
+129,Jagger Haynes,SP,BAL,7.90,,,
+130,Blake Wolters,SP,KC,7.90,,,
+131,Winston Santos,SP,HOU,7.87,,,
+132,Kash Mayfield,SP,MIA,7.84,,,
+133,Angel Genao,SS,TB,7.83,,,
+134,Steven Echavarria,SP,NYY,7.82,,,
+135,Steven Echavarria,SP,,7.82,,,
+136,Thayron Liranzo,C,LAD,7.82,,,
+137,Justin Crawford,RF,PHI,7.82,,,
+138,Owen Murphy,SP,NYY,7.81,,,
+139,Blade Tidwell,SP,PIT,7.80,,,
+140,Wyatt Sanford,SS,BOS,7.79,,,
+141,George Klassen,SP,ATL,7.76,,,
+142,Cooper Pratt,SS,LAA,7.76,,,
+143,Cam Collier,3B,CWS,7.74,,,
+144,Yolfran Castillo,SS,BAL,7.74,,,
+145,Yorger Bautista,CF,CIN,7.74,,,
+146,Braylon Payne,CF,KC,7.67,,,
+147,Luke Keaschall,2B,DET,7.67,,,
+148,Trevor McDonald,SP,ARI,7.65,,,
+149,Colby Thomas,LF,STL,7.62,,,
+150,Luis Pena,SS,HOU,7.62,,,
+151,Dillon Head,CF,MIA,7.61,,,
+152,Landen Maroudis,SP,BAL,7.61,,,
+153,PJ Morlando,LF,MIA,7.60,,,
+154,Sammy Stafura,SS,MIN,7.60,,,
+155,Jeferson Quero,C,ATL,7.59,,,
+156,Luke Dickerson,SS,OAK,7.57,,,
+157,Owen WIld,SP,MIN,7.57,,,
+158,Edwin Arroyo,SS,NYY,7.54,,,
+159,Kyle Teel,C,LAA,7.54,,,
+160,Miguel Bleis,CF,CWS,7.51,,,
+161,Yophery Rodriguez,CF,MIL,7.51,,,
+162,Bryce Meccage,SP,MIN,7.49,,,
+163,Jansel Luis,2B,PHI,7.49,,,
+164,Alex Clemmey,SP,MIA,7.47,,,
+165,Emil Morales,SS,CWS,7.45,,,
+166,Braylin Morel,RF,TEX,7.44,,,
+167,Jesus Baez,3B,HOU,7.43,,,
+168,Josh Kasevich,SS,COL,7.42,,,
+169,Ben Kudrna,SP,ARI,7.41,,,
+170,Grant Taylor,SP,HOU,7.40,,,
+171,James Tibbs,SS,TOR,7.40,,,
+172,Nelson Rada,CF,MIA,7.39,,,
+173,Maykel Coret,CF,BAL,7.38,,,
+174,Mike Sirota,CF,ARI,7.36,,,
+175,Patrick Copen,SP,,7.35,,,
+176,Dyan Jorge,SS,TOR,7.35,,,
+177,Coleman Crow,SP,BAL,7.33,,,
+178,Braden Montgomery,RF,SD,7.33,,,
+179,Derniche Valdez,2B,LAD,7.32,,,
+180,Noble Meyer,SP,CWS,7.30,,,
+181,Mason Barnett,SP,DET,7.28,,,
+182,Jake Bloss,SP,LAA,7.28,,,
+183,Ralphy Velazquez,1B,KC,7.26,,,
+184,Kaelen Culpepper,SS,LAA,7.26,,,
+185,Harry Ford,C,CWS,7.25,,,
+186,J.R. Ritchie,SP,TB,7.24,,,
+187,Eddie Rynders,3B,OAK,7.24,,,
+188,Max Muncy,SS,MIA,7.22,,,
+189,Tre' Morgan,1B,STL,7.20,,,
+190,Welbyn Francisca,SS,STL,7.20,,,
+191,Lonnie White,CF,CLE,7.19,,,
+192,Fernando Cruz,SS,,7.19,,,
+193,Yeremi Cabrera,CF,KC,7.19,,,
+194,Enmanuel Bonilla,CF,ATL,7.19,,,
+195,Kevin Alvarez,CF,CWS,7.18,,,
+196,Andres Valor,CF,BAL,7.18,,,
+197,Druw Jones,CF,CWS,7.14,,,
+198,Owen Hall,SP,HOU,7.13,,,
+199,Denzel Clarke,CF,TB,7.12,,,
+200,Andrew Salas,SS,BAL,7.09,,,
+201,Joey Oakie,SP,MIA,7.05,,,
+202,Luis Cova,CF,BAL,7.03,,,
+203,Edgar Quero,C,MIN,6.97,,,
+204,Enrique Bradfield Jr.,LF,BOS,6.95,,,
+205,Adolfo Sanchez,CF,LAD,6.95,,,
+206,Tai Peete,SS,KC,6.92,,,
+207,Tai Peete,CF,KC,6.92,,,
+208,Victor Hurtado,CF,,6.89,,,
+209,Yanquiel Fernandez,RF,PIT,6.83,,,
+210,Andrew Morris,SP,SD,6.81,,,
+211,Bryce Cunningham,SP,TOR,6.81,,,
+212,Boston Bateman,SP,TB,6.81,,,
+213,Yoeilin Cespedes,SS,STL,6.80,,,
+214,Payton Martin,SP,TEX,6.79,,,
+215,Cayden Wallace,3B,MIA,6.78,,,
+216,Hunter Barco,SP,PIT,6.78,,,
+217,Ruben Santana,1B,,6.77,,,
+218,Trevor Martin,SP,MIA,6.77,,,
+219,Benny Montgomery,CF,MIL,6.74,,,
+220,Eduardo Beltre,RF,TEX,6.74,,,
+221,Jeremy Rodriguez,SS,BAL,6.72,,,
+222,Brandon Birdsell,SP,HOU,6.72,,,
+223,Dylan Dreiling,LF,LAD,6.71,,,
+224,Drew Gilbert,CF,COL,6.69,,,
+225,Drake Baldwin,C,TB,6.68,,,
+226,Yasser Mercedes,CF,CLE,6.68,,,
+227,Elijah Green,CF,PHI,6.67,,,
+228,Yandel Ricardo,SS,,6.66,,,
+229,Walker Martin,SS,TOR,6.64,,,
+230,Malcolm Moore,C,STL,6.63,,,
+231,Alejandro Osuna,CF,WSH,6.63,,,
+232,Daylen Lile,LF,MIL,6.60,,,
+233,Jurrangelo Cijntje,SP,TB,6.60,,,
+234,Matt Canterino,SP,,6.56,,,
+235,JD Dix,SS,KC,6.54,,,
+236,Drew Beam,SP,MIN,6.53,,,
+237,C.J. Kayfus,1B,PHI,6.52,,,
+238,Echedry Vargas,SS,STL,6.52,,,
+239,Ryan Forcucci,SP,LAA,6.50,,,
+240,Juan Valera,SP,,6.49,,,
+241,Agustin Ramirez,C,MIL,6.47,,,
+242,Alan Roden,RF,KC,6.46,,,
+243,Brett Wichrowski,SP,ARI,6.46,,,
+244,C.J. Culpepper,SP,OAK,6.45,,,
+245,Ben Hess,SP,COL,6.43,,,
+246,Jose Corniell,SP,DET,6.41,,,
+247,Sheng-En Lin,SP,CHC,6.41,,,
+248,Paulino Santana,CF,DET,6.39,,,
+249,Edward Lantigua,RF,BAL,6.36,,,
+250,Yordany De Los Santos,SS,PHI,6.36,,,
+251,Jefferson Rojas,SS,PHI,6.35,,,
+252,Dorian Soto,SS,SF,6.35,,,
+253,Casey Saucke,RF,,6.34,,,
+254,Zac Veen,LF,PIT,6.34,,,
+255,Rayner Arias,RF,PIT,6.33,,,
+256,Sal Stewart,2B,HOU,6.28,,,
+257,Tekoah Roby,SP,BAL,6.27,,,
+258,Angel Cepeda,SS,CHC,6.25,,,
+259,Tytus Cissell,SS,OAK,6.25,,,
+260,Jimmy Crooks,C,SF,6.23,,,
+261,Luis Merejo,1B,TB,6.21,,,
+262,Jonathan Santucci,SP,MIA,6.20,,,
+263,Jeter Martinez,SP,CWS,6.20,,,
+264,Nick Morabito,CF,MIL,6.19,,,
+265,Jack Perkins,SP,TB,6.17,,,
+266,Kyle DeBarge,SS,OAK,6.17,,,
+267,Ashly Andujar,SS,BAL,6.16,,,
+268,Kendry Rojas,SP,OAK,6.15,,,
+269,Logan Henderson,SP,KC,6.14,,,
+270,Yu-Min Lin,SP,PHI,6.13,,,
+271,Joswa Lugo,SS,TEX,6.13,,,
+272,Dakota Jordan,RF,CLE,6.11,,,
+273,Dylan Lesko,SP,ATL,6.10,,,
+274,Johnny King,SP,MIA,6.08,,,
+275,Cooper Hjerpe,SP,CLE,6.08,,,
+276,Hyun-Seok Jang,SP,CLE,6.07,,,
+277,Jhonny Severino,3B,COL,6.06,,,
+278,Josue Briceno,C,LAA,6.06,,,
+279,Yoniel Curet,SP,NYY,6.05,,,
+280,Yoniel Curet,SP,,6.05,,,
+281,Ryan Waldschmidt,LF,SF,6.05,,,
+282,Max Anderson,2B,NYY,6.04,,,
+283,Chase Davis,LF,KC,6.04,,,
+284,Nick Frasso,SP,MIL,6.04,,,
+285,Luis De Leon,SP,NYY,6.02,,,
+286,Brody Brecht,SP,MIL,6.01,,,
+287,Gino Groover,3B,ATL,6.01,,,
+288,Gavin Cross,RF,LAA,5.99,,,
+289,Franyerber Montilla,2B,MIA,5.98,,,
+290,Nazzan Zanetello,SS,NYY,5.96,,,
+291,Miguel Ullola,SP,SD,5.95,,,
+292,Carter Jensen,C,TB,5.95,,,
+293,Jakob Marsee,CF,CLE,5.94,,,
+294,Brody Hopkins,SP,ATL,5.94,,,
+295,Joe Whitman,SP,ARI,5.94,,,
+296,Cooper Kinney,2B,MIA,5.91,,,
+297,Luis Baez,RF,BOS,5.88,,,
+298,Andry Lara,SP,SD,5.88,,,
+299,Leanardo Arias,SS,CHC,5.85,,,
+300,Chase Mobley,SP,NYM,5.85,,,
+301,Carson Benge,CF,ARI,5.84,,,
+302,Boston Baro,SS,,5.80,,,
+303,Boston Baro,SS,NYM,5.80,,,
+304,Carter Johnson,SS,CIN,5.78,,,
+305,Kale Fountain,3B,STL,5.73,,,
+306,Anderson Brito,SP,SF,5.73,,,
+307,Luke Adams,3B,COL,5.69,,,
+308,Reggie Crawford,SP,TEX,5.68,,,
+309,Keiner Delgado,2B,LAA,5.63,,,
+310,Keeler Morfe,SP,KC,5.59,,,
+311,Brian Holiday,SP,BOS,5.57,,,
+312,Grant Wolfram,SP,TEX,5.57,,,
+313,Tyson Neighbors,SP,BOS,5.57,,,
+314,Cameron Sullivan,SP,LAD,5.57,,,
+315,Koyo Aoyagi,SP,,5.57,,,
+316,George Wolkow,CF,LAD,5.56,,,
+317,Anthony Solometo,SP,MIL,5.54,,,
+318,Caleb Lomavita,C,ARI,5.51,,,
+319,Conrad Cason,SP,SF,5.50,,,
+320,Zach Ehrhard,RF,,5.50,,,
+321,David Sandlin,SP,OAK,5.47,,,
+322,Tyler Callihan,2B,TEX,5.42,,,
+323,Cobb Hightower,SS,LAD,5.41,,,
+324,Noah Cameron,SP,BOS,5.40,,,
+325,Diego Tornes,CF,CWS,5.38,,,
+326,Brendan Tunink,SS,BOS,5.36,,,
+327,Aron Estrada,2B,ATL,5.32,,,
+328,Chen-Wei Lin,SP,SD,5.30,,,
+329,John Gil,SS,CLE,5.28,,,
+330,Dylan Ray,SP,,5.28,,,
+331,Ryan Clifford,RF,COL,5.23,,,
+332,A.J. Vukovich,3B,COL,5.23,,,
+333,Brailyn Antunez,CF,NYY,5.19,,,
+334,Alex Mooney,SS,NYM,5.18,,,
+335,Connor Prielipp,SP,MIL,5.16,,,
+336,Rainiel Rodriguez,SS,STL,5.16,,,
+337,Braylin Tavera,LF,MIN,5.14,,,
+338,George Wolkow,RF,LAD,5.12,,,
+339,Jean Cabrera,SP,LAD,5.09,,,
+340,Jose Anderson,CF,LAD,5.09,,,
+341,Austin Charles,3B,LAD,5.08,,,
+342,Deyvison De Los Santos,1B,CWS,5.07,,,
+343,Emiliano Teodo,SP,TOR,5.07,,,
+344,Carson Palmquist,SP,KC,5.07,,,
+345,Payton Tolle,SP,TOR,5.06,,,
+346,Wilmer Flores,SP,,5.06,,,
+347,Aidan Curry,SP,SEA,5.06,,,
+348,Mikey Romero,SS,BOS,5.04,,,
+349,Troy Melton,SP,MIL,5.03,,,
+350,Cutter Coffey,SS,TOR,5.00,,,
+351,Shotaro Morii,SS,TB,4.97,,,
+352,Parker Messick,SP,COL,4.96,,,
+353,Dante Nori,CF,KC,4.94,,,
+354,Jordy Vargas,SP,MIA,4.93,,,
+355,Kendall George,CF,NYY,4.91,,,
+356,Jedixson Paez,SP,LAA,4.89,,,
+357,Zach Maxwell,SP,TEX,4.89,,,
+358,Isaish Lowe,SP,WSH,4.88,,,
+359,Chase Harlan,3B,OAK,4.88,,,
+360,Chase Harlan,3B,,4.88,,,
+361,Juan Brito,2B,CWS,4.88,,,
+362,Pedro Catuy,SS,,4.88,,,
+363,Ricardo Olivar,C,SD,4.87,,,
+364,Jhonny Level,SS,TB,4.87,,,
+365,Rodney Green,CF,,4.86,,,
+366,Zach Cole Jr.,RF,,4.82,,,
+367,Jud Fabian,LF,LAA,4.82,,,
+368,Sean Sullivan,SP,TOR,4.81,,,
+369,Tommy Troy,SS,DET,4.80,,,
+370,Hunter Dobbins,SP,SF,4.80,,,
+371,Dominic Keegan,1B,TEX,4.79,,,
+372,Victor Lizarraga,SP,TB,4.79,,,
+373,Griff O'Ferral,SS,NYY,4.78,,,
+374,Luke Holman,SP,LAA,4.76,,,
+375,Gunnar Hoglund,SP,CLE,4.76,,,
+376,Billy Amick,3B,KC,4.76,,,
+377,Robert Arias,CF,,4.75,,,
+378,Chase Allsup,SP,,4.74,,,
+379,Hurston Waldrep,SP,MIN,4.74,,,
+380,Yassel Soler,3B,CWS,4.73,,,
+381,Nehomar Ochoa,LF,MIN,4.73,,,
+382,Aldrin Batista,SP,ARI,4.73,,,
+383,Matthew Etzel,LF,COL,4.73,,,
+384,Cole Messina,C,NYM,4.71,,,
+385,Alfonsin Rosario,CF,MIN,4.71,,,
+386,Matt Koperniak,CF,SD,4.71,,,
+387,Tommy White,3B,KC,4.70,,,
+388,Abimelec Ortiz,1B,PHI,4.70,,,
+389,Emilien Pitre,2B,NYY,4.70,,,
+390,Cole Mathis,1B,SF,4.69,,,
+391,Joseph Montalvo,SP,TOR,4.67,,,
+392,Brock Porter,SP,,4.66,,,
+393,Luis Lara,CF,CLE,4.61,,,
+394,Hiro Wyatt,SP,NYM,4.60,,,
+395,Jonah Tong,SP,TB,4.60,,,
+396,Ramon Ramirez,C,LAD,4.58,,,
+397,Jack Leiter,SP,BOS,4.58,,,
+398,Brandon Barriera,SP,MIL,4.57,,,
+399,Yohandy Morales,1B,BOS,4.57,,,
+400,K.C. Hunt,SP,SF,4.57,,,
+401,Jhostynxon Garcia,CF,CWS,4.56,,,
+402,Elmer Rodriguez-Cruz,SP,NYM,4.51,,,
+403,Jose Perdomo,SS,TB,4.49,,,
+404,Carlson Reed,SP,WSH,4.48,,,
+405,Edgleen Perez,C,PHI,4.46,,,
+406,Chase Meidroth,3B,ATL,4.45,,,
+407,Thatcher Hurd,SP,,4.42,,,
+408,Teddy McGraw,SP,CIN,4.40,,,
+409,Teddy McGraw,SP,,4.40,,,
+410,Dylan Smith,SP,CIN,4.40,,,
+411,Devin Saltiban,2B,PHI,4.34,,,
+412,Travis Honeyman,LF,COL,4.32,,,
+413,Nick McLain,CF,,4.32,,,
+414,Juneiker Caceres,RF,MIA,4.32,,,
+415,Luis Guanipa,CF,CLE,4.20,,,
+416,Joe Mack,C,BOS,4.20,,,
+417,Doug Nikhazy,SP,NYM,4.18,,,
+418,Michael Kennedy,SP,MIL,4.18,,,
+419,Brando Mayea,CF,NYY,4.17,,,
+420,Ryan Johnson,SP,COL,4.16,,,
+421,Hao-Yu Lee,2B,STL,4.14,,,
+422,Tjayy Walton,LF,BAL,4.14,,,
+423,Fernando Perez,SP,DET,4.13,,,
+424,Charles McAdoo,2B,SD,4.13,,,
+425,Alexander Albertus,3B,CWS,4.12,,,
+426,Rainiel Rodriguez,C,STL,4.12,,,
+427,Adam Macko,SP,MIL,4.11,,,
+428,Yordanny Monegro,SP,STL,4.11,,,
+429,Joshua Kuroda-Grauer,SS,MIL,4.10,,,
+430,Leonardo Pineda,CF,PHI,4.10,,,
+431,Mac Horvath,3B,NYM,4.09,,,
+432,Jacob Bresnahan,SP,,4.08,,,
+433,Branneli Franco,SP,,4.05,,,
+434,Walker Janek,C,CIN,4.05,,,
+435,Blake Larson,SP,DET,4.04,,,
+436,A.J. Blubaugh,SP,ATL,4.03,,,
+437,Walbert Urena,SP,,4.03,,,
+438,Kyle Karros,3B,MIL,4.00,,,
+439,Brennen Davis,RF,,4.00,,,
+440,Jakob Christian,1B,,3.99,,,
+441,Peyton Pallette,SP,COL,3.98,,,
+442,Jeral Perez,2B,ATL,3.98,,,
+443,Jared Serna,2B,,3.96,,,
+444,Will Taylor,CF,,3.95,,,
+445,Gabriel Gonzalez,RF,LAA,3.95,,,
+446,Gabriel Gonzalez,RF,ATL,3.95,,,
+447,Nelfy Ynfante,SP,,3.94,,,
+448,Ty Floyd,SP,CIN,3.91,,,
+449,Elvin Garcia,SS,STL,3.91,,,
+450,Patrick Reilly,SP,SF,3.88,,,
+451,Brock Selvidge,SP,PHI,3.87,,,
+452,Wikelman Gonazlez,SP,CHC,3.86,,,
+453,Colin Houck,SS,TOR,3.84,,,
+454,Jaxon Wiggins,SP,TB,3.84,,,
+455,Samuel Zavala,RF,PIT,3.81,,,
+456,Eriq Swan,SP,WSH,3.80,,,
+457,Cristhian Vaquero,CF,ARI,3.80,,,
+458,Matthew Lugo,SS,STL,3.76,,,
+459,Mitch Jebb,2B,NYY,3.76,,,
+460,Abrahan Ramirez,2B,,3.75,,,
+461,Mike Boeve,1B,CLE,3.74,,,
+462,Bo Davidson,LF,SEA,3.70,,,
+463,Jadher Areinamo,2B,MIA,3.69,,,
+464,Dasan Brown,CF,SD,3.68,,,
+465,Jake Bennett,SP,WSH,3.68,,,
+466,Rayne Doncon,3B,MIA,3.67,,,
+467,Carlos Lagrange,SP,WSH,3.63,,,
+468,Will Simpson,1B,NYM,3.63,,,
+469,Daiber De Los Santos,SS,TEX,3.60,,,
+470,Mick Abel,SP,CHC,3.59,,,
+471,Jack Brannigan,3B,WSH,3.58,,,
+472,Jacob Gonzalez,SS,LAA,3.52,,,
+473,Nick Nastrini,SP,COL,3.51,,,
+474,Gabriel Rincones Jr.,CF,NYM,3.51,,,
+475,Khadim Diaw,C,,3.46,,,
+476,Mason Adams,SP,,3.46,,,
+477,Brandon Young,SP,TB,3.41,,,
+478,Ramon Ramirez,C,,3.38,,,
+479,Drue Hackenberg,SP,CLE,3.37,,,
+480,Leonardo Bernal,C,CHC,3.36,,,
+481,Khristian Curtis,SP,,3.35,,,
+482,Kohl Drake,SP,SF,3.32,,,
+483,Mitch Bratt,SP,STL,3.31,,,
+484,Kahlil Watson,2B,MIA,3.30,,,
+485,Daniel Susac,C,TOR,3.26,,,
+486,Cooper Ingle,C,SF,3.24,,,
+487,Juaron Watts-Brown,SP,WSH,3.24,,,
+488,Jose Paulino,SP,,3.22,,,
+489,Peter Heubeck,SP,TEX,3.21,,,
+490,Fenwick Trimble,CF,BOS,3.21,,,
+491,Grant Knipp,SP,LAA,3.19,,,
+492,Cory Lewis,SP,SD,3.18,,,
+493,Jun-Seok Shim,SP,ARI,3.17,,,
+494,Didier Fuentes,SP,NYM,3.17,,,
+495,Trace Bright,SP,TB,3.16,,,
+496,Kala'i Rosario,RF,PHI,3.16,,,
+497,George Valera,RF,BOS,3.15,,,
+498,Owen White,SP,NYY,3.13,,,
+499,Blaze Jordan,1B,BOS,3.12,,,
+500,Jared Thomas,LF,MIA,3.11,,,
+501,Josh Caron,2B,LAD,3.08,,,
+502,Lucas Braun,SP,LAD,3.03,,,
+503,Jesus Made,SS,LAD,3.00,,,
+504,Brock Wilken,3B,NYM,2.98,,,
+505,Tirso Ornelas,LF,SD,2.96,,,
+506,Robert Hassell,RF,SD,2.96,,,
+507,Cristian Hernandez,SS,MIL,2.93,,,
+508,Nestor German,SP,HOU,2.90,,,
+509,Frank Mozzicato,SP,TEX,2.90,,,
+510,Darlin Saladin,SP,DET,2.90,,,
+511,Sabin Ceballos,3B,,2.88,,,
+512,Enrique Jimenez,C,,2.84,,,
+513,Cam Schlittler,SP,STL,2.84,,,
+514,Axiel Plaz,C,,2.81,,,
+515,Cristofer Torin,2B,CLE,2.79,,,
+516,Victor Mesa Jr.,CF,LAD,2.74,,,
+517,Javier Vaz,LF,NYM,2.74,,,
+518,Homer Bush,CF,CLE,2.71,,,
+519,Trystan Vrieling,SP,PHI,2.71,,,
+520,Ian Seymour,SP,MIA,2.66,,,
+521,Dameury Pena,2B,CHC,2.57,,,
+522,Anthony Gutierrez,CF,LAD,2.55,,,
+523,Cooper Bowman,2B,NYM,2.55,,,
+524,Petey Halpin,CF,CIN,2.55,,,
+525,Payton Eeles,2B,MIN,2.54,,,
+526,Diego Velasquez,SS,TEX,2.46,,,
+527,Ryan Ritter,SS,ARI,2.42,,,
+528,Sterlin Thompson,LF,CIN,2.39,,,
+529,Ben Shields,SP,PHI,2.32,,,
+530,Ivan Melendez,1B,BOS,2.31,,,
+531,Yunior Severino,1B,CHC,2.30,,,
+532,Jonathan Mejia,2B,ARI,2.29,,,
+533,Pedro Ramirez,2B,MIL,2.25,,,
+534,Brennan Milone,3B,PIT,2.23,,,
+535,Maddux Bruns,SP,CHC,2.21,,,
+536,Diego Cartaya,C,MIN,2.19,,,
+537,Sem Robberse,SP,SD,2.19,,,
+538,Tyler Stuart,SP,NYM,2.14,,,
+539,Tyler Gentry,RF,BOS,2.13,,,
+540,Hector Rodriguez,RF,LAA,2.13,,,
+541,RJ Schreck,LF,MIN,2.13,,,
+542,Alex Ramirez,CF,TOR,2.10,,,
+543,Cole Wilcox,SP,ARI,2.06,,,
+544,Craig Yoho,SP,SD,2.05,,,
+545,Will Sanders,SP,SEA,2.05,,,
+546,Matt Wilkinson,SP,CHC,1.94,,,
+547,Sean Keys,3B,TOR,1.94,,,
+548,Carson DeMartini,3B,STL,1.91,,,
+549,Chris Cortez,SP,WSH,1.89,,,
+550,Damiano Palmegiani,1B,WSH,1.87,,,
+551,Brad Lord,SP,CHC,1.87,,,
+552,A.J. Ewing,CF,LAD,1.86,,,
+553,Pablo Guerrero,1B,SF,1.86,,,
+554,Shane Smith,SP,ARI,1.84,,,
+555,Johanfran Garcia,C,CHC,1.79,,,
+556,Wilfred Veras,LF,LAD,1.79,,,
+557,Robert Hipwell,3B,OAK,1.78,,,
+558,Eddinson Paulino,2B,MIA,1.76,,,
+559,Caleb Durbin,2B,SD,1.72,,,
+560,Jacob Berry,3B,TOR,1.70,,,
+561,Joe Rock,SP,SD,1.61,,,
+562,Aroon Escobar,2B,OAK,1.58,,,
+563,Engelth Urena,C,,1.56,,,
+564,Lael Lockhart,SP,CLE,1.56,,,
+565,Will Warren,SP,DET,1.53,,,
+566,Austin Peterson,SP,SF,1.48,,,
+567,Zack Showalter,SP,BOS,1.43,,,
+568,Landon Sims,SP,WSH,1.42,,,
+569,Jay Allen,CF,ARI,1.42,,,
+570,Nathan Martorella,1B,SEA,1.41,,,
+571,Alessandro Ercolani,SP,CWS,1.41,,,
+572,Ty Johnson,SP,MIN,1.39,,,
+573,Jorbit Vivas,2B,LAA,1.26,,,
+574,Juan Baez,2B,LAD,1.21,,,
+575,Filippo Di Turi,SS,NYY,1.20,,,
+576,Trent Harris,SP,WSH,1.20,,,
+577,Jonathon Long,1B,PIT,1.19,,,
+578,Justice Bigbie,RF,BOS,1.16,,,
+579,Barrett Kent,SP,PIT,1.12,,,
+580,Nate Furman,2B,SEA,1.11,,,
+581,Max Acosta,2B,CHW,1.01,,,
+582,Austin Gauthier,2B,,0.99,,,
+583,Blake Burkhalter,SP,TOR,0.96,,,
+584,Carlos Jorge,CF,NYM,0.95,,,
+585,Jose Ramos,CF,,0.90,,,
+586,Willy Montero,CF,CLE,0.88,,,
+587,Jeffry Rosa,CF,,0.86,,,
+588,Ben Cowles,2B,CHC,0.86,,,
+589,Frederick Bencosme,SS,MIA,0.82,,,
+590,Jose Salas,SS,COL,0.82,,,
+591,T.J. White,LF,,0.80,,,
+592,Carlos De La Cruz,RF,TEX,0.80,,,
+593,Colin Barber,CF,COL,0.77,,,
+594,Tavian Josenberger,2B,SD,0.77,,,
+595,Victor Acosta,2B,ARI,0.75,,,
+596,Mason Auer,RF,CIN,0.73,,,
+597,Enmanuel Tejeda,SS,PHI,0.73,,,
+598,David McCabe,1B,MIN,0.72,,,
+599,Oswaldo Osorio,3B,CHC,0.71,,,
+600,Ryan Gusto,SP,HOU,0.71,,,
+601,Ethan Wilson,LF,,0.71,,,
+602,Elis Cuevas,RF,LAD,0.70,,,
+603,Kristian Robinson,RF,DET,0.70,,,
+604,Austin Hendrick,RF,ARI,0.68,,,
+605,Quinn McDaniel,2B,,0.68,,,
+606,Heriberto Hernandez,LF,CHC,0.67,,,
+607,Creed Willems,C,LAD,0.67,,,
+608,Malcom Nunez,1B,,0.65,,,
+609,Jordan Viars,1B,,0.63,,,
+610,Rainer Nunez,1B,SEA,0.62,,,
+611,Victor Bericoto,RF,TEX,0.59,,,
+612,Joander Suarez,SP,HOU,0.59,,,
+613,Bryce Hubbart,SP,ARI,0.58,,,
+614,Alexander Vargas,SS,SEA,0.58,,,
+615,Jackson Nezuh,SP,PIT,0.57,,,
+616,Matthew Thompson,SP,CIN,0.56,,,
+617,Nathan Hickey,C,BOS,0.56,,,
+618,Hedbert Perez,CF,ARI,0.55,,,
+619,John Cruz,Rf,CHC,0.54,,,
+620,Yeiner Fernandez,C,,0.53,,,
+621,Shane Sasaki,CF,TEX,0.53,,,
+622,Jake Miller,SP,HOU,0.53,,,
+623,Eiberson Castellano,SP,CLE,0.53,,,
+624,Will Dion,SP,NYM,0.52,,,
+625,Arnaldo Lantigua,CF,CWS,0.51,,,
+626,Jhancarlos Lara,SP,LAD,0.50,,,
+627,Walter Ford,SP,SD,0.50,,,
+628,Luis Serna,SP,NYY,0.49,,,
+629,Freddy Zamora,SS,SEA,0.48,,,
+630,Aaron Zavala,RF,TEX,0.46,,,
+631,Andrew Dalquist,SP,CIN,0.46,,,
+632,Mason Martin,CF,ARI,0.46,,,
+633,Dom Hamel,SP,,0.45,,,
+634,Dawel Joseph,SS,LAD,0.45,,,
+635,Hunter Bishop,LF,CIN,0.41,,,
+636,Erick Pena,CF,,0.39,,,
+637,Luis Suisebel,3B,CHC,0.38,,,
+638,Brian Sanchez,CF,TOR,0.38,,,
+639,Tyler McDonough,2B,,0.37,,,
+640,Haydn McGeary,1B,TOR,0.37,,,
+641,Justin Gonzales,1B,SF,0.36,,,
+642,Dax Fulton,SP,CIN,0.33,,,
+643,E.J. Exposito,2B,NYM,0.33,,,
+644,Ivan Johnson,SS,SEA,0.33,,,
+645,Ryan Birchard,SP,NYM,0.32,,,
+646,Yorfran Medina,1B,WSH,0.32,,,
+647,Brock Vradenburg,1B,,0.31,,,
+648,Peyton Wilson,2B,SEA,0.30,,,
+649,John Rave,RF,CHC,0.29,,,
+650,Royber Salinas,SP,CHC,0.29,,,
+651,Troy Johnston,1B,SEA,0.29,,,
+652,Blake Hunt,C,SEA,0.28,,,
+653,Isaac Coffey,SP,SD,0.27,,,
+654,Brandon Clarke,SP,OAK,0.25,,,
+655,Luca Tresh,C,,0.25,,,
+656,Jack Leftwich,SP,SEA,0.24,,,
+657,CJ Van Eyk,SP,CIN,0.24,,,
+658,Phil Clarke,C,,0.24,,,
+659,Colton Gordon,SP,SEA,0.23,,,
+660,Ryan Rolison,SP,CIN,0.23,,,
+661,Gage Workman,3B,CIN,0.22,,,
+662,Ian Mejia,SP,NYM,0.22,,,
+663,Osiel Rodriguez,SP,,0.21,,,
+664,Christian Roa,SP,SEA,0.20,,,
+665,Eddy Diaz,2B,CIN,0.19,,,
+666,Robert Puason,LF,CIN,0.19,,,
+667,Kenedy Corona,RF,TEX,0.18,,,
+668,Patrick Monteverde,SP,SEA,0.17,,,
+669,Evan McKendry,SP,SEA,0.17,,,
+670,Tanner Hall,SP,,0.14,,,
+671,Carson Coleman,SP,TEX,0.13,,,
+672,Lisbel Diaz,RF,SF,0.09,,,
+673,Yeison Morrobel,LF,TOR,0.08,,,
+674,Evan Reifert,SP,CHC,0.04,,,
+675,Jesus Rodriguez,C,PIT,0.04,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,.,.,.
