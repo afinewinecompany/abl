@@ -46,7 +46,6 @@ GM_MAPPING = {
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
-        # Handle non-string input, including NA/None values
         if pd.isna(name):
             return ""
         if not isinstance(name, str):
@@ -63,11 +62,8 @@ def normalize_name(name: str) -> str:
             last, first = name.split(',', 1)
             name = f"{first.strip()} {last.strip()}"
 
-        # Remove parentheses content and everything after
         name = name.split('(')[0].strip()
         name = name.split(' - ')[0].strip()
-
-        # Remove periods and extra spaces
         name = name.replace('.', '').strip()
         name = ' '.join(name.split())
 
@@ -85,7 +81,7 @@ def render(roster_data: pd.DataFrame):
     division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
 
     # Load MLB player IDs and create cache
-    mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
+    mlb_ids_df = pd.read_csv("attached_assets/mlb-player-ids-2.csv")
     player_id_cache = create_player_id_cache(mlb_ids_df)
 
     try:
@@ -93,10 +89,8 @@ def render(roster_data: pd.DataFrame):
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
-        # Get all players that could be prospects (both MINORS and ACTIVE)
-        prospects_data = roster_data[
-            (roster_data['status'].str.upper().isin(['MINORS', 'ACTIVE']))
-        ].copy()
+        # Get all players that could be prospects (MINORS, ACTIVE, or RESERVE)
+        prospects_data = roster_data.copy()
         prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
         prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
 
@@ -117,7 +111,7 @@ def render(roster_data: pd.DataFrame):
 
         # Remove duplicates but keep the one with rank if available
         ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
-            subset=['Name'], 
+            subset=['Name'],
             keep='first'
         )
 
@@ -128,7 +122,6 @@ def render(roster_data: pd.DataFrame):
         if not shaw_data.empty:
             st.warning("Matt Shaw data found:")
             st.write(shaw_data[['player_name', 'team', 'mlb_team', 'status', 'Rank', 'Score']])
-
 
         # Rename columns for consistency
         ranked_prospects.rename(columns={
@@ -149,7 +142,6 @@ def render(roster_data: pd.DataFrame):
         }).reset_index()
 
         team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
-        # Sort by average score instead of total score
         team_scores = team_scores.sort_values('avg_score', ascending=False)
         team_scores = team_scores.reset_index(drop=True)
         team_scores.index = team_scores.index + 1
@@ -355,64 +347,76 @@ def get_rank_color(rank: int, total_ranks: int = 100) -> str:
 
 def render_prospect_preview(prospect, rank: int, team_prospects=None, player_id_cache=None, global_max_score=None, global_min_score=None):
     """Render a single prospect preview card with enhanced styling and animations"""
-    # Calculate rank color
-    rank_color = get_rank_color(rank)
+    # Ensure we have valid team information
+    team_name = prospect.get('team', prospect.get('mlb_team', 'Unknown'))
+    if pd.isna(team_name) or team_name == 'Unknown':
+        if "Shaw" in str(prospect.get('player_name', '')):
+            team_name = "Pittsburgh Pirates"
 
-    # Ensure we have a valid team name
-    team_name = str(prospect.get('mlb_team', prospect.get('team', 'Unknown')))
-    if pd.isna(team_name):
-        team_name = "Pittsburgh Pirates" if "Shaw" in str(prospect.get('player_name', '')) else "Unknown"
-
+    # Get team colors and logo
+    team_colors = MLB_TEAM_COLORS.get(team_name, {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
     team_id = MLB_TEAM_IDS.get(team_name, '')
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Get team colors and GM info
-    team_colors = MLB_TEAM_COLORS.get(team_name,
-                                   {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
-    gm_name = GM_MAPPING.get(team_name, 'Unknown')
+    # Get headshot HTML
+    headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
     st.markdown(f"""
-        <style>
-        .prospect-card-{rank} {{
-            background: linear-gradient(135deg, 
-                {team_colors['primary']} 0%,
-                {team_colors['secondary']} 60%,
-                {team_colors['primary']} 100%);
-            border-radius: 16px;
-            padding: 2rem;
+        <div class="prospect-card" style="
+            background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
             margin: 1rem 0;
             position: relative;
-            overflow: hidden;
-        }}
-        .prospect-content-{rank} {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            z-index: 2;
-        }}
-        </style>
-
-        <div class="prospect-card-{rank}">
-            <div class="rank-badge-{rank}">#{rank}</div>
-            {f'<img src="{logo_url}" class="team-logo-{rank}" alt="Team Logo">' if logo_url else ''}
-            <div class="prospect-content-{rank}">
-                <div class="prospect-info">
-                    <div class="prospect-name">{prospect['player_name']}</div>
-                    <div class="prospect-details">
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            ">
+            <div style="
+                position: absolute;
+                left: -10px;
+                top: -10px;
+                width: 40px;
+                height: 40px;
+                background: {team_colors['primary']};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                border: 2px solid {team_colors['secondary']};
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                ">#{rank}</div>
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                position: relative;
+                z-index: 2;
+                ">
+                {headshot_html}
+                <div style="flex-grow: 1;">
+                    <div style="
+                        font-size: 1.2rem;
+                        font-weight: 600;
+                        color: white;
+                        margin-bottom: 0.25rem;
+                        ">{prospect.player_name}</div>
+                    <div style="
+                        font-size: 0.9rem;
+                        color: rgba(255, 255, 255, 0.8);
+                        ">
                         <span>{team_name}</span>
-                        <span>|</span>
-                        <span>{prospect['position']}</span>
-                    </div>
-                    <div class="prospect-score">
-                        Score: {prospect['prospect_score']:.2f}
+                        <span style="margin: 0 0.5rem;">|</span>
+                        <span>{prospect.position}</span>
+                        <span style="margin: 0 0.5rem;">|</span>
+                        <span>Score: {prospect.prospect_score:.2f}</span>
                     </div>
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # Show prospects in expander if available
+    # Show team prospects in expander if available
     if team_prospects is not None:
         with st.expander("View Team Prospects"):
             prospects_html = get_team_prospects_html(team_prospects, player_id_cache, global_max_score, global_min_score)
