@@ -24,6 +24,7 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
         """Make API request with error handling and retries"""
         try:
+            st.info(f"Fetching data from {endpoint}...")
             response = self.session.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
@@ -32,9 +33,11 @@ class FantraxAPI:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
+            st.warning(f"API request to {endpoint} failed, using mock data")
             # Return mock data based on the endpoint
             return self._get_mock_data(endpoint)
         except ValueError as e:
+            st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
             return self._get_mock_data(endpoint)
 
     def _get_mock_data(self, endpoint: str) -> Dict:
