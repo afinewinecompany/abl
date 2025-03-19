@@ -187,15 +187,27 @@ def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitcher
     total_points = 0
     player_name = normalize_name(player_name)
 
-    # Check for hitter projections
-    hitter_proj = hitters_proj[hitters_proj['Name'].apply(normalize_name) == player_name]
-    if not hitter_proj.empty:
-        total_points += hitter_proj.iloc[0]['fantasy_points']
+    # Handle special case for Luis Ortiz/Luis L. Ortiz
+    if player_name.lower() == "luis ortiz":
+        alternate_names = ["luis ortiz", "luis l ortiz", "luis l. ortiz"]
+        # Check for hitter projections with any name variant
+        hitter_proj = hitters_proj[hitters_proj['Name'].apply(lambda x: normalize_name(str(x)).lower() in alternate_names)]
+        if not hitter_proj.empty:
+            total_points += hitter_proj.iloc[0]['fantasy_points']
 
-    # Check for pitcher projections
-    pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(normalize_name) == player_name]
-    if not pitcher_proj.empty:
-        total_points += pitcher_proj.iloc[0]['fantasy_points']
+        # Check for pitcher projections with any name variant
+        pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(lambda x: normalize_name(str(x)).lower() in alternate_names)]
+        if not pitcher_proj.empty:
+            total_points += pitcher_proj.iloc[0]['fantasy_points']
+    else:
+        # Regular name matching for other players
+        hitter_proj = hitters_proj[hitters_proj['Name'].apply(normalize_name) == player_name]
+        if not hitter_proj.empty:
+            total_points += hitter_proj.iloc[0]['fantasy_points']
+
+        pitcher_proj = pitchers_proj[pitchers_proj['Name'].apply(normalize_name) == player_name]
+        if not pitcher_proj.empty:
+            total_points += pitcher_proj.iloc[0]['fantasy_points']
 
     return total_points
 
