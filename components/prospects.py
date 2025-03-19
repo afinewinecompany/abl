@@ -664,7 +664,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                         <div class="prospect-details">
                             <span>{prospect.team}</span>
                             <span>|</span>
-                            <span>{prospect.position}</span>
+                            <span>{str(prospect.position).replace('position ', '').split(',')[0].strip()}</span>
                         </div>
                         <div class="prospect-score">
                             Score: {prospect.prospect_score:.2f}
