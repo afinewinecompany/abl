@@ -297,9 +297,15 @@ def get_team_prospects_html(prospects_df: pd.DataFrame, player_id_cache: Dict[st
         position = str(prospect.get('position', ''))
         prospect_score = float(prospect.get('prospect_score', 0))
 
+        # Get headshot HTML
+        headshot_html = get_player_headshot_html(player_name, player_id_cache)
+
         # Start prospect card
         html_parts.append('<div style="padding: 1rem; margin: 0.5rem 0; background: rgba(26, 28, 35, 0.5); border-radius: 8px;">')
-        html_parts.append('<div style="display: flex; align-items: center;">')
+        html_parts.append('<div style="display: flex; align-items: center; gap: 1rem;">')
+
+        # Add headshot
+        html_parts.append(headshot_html)
 
         # Add prospect info
         html_parts.append(
@@ -619,7 +625,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Get team colors and logo
-        team_colors = MLB_TEAM_COLORS.get(prospect.team,
+        team_colors = MLB_TEAM_COLORS.getget(prospect.team,
                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         team_id = MLB_TEAM_IDS.get(prospect.team, '')
         logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
