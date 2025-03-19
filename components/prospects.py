@@ -88,19 +88,33 @@ def render(roster_data: pd.DataFrame):
         minors_players['clean_name'] = minors_players['player_name'].fillna('').astype(str).apply(normalize_name)
         minors_players = minors_players.drop_duplicates(subset=['clean_name'], keep='first')
 
-        # Merge with import data
+        # Merge with import data - ensure we keep all ranked players
         ranked_prospects = pd.merge(
             minors_players,
             prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
             left_on='clean_name',
-            right_on='Name',
-            how='left'
+            right_on=prospect_import['Name'].apply(normalize_name),
+            how='outer'  # Changed to outer join to keep all players
         )
 
-        # Set prospect score from Score column
+        # Fill missing values and clean up
         ranked_prospects['prospect_score'] = ranked_prospects['Score'].fillna(0)
-        ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
-        ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
+        ranked_prospects['player_name'] = ranked_prospects['player_name'].fillna(ranked_prospects['Name'])
+        ranked_prospects['position'] = ranked_prospects['Position'].fillna('Unknown')
+        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna('Unknown')
+
+        # Remove duplicates but keep the one with rank if available
+        ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
+            subset=['Name'], 
+            keep='first'
+        )
+
+
+        # Rename columns for consistency
+        ranked_prospects.rename(columns={
+            'MLB Team': 'mlb_team',
+            'Position': 'position'
+        }, inplace=True)
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
@@ -617,8 +631,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             margin-bottom: 0.25rem;
         }
         .prospect-details {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;            color: rgba(255, 255, 255, 0.8);
             display: flex;
             gap: 1rem;
             margin-bottom: 0.25rem;
@@ -669,22 +682,9 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                     for _, player in surrounding.iterrows():
                         st.warning(f"Rank {int(player['Rank'])}: {player['player_name']}")
 
-        # Check for non-sequential ranks
-        rank_gaps = []
-        prev_rank = None
-        for rank in sorted(actual_ranks):
-            if prev_rank is not None and rank - prev_rank > 1:
-                rank_gaps.append((prev_rank, rank))
-            prev_rank = rank
-
-        if rank_gaps:
-            st.warning("⚠️ Non-sequential ranks detected:")
-            for start, end in rank_gaps:
-                st.warning(f"Gap between ranks {start} and {end}")
-
         # Debug: Check raw data for specific players
         st.warning("🔍 Debugging missing players:")
-        # Load and display raw data from ABL-Import.csv
+        # Load raw data from ABL-Import.csv
         raw_import = pd.read_csv("attached_assets/ABL-Import.csv")
 
         # Search for Shaw
@@ -698,6 +698,11 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         if not gonzalez_data.empty:
             st.warning("Found de Jesus Gonzalez entries in raw data:")
             st.write(gonzalez_data[['Name', 'Rank', 'Score']])
+
+        # Display all ranked players for debugging
+        st.warning("📊 All Players with Ranks:")
+        ranked_players = raw_import[pd.notna(raw_import['Rank'])].sort_values('Rank')
+        st.write(ranked_players[['Name', 'Rank', 'Score']])
 
     # Display prospects in order
     for idx, prospect in enumerate(top_100.itertuples(), 1):
