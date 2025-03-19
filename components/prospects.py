@@ -102,37 +102,12 @@ def render(roster_data: pd.DataFrame):
         ranked_prospects = ranked_prospects.drop_duplicates(subset=['clean_name'], keep='first')
         ranked_prospects.rename(columns={'MLB Team': 'mlb_team'}, inplace=True)
 
-        # Load and parse the rankings file
-        try:
-            rankings_df = pd.read_csv("attached_assets/Pasted-Rank-Name-Position-Grade-1-Roman-Anthony-CF-9-98-2-Noah-Schultz-SP-9-97-3-Walker-Jenkins-CF-9-96-4-A-1742356152429.txt", 
-                                    sep='\t', 
-                                    names=['Rank', 'Name', 'Position', 'Grade'])
-
-            # Normalize names in rankings
-            rankings_df['normalized_name'] = rankings_df['Name'].fillna('').astype(str).apply(normalize_name)
-
-            # Create a mapping of normalized names to rankings and grades
-            rankings_map = dict(zip(rankings_df['normalized_name'], zip(rankings_df['Rank'], rankings_df['Grade'])))
-
-            # Add ranking and grade to prospects
-            ranked_prospects['ranking'] = ranked_prospects['clean_name'].map(lambda x: rankings_map.get(x, (999, 0.0))[0])
-            ranked_prospects['grade'] = ranked_prospects['clean_name'].map(lambda x: rankings_map.get(x, (999, 0.0))[1])
-
-            # Sort by the official ranking first, then by prospect score for unranked players
-            top_100 = ranked_prospects.sort_values(['ranking', 'prospect_score'], 
-                                                 ascending=[True, False]).head(100)
-        except Exception as e:
-            st.error(f"Error loading rankings: {str(e)}")
-            # Fallback to existing sorting method
-            top_100 = ranked_prospects.nlargest(100, 'prospect_score')
-
-
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
         global_min_score = ranked_prospects['prospect_score'].min()
 
         # First render the Top 100 prospects list
-        render_top_100_header(top_100, player_id_cache, global_max_score, global_min_score)
+        render_top_100_header(ranked_prospects, player_id_cache, global_max_score, global_min_score)
 
         # Calculate team rankings using average score
         team_scores = ranked_prospects.groupby('team').agg({
@@ -611,9 +586,9 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         }
         .rank-number {
             position: absolute;
-            left:-10px;
+            left: -10px;
             top: -10px;
-            width:45px;
+            width: 45px;
             height: 45px;
             border-radius: 50%;
             display: flex;
@@ -659,38 +634,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     """, unsafe_allow_html=True)
 
     # Get top 100 prospects sorted by score
+    top_100 = ranked_prospects.nlargest(100, 'prospect_score')
 
     # Display prospects in order
-    def render_player_card(player: Dict, headshot_html: str, team_colors: Dict):
-        """Render an individual player card"""
-        prospect_grade = player.get('grade', 0)
-        prospect_rank = player.get('ranking', 999)
-        score_display = f"Grade: {prospect_grade:.2f}" if prospect_grade > 0 else f"Score: {player['prospect_score']:.2f}"
-
-        # Rest of the function remains the same, just update the score display in the details div:
-        return f"""
-            <div class="prospect-card" style="--card-bg: {gradient};">
-                <div class="rank-number" style="background: {get_rank_color(prospect_rank)};">
-                    {prospect_rank if prospect_rank < 999 else ''}
-                </div>
-                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content">
-                    {headshot_html}
-                    <div class="prospect-info">
-                        <div class="prospect-name">{player['player_name']}</div>
-                        <div class="prospect-details">
-                            <span>{player['team']}</span>
-                            <span>|</span>
-                            <span>{player['position']}</span>
-                        </div>
-                        <div class="prospect-score">
-                            {score_display}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        """
-    for idx, prospect in enumerate(ranked_prospects.itertuples(), 1):
+    for idx, prospect in enumerate(top_100.itertuples(), 1):
         # Calculate rank color
         rank_color = get_rank_color(idx)
 
@@ -706,16 +653,43 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         # Generate gradient background
         gradient = f"linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%)"
 
-        player_data = {
-            'player_name': prospect.player_name,
-            'team': prospect.team,
-            'position': prospect.position,
-            'prospect_score': prospect.prospect_score,
-            'grade': prospect.grade,
-            'ranking': prospect.ranking
-        }
-
-        st.markdown(render_player_card(player_data, headshot_html, team_colors), unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="prospect-card" style="--card-bg: {gradient};">
+                <div style="
+                    position: absolute;
+                    left: -10px;
+                    top: -10px;
+                    width: 45px;
+                    height: 45px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    z-index: 3;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    color: white;
+                ">{idx}</div>
+                {f'<img src="{logo_url}" class="team-logo-bg" alt="Team Logo">' if logo_url else ''}
+                <div class="prospect-content">
+                    {headshot_html}
+                    <div class="prospect-info">
+                        <div class="prospect-name">{prospect.player_name}</div>
+                        <div class="prospect-details">
+                            <span>{prospect.team}</span>
+                            <span>|</span>
+                            <span>{prospect.position}</span>
+                        </div>
+                        <div class="prospect-score">
+                            Score: {prospect.prospect_score:.2f}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
