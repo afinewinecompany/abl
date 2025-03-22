@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, landing_page
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
@@ -484,54 +484,59 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
-    st.title("⚾ ABL Analytics")
+    # Check if we should show the landing page
+    show_landing = landing_page.render()
+    
+    # If landing page is shown, don't display the main app content
+    if not show_landing:
+        st.title("⚾ ABL Analytics")
 
-    # Streamlined sidebar
-    with st.sidebar:
-        st.markdown("### 🔄 League Controls")
-        if st.button("Refresh Data", use_container_width=True):
-            st.experimental_rerun()
+        # Streamlined sidebar
+        with st.sidebar:
+            st.markdown("### 🔄 League Controls")
+            if st.button("Refresh Data", use_container_width=True):
+                st.experimental_rerun()
 
-        st.markdown("---")
-        st.markdown("""
-        ### About ABL Analytics
-        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
-        """)
+            st.markdown("---")
+            st.markdown("""
+            ### About ABL Analytics
+            Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+            """)
 
-    try:
-        # Fetch all data using the utility function
-        data = fetch_api_data()
+        try:
+            # Fetch all data using the utility function
+            data = fetch_api_data()
 
-        if data:
-            # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                "🏠 League Info",
-                "👥 Team Rosters",
-                "🏆 Power Rankings",
-                "📚 Handbook",
-                "📈 Projected Rankings"
-            ])
+            if data:
+                # Create tabs for different sections
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                    "🏠 League Info",
+                    "👥 Team Rosters",
+                    "🏆 Power Rankings",
+                    "📚 Handbook",
+                    "📈 Projected Rankings"
+                ])
 
-            with tab1:
-                league_info.render(data['league_data'])
+                with tab1:
+                    league_info.render(data['league_data'])
 
-            with tab2:
-                rosters.render(data['roster_data'])
+                with tab2:
+                    rosters.render(data['roster_data'])
 
-            with tab3:
-                power_rankings.render(data['standings_data'])
+                with tab3:
+                    power_rankings.render(data['standings_data'])
 
-            with tab4:
-                prospects.render(data['roster_data'])
+                with tab4:
+                    prospects.render(data['roster_data'])
 
-            with tab5:
-                projected_rankings.render(data['roster_data'])
-        else:
-            st.info("Using mock data for development...")
+                with tab5:
+                    projected_rankings.render(data['roster_data'])
+            else:
+                st.info("Loading data...")
 
-    except Exception as e:
-        st.error(f"An error occurred while loading data: {str(e)}")
-        st.info("Using mock data for development...")
+        except Exception as e:
+            st.error(f"An error occurred while loading data: {str(e)}")
+            st.info("Please try refreshing the page.")
 
 if __name__ == "__main__":
     main()
