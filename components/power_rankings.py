@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from typing import Dict
+import plotly.graph_objects as go
 
 # Import team colors and IDs from prospects.py
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
@@ -33,9 +34,6 @@ TEAM_ABBREVIATIONS = {
     "Cincinnati Reds": "CIN",
     "Milwaukee Brewers": "MIL",
     "Pittsburgh Pirates": "PIT",
-    "Cardinals": "STL",  # Added variation
-    "Saint Louis Cardinals": "STL",  # Added variation
-    "St Louis Cardinals": "STL",  # Added variation without period
     "St. Louis Cardinals": "STL",
     "Arizona Diamondbacks": "ARI",
     "Colorado Rockies": "COL",
@@ -44,9 +42,17 @@ TEAM_ABBREVIATIONS = {
     "San Francisco Giants": "SF"
 }
 
+DIVISIONS = {
+    "AL East": ["Baltimore Orioles", "Boston Red Sox", "New York Yankees", "Tampa Bay Rays", "Toronto Blue Jays"],
+    "AL Central": ["Chicago White Sox", "Cleveland Guardians", "Detroit Tigers", "Kansas City Royals", "Minnesota Twins"],
+    "AL West": ["Houston Astros", "Los Angeles Angels", "Oakland Athletics", "Seattle Mariners", "Texas Rangers"],
+    "NL East": ["Atlanta Braves", "Miami Marlins", "New York Mets", "Philadelphia Phillies", "Washington Nationals"],
+    "NL Central": ["Chicago Cubs", "Cincinnati Reds", "Milwaukee Brewers", "Pittsburgh Pirates", "St. Louis Cardinals"],
+    "NL West": ["Arizona Diamondbacks", "Colorado Rockies", "Los Angeles Dodgers", "San Diego Padres", "San Francisco Giants"]
+}
+
 def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) -> float:
     """Calculate points modifier based on total points ranking"""
-    # Sort all teams by points and split into 10 groups of 3
     sorted_points = all_teams_points.sort_values(ascending=False)
     group_size = len(sorted_points) // 10
     rank = sorted_points[sorted_points >= total_points].index.min()
@@ -55,7 +61,6 @@ def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) 
 
 def calculate_hot_cold_modifier(recent_record: float) -> float:
     """Calculate hot/cold modifier based on recent performance"""
-    # Split into 6 groups, with modifiers from 1.5x to 1.0x
     if recent_record >= 0.800:  # Group 1
         return 1.5
     elif recent_record >= 0.650:  # Group 2
@@ -69,211 +74,240 @@ def calculate_hot_cold_modifier(recent_record: float) -> float:
     else:  # Group 6
         return 1.0
 
-def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
+def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame, include_division_factor: bool = True) -> float:
     """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
-    # Calculate weekly average score
-    weekly_avg = row['total_points'] / max(row['weeks_played'], 1)  # Prevent division by zero
-
-    # Calculate points modifier
+    weekly_avg = row['total_points'] / max(row['weeks_played'], 1)
     points_mod = calculate_points_modifier(row['total_points'], all_teams_data['total_points'])
 
-    # Calculate hot/cold modifier based on recent record
     total_recent_games = row['recent_wins'] + row['recent_losses']
-    recent_record = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5  # Default to 0.5 if no games
+    recent_record = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5
     hot_cold_mod = calculate_hot_cold_modifier(recent_record)
 
-    return (weekly_avg * points_mod) * hot_cold_mod
+    score = (weekly_avg * points_mod) * hot_cold_mod
 
-def render(standings_data: pd.DataFrame):
-    """Render power rankings section"""
-    st.header("⚾ Power Rankings")
-    st.markdown("""
-        <style>
-        @keyframes slideInUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        @keyframes shimmer {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
-        }
-        .power-ranking {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 5px 0;
-            background-color: #f0f2f6;
-        }
-        .top-team {
-            background-color: #28a745;
-            color: white;
-        }
-        .trending-up {
-            color: #28a745;
-        }
-        .trending-down {
-            color: #dc3545;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    if include_division_factor:
+        score *= row['division_factor']
 
-    # Calculate power rankings
-    rankings_df = standings_data.copy()
-    
-    # Add required fields for new power score calculation
-    rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
-    rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
-    rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
-    rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
-    
-    # Calculate power scores
-    rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
-    rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
-    rankings_df.index = rankings_df.index + 1  # Start ranking from 1
+    return score
 
-    # Display top teams
-    st.subheader("🏆 League Leaders")
-    col1, col2, col3 = st.columns(3)
+def get_team_division(team_name: str) -> str:
+    """Get the division for a given team"""
+    for division, teams in DIVISIONS.items():
+        if team_name in teams:
+            return division
+    return "Unknown"
 
-    # Top 3 teams with enhanced styling
-    for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], rankings_df.head(3).iterrows())):
-        with col:
-            team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
-                                            {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
-            team_id = MLB_TEAM_IDS.get(row['team_name'], '')
-            logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+def render_division_rankings(rankings_df: pd.DataFrame, division_name: str):
+    """Render rankings for a specific division"""
+    division_rankings = rankings_df[rankings_df['division'] == division_name].copy()
+    division_rankings = division_rankings.sort_values('division_power_score', ascending=False).reset_index(drop=True)
 
-            st.markdown(f"""
-                <div style="
-                    padding: 1.5rem;
-                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                    border-radius: 12px;
-                    margin: 0.5rem 0;
-                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-                    position: relative;
-                    overflow: hidden;
-                    animation: slideInUp 0.6s ease-out {idx * 0.1}s both;
-                ">
-                    <div style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); opacity: 0.15;">
-                        <img src="{logo_url}" style="width: 180px; height: 180px;" alt="Team Logo">
-                    </div>
-                    <div style="position: absolute; left: -10px; top: -10px; background: {team_colors['accent']}; 
-                         color: {team_colors['primary']}; width: 40px; height: 40px; border-radius: 50%; 
-                         display: flex; align-items: center; justify-content: center; font-weight: bold; 
-                         font-size: 1.2rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                        #{idx + 1}
-                    </div>
-                    <div style="position: relative; z-index: 1;">
-                        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
-                            {row['team_name']}
-                        </div>
-                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Wins</div>
-                                <div style="font-size: 1.2rem; color: white;">{row['wins']}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Win %</div>
-                                <div style="font-size: 1.2rem; color: white;">{row['winning_pct']:.3f}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">Power</div>
-                                <div style="font-size: 1.2rem; color: white;">{row['power_score']:.1f}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+    st.markdown(f"### {division_name}")
 
-    # Show remaining teams with similar styling
-    st.markdown("### Complete Power Rankings")
-
-    remaining_teams = rankings_df.iloc[3:]
-    for i, (_, row) in enumerate(remaining_teams.iterrows()):
+    for idx, row in division_rankings.iterrows():
         team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
-                                        {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
-        team_id = MLB_TEAM_IDS.get(row['team_name'], '')
-        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
-
+                                       {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
         st.markdown(f"""
             <div style="
-                padding: 1rem;
-                background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                border-radius: 10px;
+                padding: 0.75rem;
+                background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
+                border-radius: 8px;
                 margin: 0.5rem 0;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                position: relative;
-                overflow: hidden;
-                animation: slideInUp 0.6s ease-out {(i + 3) * 0.1}s both;
-            ">
-                <div style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); opacity: 0.15;">
-                    <img src="{logo_url}" style="width: 120px; height: 120px;" alt="Team Logo">
-                </div>
-                <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 1rem;">
-                    <div style="background: {team_colors['accent']}; color: {team_colors['primary']}; 
-                         width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; 
-                         justify-content: center; font-weight: bold;">
-                        #{i + 4}
-                    </div>
-                    <div style="flex-grow: 1;">
-                        <div style="font-weight: 600; color: white;">{row['team_name']}</div>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
-                                <span style="color: rgba(255,255,255,0.7);">W:</span>
-                                <span style="color: white;">{row['wins']}</span>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
-                                <span style="color: rgba(255,255,255,0.7);">%:</span>
-                                <span style="color: white;">{row['winning_pct']:.3f}</span>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
-                                <span style="color: rgba(255,255,255,0.7);">Power:</span>
-                                <span style="color: white;">{row['power_score']:.1f}</span>
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="color: white; font-size: 1.1rem; font-weight: bold;">#{idx + 1}</span>
+                        <div>
+                            <div style="font-weight: bold; color: white;">{row['team_name']}</div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                                W: {row['wins']} | Win%: {row['winning_pct']:.3f}
                             </div>
                         </div>
                     </div>
+                    <span style="font-weight: bold; font-size: 1.2rem; color: white;">
+                        {row['division_power_score']:.1f}
+                    </span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # Visualization with enhanced styling
-    st.subheader("📈 Power Score Distribution")
-    fig = px.bar(
-        rankings_df,
-        x='team_name',
-        y='power_score',
-        title='Team Power Scores',
-        color='power_score',
-        color_continuous_scale='viridis',
-        labels={'team_name': 'Team', 'power_score': 'Power Score'}
+def render(standings_data: pd.DataFrame):
+    """Render power rankings section"""
+    st.header("⚾ Power Rankings")
+
+    # Calculate rankings
+    rankings_df = standings_data.copy()
+
+    # Add required fields for power score calculation
+    rankings_df['total_points'] = rankings_df['wins'] * 2
+    rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
+    rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
+
+    # Add division information
+    rankings_df['division'] = rankings_df['team_name'].apply(get_team_division)
+    rankings_df['division_factor'] = rankings_df['division'].map({
+        "AL East": 1.1,
+        "AL West": 1.05,
+        "NL East": 1.05,
+        "NL West": 1.0,
+        "AL Central": 0.95,
+        "NL Central": 0.95
+    })
+
+    # Calculate both regular and division-adjusted power scores
+    rankings_df['power_score'] = rankings_df.apply(
+        lambda x: calculate_power_score(x, rankings_df, include_division_factor=False), axis=1
+    )
+    rankings_df['division_power_score'] = rankings_df.apply(
+        lambda x: calculate_power_score(x, rankings_df, include_division_factor=True), axis=1
     )
 
+    # Sort by regular power score for overall rankings
+    rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
+
+    # Display top 3 teams
+    st.subheader("🏆 League Leaders")
+    col1, col2, col3 = st.columns(3)
+
+    for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], rankings_df.head(3).iterrows())):
+        with col:
+            team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
+                                           {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+            st.markdown(f"""
+                <div style="
+                    padding: 1rem;
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    border-radius: 12px;
+                    margin: 0.5rem 0;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    animation: slideInUp 0.6s ease-out {idx * 0.1}s both;">
+                    <h3 style="margin:0; color: white;">#{idx + 1}</h3>
+                    <h4 style="margin:0.5rem 0; color: white;">{row['team_name']}</h4>
+                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
+                        {row['power_score']:.1f}
+                    </p>
+                    <p style="margin:0; font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                        {row['division']}
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # Show remaining teams in overall rankings
+    st.markdown("### Complete Power Rankings")
+    remaining_teams = rankings_df.iloc[3:]
+    for i, (_, row) in enumerate(remaining_teams.iterrows()):
+        team_colors = MLB_TEAM_COLORS.get(row['team_name'], 
+                                       {'primary': '#1a1c23', 'secondary': '#2d2f36', 'accent': '#FFFFFF'})
+        st.markdown(f"""
+            <div style="
+                padding: 0.75rem;
+                background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="color: white; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
+                        <div>
+                            <div style="font-weight: bold; color: white;">{row['team_name']}</div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                                {row['division']} | Win%: {row['winning_pct']:.3f}
+                            </div>
+                        </div>
+                    </div>
+                    <span style="font-weight: bold; font-size: 1.2rem; color: white;">
+                        {row['power_score']:.1f}
+                    </span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Add divisional rankings
+    st.markdown("## Rankings by Division")
+    st.markdown("""
+        <div style="
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin: 1rem 0;">
+            <p style="margin:0; color: rgba(255,255,255,0.8);">
+                Division rankings include the division strength factor:
+                <br>• AL East: 1.1x
+                <br>• AL West & NL East: 1.05x
+                <br>• NL West: 1.0x
+                <br>• AL/NL Central: 0.95x
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Create tabs for leagues
+    al_tab, nl_tab = st.tabs(["American League", "National League"])
+
+    with al_tab:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            render_division_rankings(rankings_df, "AL East")
+        with col2:
+            render_division_rankings(rankings_df, "AL Central")
+        with col3:
+            render_division_rankings(rankings_df, "AL West")
+
+    with nl_tab:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            render_division_rankings(rankings_df, "NL East")
+        with col2:
+            render_division_rankings(rankings_df, "NL Central")
+        with col3:
+            render_division_rankings(rankings_df, "NL West")
+
+    # Add visualization
+    st.subheader("📈 Power Score Distribution")
+
+    # Create figure with both regular and division-adjusted scores
+    fig = go.Figure()
+
+    # Regular power scores
+    fig.add_trace(go.Bar(
+        name="Base Power Score",
+        x=rankings_df['team_name'],
+        y=rankings_df['power_score'],
+        marker_color=rankings_df['division'].map({
+            "AL East": "#FF6B6B",
+            "AL Central": "#4ECDC4",
+            "AL West": "#95A5A6",
+            "NL East": "#F39C12",
+            "NL Central": "#3498DB",
+            "NL West": "#2ECC71"
+        })
+    ))
+
+    # Division-adjusted scores (transparent overlay)
+    fig.add_trace(go.Bar(
+        name="Division-Adjusted Score",
+        x=rankings_df['team_name'],
+        y=rankings_df['division_power_score'],
+        marker=dict(
+            color='rgba(255, 255, 255, 0.3)',
+            line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
+        )
+    ))
+
     fig.update_layout(
+        barmode='overlay',
+        title="Team Power Scores (with Division Adjustment Overlay)",
         xaxis_tickangle=-45,
-        showlegend=False,
+        showlegend=True,
         height=500,
         template="plotly_dark",
         plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # Add prospect strength comparison
+    # Add prospect strength comparison (unchanged)
     st.subheader("🌟 System Strength vs Team Power")
 
     # Load prospect data
