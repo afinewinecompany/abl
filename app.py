@@ -496,6 +496,11 @@ def main():
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
+                
+            # Add a button to return to the landing page
+            if st.button("Return to Field", use_container_width=True):
+                st.session_state.entered_app = False
+                st.experimental_rerun()
 
             st.markdown("---")
             st.markdown("""
@@ -509,28 +514,58 @@ def main():
 
             if data:
                 # Create tabs for different sections
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                tabs = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
                     "📈 Projected Rankings"
                 ])
-
-                with tab1:
-                    league_info.render(data['league_data'])
-
-                with tab2:
-                    rosters.render(data['roster_data'])
-
-                with tab3:
-                    power_rankings.render(data['standings_data'])
-
-                with tab4:
-                    prospects.render(data['roster_data'])
-
-                with tab5:
-                    projected_rankings.render(data['roster_data'])
+                
+                # Determine which tab to show based on selection from landing page
+                selected_tab = 0  # Default to first tab
+                if 'selected_tab' in st.session_state:
+                    selected_tab = st.session_state.selected_tab
+                    # Clear the selection after use
+                    del st.session_state.selected_tab
+                
+                # Render content based on selected tab
+                if selected_tab == 0:
+                    with tabs[0]:
+                        league_info.render(data['league_data'])
+                elif selected_tab == 1:
+                    with tabs[1]:
+                        rosters.render(data['roster_data'])
+                elif selected_tab == 2:
+                    with tabs[2]:
+                        power_rankings.render(data['standings_data'])
+                elif selected_tab == 3:
+                    with tabs[3]:
+                        prospects.render(data['roster_data'])
+                elif selected_tab == 4:
+                    with tabs[4]:
+                        projected_rankings.render(data['roster_data'])
+                
+                # Always render all tabs content (but they will be hidden until clicked)
+                with tabs[0]:
+                    if selected_tab != 0:
+                        league_info.render(data['league_data'])
+                
+                with tabs[1]:
+                    if selected_tab != 1:
+                        rosters.render(data['roster_data'])
+                
+                with tabs[2]:
+                    if selected_tab != 2:
+                        power_rankings.render(data['standings_data'])
+                
+                with tabs[3]:
+                    if selected_tab != 3:
+                        prospects.render(data['roster_data'])
+                
+                with tabs[4]:
+                    if selected_tab != 4:
+                        projected_rankings.render(data['roster_data'])
             else:
                 st.info("Loading data...")
 
