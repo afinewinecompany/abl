@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, landing_page
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, landing_page_new as landing_page
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
