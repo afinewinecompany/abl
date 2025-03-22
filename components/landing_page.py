@@ -75,15 +75,29 @@ def render():
             line-height: 1.2 !important;
         }
         
-        /* Field background */
+        /* Field background - full screen */
         .field-container {
             background: linear-gradient(#2b8a3e, #1b5a2e);
-            border-radius: 30px;
-            padding: 20px;
-            margin-top: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            position: relative;
             overflow: hidden;
+            z-index: 9999;
+        }
+        
+        /* Hide default Streamlit elements when showing the field */
+        header[data-testid="stHeader"], 
+        footer, 
+        .main > div:first-child,
+        .block-container {
+            display: none !important;
         }
         
         /* Diamond shape for infield */
@@ -230,6 +244,103 @@ def render():
             box-shadow: 0 0 10px rgba(0,0,0,0.2);
             z-index: 0;
         }
+        
+        /* Player positions styling */
+        .player-position {
+            position: absolute;
+            z-index: 10;
+        }
+        
+        .pitcher-position {
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .first-baseman-position {
+            bottom: 38%;
+            right: 30%;
+        }
+        
+        .second-baseman-position {
+            top: 20%;
+            right: 35%;
+        }
+        
+        .third-baseman-position {
+            bottom: 38%;
+            left: 30%;
+        }
+        
+        .shortstop-position {
+            top: 20%;
+            left: 35%;
+        }
+        
+        /* Player button styling */
+        .player-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ff3030, #d42a2a);
+            color: white;
+            border: 3px solid white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            padding: 0;
+            font-weight: bold;
+        }
+        
+        .player-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
+        }
+        
+        .player-icon {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .player-text {
+            font-size: 0.9rem;
+            text-align: center;
+            line-height: 1.2;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Enter button container */
+        .enter-button-container {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        /* Enter button styling */
+        .enter-app-button {
+            background: linear-gradient(145deg, #ff3030, #d42a2a);
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .enter-app-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -251,113 +362,130 @@ def render():
         <div class="buttons-container">
     ''', unsafe_allow_html=True)
     
-    # Create the baseball field layout with native Streamlit components for better compatibility
-    # Pitcher (Power Rankings) in the center
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.markdown('<div style="display: flex; justify-content: center; margin-bottom: 30px;">', unsafe_allow_html=True)
-        if st.button("🏆\nPower\nRankings", key="power_rankings", use_container_width=True):
-            st.session_state.entered_app = True
-            st.session_state.selected_tab = 2  # Power Rankings tab index
-            time.sleep(0.3)
-            st.experimental_rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Create player positions directly in HTML with absolute positioning
+    positions_html = """
+        <!-- Pitcher in center (Power Rankings) -->
+        <div class="player-position pitcher-position">
+            <button class="player-button" data-tab="2">
+                <span class="player-icon">🏆</span>
+                <span class="player-text">Power<br>Rankings</span>
+            </button>
+        </div>
+        
+        <!-- First Baseman (League Info) -->
+        <div class="player-position first-baseman-position">
+            <button class="player-button" data-tab="0">
+                <span class="player-icon">🏠</span>
+                <span class="player-text">League<br>Info</span>
+            </button>
+        </div>
+        
+        <!-- Second Baseman (Team Rosters) -->
+        <div class="player-position second-baseman-position">
+            <button class="player-button" data-tab="1">
+                <span class="player-icon">👥</span>
+                <span class="player-text">Team<br>Rosters</span>
+            </button>
+        </div>
+        
+        <!-- Third Baseman (Handbook) -->
+        <div class="player-position third-baseman-position">
+            <button class="player-button" data-tab="3">
+                <span class="player-icon">📚</span>
+                <span class="player-text">Handbook</span>
+            </button>
+        </div>
+        
+        <!-- Shortstop (Projected Rankings) -->
+        <div class="player-position shortstop-position">
+            <button class="player-button" data-tab="4">
+                <span class="player-icon">📈</span>
+                <span class="player-text">Projected<br>Rankings</span>
+            </button>
+        </div>
+        
+        <!-- Home plate -->
+        <div class="home-plate"></div>
+    """
     
-    # Second Baseman and Shortstop (Team Rosters and Projected Rankings)
-    col1, col2, col3, col4, col5 = st.columns([0.5, 1, 1, 1, 0.5])
-    with col2:
-        if st.button("👥\nTeam\nRosters", key="team_rosters", use_container_width=True):
-            st.session_state.entered_app = True
-            st.session_state.selected_tab = 1  # Team Rosters tab index
-            time.sleep(0.3)
-            st.experimental_rerun()
-    with col4:
-        if st.button("📈\nProjected\nRankings", key="projected_rankings", use_container_width=True):
-            st.session_state.entered_app = True
-            st.session_state.selected_tab = 4  # Projected Rankings tab index
-            time.sleep(0.3)
-            st.experimental_rerun()
+    st.markdown(positions_html, unsafe_allow_html=True)
     
-    # First Baseman and Third Baseman (League Info and Handbook)
-    col1, col2, col3, col4, col5 = st.columns([0.7, 1, 0.6, 1, 0.7])
-    with col2:
-        if st.button("🏠\nLeague\nInfo", key="league_info", use_container_width=True):
-            st.session_state.entered_app = True
-            st.session_state.selected_tab = 0  # League Info tab index
-            time.sleep(0.3)
-            st.experimental_rerun()
-    with col4:
-        if st.button("📚\nHandbook", key="handbook", use_container_width=True):
-            st.session_state.entered_app = True
-            st.session_state.selected_tab = 3  # Handbook tab index
-            time.sleep(0.3)
-            st.experimental_rerun()
+    # Add JavaScript to handle player button clicks
+    js_code = """
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up click handlers for player buttons
+            const playerButtons = document.querySelectorAll('.player-button');
+            
+            playerButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Store the tab index in sessionStorage (more reliable than localStorage in this context)
+                    const tabIndex = this.getAttribute('data-tab');
+                    sessionStorage.setItem('selectedTab', tabIndex);
+                    
+                    // Add visual feedback on click
+                    this.style.transform = 'scale(1.2)';
+                    
+                    // Trigger navigating away from landing page by clicking the hidden ENTER APP button
+                    setTimeout(() => {
+                        // Find the primary button even if it's hidden
+                        const primaryButton = document.querySelector('button[data-testid="baseButton-primary"]');
+                        if (primaryButton) {
+                            primaryButton.click();
+                        } else {
+                            console.error('Could not find primary button to click');
+                        }
+                    }, 300);
+                });
+            });
+        });
+    </script>
+    """
     
-    # Home plate at the bottom
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.markdown('<div class="home-plate"></div>', unsafe_allow_html=True)
+    st.markdown(js_code, unsafe_allow_html=True)
+    
+    # Visible "Enter App" button at the bottom
+    enter_button_html = """
+    <div class="enter-button-container">
+        <button id="visible-enter-button" class="enter-app-button">ENTER APP</button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const visibleEnterButton = document.getElementById('visible-enter-button');
+            if (visibleEnterButton) {
+                visibleEnterButton.addEventListener('click', function() {
+                    // Add visual feedback
+                    this.style.transform = 'scale(1.1)';
+                    this.style.boxShadow = '0 0 30px rgba(255, 0, 0, 0.8)';
+                    
+                    // Find and click the hidden primary button
+                    setTimeout(() => {
+                        const primaryButton = document.querySelector('button[data-testid="baseButton-primary"]');
+                        if (primaryButton) {
+                            primaryButton.click();
+                        } else {
+                            console.error('Could not find primary button');
+                        }
+                    }, 300);
+                });
+            }
+        });
+    </script>
+    """
+    
+    st.markdown(enter_button_html, unsafe_allow_html=True)
     
     # Close the field container
     st.markdown('</div></div>', unsafe_allow_html=True)
     
-    # Enter app button (centered at the bottom)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("ENTER APP", key="enter_app", use_container_width=True, type="primary"):
-            st.session_state.entered_app = True
-            time.sleep(0.3)
-            st.experimental_rerun()
-    
-    # Additional custom CSS to style buttons directly
-    st.markdown("""
-    <style>
-        /* Make buttons circular */
-        button[data-testid="baseButton-secondary"] {
-            border-radius: 50% !important;
-            width: 120px !important;
-            height: 120px !important;
-            border: 3px solid white !important;
-            background: linear-gradient(145deg, #ff3030, #d42a2a) !important;
-            color: white !important;
-            font-weight: bold !important;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3) !important;
-            transition: all 0.3s ease !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 !important;
-            animation: pulse 2s infinite !important;
-            margin: 0 auto !important;
-            min-height: unset !important;
-            line-height: 1.2 !important;
-        }
-        
-        button[data-testid="baseButton-secondary"]:hover {
-            transform: scale(1.1) !important;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6) !important;
-        }
-        
-        /* Make ENTER APP button special */
-        button[data-testid="baseButton-primary"] {
-            background: linear-gradient(145deg, #ff3030, #d42a2a) !important;
-            color: white !important;
-            font-weight: bold !important;
-            font-size: 1.2rem !important;
-            padding: 0.8rem 2rem !important;
-            border-radius: 30px !important;
-            border: none !important;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4) !important;
-            transition: all 0.3s ease !important;
-            margin-top: 20px !important;
-        }
-        
-        button[data-testid="baseButton-primary"]:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Hidden but functional primary button that we'll click via JavaScript
+    # Keep it outside the container so it doesn't mess with the layout
+    st.markdown('<div style="display:none !important; position: absolute;">', unsafe_allow_html=True)
+    if st.button("ENTER APP", key="enter_app_primary", use_container_width=True, type="primary"):
+        st.session_state.entered_app = True
+        time.sleep(0.3)
+        st.experimental_rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
     return True  # Return True to indicate the landing page is being shown

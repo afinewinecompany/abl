@@ -528,6 +528,28 @@ def main():
                     selected_tab = st.session_state.selected_tab
                     # Clear the selection after use
                     del st.session_state.selected_tab
+                    
+                # Add JavaScript to check sessionStorage for tab selection
+                st.markdown("""
+                <script>
+                    // Check for selected tab in sessionStorage
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const selectedTab = sessionStorage.getItem('selectedTab');
+                        if (selectedTab) {
+                            // Find all tabs and click the selected one
+                            const tabs = document.querySelectorAll('[data-baseweb="tab"]');
+                            const tabIndex = parseInt(selectedTab);
+                            if (tabs && tabs.length > tabIndex) {
+                                setTimeout(() => {
+                                    tabs[tabIndex].click();
+                                    // Clear the selection
+                                    sessionStorage.removeItem('selectedTab');
+                                }, 200);
+                            }
+                        }
+                    });
+                </script>
+                """, unsafe_allow_html=True)
                 
                 # Render content based on selected tab
                 if selected_tab == 0:
