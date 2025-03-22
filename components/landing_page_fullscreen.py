@@ -452,7 +452,7 @@ def render():
     if st.button("ENTER APP", type="primary", key="hidden_enter"):
         st.session_state.entered_app = True
         time.sleep(0.3)
-        st.experimental_rerun()
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
     return True  # Return True to indicate the landing page is being shown

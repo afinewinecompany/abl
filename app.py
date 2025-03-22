@@ -495,12 +495,12 @@ def main():
         with st.sidebar:
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
-                st.experimental_rerun()
+                st.rerun()
                 
             # Add a button to return to the landing page
             if st.button("Return to Field", use_container_width=True):
                 st.session_state.entered_app = False
-                st.experimental_rerun()
+                st.rerun()
 
             st.markdown("---")
             st.markdown("""
