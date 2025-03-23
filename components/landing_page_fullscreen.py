@@ -60,9 +60,9 @@ def render():
         h1.title {
             text-align: center;
             color: white;
-            margin: 20px 0;
+            margin: 15px 0;
             padding: 0;
-            font-size: 3rem;
+            font-size: min(3rem, 10vw);
             font-weight: 700;
             animation: glow 3s ease-in-out infinite alternate;
             text-shadow: 0 0 10px rgba(255,255,255,0.5);
@@ -83,10 +83,10 @@ def render():
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(45deg);
-            width: 450px;
-            height: 450px;
+            width: min(450px, 85vw, 85vh);
+            height: min(450px, 85vw, 85vh);
             background: #b38b5c;
-            border: 10px solid #a87a4d;
+            border: min(10px, 2vw) solid #a87a4d;
             z-index: 0;
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
         }
@@ -94,10 +94,10 @@ def render():
         /* Bases */
         .base {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: min(30px, 6vw, 6vh);
+            height: min(30px, 6vw, 6vh);
             background: white;
-            border: 3px solid #e0e0e0;
+            border: min(3px, 0.5vw) solid #e0e0e0;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
             z-index: 2;
         }
@@ -106,7 +106,7 @@ def render():
             bottom: 0;
             left: 50%;
             transform: translateX(-50%) rotate(45deg);
-            margin-bottom: -15px;
+            margin-bottom: min(-15px, -3vw);
         }
         
         .first-base {
@@ -133,10 +133,10 @@ def render():
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
+            width: min(50px, 9vw, 9vh);
+            height: min(50px, 9vw, 9vh);
             background: #a87a4d;
-            border: 3px solid #96693f;
+            border: min(3px, 0.5vw) solid #96693f;
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
             z-index: 1;
@@ -153,7 +153,7 @@ def render():
             bottom: 0;
             right: 0;
             width: 50%;
-            height: 10px;
+            height: min(10px, 1.5vw);
             transform-origin: bottom right;
             transform: rotate(-45deg);
         }
@@ -161,7 +161,7 @@ def render():
         .first-to-second {
             top: 0;
             right: 0;
-            width: 10px;
+            width: min(10px, 1.5vw);
             height: 50%;
             transform-origin: top right;
             transform: rotate(-45deg);
@@ -171,7 +171,7 @@ def render():
             top: 0;
             left: 0;
             width: 50%;
-            height: 10px;
+            height: min(10px, 1.5vw);
             transform-origin: top left;
             transform: rotate(-45deg);
         }
@@ -179,7 +179,7 @@ def render():
         .third-to-home {
             bottom: 0;
             left: 0;
-            width: 10px;
+            width: min(10px, 1.5vw);
             height: 50%;
             transform-origin: bottom left;
             transform: rotate(-45deg);
@@ -189,8 +189,8 @@ def render():
         .player-position {
             position: fixed;
             z-index: 10;
-            width: 120px;
-            height: 120px;
+            width: min(120px, 24vw, 24vh);
+            height: min(120px, 24vw, 24vh);
         }
         
         .pitcher-position {
@@ -199,26 +199,54 @@ def render():
             transform: translate(-50%, -50%);
         }
         
-        .first-base-position {
-            top: 50%;
-            right: 20%;
-            transform: translateY(-50%);
+        /* Mobile optimization for player positions */
+        @media (max-width: 767px) {
+            .first-base-position {
+                top: 50%;
+                right: 12%;
+                transform: translateY(-50%);
+            }
+            
+            .second-base-position {
+                top: 25%;
+                right: 25%;
+            }
+            
+            .third-base-position {
+                top: 50%;
+                left: 12%;
+                transform: translateY(-50%);
+            }
+            
+            .shortstop-position {
+                top: 25%;
+                left: 25%;
+            }
         }
         
-        .second-base-position {
-            top: 25%;
-            right: 35%;
-        }
-        
-        .third-base-position {
-            top: 50%;
-            left: 20%;
-            transform: translateY(-50%);
-        }
-        
-        .shortstop-position {
-            top: 25%;
-            left: 35%;
+        /* Desktop positioning */
+        @media (min-width: 768px) {
+            .first-base-position {
+                top: 50%;
+                right: 20%;
+                transform: translateY(-50%);
+            }
+            
+            .second-base-position {
+                top: 25%;
+                right: 35%;
+            }
+            
+            .third-base-position {
+                top: 50%;
+                left: 20%;
+                transform: translateY(-50%);
+            }
+            
+            .shortstop-position {
+                top: 25%;
+                left: 35%;
+            }
         }
         
         /* Position buttons */
@@ -228,7 +256,7 @@ def render():
             border-radius: 50%;
             background: linear-gradient(145deg, #ff3030, #d42a2a);
             color: white;
-            border: 4px solid white;
+            border: min(4px, 0.8vw) solid white;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -262,12 +290,12 @@ def render():
         }
         
         .position-icon {
-            font-size: 2rem;
-            margin-bottom: 5px;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            margin-bottom: min(5px, 1vw);
         }
         
         .position-text {
-            font-size: 0.9rem;
+            font-size: clamp(0.6rem, 2vw, 0.9rem);
             text-align: center;
             line-height: 1.2;
         }
@@ -275,23 +303,26 @@ def render():
         /* Enter app button */
         .enter-app-container {
             position: fixed;
-            bottom: 40px;
+            bottom: min(40px, 8vh);
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
+            width: min(250px, 80vw);
+            text-align: center;
         }
         
         .enter-app-button {
             background: linear-gradient(145deg, #ff3030, #d42a2a);
             color: white;
             font-weight: bold;
-            font-size: 1.2rem;
-            padding: 1rem 2.5rem;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            padding: clamp(0.7rem, 2vw, 1rem) clamp(1.5rem, 5vw, 2.5rem);
             border-radius: 50px;
             border: none;
             box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
             cursor: pointer;
             transition: all 0.3s ease;
+            width: 100%;
         }
         
         .enter-app-button:hover {
@@ -309,18 +340,34 @@ def render():
             background: repeating-linear-gradient(
                 90deg,
                 transparent,
-                transparent 40px,
-                rgba(0, 0, 0, 0.05) 40px,
-                rgba(0, 0, 0, 0.05) 80px
+                transparent min(40px, 5vw),
+                rgba(0, 0, 0, 0.05) min(40px, 5vw),
+                rgba(0, 0, 0, 0.05) min(80px, 10vw)
             );
             z-index: -1;
             opacity: 0.7;
+        }
+        
+        /* Better touch handling for mobile */
+        @media (pointer: coarse) {
+            .position-button {
+                animation: none;
+            }
+            .position-button:active {
+                transform: scale(1.1);
+                box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+            }
+            .enter-app-button:active {
+                transform: scale(1.05);
+                box-shadow: 0 0 35px rgba(255, 0, 0, 0.7);
+            }
         }
     </style>
     """, unsafe_allow_html=True)
     
     # Create the baseball field HTML structure
     field_html = """
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <div class="baseball-field-overlay"></div>
     <div class="grass-lines"></div>
     
@@ -402,31 +449,51 @@ def render():
             }, 300);
         }
         
+        // Utility function to detect if we're on a mobile device
+        function isMobileDevice() {
+            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+        }
+        
         // Set up event listeners when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Add click handlers for all position buttons
-            document.getElementById('power-rankings-btn').addEventListener('click', function() {
+            // Helper function to add both click and touch events
+            function addClickAndTouchEvents(element, handler) {
+                // For desktop clicks
+                element.addEventListener('click', handler);
+                
+                // For mobile touches
+                if (isMobileDevice()) {
+                    element.addEventListener('touchstart', function(e) {
+                        // Prevent default to avoid double-firing on some devices
+                        e.preventDefault();
+                        handler.call(this, e);
+                    });
+                }
+            }
+            
+            // Add handlers for all position buttons
+            addClickAndTouchEvents(document.getElementById('power-rankings-btn'), function() {
                 handlePositionClick.call(this, 2);
             });
             
-            document.getElementById('league-info-btn').addEventListener('click', function() {
+            addClickAndTouchEvents(document.getElementById('league-info-btn'), function() {
                 handlePositionClick.call(this, 0);
             });
             
-            document.getElementById('team-rosters-btn').addEventListener('click', function() {
+            addClickAndTouchEvents(document.getElementById('team-rosters-btn'), function() {
                 handlePositionClick.call(this, 1);
             });
             
-            document.getElementById('handbook-btn').addEventListener('click', function() {
+            addClickAndTouchEvents(document.getElementById('handbook-btn'), function() {
                 handlePositionClick.call(this, 3);
             });
             
-            document.getElementById('projected-rankings-btn').addEventListener('click', function() {
+            addClickAndTouchEvents(document.getElementById('projected-rankings-btn'), function() {
                 handlePositionClick.call(this, 4);
             });
             
-            // Add click handler for the enter app button
-            document.getElementById('enter-app-btn').addEventListener('click', function() {
+            // Add handler for the enter app button
+            addClickAndTouchEvents(document.getElementById('enter-app-btn'), function() {
                 // Visual feedback
                 this.style.transform = 'scale(1.1)';
                 this.style.boxShadow = '0 0 40px rgba(255, 0, 0, 0.8)';
