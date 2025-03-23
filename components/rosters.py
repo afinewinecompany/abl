@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from typing import Dict
+from typing import Dict, Optional
 from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points
 import unicodedata
 from components.prospects import normalize_name, MLB_TEAM_COLORS, MLB_TEAM_IDS, get_player_headshot_html
@@ -180,40 +180,51 @@ def get_position_order(position: str) -> int:
     }
     return position_order.get(position, 99)
 
-def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: float = None):
+def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: Optional[float] = None):
     """Render an individual player card"""
     projected_points = player.get('projected_points', 0)
     points_display = f"| {projected_points:.1f} pts" if projected_points > 0 else ""
-
+    
+    # For column layout, make a more compact display
+    # Shorten MLB team name if it's long
+    mlb_team = player['mlb_team']
+    if len(mlb_team) > 15:  # if team name is too long
+        parts = mlb_team.split()
+        if len(parts) > 1:
+            mlb_team = parts[-1]  # Use just the last word
+    
     return f"""
         <div class="player-card" style="
             background: linear-gradient(135deg, 
                 {team_colors['primary']} 0%,
                 {team_colors['secondary']} 100%);
-            border-radius: 10px;
-            padding: 0.75rem;
-            margin: 0.5rem 0;
+            border-radius: 8px;
+            padding: 0.6rem;
+            margin: 0.4rem 0;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            gap: 0.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
-            onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
             onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
-            {headshot_html}
-            <div style="flex-grow: 1; color: white;">
-                <div style="font-size: 1rem; font-weight: 600;">{player['player_name']}</div>
-                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.15rem;">
-                    {player['position']} | {player['mlb_team']} | ${player['salary']:,.0f}{points_display}{f' | Score: {prospect_score:.1f}' if prospect_score is not None else ''}
+            <div style="flex: 0 0 auto; max-width: 40px;">
+                {headshot_html.replace('width: 60px; height: 60px;', 'width: 40px; height: 40px;') if headshot_html else ''}
+            </div>
+            <div style="flex-grow: 1; color: white; overflow: hidden;">
+                <div style="font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{player['player_name']}</div>
+                <div style="font-size: 0.7rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {player['position']} | {mlb_team} | ${player['salary']:,.0f}{points_display}{f' | {prospect_score:.1f}' if prospect_score is not None else ''}
                 </div>
             </div>
             <span style="
                 background: rgba(255,255,255,0.1);
-                padding: 0.25rem 0.75rem;
-                border-radius: 15px;
+                padding: 0.2rem 0.4rem;
+                border-radius: 12px;
                 font-weight: 600;
-                font-size: 0.8rem;">
+                font-size: 0.7rem;
+                white-space: nowrap;">
                 {player['status'].upper()}
             </span>
         </div>
@@ -344,40 +355,66 @@ def render(roster_data: pd.DataFrame):
             ~team_roster['status'].str.upper().isin(['ACTIVE', 'MINORS'])
         ]
 
+        # Create three columns for the roster sections
+        st.markdown("""
+        <style>
+        .roster-column {
+            padding: 0.5rem;
+        }
+        .roster-header {
+            text-align: center;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Create the three columns
+        col1, col2, col3 = st.columns(3)
+        
         # Active Roster Section with position-based layout
-        st.subheader("📋 Active Roster")
-
-        # Group active roster by position
-        for pos in ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UT']:
-            pos_players = active_roster[active_roster['position'] == pos]
-            if not pos_players.empty:
-                st.markdown(f"**{pos}**")
-                for _, player in pos_players.iterrows():
+        with col1:
+            st.markdown("<div class='roster-header'><h3>📋 Active Roster</h3></div>", unsafe_allow_html=True)
+            
+            # Group active roster by position
+            for pos in ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UT']:
+                pos_players = active_roster[active_roster['position'] == pos]
+                if not pos_players.empty:
+                    st.markdown(f"**{pos}**")
+                    for _, player in pos_players.iterrows():
+                        headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+                        st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
+            
+            # Display pitchers after position players
+            pitchers = active_roster[active_roster['position'].isin(['SP', 'RP', 'P'])]
+            if not pitchers.empty:
+                st.markdown("**Pitchers**")
+                for _, player in pitchers.iterrows():
                     headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
                     st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
-
-        # Display pitchers after position players
-        pitchers = active_roster[active_roster['position'].isin(['SP', 'RP', 'P'])]
-        if not pitchers.empty:
-            st.markdown("**Pitchers**")
-            for _, player in pitchers.iterrows():
-                headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
-                st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
-
+        
         # Reserve Roster Section
-        if not reserve_roster.empty:
-            st.subheader("🔄 Reserve Roster")
-            for _, player in reserve_roster.iterrows():
-                headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
-                st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
-
+        with col2:
+            if not reserve_roster.empty:
+                st.markdown("<div class='roster-header'><h3>🔄 Reserve Roster</h3></div>", unsafe_allow_html=True)
+                for _, player in reserve_roster.iterrows():
+                    headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+                    st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roster-header'><h3>🔄 Reserve Roster</h3></div><p>No players on reserve roster</p>", unsafe_allow_html=True)
+        
         # Minors/Prospects Section
-        if not minors_roster.empty:
-            st.subheader("⭐ Minor League Players")
-            for _, player in minors_roster.iterrows():
-                headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
-                prospect_score = prospect_scores.get(normalize_name(player['player_name']), None)
-                st.markdown(render_player_card(player, headshot_html, team_colors, prospect_score), unsafe_allow_html=True)
+        with col3:
+            if not minors_roster.empty:
+                st.markdown("<div class='roster-header'><h3>⭐ Minor League Players</h3></div>", unsafe_allow_html=True)
+                for _, player in minors_roster.iterrows():
+                    headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
+                    prospect_score = prospect_scores.get(normalize_name(player['player_name']), None)
+                    st.markdown(render_player_card(player, headshot_html, team_colors, prospect_score), unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roster-header'><h3>⭐ Minor League Players</h3></div><p>No minor league players</p>", unsafe_allow_html=True)
 
         # Position breakdown
         st.subheader("Position Distribution")
