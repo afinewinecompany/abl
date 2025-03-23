@@ -142,13 +142,13 @@ def main():
         
         # Page navigation
         st.subheader("Navigation")
-        page = st.radio("", [
+        page = st.radio("Select Page", [
             "League Overview", 
             "Team Rosters", 
             "Power Rankings", 
             "Prospect Handbook", 
             "Projected Rankings"
-        ])
+        ], label_visibility="collapsed")
         
         # Refresh button
         st.markdown("---")
