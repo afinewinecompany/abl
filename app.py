@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, landing_page_new_simplified as landing_page
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
@@ -484,116 +484,54 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
-    # Check if we should show the landing page
-    show_landing = landing_page.render()
-    
-    # If landing page is shown, don't display the main app content
-    if not show_landing:
-        st.title("⚾ ABL Analytics")
+    st.title("⚾ ABL Analytics")
 
-        # Streamlined sidebar
-        with st.sidebar:
-            st.markdown("### 🔄 League Controls")
-            if st.button("Refresh Data", use_container_width=True):
-                st.rerun()
-                
-            # Add a button to return to the landing page
-            if st.button("Return to Field", use_container_width=True):
-                st.session_state.entered_app = False
-                st.rerun()
+    # Streamlined sidebar
+    with st.sidebar:
+        st.markdown("### 🔄 League Controls")
+        if st.button("Refresh Data", use_container_width=True):
+            st.experimental_rerun()
 
-            st.markdown("---")
-            st.markdown("""
-            ### About ABL Analytics
-            Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
-            """)
+        st.markdown("---")
+        st.markdown("""
+        ### About ABL Analytics
+        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+        """)
 
-        try:
-            # Fetch all data using the utility function
-            data = fetch_api_data()
+    try:
+        # Fetch all data using the utility function
+        data = fetch_api_data()
 
-            if data:
-                # Create tabs for different sections
-                tabs = st.tabs([
-                    "🏠 League Info",
-                    "👥 Team Rosters",
-                    "🏆 Power Rankings",
-                    "📚 Handbook",
-                    "📈 Projected Rankings"
-                ])
-                
-                # Determine which tab to show based on selection from landing page
-                selected_tab = 0  # Default to first tab
-                if 'selected_tab' in st.session_state:
-                    selected_tab = st.session_state.selected_tab
-                    # Clear the selection after use
-                    del st.session_state.selected_tab
-                    
-                # Add JavaScript to check sessionStorage for tab selection
-                st.markdown("""
-                <script>
-                    // Check for selected tab in sessionStorage
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const selectedTab = sessionStorage.getItem('selectedTab');
-                        if (selectedTab) {
-                            // Find all tabs and click the selected one
-                            const tabs = document.querySelectorAll('[data-baseweb="tab"]');
-                            const tabIndex = parseInt(selectedTab);
-                            if (tabs && tabs.length > tabIndex) {
-                                setTimeout(() => {
-                                    tabs[tabIndex].click();
-                                    // Clear the selection
-                                    sessionStorage.removeItem('selectedTab');
-                                }, 200);
-                            }
-                        }
-                    });
-                </script>
-                """, unsafe_allow_html=True)
-                
-                # Render content based on selected tab
-                if selected_tab == 0:
-                    with tabs[0]:
-                        league_info.render(data['league_data'])
-                elif selected_tab == 1:
-                    with tabs[1]:
-                        rosters.render(data['roster_data'])
-                elif selected_tab == 2:
-                    with tabs[2]:
-                        power_rankings.render(data['standings_data'])
-                elif selected_tab == 3:
-                    with tabs[3]:
-                        prospects.render(data['roster_data'])
-                elif selected_tab == 4:
-                    with tabs[4]:
-                        projected_rankings.render(data['roster_data'])
-                
-                # Always render all tabs content (but they will be hidden until clicked)
-                with tabs[0]:
-                    if selected_tab != 0:
-                        league_info.render(data['league_data'])
-                
-                with tabs[1]:
-                    if selected_tab != 1:
-                        rosters.render(data['roster_data'])
-                
-                with tabs[2]:
-                    if selected_tab != 2:
-                        power_rankings.render(data['standings_data'])
-                
-                with tabs[3]:
-                    if selected_tab != 3:
-                        prospects.render(data['roster_data'])
-                
-                with tabs[4]:
-                    if selected_tab != 4:
-                        projected_rankings.render(data['roster_data'])
-            else:
-                st.info("Loading data...")
+        if data:
+            # Create tabs for different sections
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "🏠 League Info",
+                "👥 Team Rosters",
+                "🏆 Power Rankings",
+                "📚 Handbook",
+                "📈 Projected Rankings"
+            ])
 
-        except Exception as e:
-            st.error(f"An error occurred while loading data: {str(e)}")
-            st.info("Please try refreshing the page.")
+            with tab1:
+                league_info.render(data['league_data'])
+
+            with tab2:
+                rosters.render(data['roster_data'])
+
+            with tab3:
+                power_rankings.render(data['standings_data'])
+
+            with tab4:
+                prospects.render(data['roster_data'])
+
+            with tab5:
+                projected_rankings.render(data['roster_data'])
+        else:
+            st.info("Using mock data for development...")
+
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {str(e)}")
+        st.info("Using mock data for development...")
 
 if __name__ == "__main__":
     main()
