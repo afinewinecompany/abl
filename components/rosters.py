@@ -382,7 +382,19 @@ def render(roster_data: pd.DataFrame):
             for pos in ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UT']:
                 pos_players = active_roster[active_roster['position'] == pos]
                 if not pos_players.empty:
-                    st.markdown(f"**{pos}**")
+                    # Create a position card that matches the player card style
+                    st.markdown(f"""
+                        <div style="
+                            background: rgba(0, 0, 0, 0.05);
+                            border-radius: 6px;
+                            padding: 0.3rem 0.6rem;
+                            margin-top: 0.6rem;
+                            margin-bottom: 0.3rem;
+                            font-weight: 600;
+                            font-size: 0.9rem;">
+                            {pos}
+                        </div>
+                    """, unsafe_allow_html=True)
                     for _, player in pos_players.iterrows():
                         headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
                         st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
@@ -390,7 +402,19 @@ def render(roster_data: pd.DataFrame):
             # Display pitchers after position players
             pitchers = active_roster[active_roster['position'].isin(['SP', 'RP', 'P'])]
             if not pitchers.empty:
-                st.markdown("**Pitchers**")
+                # Create a position card for pitchers that matches the style
+                st.markdown(f"""
+                    <div style="
+                        background: rgba(0, 0, 0, 0.05);
+                        border-radius: 6px;
+                        padding: 0.3rem 0.6rem;
+                        margin-top: 0.6rem;
+                        margin-bottom: 0.3rem;
+                        font-weight: 600;
+                        font-size: 0.9rem;">
+                        Pitchers
+                    </div>
+                """, unsafe_allow_html=True)
                 for _, player in pitchers.iterrows():
                     headshot_html = get_player_headshot_html(player['player_name'], player_id_cache)
                     st.markdown(render_player_card(player, headshot_html, team_colors), unsafe_allow_html=True)
