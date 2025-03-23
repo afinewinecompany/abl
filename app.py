@@ -1,5 +1,5 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, trade_analyzer
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from utils import fetch_api_data
 
 # This must be the first Streamlit command
@@ -504,13 +504,12 @@ def main():
 
         if data:
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "📚 Handbook",
-                "📈 Projected Rankings",
-                "💬 Trade Analyzer"
+                "📈 Projected Rankings"
             ])
 
             with tab1:
@@ -527,15 +526,6 @@ def main():
 
             with tab5:
                 projected_rankings.render(data['roster_data'])
-                
-            with tab6:
-                # Pass both roster data and projected rankings to the trade analyzer
-                projected_data = None
-                try:
-                    projected_data = data.get('projected_rankings', None)
-                except:
-                    pass
-                trade_analyzer.render(data['roster_data'], projected_data)
         else:
             st.info("Using mock data for development...")
 
