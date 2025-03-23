@@ -672,7 +672,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                        use_container_width=False,
                        help="Click to show only top 10 prospects"):
                 st.session_state.show_all_prospects = False
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.markdown("<p style='text-align: center; color: #999;'>Showing Top 10 prospects</p>", 
                       unsafe_allow_html=True)
@@ -745,7 +745,7 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
                            use_container_width=False, 
                            help="Click to view all top 100 prospects"):
                     st.session_state.show_all_prospects = True
-                    st.experimental_rerun()
+                    st.rerun()
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
