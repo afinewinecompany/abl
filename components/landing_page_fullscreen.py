@@ -91,6 +91,48 @@ def render():
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
         }
         
+        /* Base containers for positioning */
+        .base-container {
+            position: absolute;
+            width: min(120px, 23vw, 23vh);
+            height: min(120px, 23vw, 23vh);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+        }
+        
+        .home-plate-container {
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) rotate(-45deg) translateY(20%);
+        }
+        
+        .first-base-container {
+            top: 0;
+            right: 0;
+            transform: translate(30%, -30%) rotate(-45deg);
+        }
+        
+        .second-base-container {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(-30%) rotate(-45deg);
+        }
+        
+        .third-base-container {
+            top: 0;
+            left: 0;
+            transform: translate(-30%, -30%) rotate(-45deg);
+        }
+        
+        .pitchers-mound-container {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        
         /* Bases */
         .base {
             position: absolute;
@@ -103,10 +145,9 @@ def render():
         }
         
         .home-plate {
-            bottom: 0;
+            bottom: 20%;
             left: 50%;
             transform: translateX(-50%) rotate(45deg);
-            margin-bottom: min(-15px, -3vw);
         }
         
         .first-base {
@@ -185,74 +226,10 @@ def render():
             transform: rotate(-45deg);
         }
         
-        /* Player position containers */
-        .player-position {
-            position: fixed;
-            z-index: 10;
-            width: min(120px, 24vw, 24vh);
-            height: min(120px, 24vw, 24vh);
-        }
-        
-        .pitcher-position {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        /* Mobile optimization for player positions */
-        @media (max-width: 767px) {
-            .first-base-position {
-                top: 50%;
-                right: 12%;
-                transform: translateY(-50%);
-            }
-            
-            .second-base-position {
-                top: 25%;
-                right: 25%;
-            }
-            
-            .third-base-position {
-                top: 50%;
-                left: 12%;
-                transform: translateY(-50%);
-            }
-            
-            .shortstop-position {
-                top: 25%;
-                left: 25%;
-            }
-        }
-        
-        /* Desktop positioning */
-        @media (min-width: 768px) {
-            .first-base-position {
-                top: 50%;
-                right: 20%;
-                transform: translateY(-50%);
-            }
-            
-            .second-base-position {
-                top: 25%;
-                right: 35%;
-            }
-            
-            .third-base-position {
-                top: 50%;
-                left: 20%;
-                transform: translateY(-50%);
-            }
-            
-            .shortstop-position {
-                top: 25%;
-                left: 35%;
-            }
-        }
-        
-        /* Position buttons */
-        .position-button {
-            width: 100%;
-            height: 100%;
+        /* Base buttons styling */
+        .base-button {
+            width: min(100px, 20vw, 20vh);
+            height: min(100px, 20vw, 20vh);
             border-radius: 50%;
             background: linear-gradient(145deg, #ff3030, #d42a2a);
             color: white;
@@ -267,6 +244,8 @@ def render():
             animation: pulse 2s infinite;
             font-weight: bold;
             padding: 0;
+            position: relative;
+            z-index: 20;
         }
         
         @keyframes pulse {
@@ -284,7 +263,7 @@ def render():
             }
         }
         
-        .position-button:hover {
+        .base-button:hover {
             transform: scale(1.1);
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
         }
@@ -300,34 +279,33 @@ def render():
             line-height: 1.2;
         }
         
-        /* Enter app button */
-        .enter-app-container {
-            position: fixed;
-            bottom: min(40px, 8vh);
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            width: min(250px, 80vw);
-            text-align: center;
-        }
-        
-        .enter-app-button {
-            background: linear-gradient(145deg, #ff3030, #d42a2a);
-            color: white;
-            font-weight: bold;
-            font-size: clamp(1rem, 3vw, 1.2rem);
-            padding: clamp(0.7rem, 2vw, 1rem) clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 50px;
-            border: none;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        .enter-app-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 35px rgba(255, 0, 0, 0.7);
+        /* Mobile optimization for base buttons */
+        @media (max-width: 767px) {
+            .base-container {
+                width: min(100px, 20vw, 20vh);
+                height: min(100px, 20vw, 20vh);
+            }
+            
+            .base-button {
+                width: min(80px, 18vw, 18vh);
+                height: min(80px, 18vw, 18vh);
+            }
+            
+            .home-plate-container {
+                transform: translateX(-50%) rotate(-45deg) translateY(30%);
+            }
+            
+            .first-base-container {
+                transform: translate(30%, -30%) rotate(-45deg);
+            }
+            
+            .second-base-container {
+                transform: translateX(-50%) translateY(-30%) rotate(-45deg);
+            }
+            
+            .third-base-container {
+                transform: translate(-30%, -30%) rotate(-45deg);
+            }
         }
         
         /* Outfield grass texture lines */
@@ -350,16 +328,12 @@ def render():
         
         /* Better touch handling for mobile */
         @media (pointer: coarse) {
-            .position-button {
+            .base-button {
                 animation: none;
             }
-            .position-button:active {
+            .base-button:active {
                 transform: scale(1.1);
                 box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
-            }
-            .enter-app-button:active {
-                transform: scale(1.05);
-                box-shadow: 0 0 35px rgba(255, 0, 0, 0.7);
             }
         }
     </style>
@@ -371,60 +345,60 @@ def render():
     <div class="baseball-field-overlay"></div>
     <div class="grass-lines"></div>
     
-    <h1 class="title">⚾ ABL Analytics Field</h1>
+    <h1 class="title">⚾ ABL Analytics</h1>
     
     <!-- Baseball diamond -->
     <div class="baseball-diamond">
-        <div class="base home-plate"></div>
-        <div class="base first-base"></div>
-        <div class="base second-base"></div>
-        <div class="base third-base"></div>
-        <div class="pitchers-mound"></div>
+        <!-- Home plate with League Info -->
+        <div class="base-container home-plate-container">
+            <div class="base home-plate"></div>
+            <button id="league-info-btn" class="base-button home-button">
+                <span class="position-icon">🏠</span>
+                <span class="position-text">League<br>Info</span>
+            </button>
+        </div>
+        
+        <!-- First base with Team Rosters -->
+        <div class="base-container first-base-container">
+            <div class="base first-base"></div>
+            <button id="team-rosters-btn" class="base-button first-button">
+                <span class="position-icon">👥</span>
+                <span class="position-text">Team<br>Rosters</span>
+            </button>
+        </div>
+        
+        <!-- Second base with Power Rankings -->
+        <div class="base-container second-base-container">
+            <div class="base second-base"></div>
+            <button id="power-rankings-btn" class="base-button second-button">
+                <span class="position-icon">🏆</span>
+                <span class="position-text">Power<br>Rankings</span>
+            </button>
+        </div>
+        
+        <!-- Third base with Handbook -->
+        <div class="base-container third-base-container">
+            <div class="base third-base"></div>
+            <button id="handbook-btn" class="base-button third-button">
+                <span class="position-icon">📚</span>
+                <span class="position-text">Handbook</span>
+            </button>
+        </div>
+        
+        <!-- Pitcher's mound with Projected Rankings -->
+        <div class="base-container pitchers-mound-container">
+            <div class="pitchers-mound"></div>
+            <button id="projected-rankings-btn" class="base-button mound-button">
+                <span class="position-icon">📈</span>
+                <span class="position-text">Projected<br>Rankings</span>
+            </button>
+        </div>
+        
+        <!-- Base paths -->
         <div class="base-path home-to-first"></div>
         <div class="base-path first-to-second"></div>
         <div class="base-path second-to-third"></div>
         <div class="base-path third-to-home"></div>
-    </div>
-    
-    <!-- Player positions -->
-    <div class="player-position pitcher-position">
-        <button id="power-rankings-btn" class="position-button">
-            <span class="position-icon">🏆</span>
-            <span class="position-text">Power<br>Rankings</span>
-        </button>
-    </div>
-    
-    <div class="player-position first-base-position">
-        <button id="league-info-btn" class="position-button">
-            <span class="position-icon">🏠</span>
-            <span class="position-text">League<br>Info</span>
-        </button>
-    </div>
-    
-    <div class="player-position second-base-position">
-        <button id="team-rosters-btn" class="position-button">
-            <span class="position-icon">👥</span>
-            <span class="position-text">Team<br>Rosters</span>
-        </button>
-    </div>
-    
-    <div class="player-position third-base-position">
-        <button id="handbook-btn" class="position-button">
-            <span class="position-icon">📚</span>
-            <span class="position-text">Handbook</span>
-        </button>
-    </div>
-    
-    <div class="player-position shortstop-position">
-        <button id="projected-rankings-btn" class="position-button">
-            <span class="position-icon">📈</span>
-            <span class="position-text">Projected<br>Rankings</span>
-        </button>
-    </div>
-    
-    <!-- Enter app button -->
-    <div class="enter-app-container">
-        <button id="enter-app-btn" class="enter-app-button">ENTER APP</button>
     </div>
     
     <script>
@@ -499,7 +473,7 @@ def render():
                 }
             }
             
-            // Add handlers for all position buttons
+            // Add handlers for all base buttons
             addClickAndTouchEvents(document.getElementById('power-rankings-btn'), function() {
                 handlePositionClick.call(this, 2);
             });
@@ -518,50 +492,6 @@ def render():
             
             addClickAndTouchEvents(document.getElementById('projected-rankings-btn'), function() {
                 handlePositionClick.call(this, 4);
-            });
-            
-            // Add handler for the enter app button
-            addClickAndTouchEvents(document.getElementById('enter-app-btn'), function() {
-                // Visual feedback
-                this.style.transform = 'scale(1.1)';
-                this.style.boxShadow = '0 0 40px rgba(255, 0, 0, 0.8)';
-                
-                // Find and click the Streamlit button
-                setTimeout(() => {
-                    try {
-                        const streamlitDoc = window.parent.document;
-                        // Multiple ways to find the button
-                        let enterAppBtn = streamlitDoc.querySelector('button[kind="primary"]');
-                        
-                        if (!enterAppBtn) {
-                            // Try finding it by key
-                            enterAppBtn = streamlitDoc.querySelector('[data-testid="stButton"]');
-                        }
-                        
-                        if (!enterAppBtn) {
-                            // Try finding by content
-                            const buttons = streamlitDoc.querySelectorAll('button');
-                            for (let btn of buttons) {
-                                if (btn.textContent.includes('ENTER APP')) {
-                                    enterAppBtn = btn;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if (enterAppBtn) {
-                            console.log("Found button, clicking now");
-                            enterAppBtn.click();
-                        } else {
-                            console.error("Could not find the hidden button");
-                            // Force app entry by direct state manipulation
-                            window.parent.sessionStorage.setItem('entered_app', 'true');
-                            window.parent.location.reload();
-                        }
-                    } catch (err) {
-                        console.error("Error clicking button:", err);
-                    }
-                }, 300);
             });
         });
     </script>
