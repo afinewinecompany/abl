@@ -9,6 +9,10 @@ def render():
     if st.session_state.get('entered_app', False):
         return False
     
+    # Initialize the selected tab in session state
+    if 'selected_tab' not in st.session_state:
+        st.session_state.selected_tab = 0
+    
     # Hide Streamlit default styling
     hide_streamlit_style = """
     <style>
