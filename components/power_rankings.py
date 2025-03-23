@@ -69,10 +69,19 @@ def calculate_hot_cold_modifier(recent_record: float) -> float:
     else:  # Group 6
         return 1.0
 
+def calculate_weekly_strength_of_schedule(team_points: pd.Series, matchups_per_week: int = 3) -> float:
+    """Calculate average points per week based on matchup performance"""
+    # Reshape points into weeks (each week has 3 matchups)
+    weeks = [team_points[i:i + matchups_per_week] for i in range(0, len(team_points), matchups_per_week)]
+    # Calculate average for each week
+    weekly_averages = [week.mean() for week in weeks if len(week) > 0]
+    # Return average across all weeks
+    return sum(weekly_averages) / len(weekly_averages) if weekly_averages else 0
+
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
-    """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
-    # Calculate weekly average score
-    weekly_avg = row['total_points'] / max(row['weeks_played'], 1)  # Prevent division by zero
+    """Calculate power score based on weekly strength of schedule, points modifier, and hot/cold modifier"""
+    # Get weekly strength of schedule (using matchup-based calculation)
+    weekly_sos = calculate_weekly_strength_of_schedule(row['matchup_points']) if 'matchup_points' in row else row['total_points'] / max(row['weeks_played'], 1)
 
     # Calculate points modifier
     points_mod = calculate_points_modifier(row['total_points'], all_teams_data['total_points'])
@@ -82,7 +91,7 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     recent_record = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5  # Default to 0.5 if no games
     hot_cold_mod = calculate_hot_cold_modifier(recent_record)
 
-    return (weekly_avg * points_mod) * hot_cold_mod
+    return (weekly_sos * points_mod) * hot_cold_mod
 
 def render(standings_data: pd.DataFrame):
     """Render power rankings section"""
