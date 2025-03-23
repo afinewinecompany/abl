@@ -4,6 +4,7 @@ import plotly.express as px
 from typing import Dict
 import os
 import unicodedata
+from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
@@ -207,25 +208,64 @@ def render(roster_data: pd.DataFrame):
         # Display top 3 teams in cards
         for idx, (col, (_, row)) in enumerate(zip([col1, col2, col3], team_rankings.head(3).iterrows())):
             with col:
-                division = division_mapping.get(row['team'], "Unknown")
-                color = division_colors.get(division, "#00ff88")
+                team_name = row['team']
+                division = division_mapping.get(team_name, "Unknown")
+                division_color = division_colors.get(division, "#00ff88")
+                
+                # Get team colors from MLB_TEAM_COLORS
+                team_colors = MLB_TEAM_COLORS.get(team_name, {
+                    'primary': '#1a1c23', 
+                    'secondary': '#2d2f36',
+                    'accent': '#FFFFFF'
+                })
+                
+                # Get team ID for logo
+                team_id = MLB_TEAM_IDS.get(team_name, '')
+                team_logo_url = f"https://www.mlbstatic.com/team-logos/{team_id}.svg" if team_id else ""
+                logo_html = f'<img src="{team_logo_url}" style="width: 50px; height: 50px; position: absolute; top: 1rem; right: 1rem;">' if team_id else ""
+                
                 st.markdown(f"""
                 <div style="
-                    padding: 1rem;
-                    background-color: #1a1c23;
+                    position: relative;
+                    padding: 1.5rem 1rem;
+                    background: linear-gradient(135deg, 
+                        {team_colors['primary']} 0%,
+                        {team_colors['secondary']} 100%);
                     border-radius: 10px;
-                    border-left: 5px solid {color};
                     margin: 0.5rem 0;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+                    overflow: hidden;
                 ">
-                    <h3 style="margin:0; color: {color};">#{idx + 1}</h3>
-                    <h4 style="margin:0.5rem 0;">{row['team']}</h4>
-                    <p style="margin:0; font-size: 1.2rem; color: #fafafa;">
-                        {row['abl_score']:.1f}
-                    </p>
-                    <p style="margin:0; font-size: 0.8rem; color: #888;">
-                        {division}
-                    </p>
+                    {logo_html}
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 5px;
+                        background: linear-gradient(90deg, transparent, {division_color}, transparent);
+                    "></div>
+                    <h3 style="margin:0; color: white; font-size: 1.8rem; font-weight: 800;">#{idx + 1}</h3>
+                    <h4 style="margin:0.5rem 0; color: white; font-size: 1.4rem;">{team_name}</h4>
+                    <div style="
+                        margin-top: 1rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    ">
+                        <div>
+                            <p style="margin:0; font-size: 0.8rem; color: rgba(255,255,255,0.7);">SCORE</p>
+                            <p style="margin:0; font-size: 1.6rem; font-weight: 700; color: white;">
+                                {row['abl_score']:.1f}
+                            </p>
+                        </div>
+                        <div>
+                            <p style="margin:0; font-size: 0.8rem; color: rgba(255,255,255,0.7);">DIVISION</p>
+                            <p style="margin:0; font-size: 1rem; color: white; font-weight: 600;">
+                                {division}
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -235,26 +275,61 @@ def render(roster_data: pd.DataFrame):
         # Display teams 4-30 in single column
         remaining_teams = team_rankings.iloc[3:]
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            division = division_mapping.get(row['team'], "Unknown")
-            color = division_colors.get(division, "#00ff88")
+            team_name = row['team']
+            division = division_mapping.get(team_name, "Unknown")
+            division_color = division_colors.get(division, "#00ff88")
+            
+            # Get team colors and logo
+            team_colors = MLB_TEAM_COLORS.get(team_name, {
+                'primary': '#1a1c23', 
+                'secondary': '#2d2f36',
+                'accent': '#FFFFFF'
+            })
+            
+            team_id = MLB_TEAM_IDS.get(team_name, '')
+            team_logo_url = f"https://www.mlbstatic.com/team-logos/{team_id}.svg" if team_id else ""
+            logo_html = f'<img src="{team_logo_url}" style="width: 30px; height: 30px;">' if team_id else ""
+            
             st.markdown(f"""
             <div style="
                 padding: 0.75rem;
-                background-color: #1a1c23;
+                background: linear-gradient(135deg, 
+                    {team_colors['primary']} 0%,
+                    {team_colors['secondary']} 100%);
                 border-radius: 8px;
                 margin: 0.5rem 0;
-                border-left: 4px solid {color};
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                position: relative;
+                overflow: hidden;
             ">
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 4px;
+                    height: 100%;
+                    background-color: {division_color};
+                "></div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="color: {color}; font-size: 1.1rem; font-weight: bold;">#{i + 4}</span>
-                        <div>
-                            <div style="font-weight: bold;">{row['team']}</div>
-                            <div style="font-size: 0.8rem; color: #888;">{division}</div>
+                    <div style="display: flex; align-items: center; gap: 1rem; color: white;">
+                        <span style="font-size: 1.1rem; font-weight: bold; background: rgba(255,255,255,0.1); 
+                                 padding: 0.2rem 0.5rem; border-radius: 4px;">#{i + 4}</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {logo_html}
+                            <div>
+                                <div style="font-weight: bold; font-size: 1rem;">{team_name}</div>
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">{division}</div>
+                            </div>
                         </div>
                     </div>
-                    <span style="font-weight: bold; font-size: 1.2rem;">{row['abl_score']:.1f}</span>
+                    <span style="
+                        font-weight: bold; 
+                        font-size: 1.2rem; 
+                        color: white;
+                        background: rgba(255,255,255,0.1);
+                        padding: 0.2rem 0.8rem;
+                        border-radius: 6px;
+                    ">{row['abl_score']:.1f}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
