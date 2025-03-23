@@ -412,28 +412,34 @@ def render():
     </div>
     
     <script>
-        // Create random baseball stitches in the background
-        document.addEventListener('DOMContentLoaded', function() {
+        // Create and initialize all elements on page load
+        window.addEventListener('load', function() {
+            // Create random baseball stitches in the background
             const stitchesContainer = document.getElementById('stitchesContainer');
-            const numStitches = 30;
-            
-            for (let i = 0; i < numStitches; i++) {
-                const stitch = document.createElement('div');
-                stitch.classList.add('stitch');
+            if (stitchesContainer) {
+                const numStitches = 30;
                 
-                // Random position, scale, rotation, and animation delay
-                const left = Math.random() * 100;
-                const delay = Math.random() * 20;
-                const rotation = Math.random() * 360;
-                const scale = 0.5 + Math.random() * 1;
-                
-                stitch.style.left = `${left}%`;
-                stitch.style.animationDelay = `${delay}s`;
-                stitch.style.setProperty('--rotation', `${rotation}deg`);
-                stitch.style.setProperty('--scale', scale);
-                
-                stitchesContainer.appendChild(stitch);
+                for (let i = 0; i < numStitches; i++) {
+                    const stitch = document.createElement('div');
+                    stitch.classList.add('stitch');
+                    
+                    // Random position, scale, rotation, and animation delay
+                    const left = Math.random() * 100;
+                    const delay = Math.random() * 20;
+                    const rotation = Math.random() * 360;
+                    const scale = 0.5 + Math.random() * 1;
+                    
+                    stitch.style.left = `${left}%`;
+                    stitch.style.animationDelay = `${delay}s`;
+                    stitch.style.setProperty('--rotation', `${rotation}deg`);
+                    stitch.style.setProperty('--scale', scale);
+                    
+                    stitchesContainer.appendChild(stitch);
+                }
             }
+            
+            // Set up event listeners for all navigation buttons
+            setupNavButtons();
         });
         
         // Function to handle navigation button clicks
@@ -444,8 +450,10 @@ def render():
             
             // Store the selected tab and trigger the enter app action
             try {
+                console.log("Navigation clicked, tab index:", tabIndex);
+                
                 // Store tab index in session storage for app.py to read
-                sessionStorage.setItem('selectedTab', tabIndex);
+                window.parent.sessionStorage.setItem('selectedTab', tabIndex);
                 
                 // Find and click the hidden enter app button
                 setTimeout(() => {
@@ -493,46 +501,40 @@ def render():
             return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
         }
         
-        // Set up event listeners when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        // Setup navigation buttons
+        function setupNavButtons() {
             // Helper function to add both click and touch events
-            function addClickAndTouchEvents(element, handler) {
-                if (!element) return;
+            function addClickAndTouchEvents(elementId, tabIndex) {
+                const element = document.getElementById(elementId);
+                if (!element) {
+                    console.error(`Button element not found: ${elementId}`);
+                    return;
+                }
                 
                 // For desktop clicks
-                element.addEventListener('click', handler);
+                element.addEventListener('click', function(e) {
+                    handleNavClick.call(this, tabIndex);
+                });
                 
                 // For mobile touches
                 if (isMobileDevice()) {
                     element.addEventListener('touchstart', function(e) {
                         // Prevent default to avoid double-firing on some devices
                         e.preventDefault();
-                        handler.call(this, e);
+                        handleNavClick.call(this, tabIndex);
                     });
                 }
+                
+                console.log(`Event handlers added for: ${elementId}`);
             }
             
             // Add handlers for all navigation buttons
-            addClickAndTouchEvents(document.getElementById('league-info-btn'), function() {
-                handleNavClick.call(this, 0);
-            });
-            
-            addClickAndTouchEvents(document.getElementById('team-rosters-btn'), function() {
-                handleNavClick.call(this, 1);
-            });
-            
-            addClickAndTouchEvents(document.getElementById('power-rankings-btn'), function() {
-                handleNavClick.call(this, 2);
-            });
-            
-            addClickAndTouchEvents(document.getElementById('handbook-btn'), function() {
-                handleNavClick.call(this, 3);
-            });
-            
-            addClickAndTouchEvents(document.getElementById('projected-rankings-btn'), function() {
-                handleNavClick.call(this, 4);
-            });
-        });
+            addClickAndTouchEvents('league-info-btn', 0);
+            addClickAndTouchEvents('team-rosters-btn', 1);
+            addClickAndTouchEvents('power-rankings-btn', 2);
+            addClickAndTouchEvents('handbook-btn', 3);
+            addClickAndTouchEvents('projected-rankings-btn', 4);
+        }
     </script>
     """
     
