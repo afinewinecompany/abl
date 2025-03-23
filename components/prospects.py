@@ -594,6 +594,10 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             50% { text-shadow: 0 0 40px rgba(255, 77, 77, 0.8), 0 0 60px rgba(65, 105, 225, 0.5); }
             100% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.5), 0 0 40px rgba(65, 105, 225, 0.3); }
         }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
         .hover-card:hover {
             transform: translateY(-3px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
@@ -616,6 +620,32 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             padding: 0;
             text-align: center;
         }
+        .view-all-btn {
+            background: linear-gradient(135deg, #ff4d4d 0%, #4169E1 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+            max-width: 200px;
+        }
+        .view-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .prospect-card {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .hidden-prospects {
+            display: none;
+        }
         </style>
 
         <h1 class="top-100-title">ABL TOP 100</h1>
@@ -623,55 +653,100 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
 
     # Get top 100 prospects sorted by Rank
     top_100 = ranked_prospects.dropna(subset=['Rank']).sort_values('Rank').head(100)
+    
+    # Create a session state key if it doesn't exist
+    if 'show_all_prospects' not in st.session_state:
+        st.session_state.show_all_prospects = False
+    
+    # Button to toggle between showing top 10 and all prospects
+    if not st.session_state.show_all_prospects:
+        if st.button("View All Top 100", key="view_all_btn", 
+                    use_container_width=False, 
+                    help="Click to view all top 100 prospects"):
+            st.session_state.show_all_prospects = True
+            st.experimental_rerun()
+    else:
+        if st.button("Show Top 10 Only", key="show_top_10_btn", 
+                    use_container_width=False,
+                    help="Click to show only top 10 prospects"):
+            st.session_state.show_all_prospects = False
+            st.experimental_rerun()
+    
+    # Determine how many prospects to display
+    display_count = 100 if st.session_state.show_all_prospects else 10
+    
+    # Display prospects in order with a container for styling
+    with st.container():
+        # Display how many prospects are being shown
+        if st.session_state.show_all_prospects:
+            st.markdown("<p style='text-align: center; color: #999;'>Showing all Top 100 prospects</p>", 
+                      unsafe_allow_html=True)
+        else:
+            st.markdown("<p style='text-align: center; color: #999;'>Showing Top 10 prospects</p>", 
+                      unsafe_allow_html=True)
+        
+        # Display the specified number of prospects
+        for idx, prospect in enumerate(top_100.head(display_count).itertuples(), 1):
+            # Add a small delay to animation for staggered effect
+            delay = min(idx * 0.05, 0.5)
+            
+            # Get team colors and logo
+            team_colors = MLB_TEAM_COLORS.get(prospect.team,
+                                         {'primary': '#1a1c23', 'secondary': '#2df36', 'accent': '#FFFFFF'})
+            team_id = MLB_TEAM_IDS.get(prospect.team, '')
+            logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
 
-    # Displayprospects in order
-    for idx, prospect in enumerate(top_100.itertuples(), 1):
-        # Get team colors and logo
-        team_colors = MLB_TEAM_COLORS.get(prospect.team,
-                                       {'primary': '#1a1c23', 'secondary': '#2df36', 'accent': '#FFFFFF'})
-        team_id = MLB_TEAM_IDS.get(prospect.team, '')
-        logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
+            # Get headshot HTML
+            headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
 
-        # Get headshot HTML
-        headshot_html = get_player_headshot_html(prospect.player_name, player_id_cache)
-
-        st.markdown(f"""
-            <div class="prospect-card hover-card" style="
-                background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
-                border-radius: 8px;
-                padding: 0.75rem;
-                margin: 0.5rem 0;
-                position: relative;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                <div style="
-                    position: absolute;
-                    left: -8px;
-                    top: -8px;
-                    width: 30px;
-                    height: 30px;
-                    background: {team_colors['primary']};
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    border: 2px solid {team_colors['secondary']};
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">#{idx}</div>
-                {f'<img src="{logo_url}" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
-                <div class="prospect-content" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 0.75rem;">
-                    {headshot_html}
-                    <div style="flex-grow: 1;">
-                        <div style="font-size: 0.95rem; font-weight: 600; color: white;">{prospect.player_name}</div>
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.1rem;">
-                            {prospect.team} | {str(prospect.position).replace('position ', '').split(',')[0].strip()} | Score: {prospect.prospect_score:.2f}
+            st.markdown(f"""
+                <div class="prospect-card hover-card" style="
+                    background: linear-gradient(135deg, {team_colors['primary']}80 0%, {team_colors['secondary']}80 100%);
+                    border-radius: 8px;
+                    padding: 0.75rem;
+                    margin: 0.5rem 0;
+                    position: relative;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    animation-delay: {delay}s;">
+                    <div style="
+                        position: absolute;
+                        left: -8px;
+                        top: -8px;
+                        width: 30px;
+                        height: 30px;
+                        background: {team_colors['primary']};
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-size: 0.9rem;
+                        font-weight: bold;
+                        border: 2px solid {team_colors['secondary']};
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">#{idx}</div>
+                    {f'<img src="{logo_url}" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; opacity: 0.15; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+                    <div class="prospect-content" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 0.75rem;">
+                        {headshot_html}
+                        <div style="flex-grow: 1;">
+                            <div style="font-size: 0.95rem; font-weight: 600; color: white;">{prospect.player_name}</div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 0.1rem;">
+                                {prospect.team} | {str(prospect.position).replace('position ', '').split(',')[0].strip()} | Score: {prospect.prospect_score:.2f}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+        # If not showing all, display a message about remaining prospects
+        if not st.session_state.show_all_prospects:
+            remaining = len(top_100) - display_count
+            if remaining > 0:
+                st.markdown(f"""
+                    <div style="text-align: center; margin: 20px 0; color: #888; font-style: italic;">
+                        + {remaining} more prospects - click "View All" to see the complete list
+                    </div>
+                """, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
