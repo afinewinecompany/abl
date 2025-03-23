@@ -100,31 +100,30 @@ def render():
             display: flex;
             align-items: center;
             justify-content: center;
-            transform-origin: center center;
         }
         
         .home-plate-container {
-            bottom: 0;
+            bottom: -10%;
             left: 50%;
-            transform: translateX(-50%) rotate(-45deg) translateY(20%);
+            transform: translateX(-50%) rotate(-45deg);
         }
         
         .first-base-container {
-            top: 0;
-            right: 0;
-            transform: translate(30%, -30%) rotate(-45deg);
+            top: 50%;
+            right: -10%;
+            transform: translate(0, -50%) rotate(-45deg);
         }
         
         .second-base-container {
-            top: 0;
+            top: -10%;
             left: 50%;
-            transform: translateX(-50%) translateY(-30%) rotate(-45deg);
+            transform: translateX(-50%) rotate(-45deg);
         }
         
         .third-base-container {
-            top: 0;
-            left: 0;
-            transform: translate(-30%, -30%) rotate(-45deg);
+            top: 50%;
+            left: -10%;
+            transform: translate(0, -50%) rotate(-45deg);
         }
         
         .pitchers-mound-container {
@@ -136,36 +135,48 @@ def render():
         /* Bases */
         .base {
             position: absolute;
-            width: min(30px, 6vw, 6vh);
-            height: min(30px, 6vw, 6vh);
+            width: min(40px, 8vw, 8vh);
+            height: min(40px, 8vw, 8vh);
             background: white;
-            border: min(3px, 0.5vw) solid #e0e0e0;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+            border: min(4px, 0.7vw) solid #e0e0e0;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
             z-index: 2;
+            animation: pulseBases 2s infinite alternate;
+        }
+        
+        @keyframes pulseBases {
+            0% {
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            }
+            100% {
+                box-shadow: 0 0 30px rgba(255, 255, 255, 1);
+            }
         }
         
         .home-plate {
-            bottom: 20%;
+            bottom: 10%;
             left: 50%;
             transform: translateX(-50%) rotate(45deg);
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+            height: min(45px, 9vw, 9vh);
         }
         
         .first-base {
             top: 0;
             right: 0;
-            transform: translate(50%, -50%);
+            transform: translate(40%, -40%);
         }
         
         .second-base {
             top: 0;
             left: 50%;
-            transform: translateX(-50%) rotate(45deg) translateY(-50%);
+            transform: translateX(-50%) translateY(-40%) rotate(45deg);
         }
         
         .third-base {
             top: 0;
             left: 0;
-            transform: translate(-50%, -50%);
+            transform: translate(-40%, -40%);
         }
         
         /* Pitcher's mound */
@@ -292,19 +303,19 @@ def render():
             }
             
             .home-plate-container {
-                transform: translateX(-50%) rotate(-45deg) translateY(30%);
+                bottom: -15%;
             }
             
             .first-base-container {
-                transform: translate(30%, -30%) rotate(-45deg);
+                right: -15%;
             }
             
             .second-base-container {
-                transform: translateX(-50%) translateY(-30%) rotate(-45deg);
+                top: -15%;
             }
             
             .third-base-container {
-                transform: translate(-30%, -30%) rotate(-45deg);
+                left: -15%;
             }
         }
         
