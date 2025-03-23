@@ -442,9 +442,37 @@ def render():
             
             // Find and click the hidden enter app button
             setTimeout(() => {
-                const enterAppBtn = streamlitDoc.querySelector('button[kind="primary"]');
-                if (enterAppBtn) {
-                    enterAppBtn.click();
+                try {
+                    // Multiple ways to find the button
+                    let enterAppBtn = streamlitDoc.querySelector('button[kind="primary"]');
+                    
+                    if (!enterAppBtn) {
+                        // Try finding it by key
+                        enterAppBtn = streamlitDoc.querySelector('[data-testid="stButton"]');
+                    }
+                    
+                    if (!enterAppBtn) {
+                        // Try finding by content
+                        const buttons = streamlitDoc.querySelectorAll('button');
+                        for (let btn of buttons) {
+                            if (btn.textContent.includes('ENTER APP')) {
+                                enterAppBtn = btn;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (enterAppBtn) {
+                        console.log("Found button, clicking now");
+                        enterAppBtn.click();
+                    } else {
+                        console.error("Could not find the hidden button");
+                        // Force app entry by direct state manipulation
+                        window.parent.sessionStorage.setItem('entered_app', 'true');
+                        window.parent.location.reload();
+                    }
+                } catch (err) {
+                    console.error("Error clicking button:", err);
                 }
             }, 300);
         }
@@ -500,10 +528,38 @@ def render():
                 
                 // Find and click the Streamlit button
                 setTimeout(() => {
-                    const streamlitDoc = window.parent.document;
-                    const enterAppBtn = streamlitDoc.querySelector('button[kind="primary"]');
-                    if (enterAppBtn) {
-                        enterAppBtn.click();
+                    try {
+                        const streamlitDoc = window.parent.document;
+                        // Multiple ways to find the button
+                        let enterAppBtn = streamlitDoc.querySelector('button[kind="primary"]');
+                        
+                        if (!enterAppBtn) {
+                            // Try finding it by key
+                            enterAppBtn = streamlitDoc.querySelector('[data-testid="stButton"]');
+                        }
+                        
+                        if (!enterAppBtn) {
+                            // Try finding by content
+                            const buttons = streamlitDoc.querySelectorAll('button');
+                            for (let btn of buttons) {
+                                if (btn.textContent.includes('ENTER APP')) {
+                                    enterAppBtn = btn;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (enterAppBtn) {
+                            console.log("Found button, clicking now");
+                            enterAppBtn.click();
+                        } else {
+                            console.error("Could not find the hidden button");
+                            // Force app entry by direct state manipulation
+                            window.parent.sessionStorage.setItem('entered_app', 'true');
+                            window.parent.location.reload();
+                        }
+                    } catch (err) {
+                        console.error("Error clicking button:", err);
                     }
                 }, 300);
             });
@@ -514,8 +570,8 @@ def render():
     # Render the baseball field
     st.markdown(field_html, unsafe_allow_html=True)
     
-    # Hidden button that will be triggered by JavaScript
-    st.markdown('<div style="display:none;">', unsafe_allow_html=True)
+    # Hidden button that will be triggered by JavaScript (completely hidden from view)
+    st.markdown('<div style="display:none; position:absolute; visibility:hidden; height:0; width:0; overflow:hidden;">', unsafe_allow_html=True)
     if st.button("ENTER APP", type="primary", key="hidden_enter"):
         st.session_state.entered_app = True
         time.sleep(0.3)
