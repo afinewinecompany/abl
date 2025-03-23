@@ -3,7 +3,7 @@ from streamlit_chat import message
 import pandas as pd
 import openai
 import os
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 import json
 from components.prospects import normalize_name
 
@@ -55,7 +55,7 @@ class TradeAnalyzer:
         """Get all players from a specific team"""
         return self.team_rosters.get(team_name, pd.DataFrame())
     
-    def analyze_trade(self, team1: str, players1: List[str], team2: str, players2: List[str]) -> Dict[str, any]:
+    def analyze_trade(self, team1: str, players1: List[str], team2: str, players2: List[str]) -> Dict[str, Any]:
         """Analyze a potential trade between two teams"""
         # Get player details for team 1
         team1_players_data = []
@@ -86,7 +86,7 @@ class TradeAnalyzer:
         return self._call_openai_api(context)
     
     def _simplified_trade_analysis(self, team1: str, players1: List[Dict], 
-                                  team2: str, players2: List[Dict]) -> Dict[str, any]:
+                                  team2: str, players2: List[Dict]) -> Dict[str, Any]:
         """Provide a simplified trade analysis when OpenAI API is not available"""
         # Calculate simple metrics for each side of the trade
         team1_active_count = sum(1 for p in players1 if p.get('status', '').upper() == 'ACTIVE')
@@ -175,7 +175,7 @@ class TradeAnalyzer:
         
         return context
     
-    def _call_openai_api(self, prompt: str) -> Dict[str, any]:
+    def _call_openai_api(self, prompt: str) -> Dict[str, Any]:
         """Call the OpenAI API to analyze the trade"""
         try:
             client = openai.OpenAI(api_key=self.api_key)
