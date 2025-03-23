@@ -658,20 +658,6 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
     if 'show_all_prospects' not in st.session_state:
         st.session_state.show_all_prospects = False
     
-    # Button to toggle between showing top 10 and all prospects
-    if not st.session_state.show_all_prospects:
-        if st.button("View All Top 100", key="view_all_btn", 
-                    use_container_width=False, 
-                    help="Click to view all top 100 prospects"):
-            st.session_state.show_all_prospects = True
-            st.experimental_rerun()
-    else:
-        if st.button("Show Top 10 Only", key="show_top_10_btn", 
-                    use_container_width=False,
-                    help="Click to show only top 10 prospects"):
-            st.session_state.show_all_prospects = False
-            st.experimental_rerun()
-    
     # Determine how many prospects to display
     display_count = 100 if st.session_state.show_all_prospects else 10
     
@@ -681,6 +667,12 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
         if st.session_state.show_all_prospects:
             st.markdown("<p style='text-align: center; color: #999;'>Showing all Top 100 prospects</p>", 
                       unsafe_allow_html=True)
+            # Show button to toggle back to top 10 only
+            if st.button("Show Top 10 Only", key="show_top_10_btn", 
+                       use_container_width=False,
+                       help="Click to show only top 10 prospects"):
+                st.session_state.show_all_prospects = False
+                st.experimental_rerun()
         else:
             st.markdown("<p style='text-align: center; color: #999;'>Showing Top 10 prospects</p>", 
                       unsafe_allow_html=True)
@@ -744,9 +736,16 @@ def render_top_100_header(ranked_prospects: pd.DataFrame, player_id_cache: Dict[
             if remaining > 0:
                 st.markdown(f"""
                     <div style="text-align: center; margin: 20px 0; color: #888; font-style: italic;">
-                        + {remaining} more prospects - click "View All" to see the complete list
+                        + {remaining} more prospects
                     </div>
                 """, unsafe_allow_html=True)
+                
+                # Add the View All button after the top 10 prospects
+                if st.button("View All Top 100", key="view_all_btn", 
+                           use_container_width=False, 
+                           help="Click to view all top 100 prospects"):
+                    st.session_state.show_all_prospects = True
+                    st.experimental_rerun()
 
     st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
 
