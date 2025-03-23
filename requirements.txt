@@ -15,3 +15,7 @@ openai
 trafilatura
 openai
 twilio
+langchain
+openai
+streamlit-chat
+streamlit-extras
