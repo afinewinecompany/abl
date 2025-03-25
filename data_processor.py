@@ -246,9 +246,16 @@ class DataProcessor:
                             eligible_positions.append(pos['shortName'])
                         elif isinstance(pos, str):
                             eligible_positions.append(pos)
-                # Check for positions array
+                # Check for positions array - both string array and object array formats
                 elif 'positions' in player and isinstance(player['positions'], list):
-                    eligible_positions = player['positions']
+                    eligible_positions = []
+                    for pos in player['positions']:
+                        if isinstance(pos, str):
+                            eligible_positions.append(pos)
+                        elif isinstance(pos, dict) and 'shortName' in pos:
+                            eligible_positions.append(pos['shortName'])
+                        elif isinstance(pos, dict) and 'name' in pos:
+                            eligible_positions.append(pos['name'])
                 
                 # Stats processing - handle different formats
                 stats = {}

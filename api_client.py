@@ -176,7 +176,10 @@ class FantraxAPI:
             )
             response.raise_for_status()
             
-            # Now make the API call to get the actual player data
+            # Log the request for debugging purposes
+            st.warning("Making request to Fantrax API for player data...")
+            
+            # Try alternative 1: Direct player pool endpoint
             params = {
                 "leagueId": self.league_id,
                 "view": "AVAILABLE",
@@ -185,6 +188,7 @@ class FantraxAPI:
                 "statisticType": "SEASON_PROJECTION_FANTASY",
                 "offset": (page - 1) * max_results,
                 "limit": max_results,
+                "scoring": "HEAD2HEAD",  # This was missing and might be required
                 "sortStatId": "-1",  # Default sort
                 "sortDirection": "DESC"
             }
@@ -196,8 +200,11 @@ class FantraxAPI:
                 params["mlbTeam"] = team
             if sort_stat:
                 params["sortStat"] = sort_stat
+            
+            # Print request details for debugging
+            st.info(f"Making request to https://www.fantrax.com/fxpa/league/playerPool?leagueId={self.league_id}")
                 
-            # This endpoint is in a different format
+            # Use the format found in actual Fantrax requests
             endpoint = "fxpa/league/playerPool"
             response = self.session.get(
                 f"https://www.fantrax.com/{endpoint}",
@@ -206,7 +213,9 @@ class FantraxAPI:
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
                     "Accept": "application/json",
-                    "Referer": direct_url
+                    "Origin": "https://www.fantrax.com",
+                    "Referer": direct_url,
+                    "X-Requested-With": "XMLHttpRequest"
                 }
             )
             response.raise_for_status()
@@ -219,12 +228,101 @@ class FantraxAPI:
                 st.warning("No players found in the response")
                 # Debug information
                 st.info(f"Response data keys: {list(data.keys())}")
+                
+                # Try alternative 2: Try the general AJAX endpoint
+                st.info("Trying alternative endpoint...")
+                
+                ajax_params = {
+                    "leagueId": self.league_id,
+                    "fetchType": "PLAYERS_POOL",
+                    "scoringCategoryType": "SEASON_PROJECTION_FANTASY",
+                    "scoringPeriodId": 0,  # current period
+                    "seasonType": "REGULAR_SEASON",
+                    "view": "AVAILABLE",
+                    "lineupType": None,
+                    "sortDirection": "DESC",
+                    "pageSize": max_results,
+                    "pageNumber": page,
+                    "filters": {},
+                }
+                
+                if position:
+                    ajax_params["filters"]["positionOrGroup"] = position
+                if team:
+                    ajax_params["filters"]["teamId"] = team
+                
+                try:
+                    ajax_response = self.session.post(
+                        "https://www.fantrax.com/fxea/general/loadLeagueData",
+                        json=ajax_params,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "Origin": "https://www.fantrax.com",
+                            "Referer": f"https://www.fantrax.com/fantasy/league/{self.league_id}/players",
+                            "X-Requested-With": "XMLHttpRequest",
+                        }
+                    )
+                    ajax_response.raise_for_status()
+                    ajax_data = ajax_response.json()
+                    
+                    # Debug info for alternative endpoint
+                    st.info(f"Alternative endpoint keys: {list(ajax_data.keys()) if isinstance(ajax_data, dict) else 'Not a dict'}")
+                    
+                    # If this contains player data, return it
+                    if isinstance(ajax_data, dict) and ajax_data.get("players"):
+                        return ajax_data
+                    
+                    # Try to extract players from the pool data
+                    if isinstance(ajax_data, dict) and "poolData" in ajax_data:
+                        pool_data = ajax_data["poolData"]
+                        if isinstance(pool_data, dict) and "playerInfo" in pool_data:
+                            players = pool_data["playerInfo"]
+                            if isinstance(players, list) and len(players) > 0:
+                                return {"players": players}
+                except Exception as ajax_err:
+                    st.error(f"Alternative endpoint failed: {str(ajax_err)}")
+                
+                # If all attempts fail, return empty players list
                 return {"players": []}
                 
             return data
             
         except Exception as e:
             st.error(f"Error fetching available players: {str(e)}")
+            import traceback
+            st.error(traceback.format_exc())
+            
+            # Try one last approach - the simplest API endpoint
+            try:
+                st.info("Trying final fallback endpoint...")
+                
+                # This is the most basic endpoint that should work if the user is logged in
+                simple_params = {
+                    "leagueId": self.league_id,
+                    "view": "AVAILABLE",
+                }
+                
+                simple_response = self.session.get(
+                    "https://www.fantrax.com/fxpa/stats/MLB/players",
+                    params=simple_params,
+                    headers={
+                        "Accept": "application/json",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                    }
+                )
+                simple_response.raise_for_status()
+                simple_data = simple_response.json()
+                
+                # Debug info
+                if isinstance(simple_data, dict):
+                    st.info(f"Final fallback endpoint keys: {list(simple_data.keys())}")
+                    if "players" in simple_data and isinstance(simple_data["players"], list):
+                        return simple_data
+                
+            except Exception as final_err:
+                st.error(f"All attempts failed: {str(final_err)}")
+                
             # Try printing more debug info
             st.info("Please try logging in again or refreshing the page")
             return {"players": []}
