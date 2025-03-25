@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from utils import fetch_api_data, fetch_fantrax_data
 
