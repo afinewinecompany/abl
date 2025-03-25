@@ -257,12 +257,36 @@ class FantraxAPI:
                     if isinstance(data, dict):
                         st.info(f"Raw response keys: {list(data.keys() if isinstance(data, dict) else [])}")
                         
+                        # Check if there's a page error in the response
+                        if "pageError" in data and data["pageError"]:
+                            page_error = data["pageError"]
+                            st.error(f"⚠️ Page error found in response: {page_error}")
+                            if isinstance(page_error, dict):
+                                if "errorType" in page_error:
+                                    st.error(f"Error type: {page_error['errorType']}")
+                                if "errorMessage" in page_error:
+                                    st.error(f"Error message: {page_error['errorMessage']}")
+                                if "errorCode" in page_error:
+                                    st.error(f"Error code: {page_error['errorCode']}")
+                        
                         # Try to get detailed data from the response
                         if "responses" in data and isinstance(data["responses"], list) and len(data["responses"]) > 0:
                             # Extract responses array which might contain our player data
                             response_data = data["responses"][0]
                             if isinstance(response_data, dict):
                                 st.info(f"First response keys: {list(response_data.keys())}")
+                                
+                                # Check if there's a pageError in the response item
+                                if "pageError" in response_data and response_data["pageError"]:
+                                    page_error = response_data["pageError"]
+                                    st.error(f"⚠️ Page error found in response[0]: {page_error}")
+                                    if isinstance(page_error, dict):
+                                        if "errorType" in page_error:
+                                            st.error(f"Error type: {page_error['errorType']}")
+                                        if "errorMessage" in page_error:
+                                            st.error(f"Error message: {page_error['errorMessage']}")
+                                        if "errorCode" in page_error:
+                                            st.error(f"Error code: {page_error['errorCode']}")
                                 
                                 # Check if this response has data
                                 if "data" in response_data:
@@ -352,8 +376,66 @@ class FantraxAPI:
                     st.error(f"API request failed with status {response.status_code}")
                     st.error(f"Response text: {response.text[:500]}...")
                 
-                # APPROACH 2: Try alternative API endpoint as backup
+                # APPROACH 2: Try alternative API endpoints as backup
                 alternative_url = "https://www.fantrax.com/fxea/req"
+                
+                # First try the getLeagueRules endpoint, which often contains player information
+                rules_payload = {
+                    "msgs": [{
+                        "method": "getLeagueRules",
+                        "data": {
+                            "leagueId": self.league_id
+                        },
+                        "uri": "/league/rules"
+                    }]
+                }
+                
+                if st.session_state.get('debug_mode', False):
+                    st.info("Trying alternative API endpoint (league rules)...")
+                
+                rules_response = self.session.post(
+                    alternative_url, 
+                    json=rules_payload, 
+                    headers=headers, 
+                    timeout=30
+                )
+                
+                if rules_response.status_code == 200:
+                    rules_data = rules_response.json()
+                    
+                    if st.session_state.get('debug_mode', False):
+                        st.success(f"Rules API request successful with status {rules_response.status_code}")
+                        if isinstance(rules_data, dict):
+                            st.info(f"Rules response keys: {list(rules_data.keys())}")
+                            if "msgs" in rules_data and len(rules_data["msgs"]) > 0:
+                                st.info(f"Rules msg keys: {list(rules_data['msgs'][0].keys())}")
+                                if "data" in rules_data["msgs"][0]:
+                                    st.info(f"Rules data keys: {list(rules_data['msgs'][0]['data'].keys())}")
+                    
+                    # Try to extract players from the league rules response
+                    if isinstance(rules_data, dict) and "msgs" in rules_data and rules_data["msgs"]:
+                        rules_msg = rules_data["msgs"][0]
+                        if "data" in rules_msg:
+                            rules_data_obj = rules_msg["data"]
+                            
+                            # Check for players list in multiple potential locations
+                            player_locations = [
+                                ("playerInfo", rules_data_obj),
+                                ("players", rules_data_obj),
+                                ("playerInfo", rules_data_obj.get("league", {})),
+                                ("players", rules_data_obj.get("league", {})),
+                                ("playerInfo", rules_data_obj.get("playerDatabase", {})),
+                                ("players", rules_data_obj.get("playerDatabase", {}))
+                            ]
+                            
+                            for key, container in player_locations:
+                                if key in container and isinstance(container[key], list) and len(container[key]) > 0:
+                                    players = container[key]
+                                    if st.session_state.get('debug_mode', False):
+                                        st.success(f"Found {len(players)} players in rules response at {key}")
+                                    return {"players": players}
+                
+                # APPROACH 3: Try the original players API endpoint
                 alternative_payload = {
                     "msgs": [{
                         "method": "getLeaguePlayersInfo",
@@ -366,7 +448,7 @@ class FantraxAPI:
                 }
                 
                 if st.session_state.get('debug_mode', False):
-                    st.info("Trying alternative API endpoint...")
+                    st.info("Trying alternative API endpoint (player pool)...")
                 
                 alt_response = self.session.post(
                     alternative_url, 
@@ -378,13 +460,87 @@ class FantraxAPI:
                 if alt_response.status_code == 200:
                     alt_data = alt_response.json()
                     
+                    if st.session_state.get('debug_mode', False):
+                        st.success(f"Player pool API request successful with status {alt_response.status_code}")
+                        if isinstance(alt_data, dict):
+                            st.info(f"Player pool response keys: {list(alt_data.keys())}")
+                            if "msgs" in alt_data and len(alt_data["msgs"]) > 0:
+                                st.info(f"Player pool msg keys: {list(alt_data['msgs'][0].keys())}")
+                                if "data" in alt_data["msgs"][0]:
+                                    st.info(f"Player pool data keys: {list(alt_data['msgs'][0]['data'].keys())}")
+                    
                     # Try to extract players from alternative response
                     if isinstance(alt_data, dict) and "msgs" in alt_data and alt_data["msgs"]:
                         alt_msg = alt_data["msgs"][0]
                         if "data" in alt_msg and "players" in alt_msg["data"]:
                             alt_players = alt_msg["data"]["players"]
                             if isinstance(alt_players, list):
+                                if st.session_state.get('debug_mode', False):
+                                    st.success(f"Found {len(alt_players)} players in player pool response")
                                 return {"players": alt_players}
+            
+            # APPROACH 4: Try the getLeagueInfo endpoint which sometimes includes player information
+            league_info_payload = {
+                "msgs": [{
+                    "method": "getLeagueInfo",
+                    "data": {
+                        "leagueId": self.league_id
+                    },
+                    "uri": "/league/get-info"
+                }]
+            }
+            
+            if st.session_state.get('debug_mode', False):
+                st.info("Trying league info API endpoint...")
+            
+            league_info_response = self.session.post(
+                alternative_url, 
+                json=league_info_payload, 
+                headers=headers, 
+                timeout=30
+            )
+            
+            if league_info_response.status_code == 200:
+                league_info_data = league_info_response.json()
+                
+                if st.session_state.get('debug_mode', False):
+                    st.success(f"League info API request successful with status {league_info_response.status_code}")
+                    if isinstance(league_info_data, dict):
+                        st.info(f"League info response keys: {list(league_info_data.keys())}")
+                        if "msgs" in league_info_data and len(league_info_data["msgs"]) > 0:
+                            st.info(f"League info msg keys: {list(league_info_data['msgs'][0].keys())}")
+                            if "data" in league_info_data["msgs"][0]:
+                                st.info(f"League info data keys: {list(league_info_data['msgs'][0]['data'].keys())}")
+                
+                # Try to find players in the league info response
+                if isinstance(league_info_data, dict):
+                    # First try the standard extraction
+                    if "msgs" in league_info_data and league_info_data["msgs"]:
+                        league_msg = league_info_data["msgs"][0]
+                        if "data" in league_msg:
+                            league_data = league_msg["data"]
+                            # Try to find player data in various locations
+                            potential_containers = [
+                                league_data,
+                                league_data.get("league", {}),
+                                league_data.get("teams", {})
+                            ]
+                            
+                            for container in potential_containers:
+                                # Try different keys that might contain player data
+                                for key in ["players", "playerInfo", "playersInfo"]:
+                                    if key in container and isinstance(container[key], list) and len(container[key]) > 0:
+                                        players = container[key]
+                                        if st.session_state.get('debug_mode', False):
+                                            st.success(f"Found {len(players)} players in league info response")
+                                        return {"players": players}
+                    
+                    # If standard extraction failed, try recursive search
+                    players = find_players_in_obj(league_info_data, "league_info")
+                    if players:
+                        if st.session_state.get('debug_mode', False):
+                            st.success(f"Found {len(players)} players with recursive search in league info")
+                        return {"players": players}
             
             # If all API attempts fail, try directly accessing the players page
             if st.session_state.get('debug_mode', False):

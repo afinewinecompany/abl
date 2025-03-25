@@ -16,12 +16,41 @@ def render(available_players_df: pd.DataFrame, mlb_ids_df: Optional[pd.DataFrame
     st.header("Available Players", divider="blue")
     
     if available_players_df.empty:
+        st.error("⚠️ No available players data found from Fantrax")
+        
         if st.session_state.get('fantrax_logged_in', False):
-            st.error("No available players data found from Fantrax. There may be an issue with the API connection.")
-            st.info("Please check the console for error details and try logging in again.")
+            st.warning("You're logged in, but we couldn't retrieve player data.")
+            
+            with st.expander("🔍 Troubleshooting Steps", expanded=True):
+                st.markdown("""
+                ### Possible Issues:
+                1. **Authentication Problems**: Your Fantrax session may have expired
+                2. **API Changes**: Fantrax may have updated their API structure
+                3. **Access Restrictions**: Your account may not have access to this specific league's available players
+                
+                ### Try these solutions:
+                1. Click the **Logout** button in the sidebar and log in again
+                2. Make sure your league ID is correct in the .env file (current ID: `{league_id}`)
+                3. Check if you can access the [Available Players page](https://www.fantrax.com/fantasy/league/{league_id}/players;view=AVAILABLE) directly in your browser
+                4. Try toggling the Debug Mode in the sidebar to see detailed error information
+                """.format(league_id=st.session_state.get('league_id', 'unknown')))
+            
+            # Show debug info if in debug mode
+            if st.session_state.get('debug_mode', False):
+                st.info("🔍 Debug Information")
+                auth_status = st.session_state.get('fantrax_auth', {})
+                cookie_count = len(auth_status.get('cookies', {}))
+                st.code(f"""
+Authentication Status: {st.session_state.get('fantrax_logged_in', False)}
+Username: {st.session_state.get('fantrax_username', 'Not set')}
+Cookie Count: {cookie_count}
+League ID: {st.session_state.get('league_id', 'Not set')}
+                """)
+            
             return
         else:
             st.warning("Please log in with your Fantrax account to view available players.")
+            st.info("Enter your Fantrax credentials in the sidebar to authenticate and access player data.")
             return
     
     # Create filters
