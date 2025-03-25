@@ -190,7 +190,7 @@ def render(roster_data: pd.DataFrame):
         team_rankings.index = team_rankings.index + 1
 
         # Display prominent rankings table
-        st.subheader("🏆 ABL Power Rankings")
+        st.subheader("🏆 ABL Projected Rankings")
 
         # Top 3 teams in cards
         col1, col2, col3 = st.columns(3)
