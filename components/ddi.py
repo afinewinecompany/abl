@@ -295,23 +295,61 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
     
     return ddi_df
 
-def get_team_color(team_name: str) -> str:
-    """Get team color based on team name"""
-    # Map of team names to colors (add more as needed)
+def get_team_colors(team_name: str) -> dict:
+    """Get team primary and secondary colors based on team name"""
+    # Map of team names to primary and secondary colors
     team_colors = {
-        'Pittsburgh Pirates': '#FDB827',
-        'Detroit Tigers': '#0C2340',
-        'Los Angeles Dodgers': '#005A9C',
-        'New York Yankees': '#0C2340',
-        'Kansas City Royals': '#004687',
-        'Cleveland Guardians': '#00385D',
-        'Texas Rangers': '#C0111F',
-        'Philadelphia Phillies': '#E81828',
-        'Saint Louis Cardinals': '#C41E3A',
+        'Pittsburgh Pirates': {'primary': '#FDB827', 'secondary': '#000000'},
+        'Detroit Tigers': {'primary': '#0C2340', 'secondary': '#FA4616'},
+        'Los Angeles Dodgers': {'primary': '#005A9C', 'secondary': '#FFFFFF'},
+        'New York Yankees': {'primary': '#0C2340', 'secondary': '#FFFFFF'},
+        'Kansas City Royals': {'primary': '#004687', 'secondary': '#BD9B60'},
+        'Cleveland Guardians': {'primary': '#00385D', 'secondary': '#E31937'},
+        'Texas Rangers': {'primary': '#C0111F', 'secondary': '#003278'},
+        'Philadelphia Phillies': {'primary': '#E81828', 'secondary': '#002D72'},
+        'Saint Louis Cardinals': {'primary': '#C41E3A', 'secondary': '#0C2340'},
+        'Atlanta Braves': {'primary': '#CE1141', 'secondary': '#13274F'},
+        'Baltimore Orioles': {'primary': '#DF4601', 'secondary': '#000000'},
+        'Arizona Diamondbacks': {'primary': '#A71930', 'secondary': '#E3D4AD'},
+        'Boston Red Sox': {'primary': '#BD3039', 'secondary': '#0C2340'},
+        'Chicago Cubs': {'primary': '#0E3386', 'secondary': '#CC3433'},
+        'Chicago White Sox': {'primary': '#000000', 'secondary': '#C4CED4'},
+        'Cincinnati Reds': {'primary': '#C6011F', 'secondary': '#000000'},
+        'Colorado Rockies': {'primary': '#33006F', 'secondary': '#C4CED4'},
+        'Houston Astros': {'primary': '#002D62', 'secondary': '#EB6E1F'},
+        'Los Angeles Angels': {'primary': '#BA0021', 'secondary': '#003263'},
+        'Miami Marlins': {'primary': '#00A3E0', 'secondary': '#EF3340'},
+        'Milwaukee Brewers': {'primary': '#0A2351', 'secondary': '#FFC52F'},
+        'Minnesota Twins': {'primary': '#002B5C', 'secondary': '#D31145'},
+        'New York Mets': {'primary': '#002D72', 'secondary': '#FF5910'},
+        'Oakland Athletics': {'primary': '#003831', 'secondary': '#EFB21E'},
+        'Athletics': {'primary': '#003831', 'secondary': '#EFB21E'},
+        'Las Vegas Athletics': {'primary': '#003831', 'secondary': '#EFB21E'},
+        'San Diego Padres': {'primary': '#2F241D', 'secondary': '#FFC425'},
+        'San Francisco Giants': {'primary': '#FD5A1E', 'secondary': '#000000'},
+        'Seattle Mariners': {'primary': '#0C2C56', 'secondary': '#005C5C'},
+        'Tampa Bay Rays': {'primary': '#092C5C', 'secondary': '#8FBCE6'},
+        'Toronto Blue Jays': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
+        'Washington Nationals': {'primary': '#AB0003', 'secondary': '#14225A'},
     }
     
     # Default to a standard color if team not found
-    return team_colors.get(team_name, '#1E88E5')
+    return team_colors.get(team_name, {'primary': '#1E88E5', 'secondary': '#0D47A1'})
+
+
+def get_team_logo_url(team_name: str) -> str:
+    """Get MLB team logo URL"""
+    # Clean team name for URL formatting
+    clean_name = team_name.lower().replace(' ', '-')
+    
+    # Handle special cases
+    if 'athletics' in clean_name:
+        clean_name = 'oakland-athletics'  # Use Oakland for now since that's the established logo
+    elif 'guardians' in clean_name:
+        clean_name = 'cleveland-guardians'
+    
+    # Return the logo URL from MLB
+    return f"https://www.mlbstatic.com/team-logos/{clean_name}.svg"
 
 def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
     """Create a stacked bar visualization of DDI components"""
@@ -420,7 +458,7 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
             theta=categories,
             fill='toself',
             name=f"{team_name} (#{int(team['Rank'])})",
-            line=dict(color=get_team_color(team_name)),
+            line=dict(color=get_team_colors(team_name)['primary']),
             opacity=0.8
         ))
     
@@ -456,6 +494,197 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
     )
     
     return fig
+
+def create_bubble_chart(ddi_df: pd.DataFrame) -> go.Figure:
+    """Create an interactive bubble chart with team colors and logos"""
+    
+    # Create a copy of the DataFrame for manipulation
+    bubble_df = ddi_df.copy()
+    
+    # Generate bubble sizes based on DDI Score (normalized between 30 and 100)
+    min_size = 30
+    max_size = 100
+    bubble_df['bubble_size'] = min_size + (bubble_df['DDI Score'] - bubble_df['DDI Score'].min()) / (bubble_df['DDI Score'].max() - bubble_df['DDI Score'].min()) * (max_size - min_size)
+    
+    # Create a figure
+    fig = go.Figure()
+    
+    # Add bubbles for each team
+    for _, row in bubble_df.iterrows():
+        team_name = row['Team']
+        team_colors = get_team_colors(team_name)
+        
+        # Format hover information
+        hover_text = (
+            f"<b>{team_name}</b><br>" +
+            f"DDI Score: {row['DDI Score']:.1f}<br>" +
+            f"Rank: #{row['Rank']}<br>" +
+            f"Power Score: {row['Power Score']:.1f}<br>" +
+            f"Prospect Score: {row['Prospect Score']:.1f}<br>" +
+            f"Historical Score: {row['Historical Score']:.1f}"
+        )
+        
+        # Calculate position on a circle to spread teams out
+        angle = 2 * np.pi * (row['Rank'] / len(bubble_df))
+        radius = 5
+        x = radius * np.cos(angle)
+        y = radius * np.sin(angle)
+        
+        # Add bubble
+        fig.add_trace(go.Scatter(
+            x=[x],
+            y=[y],
+            mode='markers+text',
+            marker=dict(
+                size=row['bubble_size'],
+                color=team_colors['primary'],
+                line=dict(
+                    color=team_colors['secondary'],
+                    width=3
+                ),
+                opacity=0.8,
+                symbol='circle'
+            ),
+            text=str(int(row['Rank'])),
+            textposition='middle center',
+            textfont=dict(
+                family='Arial Black',
+                size=14,
+                color='white'
+            ),
+            name=team_name,
+            hovertext=hover_text,
+            hoverinfo='text',
+            customdata=[team_name],  # Store team name for click events
+        ))
+        
+        # Try to add team logo as an image
+        try:
+            logo_url = get_team_logo_url(team_name)
+            logo_size = row['bubble_size'] * 0.8 / 100  # Scale logo size
+            
+            fig.add_layout_image(
+                dict(
+                    source=logo_url,
+                    x=x,
+                    y=y,
+                    xref="x",
+                    yref="y",
+                    sizex=logo_size,
+                    sizey=logo_size,
+                    xanchor="center",
+                    yanchor="middle",
+                    opacity=0.8,
+                    layer="above"
+                )
+            )
+        except:
+            # If logo can't be added, just use the bubble
+            pass
+    
+    # Add JavaScript for click interactions
+    fig.update_layout(
+        clickmode='event+select',
+        height=700,
+        margin=dict(l=20, r=20, t=50, b=20),
+        title={
+            'text': 'Dynasty Dominance Index - Team Bubbles',
+            'y': 0.98,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        },
+        xaxis=dict(
+            visible=False,
+            range=[-6, 6]
+        ),
+        yaxis=dict(
+            visible=False,
+            range=[-6, 6]
+        ),
+        plot_bgcolor='rgba(0, 0, 0, 0)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        showlegend=False,
+        updatemenus=[
+            dict(
+                type="buttons",
+                buttons=[
+                    dict(
+                        label="Reset View",
+                        method="update",
+                        args=[{"visible": [True] * len(bubble_df)}]
+                    )
+                ],
+                direction="right",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=0.1,
+                xanchor="left",
+                y=1.1,
+                yanchor="top"
+            )
+        ],
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="Arial"
+        ),
+    )
+    
+    return fig
+
+def render_team_card(team_row):
+    """Render a card for a team with its DDI information"""
+    team_name = team_row['Team']
+    team_colors = get_team_colors(team_name)
+    
+    # Create a card with team colors
+    card_html = f"""
+    <div style="
+        background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 5px 0;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;"
+        onmouseover="this.style.transform='scale(1.02)'"
+        onmouseout="this.style.transform='scale(1)'">
+        
+        <div style="font-size: 24px; font-weight: bold; margin-right: 15px; 
+                    background: rgba(255,255,255,0.2); width: 40px; height: 40px; 
+                    display: flex; align-items: center; justify-content: center; 
+                    border-radius: 50%;">
+            {int(team_row['Rank'])}
+        </div>
+        
+        <div style="flex-grow: 1;">
+            <div style="font-size: 18px; font-weight: bold;">{team_name}</div>
+            <div style="font-size: 14px; opacity: 0.9;">DDI Score: {team_row['DDI Score']:.1f}</div>
+            <div style="display: flex; margin-top: 5px;">
+                <div style="flex: 0.35; font-size: 12px;">Power: {team_row['Power Score']:.1f}</div>
+                <div style="flex: 0.25; font-size: 12px;">Prospects: {team_row['Prospect Score']:.1f}</div>
+                <div style="flex: 0.4; font-size: 12px;">Historical: {team_row['Historical Score']:.1f}</div>
+            </div>
+        </div>
+        
+        <div style="
+            position: absolute;
+            right: -20px;
+            opacity: 0.1;
+            font-size: 80px;
+            font-weight: bold;">
+            {int(team_row['Rank'])}
+        </div>
+    </div>
+    """
+    
+    return card_html
 
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
@@ -512,49 +741,119 @@ def render(roster_data: pd.DataFrame):
         for col in ['DDI Score', 'Power Score', 'Prospect Score', 'Historical Score']:
             display_df[col] = display_df[col].round(1)
         
-        # Display the rankings table
-        st.subheader("Dynasty Dominance Index Rankings")
-        st.dataframe(
-            display_df,
-            column_config={
-                "Rank": st.column_config.NumberColumn(
-                    "Rank",
-                    help="Team rank by DDI score",
-                    format="%d"
-                ),
-                "Team": st.column_config.TextColumn(
-                    "Team",
-                    help="Team name"
-                ),
-                "DDI Score": st.column_config.NumberColumn(
-                    "DDI Score",
-                    help="Overall Dynasty Dominance Index score",
-                    format="%.1f"
-                ),
-                "Power Score": st.column_config.NumberColumn(
-                    "Power",
-                    help="Current team strength score (0-100)",
-                    format="%.1f"
-                ),
-                "Prospect Score": st.column_config.NumberColumn(
-                    "Prospects",
-                    help="Prospect system strength score (0-100)",
-                    format="%.1f"
-                ),
-                "Historical Score": st.column_config.NumberColumn(
-                    "History",
-                    help="Historical performance score (0-100)",
-                    format="%.1f"
-                ),
-            },
-            use_container_width=True,
-            hide_index=True,
-        )
+        # Create visualization tabs
+        vis_tab1, vis_tab2, vis_tab3, vis_tab4 = st.tabs([
+            "Bubble Visualization", 
+            "Team Cards", 
+            "Component Breakdown",
+            "Top Teams Comparison"
+        ])
         
-        # Add visualization tabs
-        vis_tab1, vis_tab2 = st.tabs(["Component Breakdown", "Top Teams Comparison"])
-        
+        # Tab 1: Interactive Bubble Visualization
         with vis_tab1:
+            st.markdown("""
+            ### Team Bubbles
+            Click on a team bubble to make it "pop"! Each bubble represents a team, sized by their DDI score.
+            """)
+            # Create the bubble chart
+            bubble_chart = create_bubble_chart(display_df)
+            
+            # Add a click handler to "pop" bubbles
+            bubble_chart_config = {
+                'displayModeBar': False,
+                'responsive': True
+            }
+            
+            # Add JavaScript to handle bubble popping
+            st.markdown("""
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const gd = document.querySelector('.js-plotly-plot');
+                gd.on('plotly_click', function(data) {
+                    const point = data.points[0];
+                    const teamName = point.customdata[0];
+                    
+                    // Create a popping animation
+                    const update = {
+                        'marker.size': [0],
+                        'marker.opacity': [0]
+                    };
+                    
+                    Plotly.restyle(gd, update, [point.curveNumber]);
+                    
+                    // Add a "pop" sound effect
+                    const audio = new Audio('data:audio/mp3;base64,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');
+                    audio.play();
+                    
+                    // Show team info
+                    const teamInfo = document.getElementById('team-info');
+                    if (teamInfo) {
+                        teamInfo.innerHTML = `<h3>${teamName} has been eliminated!</h3>`;
+                        teamInfo.style.display = 'block';
+                    }
+                });
+            });
+            </script>
+            <div id="team-info" style="display:none; text-align:center; margin-top:20px;"></div>
+            """, unsafe_allow_html=True)
+            
+            st.plotly_chart(bubble_chart, use_container_width=True, config=bubble_chart_config)
+        
+        # Tab 2: Team Cards 
+        with vis_tab2:
+            st.markdown("### Dynasty Dominance Rankings")
+            
+            # Show team cards in a 2-column layout
+            col1, col2 = st.columns(2)
+            
+            # Display team cards in alternating columns
+            for i, (_, team_row) in enumerate(display_df.iterrows()):
+                if i % 2 == 0:
+                    col1.markdown(render_team_card(team_row), unsafe_allow_html=True)
+                else:
+                    col2.markdown(render_team_card(team_row), unsafe_allow_html=True)
+            
+            # Also show the traditional table below
+            with st.expander("View as Table"):
+                st.dataframe(
+                    display_df,
+                    column_config={
+                        "Rank": st.column_config.NumberColumn(
+                            "Rank",
+                            help="Team rank by DDI score",
+                            format="%d"
+                        ),
+                        "Team": st.column_config.TextColumn(
+                            "Team",
+                            help="Team name"
+                        ),
+                        "DDI Score": st.column_config.NumberColumn(
+                            "DDI Score",
+                            help="Overall Dynasty Dominance Index score",
+                            format="%.1f"
+                        ),
+                        "Power Score": st.column_config.NumberColumn(
+                            "Power",
+                            help="Current team strength score (0-100)",
+                            format="%.1f"
+                        ),
+                        "Prospect Score": st.column_config.NumberColumn(
+                            "Prospects",
+                            help="Prospect system strength score (0-100)",
+                            format="%.1f"
+                        ),
+                        "Historical Score": st.column_config.NumberColumn(
+                            "History",
+                            help="Historical performance score (0-100)",
+                            format="%.1f"
+                        ),
+                    },
+                    use_container_width=True,
+                    hide_index=True,
+                )
+        
+        # Tab 3: Component Breakdown
+        with vis_tab3:
             st.plotly_chart(create_ddi_visualization(ddi_df), use_container_width=True)
             
             # Add explanation of component weighting
@@ -565,7 +864,8 @@ def render(roster_data: pd.DataFrame):
             - Historical Performance: {HISTORY_WEIGHT*100}%
             """)
             
-        with vis_tab2:
+        # Tab 4: Top Teams Comparison
+        with vis_tab4:
             st.plotly_chart(create_radar_chart(ddi_df), use_container_width=True)
             
             # Add breakdown of historical weighting
