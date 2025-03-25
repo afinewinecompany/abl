@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions, ddi
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
 
@@ -527,12 +527,11 @@ def main():
             
             if data:
                 # Create tabs for different sections
-                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
-                    "📚 Handbook",
-                    "📈 Projected Rankings",
+                    "📚 Handbook", 
                     "🏆 DDI Rankings"
                 ])
 
@@ -549,9 +548,6 @@ def main():
                     prospects.render(data['roster_data'])
 
                 with tab5:
-                    projected_rankings.render(data['roster_data'])
-                    
-                with tab6:
                     ddi.render(data['roster_data'])
             else:
                 st.info("No data available from the current API. Try switching to the Fantrax API.")
@@ -561,12 +557,11 @@ def main():
             
             if fantrax_data:
                 # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
-                    "📈 Projected Rankings",
                     "📋 Transactions"
                 ])
 
@@ -685,9 +680,6 @@ def main():
                     prospects.render(fantrax_data['roster_data'])
 
                 with tab5:
-                    projected_rankings.render(fantrax_data['roster_data'])
-                    
-                with tab6:
                     st.title("Transactions")
                     
                     # Debug information for transactions tab
