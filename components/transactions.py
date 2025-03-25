@@ -10,16 +10,23 @@ def render(transactions_data: List[Dict[str, Any]]):
     Args:
         transactions_data: List of transaction dictionaries
     """
-    st.header("Transactions")
+    # Create an expander for debug information
+    with st.expander("Debug Information", expanded=False):
+        st.write(f"Transactions data type: {type(transactions_data)}")
+        st.write(f"Number of transactions: {len(transactions_data) if isinstance(transactions_data, list) else 'Not a list'}")
+        
+        if transactions_data and isinstance(transactions_data, list) and len(transactions_data) > 0:
+            st.write("First transaction keys:", list(transactions_data[0].keys()))
+            st.write("First transaction:", transactions_data[0])
     
-    # Debug information
-    st.write(f"Transactions data type: {type(transactions_data)}")
-    st.write(f"Number of transactions: {len(transactions_data) if isinstance(transactions_data, list) else 'Not a list'}")
-    
-    if transactions_data and isinstance(transactions_data, list) and len(transactions_data) > 0:
-        st.write("First transaction keys:", list(transactions_data[0].keys()))
-    
-    if not transactions_data:
+    # Ensure transactions_data is a list
+    if not isinstance(transactions_data, list):
+        st.error("Transactions data is not in the expected format (list expected)")
+        st.info("No transaction data available")
+        return
+        
+    # Handle empty list
+    if not transactions_data or len(transactions_data) == 0:
         st.info("No transaction data available")
         return
     

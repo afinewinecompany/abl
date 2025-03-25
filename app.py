@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions
 from utils import fetch_api_data, fetch_fantrax_data
+from fantrax_integration import fantrax_client
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -666,19 +667,53 @@ def main():
                     projected_rankings.render(fantrax_data['roster_data'])
                     
                 with tab6:
+                    st.title("Transactions")
+                    
                     # Debug information for transactions tab
-                    st.write(f"Debug: fantrax_data keys: {list(fantrax_data.keys())}")
+                    st.sidebar.markdown("### Debug Information")
+                    st.sidebar.write(f"fantrax_data keys: {list(fantrax_data.keys())}")
                     
                     # Check if transactions key exists in the data
                     if 'transactions' in fantrax_data:
                         transactions_data = fantrax_data['transactions']
-                        st.write(f"Debug: transactions_data type: {type(transactions_data)}")
-                        st.write(f"Debug: transactions_data length: {len(transactions_data)}")
+                        st.sidebar.write(f"transactions_data type: {type(transactions_data)}")
+                        st.sidebar.write(f"transactions_data length: {len(transactions_data)}")
+                        
+                        if transactions_data and len(transactions_data) > 0:
+                            st.sidebar.write(f"First transaction keys: {list(transactions_data[0].keys()) if transactions_data and isinstance(transactions_data[0], dict) else 'No keys found'}")
+                            st.sidebar.write(f"Sample transaction: {transactions_data[0]}")
+                        else:
+                            st.sidebar.warning("Transactions list is empty")
+                            
+                            # Let's try to fetch some basic transactions directly for debugging
+                            try:
+                                st.info("Attempting to fetch transactions directly...")
+                                direct_transactions = fantrax_client.get_transactions(limit=10)
+                                st.sidebar.write(f"Direct fetch - transactions count: {len(direct_transactions)}")
+                                
+                                if direct_transactions and len(direct_transactions) > 0:
+                                    # Use these transactions instead
+                                    transactions_data = direct_transactions
+                                    st.success(f"Successfully fetched {len(transactions_data)} transactions directly.")
+                                    st.sidebar.write(f"First direct transaction: {direct_transactions[0]}")
+                            except Exception as e:
+                                st.error(f"Failed to fetch transactions directly: {str(e)}")
                         
                         # Use the transactions component with filtering capabilities
                         transactions.render(transactions_data)
                     else:
                         st.error("Transactions data not found in Fantrax data")
+                        try:
+                            st.info("Attempting to fetch transactions directly...")
+                            direct_transactions = fantrax_client.get_transactions(limit=10)
+                            
+                            if direct_transactions and len(direct_transactions) > 0:
+                                st.success(f"Successfully fetched {len(direct_transactions)} transactions directly.")
+                                transactions.render(direct_transactions)
+                            else:
+                                st.warning("No transactions found when fetching directly.")
+                        except Exception as e:
+                            st.error(f"Failed to fetch transactions directly: {str(e)}")
             else:
                 st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
 
