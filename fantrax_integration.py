@@ -1,7 +1,7 @@
-from fantraxapi import FantraxAPI
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any, Optional
+from api_client import FantraxAPI
 
 class FantraxAPIWrapper:
     """
@@ -10,7 +10,7 @@ class FantraxAPIWrapper:
     def __init__(self, league_id: str = "grx2lginm1v4p5jd"):
         """Initialize the Fantrax API with the league ID."""
         self.league_id = league_id
-        self._api = FantraxAPI(league_id)
+        self._api = FantraxAPI()  # The league_id is already set in the FantraxAPI class
         self._cache = {}
     
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
@@ -18,7 +18,7 @@ class FantraxAPIWrapper:
         """Get current standings and convert to DataFrame."""
         try:
             # Get standings data from API
-            standings_data = _self._api.get_standings()
+            standings_data = _self._api.get_standings()  # This gets a list of standings data
             
             if not standings_data or not isinstance(standings_data, list):
                 return pd.DataFrame()
@@ -97,7 +97,21 @@ class FantraxAPIWrapper:
         """Get all team rosters as a dictionary."""
         try:
             rosters = {}
-            teams_data = _self._api.get_teams()
+            # Use the team info from get_team_rosters since there's no direct get_teams endpoint
+            rosters_data = _self._api.get_team_rosters()
+            teams_data = []
+            
+            # Extract team information from rosters response
+            if isinstance(rosters_data, dict) and 'rosters' in rosters_data:
+                for team_id, team_info in rosters_data.get('rosters', {}).items():
+                    if isinstance(team_info, dict):
+                        teams_data.append({
+                            'id': team_id,
+                            'name': team_info.get('teamName', f'Team {team_id}')
+                        })
+            else:
+                # Fallback for missing data
+                teams_data
             
             if not teams_data or not isinstance(teams_data, list):
                 return {}
@@ -110,8 +124,13 @@ class FantraxAPIWrapper:
                 if not team_id:
                     continue
                 
-                # Get roster for this team
-                team_roster = _self._api.get_roster(team_id)
+                # Get roster for this team from the roster response
+                # Since there's no direct get_roster method, extract from the data we already have
+                team_roster = []
+                if isinstance(rosters_data, dict) and 'rosters' in rosters_data:
+                    team_roster_data = rosters_data.get('rosters', {}).get(team_id, {})
+                    if isinstance(team_roster_data, dict) and 'rosterItems' in team_roster_data:
+                        team_roster = team_roster_data.get('rosterItems', [])
                 
                 if not team_roster or not isinstance(team_roster, list):
                     rosters[team_name] = []
@@ -153,26 +172,15 @@ class FantraxAPIWrapper:
             # Get league info from API
             league_obj = _self._api.get_league_info()
             
-            # Extract league details safely
+            # Extract league details safely from the API response
             league_info = {
-                'name': league_obj.get('leagueName', 'ABL League'),
-                'sport': league_obj.get('sportType', 'Baseball'),
-                'season': league_obj.get('season', '2025'),
-                'scoring_type': league_obj.get('scoringStyle', 'H2H'),
-                'teams_count': len(_self._api.get_teams() or []),
-                'current_week': None,  # Will be set from scoring periods later
+                'name': league_obj.get('name', 'ABL League'),
+                'sport': 'Baseball',  # This is MLB by default
+                'season': str(league_obj.get('season', '2025')),
+                'scoring_type': league_obj.get('scoringSettings', {}).get('scoringPeriod', 'Weekly'),
+                'teams_count': league_obj.get('teams', 30),
+                'current_week': 1,  # Default to week 1
             }
-            
-            # Try to get current period/week
-            try:
-                scoring_periods = _self._api.get_scoring_periods()
-                if isinstance(scoring_periods, list):
-                    for period in scoring_periods:
-                        if period.get('isCurrent', False):
-                            league_info['current_week'] = period.get('periodNum', 'N/A')
-                            break
-            except:
-                pass
                 
             return league_info
         except Exception as e:

@@ -1,0 +1,220 @@
+DraftPick
+classfantraxapi.DraftPick(api, data)[source]
+Represents a single Draft Pick.
+
+Variables
+:
+from_team (Team]) – Team Traded From.
+
+to_team (Team]) – Team Traded To.
+
+round (int) – Draft Pick Round.
+
+year (int) – Draft Pick Year.
+
+owner (Team]) – Original Pick Owner.
+
+Matchup
+classfantraxapi.Matchup(api, matchup_key, data)[source]
+Represents a single Matchup.
+
+Variables
+:
+matchup_key (int) – Team ID.
+
+away (Team) – Away Team.
+
+away_score (float) – Away Team Score.
+
+home (Team) – Home Team.
+
+home_score (float) – Home Team Score.
+
+Player
+classfantraxapi.Player(api, data, transaction_type=None)[source]
+Represents a single Player.
+
+Variables
+:
+id (str) – Player ID.
+
+name (str) – Player Name.
+
+short_name (str) – Player Short Name.
+
+team_name (str) – Team Name.
+
+team_short_name (str) – Team Short Name.
+
+pos_short_name (str) – Player Positions.
+
+positions (List[Position]) – Player Positions.
+
+Position
+classfantraxapi.Position(api, data)[source]
+Represents a single Position.
+
+Variables
+:
+id (str) – Position ID.
+
+name (str) – Position Name.
+
+short_name (str) – Position Short Name.
+
+Record
+classfantraxapi.Record(api, team_id, rank, fields, data)[source]
+Represents a single Record of a Standings.
+
+Variables
+:
+team (Team) – Team.
+
+rank (int) – Standings Rank.
+
+win (int) – Number of Wins.
+
+loss (int) – Number of Losses.
+
+tie (int) – Number of Ties.
+
+points (int) – Number of Points.
+
+win_percentage (float) – Win Percentage.
+
+games_back (int) – Number of Games Back.
+
+wavier_wire_order (int) – Wavier Wire Claim Order.
+
+points_for (float) – Fantasy Points Against.
+
+streak (str) – Streak.
+
+ScoringPeriod
+classfantraxapi.ScoringPeriod(api, data)[source]
+Represents a single Scoring Period.
+
+Variables
+:
+name (str) – Name.
+
+week (int) – Week Number.
+
+start (datetime) – Start Date of the Period.
+
+end (datetime) – End Date of the Period.
+
+next (datetime) – Next Day after the Period.
+
+complete (bool) – Is the Period Complete?
+
+current (bool) – Is it the current Period?
+
+future (bool) – Is the Period in the future?
+
+matchups (List[Matchup]) – List of Matchups.
+
+Standings
+classfantraxapi.Standings(api, data, week=None)[source]
+Represents a single Standings.
+
+Variables
+:
+week (int) – Week Number.
+
+ranks (Dict[int, Record]) – Team Ranks and their Records.
+
+Team
+classfantraxapi.Team(api, team_id, name, short, logo)[source]
+Represents a single Team.
+
+Variables
+:
+team_id (str) – Team ID.
+
+name (str) – Team Name.
+
+short (str) – Team Short Name.
+
+Trade
+classfantraxapi.Trade(api, data)[source]
+Represents a single Trade.
+
+Variables
+:
+proposed_by (Team]) – Team Trade Proposed By.
+
+proposed (str) – Datetime Trade was Proposed.
+
+accepted (str) – Datetime Trade was Accepted.
+
+executed (str) – Datetime Trade will be Executed.
+
+moves (List[Union(DraftPick, TradePlayer)]) – Team Short Name.
+
+TradeBlock
+classfantraxapi.TradeBlock(api, data)[source]
+Represents a single Trade Block.
+
+Variables
+:
+team (Team]) – Team of the Trade Block.
+
+update_date (datetime) – Last Updated Date.
+
+note (str) – Trading Block Note.
+
+players_offered (Dict[str, List[Player]]) – Players Offered.
+
+positions_wanted (List[Position]) – Players Wanted.
+
+positions_offered (List[Position]) – Positions Offered.
+
+positions_wanted – Positions Wanted.
+
+stats_offered (List[str]) – Stats Offered.
+
+stats_wanted (List[str]) – Stats Wanted.
+
+TradePlayer
+classfantraxapi.TradePlayer(api, data)[source]
+Represents a single Draft Pick.
+
+Variables
+:
+from_team (Team]) – Team Traded From.
+
+to_team (Team]) – Team Traded To.
+
+name (str) – TradePlayer Name.
+
+short_name (str) – TradePlayer Short Name.
+
+team_name (str) – Team Name.
+
+team_short_name (str) – Team Short Name.
+
+pos (str) – TradePlayer Position.
+
+ppg (float) – Fantasy Points Per Game.
+
+points (float) – Total Fantasy Points.
+
+Transaction
+classfantraxapi.Transaction(api, data)[source]
+Represents a single Transaction.
+
+Variables
+:
+id (str) – Transaction ID.
+
+team (Team]) – Team who made te Transaction.
+
+date (datetime) – Transaction Date.
+
+count (str) – Number of Players in the Transaction.
+
+players (List[Player]) – Players in the Transaction.
+
+finalized (bool) – this is true when all player have been added.
+
