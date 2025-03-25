@@ -123,19 +123,14 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
 
 def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
     """
-    Get team prospect scores based on prospect rankings.
-    
-    Instead of using the merged data approach, we'll use a more direct method:
-    1. Create a dictionary mapping players to their team 
-    2. Go through each prospect in the ABL-Import file
-    3. If the prospect is on a team's roster, add their score to that team
+    Get team prospect scores using the exact same method as the prospects.py component.
+    This ensures consistency across the application.
     """
     try:
-        # Step 1: Load prospect data from ABL-Import.csv
+        # Use the same method as the prospects component
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
-        prospect_import['Score'] = pd.to_numeric(prospect_import['Score'], errors='coerce')
         
-        # Helper function to normalize player names
+        # Helper function to normalize player names - identical to prospects.py
         def normalize_name(name: str) -> str:
             """Simple normalization for player names"""
             if pd.isna(name):
@@ -148,76 +143,83 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
             name = name.replace('.', '').strip()
             return ' '.join(name.split())
         
-        # Step 2: Create a direct mapping from player names (normalized) to their ABL teams
-        roster_copy = roster_data.copy()
-        player_to_team = {}
-        for _, row in roster_copy.iterrows():
-            if pd.notna(row['player_name']):
-                normalized_name = normalize_name(row['player_name'])
-                if normalized_name:
-                    player_to_team[normalized_name] = row['team']
-                    
-        # Step 3: Create lookup dictionary for prospect scores by normalized name
-        prospect_scores = {}
-        for _, row in prospect_import.iterrows():
-            normalized_name = normalize_name(row['Name'])
-            if normalized_name and pd.notna(row['Score']):
-                prospect_scores[normalized_name] = row['Score']
-                
+        # Normalize names in prospect import
+        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
+        
+        # Create a copy of roster data with clean_name for matching
+        prospects_data = roster_data.copy()
+        prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
+        prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
+        
         # Debug info
-        print(f"Total prospects with scores: {len(prospect_scores)}")
-        print(f"Total players with team mappings: {len(player_to_team)}")
+        print(f"Total prospects in import: {len(prospect_import)}")
+        print(f"Total players in roster data: {len(prospects_data)}")
         
-        # Step 4: Calculate total prospect score per team
-        team_prospect_totals = {}
-        prospect_counts = {}
-        matched_count = 0
+        # Merge using the IDENTICAL method to prospects.py component
+        ranked_prospects = pd.merge(
+            prospects_data,
+            prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
+            left_on='clean_name',
+            right_on=prospect_import['Name'],
+            how='outer'  # Outer join to keep all players
+        )
         
-        # First initialize all teams with zero
+        # This is important: Use the exact same fields as prospects.py
+        ranked_prospects['prospect_score'] = pd.to_numeric(ranked_prospects['Score'].fillna(0), errors='coerce')
+        ranked_prospects['player_name'] = ranked_prospects['player_name'].fillna(ranked_prospects['Name'])
+        
+        # Remove duplicates but keep the one with rank if available
+        ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
+            subset=['Name'], 
+            keep='first'
+        )
+        
+        # Debug merged data
+        print(f"Total records after merge: {len(ranked_prospects)}")
+        print(f"Number of prospects found: {ranked_prospects['Score'].notna().sum()}")
+        
+        # Calculate team scores - identical to prospects.py
+        team_scores = ranked_prospects.groupby('team').agg({
+            'prospect_score': ['sum', 'mean', 'count']
+        }).reset_index()
+        
+        # Clean up column names - identical to prospects.py
+        team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
+        
+        # Debug team scores
+        print(f"Teams with prospect data: {len(team_scores)}")
+        
+        # Handle teams with NA or missing values
+        team_scores['total_score'] = team_scores['total_score'].fillna(0)
+        team_scores['avg_score'] = team_scores['avg_score'].fillna(0)
+        team_scores['prospect_count'] = team_scores['prospect_count'].fillna(0)
+        
+        # Make sure all teams are included
         all_teams = roster_data['team'].unique()
         for team in all_teams:
-            team_prospect_totals[team] = 0
-            prospect_counts[team] = 0
-            
-        # Then calculate scores from matched prospects
-        for prospect_name, score in prospect_scores.items():
-            team = player_to_team.get(prospect_name)
-            if team:
-                matched_count += 1
-                team_prospect_totals[team] += score
-                prospect_counts[team] += 1
-                
-        # Debug some matches and misses
-        print(f"Found {matched_count} prospects matched to teams")
-        print("Sample of matched prospects:")
-        sample_count = 0
-        for prospect_name, score in prospect_scores.items():
-            team = player_to_team.get(prospect_name)
-            if team and sample_count < 5:
-                print(f"  - {prospect_name}: {score} (Team: {team})")
-                sample_count += 1
-                
-        # Step 5: Convert results to DataFrame
-        results = []
-        for team in all_teams:
-            total_score = team_prospect_totals.get(team, 0)
-            count = prospect_counts.get(team, 0)
-            avg_score = total_score / count if count > 0 else 0
-            
-            results.append({
-                'team': team,
-                'total_score': total_score,
-                'avg_score': avg_score,
-                'prospect_count': count
-            })
-            
-        # Create DataFrame and show team scores
-        team_scores = pd.DataFrame(results)
+            if team not in team_scores['team'].values:
+                team_scores = pd.concat([
+                    team_scores,
+                    pd.DataFrame({
+                        'team': [team],
+                        'total_score': [0],
+                        'avg_score': [0],
+                        'prospect_count': [0]
+                    })
+                ])
         
         # Additional debug info
         print("Team prospect scores:")
         for _, row in team_scores.iterrows():
-            print(f"{row['team']}: {row['total_score']:.2f} (Count: {row['prospect_count']})")
+            print(f"{row['team']}: {row['total_score']:.2f} (Count: {int(row['prospect_count'])})")
+        
+        # Special debug for the teams you mentioned
+        for team_name in ["Baltimore Orioles", "Kansas City Royals", "Atlanta Braves"]:
+            team_data = team_scores[team_scores['team'] == team_name]
+            if len(team_data) > 0:
+                print(f"Special check - {team_name}: {team_data['total_score'].values[0]:.2f}")
+            else:
+                print(f"Special check - {team_name}: not found in team_scores")
         
         return team_scores
         
