@@ -96,8 +96,55 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
     
     return total_score
 
+def add_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
+    """Add prospect scores to roster data based on the same logic used in the prospects component"""
+    try:
+        # Load prospect scores from the import file
+        prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
+        
+        # Normalize names in the prospect import
+        def normalize_name(name: str) -> str:
+            """Simple normalization for player names"""
+            if pd.isna(name):
+                return ""
+            if not isinstance(name, str):
+                return str(name).strip()
+            
+            name = name.lower()
+            name = name.split('(')[0].strip()
+            name = name.replace('.', '').strip()
+            return ' '.join(name.split())
+        
+        # Add normalized names
+        prospect_import['normalized_name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
+        roster_copy = roster_data.copy()
+        roster_copy['normalized_name'] = roster_copy['player_name'].fillna('').astype(str).apply(normalize_name)
+        
+        # Merge roster data with prospect scores
+        enhanced_roster = pd.merge(
+            roster_copy,
+            prospect_import[['normalized_name', 'Score']],
+            left_on='normalized_name',
+            right_on='normalized_name',
+            how='left'
+        )
+        
+        # Rename the Score column to prospect_score
+        enhanced_roster['prospect_score'] = enhanced_roster['Score'].fillna(0)
+        
+        return enhanced_roster
+    except Exception as e:
+        st.error(f"Error adding prospect scores: {str(e)}")
+        # Return the original data with an empty prospect_score column
+        roster_data['prospect_score'] = 0
+        return roster_data
+
 def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame, history_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Calculate the Dynasty Dominance Index for all teams"""
+    
+    # Add prospect scores if they don't exist
+    if 'prospect_score' not in roster_data.columns:
+        roster_data = add_prospect_scores(roster_data)
     
     # Extract unique teams from roster data
     teams = roster_data['team'].unique()
