@@ -54,12 +54,36 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
         
     total_score = 0.0
     
+    # Handle special cases for team name variations in historical data
+    search_names = [team_name]
+    if team_name == "Athletics" or team_name == "Las Vegas Athletics":
+        search_names = ["Oakland Athletics", "Las Vegas Athletics"]
+    
+    # Debug info
+    print(f"Calculating historical score for team: {team_name}, searching: {search_names}")
+    
     for year, data in history_data.items():
         year_weight = HISTORY_WEIGHTS.get(year, 0.0)
         
-        # Find the team in this year's data
-        team_data = data[data['Team'] == team_name]
-        if len(team_data) == 0:
+        # Try all possible team names
+        team_data = None
+        for search_name in search_names:
+            # If we're in 2024 and searching for Oakland Athletics, use Las Vegas Athletics
+            if year == "2024" and search_name == "Oakland Athletics":
+                search_name = "Las Vegas Athletics"
+            # If we're in 2021-2023 and searching for Las Vegas Athletics, use Oakland Athletics
+            elif year != "2024" and search_name == "Las Vegas Athletics":
+                search_name = "Oakland Athletics"
+                
+            # Find the team in this year's data
+            found_data = data[data['Team'] == search_name]
+            if len(found_data) > 0:
+                team_data = found_data
+                break
+        
+        # If no team data found with any name, skip this year
+        if team_data is None or len(team_data) == 0:
+            print(f"No data found for {team_name} in {year}")
             continue
             
         # Calculate score based on Win% (scale from 0-100)
@@ -83,7 +107,8 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
         # Add playoff bonus if applicable
         playoff_result = None
         for place, playoff_team in PLAYOFF_HISTORY.get(year, {}).items():
-            if playoff_team == team_name:
+            # Check if playoff team matches any of our search names
+            if any(playoff_team == search_name for search_name in search_names):
                 playoff_result = place
                 break
                 
@@ -117,6 +142,9 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
             name = name.split('(')[0].strip()
             name = name.replace('.', '').strip()
             return ' '.join(name.split())
+        
+        # Ensure Score column is numeric
+        prospect_import['Score'] = pd.to_numeric(prospect_import['Score'], errors='coerce')
             
         # Add normalized names to prospect import
         prospect_import['normalized_name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
@@ -124,6 +152,10 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
         # Create a clean copy of roster data with normalized names
         roster_copy = roster_data.copy()
         roster_copy['normalized_name'] = roster_copy['player_name'].fillna('').astype(str).apply(normalize_name)
+        
+        # Debug info
+        print(f"Total prospects in import: {len(prospect_import)}")
+        print(f"Total players in roster data: {len(roster_copy)}")
         
         # Merge prospect data (this matches the prospects.py component logic)
         merged_data = pd.merge(
@@ -134,8 +166,12 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
             how='left'
         )
         
-        # Create prospect_score column
-        merged_data['prospect_score'] = merged_data['Score'].fillna(0)
+        # Debug merged data
+        print(f"Total records after merge: {len(merged_data)}")
+        print(f"Number of prospects found: {merged_data['Score'].notna().sum()}")
+        
+        # Create prospect_score column with proper numeric conversion
+        merged_data['prospect_score'] = pd.to_numeric(merged_data['Score'], errors='coerce').fillna(0)
         
         # Group by team and calculate total score, matching the Handbook page calculation
         team_scores = merged_data.groupby('team').agg({
@@ -145,10 +181,17 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
         # Clean up column names
         team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
         
+        # Additional debug info
+        print("Team prospect scores:")
+        for _, row in team_scores.iterrows():
+            print(f"{row['team']}: {row['total_score']:.2f} (Count: {row['prospect_count']})")
+        
         return team_scores
         
     except Exception as e:
         st.error(f"Error calculating team prospect scores: {str(e)}")
+        import traceback
+        st.write(traceback.format_exc())
         # Return a simple DataFrame with empty scores
         teams = roster_data['team'].unique()
         return pd.DataFrame({
@@ -176,10 +219,16 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
         
         # Handle Athletics name variation
         team_search = team
+        team_history_search = team
+        
+        # For current API data (team might be "Athletics")
         if team == "Athletics":
-            team_search = "Oakland Athletics"
-        elif team == "Oakland Athletics":
-            team_search = "Athletics"
+            team_search = "Las Vegas Athletics"  # For current data
+            team_history_search = "Oakland Athletics"  # For historical years 2021-2023
+        
+        # When looking at history data directly
+        elif team == "Las Vegas Athletics":
+            team_history_search = "Oakland Athletics"  # For historical years 2021-2023
         
         # Get power ranking score (normalized from 0-100, where 100 is best)
         team_power = power_rankings[(power_rankings['Team'] == team) | (power_rankings['Team'] == team_search)]
