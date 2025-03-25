@@ -7,9 +7,9 @@ import os
 import numpy as np
 
 # Define weighting factors
-POWER_RANK_WEIGHT = 0.35  # 35% of the score based on current power ranking
-PROSPECT_WEIGHT = 0.25    # 25% of the score based on prospect strength
-HISTORY_WEIGHT = 0.40     # 40% of the score based on historical performance
+POWER_RANK_WEIGHT = 0.45  # 45% of the score based on current power ranking
+PROSPECT_WEIGHT = 0.30    # 30% of the score based on prospect strength
+HISTORY_WEIGHT = 0.25     # 25% of the score based on historical performance
 
 # Historical weights (more recent years weighted more heavily)
 HISTORY_WEIGHTS = {
@@ -531,8 +531,8 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         values='DDI Score',
         color='DDI Score',
         hover_data=['Power Score', 'Prospect Score', 'Historical Score'],
-        color_continuous_scale='RdBu',
-        color_continuous_midpoint=tm_df['DDI Score'].mean()
+        color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],  # Red for high, Blue for low
+        color_continuous_midpoint=tm_df['DDI Score'].median()
     )
     
     # Customize appearance
@@ -705,9 +705,9 @@ def render(roster_data: pd.DataFrame):
     The Dynasty Dominance Index (DDI) combines a team's current power ranking, prospect system strength, and historical performance to create a comprehensive evaluation of dynasty team health and trajectory.
     
     #### DDI Components:
-    - **Current Power Rankings (35%)**: How strong is the team right now?
-    - **Prospect System (25%)**: How strong is the team's future talent pipeline?
-    - **Historical Performance (40%)**: How consistently successful has the team been over time?
+    - **Current Power Rankings (45%)**: How strong is the team right now?
+    - **Prospect System (30%)**: How strong is the team's future talent pipeline?
+    - **Historical Performance (25%)**: How consistently successful has the team been over time?
     """)
     
     # Create a horizontal rule
