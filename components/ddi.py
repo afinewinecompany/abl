@@ -96,13 +96,16 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
     
     return total_score
 
-def add_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
-    """Add prospect scores to roster data based on the same logic used in the prospects component"""
+def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Get team prospect scores from the same calculation used in the Handbook page.
+    Returns a DataFrame with team and their total prospect scores.
+    """
     try:
-        # Load prospect scores from the import file
+        # Use the same logic as in the prospects component
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         
-        # Normalize names in the prospect import
+        # Normalize player names for comparison
         def normalize_name(name: str) -> str:
             """Simple normalization for player names"""
             if pd.isna(name):
@@ -114,37 +117,52 @@ def add_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
             name = name.split('(')[0].strip()
             name = name.replace('.', '').strip()
             return ' '.join(name.split())
-        
-        # Add normalized names
+            
+        # Add normalized names to prospect import
         prospect_import['normalized_name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
+        
+        # Create a clean copy of roster data with normalized names
         roster_copy = roster_data.copy()
         roster_copy['normalized_name'] = roster_copy['player_name'].fillna('').astype(str).apply(normalize_name)
         
-        # Merge roster data with prospect scores
-        enhanced_roster = pd.merge(
+        # Merge prospect data (this matches the prospects.py component logic)
+        merged_data = pd.merge(
             roster_copy,
-            prospect_import[['normalized_name', 'Score']],
+            prospect_import[['normalized_name', 'Score', 'Rank']],
             left_on='normalized_name',
             right_on='normalized_name',
             how='left'
         )
         
-        # Rename the Score column to prospect_score
-        enhanced_roster['prospect_score'] = enhanced_roster['Score'].fillna(0)
+        # Create prospect_score column
+        merged_data['prospect_score'] = merged_data['Score'].fillna(0)
         
-        return enhanced_roster
+        # Group by team and calculate total score, matching the Handbook page calculation
+        team_scores = merged_data.groupby('team').agg({
+            'prospect_score': ['sum', 'mean', 'count']
+        }).reset_index()
+        
+        # Clean up column names
+        team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
+        
+        return team_scores
+        
     except Exception as e:
-        st.error(f"Error adding prospect scores: {str(e)}")
-        # Return the original data with an empty prospect_score column
-        roster_data['prospect_score'] = 0
-        return roster_data
+        st.error(f"Error calculating team prospect scores: {str(e)}")
+        # Return a simple DataFrame with empty scores
+        teams = roster_data['team'].unique()
+        return pd.DataFrame({
+            'team': teams,
+            'total_score': [0] * len(teams),
+            'avg_score': [0] * len(teams),
+            'prospect_count': [0] * len(teams)
+        })
 
 def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame, history_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Calculate the Dynasty Dominance Index for all teams"""
     
-    # Add prospect scores if they don't exist
-    if 'prospect_score' not in roster_data.columns:
-        roster_data = add_prospect_scores(roster_data)
+    # Get team prospect scores directly from the handbook calculation
+    team_prospect_scores = get_team_prospect_scores(roster_data)
     
     # Extract unique teams from roster data
     teams = roster_data['team'].unique()
@@ -153,24 +171,32 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
     ddi_data = []
     
     for team in teams:
+        # Account for "Oakland Athletics" / "Athletics" naming variants
+        team_display = team  # Use this name for display
+        
+        # Handle Athletics name variation
+        team_search = team
+        if team == "Athletics":
+            team_search = "Oakland Athletics"
+        elif team == "Oakland Athletics":
+            team_search = "Athletics"
+        
         # Get power ranking score (normalized from 0-100, where 100 is best)
-        team_power = power_rankings[power_rankings['Team'] == team]
+        team_power = power_rankings[(power_rankings['Team'] == team) | (power_rankings['Team'] == team_search)]
         if len(team_power) > 0:
             # Normalize power score where highest is 100
             power_score = (team_power['Power Score'].values[0] / power_rankings['Power Score'].max()) * 100
         else:
             power_score = 0
             
-        # Get prospect score
-        team_prospects = roster_data[roster_data['team'] == team]
-        prospect_count = len(team_prospects[team_prospects['prospect_score'] > 0])
-        
-        # Calculate average prospect score for the team
-        if prospect_count > 0:
-            avg_prospect_score = team_prospects['prospect_score'].mean()
-            # Normalize to 0-100 scale relative to all teams
-            max_prospect_avg = roster_data.groupby('team')['prospect_score'].mean().max()
-            prospect_score = (avg_prospect_score / max_prospect_avg) * 100 if max_prospect_avg > 0 else 0
+        # Get prospect score from the handbook calculation (total_score from each team)
+        team_prospects = team_prospect_scores[(team_prospect_scores['team'] == team) | (team_prospect_scores['team'] == team_search)]
+        if len(team_prospects) > 0:
+            # Get total prospect score and normalize to 0-100
+            total_prospect_score = team_prospects['total_score'].values[0]
+            # Normalize to 0-100 scale
+            max_prospect_score = team_prospect_scores['total_score'].max()
+            prospect_score = (total_prospect_score / max_prospect_score) * 100 if max_prospect_score > 0 else 0
         else:
             prospect_score = 0
             
