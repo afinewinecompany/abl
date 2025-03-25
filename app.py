@@ -567,6 +567,54 @@ def main():
                         st.metric("Teams", league_data.get('teams_count', 'N/A'))
                     with col3:
                         st.metric("Current Week", league_data.get('current_week', 'N/A'))
+                    
+                    # Add Standings section to League Info tab
+                    st.header("League Standings")
+                    standings_data = fantrax_data['standings_data']
+                    
+                    if not standings_data.empty:
+                        # Sort standings by rank
+                        standings_data = standings_data.sort_values('rank') if 'rank' in standings_data.columns else standings_data
+                        
+                        # Display standings table with enhanced formatting
+                        st.dataframe(
+                            standings_data,
+                            column_config={
+                                "team": st.column_config.TextColumn("Team"),
+                                "rank": st.column_config.NumberColumn("Rank", format="%d"),
+                                "wins": st.column_config.NumberColumn("Wins", format="%d"),
+                                "losses": st.column_config.NumberColumn("Losses", format="%d"),
+                                "ties": st.column_config.NumberColumn("Ties", format="%d"),
+                                "win_percentage": st.column_config.NumberColumn("Win %", format="%.3f"),
+                                "points_for": st.column_config.NumberColumn("Points For", format="%.1f"),
+                                "points_against": st.column_config.NumberColumn("Points Against", format="%.1f"),
+                                "streak": "Streak"
+                            },
+                            hide_index=True
+                        )
+                        
+                        # Add Current Matchups section
+                        st.header("Current Matchups")
+                        matchups = fantrax_data['current_matchups']
+                        
+                        if matchups:
+                            matchup_df = pd.DataFrame(matchups)
+                            st.dataframe(
+                                matchup_df,
+                                column_config={
+                                    "away_team": "Away Team",
+                                    "away_score": st.column_config.NumberColumn("Away Score", format="%.1f"),
+                                    "home_team": "Home Team", 
+                                    "home_score": st.column_config.NumberColumn("Home Score", format="%.1f"),
+                                    "winner": "Winner",
+                                    "score_difference": st.column_config.NumberColumn("Difference", format="%.1f")
+                                },
+                                hide_index=True
+                            )
+                        else:
+                            st.info("No current matchups available")
+                    else:
+                        st.info("No standings data available")
 
                 with tab2:
                     # Display rosters from Fantrax
@@ -591,15 +639,22 @@ def main():
                         st.info("No roster data available")
 
                 with tab3:
-                    # Display standings/power rankings from Fantrax
-                    st.header("Current Standings")
+                    # Use the standings component for a better visualization
                     standings_data = fantrax_data['standings_data']
                     
                     if not standings_data.empty:
-                        st.dataframe(standings_data[[
-                            'rank', 'team', 'wins', 'losses', 'ties', 
-                            'win_percentage', 'points_for', 'points_against'
-                        ]])
+                        # Rename columns to match what the standings component expects
+                        if 'team' in standings_data.columns and 'team_name' not in standings_data.columns:
+                            standings_data = standings_data.rename(columns={'team': 'team_name'})
+                        if 'win_percentage' in standings_data.columns and 'winning_pct' not in standings_data.columns:
+                            standings_data = standings_data.rename(columns={'win_percentage': 'winning_pct'})
+                        
+                        # Add games_back if missing
+                        if 'games_back' not in standings_data.columns:
+                            standings_data['games_back'] = 0.0
+                            
+                        # Use the standings component for nice visualizations
+                        standings.render(standings_data)
                     else:
                         st.info("No standings data available")
 
