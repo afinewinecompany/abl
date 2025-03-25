@@ -14,10 +14,10 @@ class FantraxAPIWrapper:
         self._cache = {}
     
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
-    def get_standings(self) -> pd.DataFrame:
+    def get_standings(_self) -> pd.DataFrame:
         """Get current standings and convert to DataFrame."""
         try:
-            standings = self._api.standings()
+            standings = _self._api.standings()
             standings_data = []
             
             for rank, record in standings.ranks.items():
@@ -41,14 +41,14 @@ class FantraxAPIWrapper:
             return pd.DataFrame()
 
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
-    def get_team_rosters(self) -> Dict[str, List[Dict[str, Any]]]:
+    def get_team_rosters(_self) -> Dict[str, List[Dict[str, Any]]]:
         """Get all team rosters as a dictionary."""
         try:
             rosters = {}
-            teams = self._api.teams
+            teams = _self._api.teams
 
             for team_id, team in teams.items():
-                team_roster = self._api.roster(team_id)
+                team_roster = _self._api.roster(team_id)
                 roster_data = []
                 
                 # Process active players
@@ -87,16 +87,16 @@ class FantraxAPIWrapper:
             return {}
 
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
-    def get_league_info(self) -> Dict[str, Any]:
+    def get_league_info(_self) -> Dict[str, Any]:
         """Get league information."""
         try:
             league_info = {
-                'name': self._api.name,
-                'sport': self._api.sport,
-                'season': self._api.season,
-                'scoring_type': self._api.scoring_type,
-                'teams_count': len(self._api.teams),
-                'current_week': self._api.current_period.week if hasattr(self._api.current_period, 'week') else None,
+                'name': _self._api.name,
+                'sport': _self._api.sport,
+                'season': _self._api.season,
+                'scoring_type': _self._api.scoring_type,
+                'teams_count': len(_self._api.teams),
+                'current_week': _self._api.current_period.week if hasattr(_self._api.current_period, 'week') else None,
             }
             return league_info
         except Exception as e:
@@ -104,10 +104,10 @@ class FantraxAPIWrapper:
             return {}
 
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
-    def get_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_transactions(_self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get recent transactions."""
         try:
-            transactions = self._api.transactions(limit)
+            transactions = _self._api.transactions(limit)
             transactions_data = []
             
             for tx in transactions:
@@ -127,10 +127,10 @@ class FantraxAPIWrapper:
             return []
 
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
-    def get_scoring_periods(self) -> List[Dict[str, Any]]:
+    def get_scoring_periods(_self) -> List[Dict[str, Any]]:
         """Get scoring periods information."""
         try:
-            periods = self._api.scoring_periods
+            periods = _self._api.scoring_periods
             periods_data = []
             
             for period in periods:
@@ -149,10 +149,10 @@ class FantraxAPIWrapper:
             st.error(f"Failed to fetch scoring periods: {str(e)}")
             return []
 
-    def get_matchups_for_period(self, period_index: int = 0) -> List[Dict[str, Any]]:
+    def get_matchups_for_period(_self, period_index: int = 0) -> List[Dict[str, Any]]:
         """Get matchups for a specific scoring period."""
         try:
-            periods = self._api.scoring_periods
+            periods = _self._api.scoring_periods
             if 0 <= period_index < len(periods):
                 period = periods[period_index]
                 matchups_data = []
