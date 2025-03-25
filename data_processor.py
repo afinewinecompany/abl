@@ -171,3 +171,73 @@ class DataProcessor:
             return pd.DataFrame(
                 columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
             )
+            
+    def process_available_players(self, players_data: Dict) -> pd.DataFrame:
+        """Process available players data into a DataFrame"""
+        try:
+            if not players_data or not isinstance(players_data, dict):
+                return pd.DataFrame(
+                    columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'stats']
+                )
+                
+            players_list = []
+            players = players_data.get('players', [])
+            
+            for player in players:
+                if not isinstance(player, dict):
+                    continue
+                    
+                # Extract player details
+                player_id = player.get('id', '')
+                player_name = player.get('name', 'Unknown')
+                position = player.get('position', 'N/A')
+                mlb_team = player.get('team', 'N/A')
+                status = player.get('status', 'Active')
+                
+                # Process eligibility if available
+                eligibility = player.get('eligibility', [])
+                eligible_positions = []
+                if isinstance(eligibility, list):
+                    eligible_positions = [pos.get('shortName', '') for pos in eligibility if isinstance(pos, dict)]
+                
+                # Stats dictionary to hold player statistics
+                stats = {}
+                # Process player stats if available
+                player_stats = player.get('stats', {})
+                if isinstance(player_stats, dict):
+                    # Extract hitting stats
+                    hitting = player_stats.get('hitting', {})
+                    if isinstance(hitting, dict):
+                        for stat_name, stat_value in hitting.items():
+                            stats[f'hit_{stat_name}'] = stat_value
+                    
+                    # Extract pitching stats
+                    pitching = player_stats.get('pitching', {})
+                    if isinstance(pitching, dict):
+                        for stat_name, stat_value in pitching.items():
+                            stats[f'pit_{stat_name}'] = stat_value
+                
+                player_info = {
+                    'player_id': player_id,
+                    'player_name': player_name,
+                    'position': position,
+                    'mlb_team': mlb_team,
+                    'status': status,
+                    'eligible_positions': eligible_positions,
+                    'stats': stats
+                }
+                
+                players_list.append(player_info)
+                
+            # Create DataFrame
+            df = pd.DataFrame(players_list) if players_list else pd.DataFrame(
+                columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'eligible_positions', 'stats']
+            )
+            
+            return df
+            
+        except Exception as e:
+            st.error(f"Error processing available players: {str(e)}")
+            return pd.DataFrame(
+                columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'eligible_positions', 'stats']
+            )
