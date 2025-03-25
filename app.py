@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
-# Projected Rankings removed as it's no longer relevant for this season
+# Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
 

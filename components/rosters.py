@@ -2,9 +2,54 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from typing import Dict, Optional
-from components.projected_rankings import calculate_hitter_points, calculate_pitcher_points
+# Import necessary functions directly so we don't need to import the projected_rankings module
+# Functions moved to this file to reduce dependencies
 import unicodedata
 from components.prospects import normalize_name, MLB_TEAM_COLORS, MLB_TEAM_IDS, get_player_headshot_html
+
+# Added function definitions from projected_rankings.py to make this module self-contained
+def calculate_hitter_points(row: pd.Series) -> float:
+    """Calculate fantasy points for a hitter"""
+    try:
+        points = 0
+        singles = row['H'] - (row['2B'] + row['3B'] + row['HR'])
+        points += singles * 1
+        points += row['2B'] * 2
+        points += row['3B'] * 3
+        points += row['HR'] * 4
+        points += row['RBI'] * 1
+        points += row['R'] * 1
+        points += row['BB'] * 1
+        points += row['HBP'] * 1
+        points += row['SB'] * 2
+        return points
+    except Exception as e:
+        st.error(f"Error calculating hitter points: {str(e)}")
+        return 0
+
+def calculate_pitcher_points(row: pd.Series) -> float:
+    """Calculate fantasy points for a pitcher"""
+    try:
+        points = 0
+        points += row['IP'] * 2
+        points += row['SO'] * 1
+        points += row['SV'] * 6
+        points += row['HLD'] * 3
+        points -= row['ER'] * 1
+        points -= row['H'] * 0.5
+        points -= row['BB'] * 0.5
+
+        if pd.notna(row['IP']) and pd.notna(row['ER']):
+            ip = row['IP']
+            er = row['ER']
+            if (ip >= 4 and ip <= 4.67 and er <= 1) or \
+               (ip >= 5 and ip <= 6.67 and er <= 2) or \
+               (ip >= 7 and er <= 3):
+                points += 8
+        return points
+    except Exception as e:
+        st.error(f"Error calculating pitcher points: {str(e)}")
+        return 0
 
 def get_salary_penalty(team: str) -> float:
     """Get salary cap penalty for a team"""
