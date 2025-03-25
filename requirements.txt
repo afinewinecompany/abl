@@ -18,3 +18,4 @@ twilio
 beautifulsoup4
 lxml
 urllib3
+python-dotenv

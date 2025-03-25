@@ -3,13 +3,19 @@ from typing import Dict, Any, Optional
 import streamlit as st
 import time
 import json
+import os
+from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+# Load environment variables from .env file
+load_dotenv()
 
 class FantraxAPI:
     def __init__(self):
         self.base_url = "https://www.fantrax.com/fxea"
-        self.league_id = "grx2lginm1v4p5jd"
+        # Get league ID from .env file or use default
+        self.league_id = os.getenv("FANTRAX_LEAGUE_ID", "grx2lginm1v4p5jd")
 
         # Configure retry strategy
         retry_strategy = Retry(

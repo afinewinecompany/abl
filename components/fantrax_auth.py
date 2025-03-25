@@ -2,6 +2,11 @@ import streamlit as st
 import requests
 from typing import Dict, Optional, Tuple
 import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def login_form() -> Tuple[bool, str]:
     """
@@ -30,6 +35,28 @@ def login_form() -> Tuple[bool, str]:
                 return False, message
     
     return False, ""
+
+def auto_login() -> Tuple[bool, str]:
+    """
+    Automatically authenticate using credentials from .env file
+    Returns a tuple of (success, message)
+    """
+    # Get credentials from .env
+    username = os.getenv("FANTRAX_EMAIL")
+    password = os.getenv("FANTRAX_PASSWORD")
+    
+    if not username or not password:
+        return False, "No credentials found in .env file"
+    
+    success, message, session_data = authenticate_fantrax(username, password)
+    if success:
+        # Store session data in streamlit session state
+        st.session_state.fantrax_auth = session_data
+        st.session_state.fantrax_logged_in = True
+        st.session_state.fantrax_username = username
+        return True, "Auto-login successful!"
+    else:
+        return False, message
 
 def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optional[Dict]]:
     """
@@ -132,6 +159,19 @@ def get_session_data() -> Optional[Dict]:
 
 def render_auth_status():
     """Render current authentication status"""
+    # If not already authenticated, try auto-login
+    if not is_authenticated():
+        # Check if this is the first run
+        if "attempted_auto_login" not in st.session_state:
+            st.session_state.attempted_auto_login = True
+            success, message = auto_login()
+            if success:
+                st.success(message)
+                st.rerun()  # Refresh after successful auto-login
+            elif st.session_state.get('debug_mode', False):
+                st.warning(f"Auto-login failed: {message}")
+    
+    # Show current authentication status
     if is_authenticated():
         col1, col2 = st.columns([3, 1])
         with col1:
@@ -139,12 +179,17 @@ def render_auth_status():
         with col2:
             if st.button("Logout"):
                 logout()
+                # Also clear the auto-login attempt flag
+                if "attempted_auto_login" in st.session_state:
+                    del st.session_state.attempted_auto_login
                 st.rerun()
     else:
-        success, message = login_form()
-        if message:
-            if success:
-                st.success(message)
-                st.rerun()  # Refresh the page after successful login
-            else:
-                st.error(message)
+        # Only show manual login form if auto-login failed
+        if st.session_state.get("attempted_auto_login", False):
+            success, message = login_form()
+            if message:
+                if success:
+                    st.success(message)
+                    st.rerun()  # Refresh the page after successful login
+                else:
+                    st.error(message)
