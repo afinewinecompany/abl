@@ -1,7 +1,12 @@
 import streamlit as st
+import os
+from dotenv import load_dotenv
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, fantrax_auth, available_players
 from utils import fetch_api_data
 from api_client import FantraxAPI
+
+# Load environment variables from .env file
+load_dotenv()
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -498,7 +503,22 @@ def main():
     # Streamlined sidebar with Fantrax authentication
     with st.sidebar:
         st.markdown("### 🔐 Fantrax Account")
-        fantrax_auth.render_auth_status()
+        
+        # Force auto-login on app startup
+        if not st.session_state.get("fantrax_logged_in", False):
+            success, message = fantrax_auth.auto_login()
+            if success:
+                st.success(f"✅ Automatically logged in as {st.session_state.get('fantrax_username', 'User')}")
+            else:
+                st.error(f"⚠️ Auto-login failed: {message}")
+                # Show manual login form as fallback
+                fantrax_auth.render_auth_status()
+        else:
+            # Already logged in, show status
+            st.success(f"✅ Logged in as {st.session_state.get('fantrax_username', 'User')}")
+            if st.button("Logout"):
+                fantrax_auth.logout()
+                st.rerun()
         
         st.markdown("---")
         
@@ -512,10 +532,11 @@ def main():
         
         if debug_mode:
             st.info("Debug mode enabled - additional logging will be displayed")
-            # Display any auth info
+            # Display auth info for debugging
             if "fantrax_auth" in st.session_state and st.session_state.fantrax_auth:
                 cookies = st.session_state.fantrax_auth.get("cookies", {})
                 st.write(f"Auth cookies: {len(cookies)} cookies stored")
+                st.write(f"League ID: {os.getenv('FANTRAX_LEAGUE_ID', 'not set')}")
 
         st.markdown("---")
         st.markdown("""
