@@ -15,12 +15,25 @@ def render(available_players_df: pd.DataFrame, mlb_ids_df: Optional[pd.DataFrame
     """
     st.header("Available Players", divider="blue")
     
+    # Check if we should use sample data for demonstration
+    use_sample_data = False
     if available_players_df.empty:
         if st.session_state.get('fantrax_logged_in', False):
-            st.info("No available players data found. Try adjusting your filters or refresh the page.")
+            # Option to use sample data when authenticated but no API results
+            use_sample_data = st.checkbox("Use sample player data for demonstration", value=True)
+            if not use_sample_data:
+                st.info("No available players data found. Try adjusting your filters or refresh the page.")
+                return
         else:
             st.warning("Please log in with your Fantrax account to view available players.")
-            return
+            # Option to use sample data even without authentication
+            use_sample_data = st.checkbox("Use sample player data for demonstration", value=True)
+            if not use_sample_data:
+                return
+    
+    # Use sample data if needed
+    if use_sample_data:
+        available_players_df = generate_sample_player_data()
     
     # Create filters
     col1, col2, col3 = st.columns(3)
@@ -165,6 +178,72 @@ def render_player_card(player, player_id_cache):
     
     # Render the card
     st.markdown(card_html, unsafe_allow_html=True)
+
+def generate_sample_player_data() -> pd.DataFrame:
+    """
+    Generate sample player data for demonstration purposes
+    Returns a DataFrame with sample player data formatted like Fantrax data
+    """
+    # Define sample data
+    sample_players = [
+        # Star hitters
+        {"player_id": "h1", "player_name": "Aaron Judge", "position": "OF", "mlb_team": "NYY", "status": "Active",
+         "eligible_positions": ["OF", "DH"], 
+         "stats": {"hit_AVG": .294, "hit_HR": 41, "hit_RBI": 102, "hit_R": 96, "hit_SB": 12}},
+        {"player_id": "h2", "player_name": "Juan Soto", "position": "OF", "mlb_team": "NYY", "status": "Active",
+         "eligible_positions": ["OF", "DH"], 
+         "stats": {"hit_AVG": .306, "hit_HR": 35, "hit_RBI": 86, "hit_R": 109, "hit_SB": 6}},
+        {"player_id": "h3", "player_name": "Shohei Ohtani", "position": "DH", "mlb_team": "LAD", "status": "Active",
+         "eligible_positions": ["DH", "UT"], 
+         "stats": {"hit_AVG": .289, "hit_HR": 44, "hit_RBI": 95, "hit_R": 115, "hit_SB": 25}},
+        {"player_id": "h4", "player_name": "Bobby Witt Jr.", "position": "SS", "mlb_team": "KC", "status": "Active",
+         "eligible_positions": ["SS", "3B"], 
+         "stats": {"hit_AVG": .311, "hit_HR": 27, "hit_RBI": 92, "hit_R": 99, "hit_SB": 36}},
+        {"player_id": "h5", "player_name": "Gunnar Henderson", "position": "SS", "mlb_team": "BAL", "status": "Active",
+         "eligible_positions": ["SS", "3B"], 
+         "stats": {"hit_AVG": .284, "hit_HR": 30, "hit_RBI": 82, "hit_R": 104, "hit_SB": 18}},
+         
+        # Injured hitters
+        {"player_id": "h6", "player_name": "Julio Rodriguez", "position": "OF", "mlb_team": "SEA", "status": "IL",
+         "eligible_positions": ["OF"], 
+         "stats": {"hit_AVG": .278, "hit_HR": 18, "hit_RBI": 56, "hit_R": 68, "hit_SB": 23}},
+        {"player_id": "h7", "player_name": "Bryce Harper", "position": "1B", "mlb_team": "PHI", "status": "IL",
+         "eligible_positions": ["1B", "OF", "DH"], 
+         "stats": {"hit_AVG": .297, "hit_HR": 29, "hit_RBI": 89, "hit_R": 82, "hit_SB": 11}},
+         
+        # Prospect hitters
+        {"player_id": "h8", "player_name": "Jackson Holliday", "position": "SS", "mlb_team": "BAL", "status": "Minors",
+         "eligible_positions": ["SS", "2B"], 
+         "stats": {"hit_AVG": .312, "hit_HR": 12, "hit_RBI": 44, "hit_R": 66, "hit_SB": 16}},
+        {"player_id": "h9", "player_name": "Jordan Lawlar", "position": "SS", "mlb_team": "ARI", "status": "Minors",
+         "eligible_positions": ["SS"], 
+         "stats": {"hit_AVG": .285, "hit_HR": 14, "hit_RBI": 58, "hit_R": 62, "hit_SB": 25}},
+         
+        # Star pitchers
+        {"player_id": "p1", "player_name": "Gerrit Cole", "position": "SP", "mlb_team": "NYY", "status": "Active",
+         "eligible_positions": ["SP"], 
+         "stats": {"pit_ERA": 3.05, "pit_WHIP": 1.02, "pit_W": 14, "pit_SV": 0, "pit_SO": 218}},
+        {"player_id": "p2", "player_name": "Spencer Strider", "position": "SP", "mlb_team": "ATL", "status": "IL",
+         "eligible_positions": ["SP"], 
+         "stats": {"pit_ERA": 2.58, "pit_WHIP": 0.94, "pit_W": 8, "pit_SV": 0, "pit_SO": 104}},
+        {"player_id": "p3", "player_name": "Emmanuel Clase", "position": "RP", "mlb_team": "CLE", "status": "Active",
+         "eligible_positions": ["RP"], 
+         "stats": {"pit_ERA": 1.88, "pit_WHIP": 0.82, "pit_W": 5, "pit_SV": 41, "pit_SO": 62}},
+        {"player_id": "p4", "player_name": "Zac Gallen", "position": "SP", "mlb_team": "ARI", "status": "Active",
+         "eligible_positions": ["SP"], 
+         "stats": {"pit_ERA": 3.22, "pit_WHIP": 1.12, "pit_W": 12, "pit_SV": 0, "pit_SO": 183}},
+         
+        # Prospect pitchers
+        {"player_id": "p5", "player_name": "Jackson Jobe", "position": "SP", "mlb_team": "DET", "status": "Minors",
+         "eligible_positions": ["SP"], 
+         "stats": {"pit_ERA": 2.81, "pit_WHIP": 1.05, "pit_W": 7, "pit_SV": 0, "pit_SO": 92}},
+        {"player_id": "p6", "player_name": "Cade Horton", "position": "SP", "mlb_team": "CHC", "status": "Minors",
+         "eligible_positions": ["SP"], 
+         "stats": {"pit_ERA": 3.14, "pit_WHIP": 1.13, "pit_W": 9, "pit_SV": 0, "pit_SO": 118}},
+    ]
+    
+    # Convert to DataFrame
+    return pd.DataFrame(sample_players)
 
 def fetch_mlb_player_ids() -> pd.DataFrame:
     """
