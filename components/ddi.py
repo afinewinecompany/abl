@@ -253,9 +253,15 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
         team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
         if len(team_power) > 0:
             # Normalize power score where highest is 100
-            power_score = (team_power[score_col].values[0] / power_rankings[score_col].max()) * 100
+            max_score = power_rankings[score_col].max()
+            if max_score > 0:
+                power_score = (team_power[score_col].values[0] / max_score) * 100
+            else:
+                # Default to 100 if we have no valid power scores
+                power_score = 100
         else:
-            power_score = 0
+            # Default to 100 as requested
+            power_score = 100
             
         # Get prospect score from the handbook calculation (total_score from each team)
         team_prospects = team_prospect_scores[(team_prospect_scores['team'] == team) | (team_prospect_scores['team'] == team_search)]
