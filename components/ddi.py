@@ -160,7 +160,7 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
             prospects_data,
             prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
             left_on='clean_name',
-            right_on=prospect_import['Name'],
+            right_on='Name',  # Fixed: use string column name, not the actual column
             how='outer'  # Outer join to keep all players
         )
         
