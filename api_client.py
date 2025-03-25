@@ -1,9 +1,12 @@
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 import streamlit as st
 import time
 import json
 import os
+import datetime
+import pickle
+import logging
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -170,6 +173,83 @@ class FantraxAPI:
     def get_standings(self) -> Dict:
         """Fetch standings data"""
         return self._make_request("general/getStandings", {"leagueId": self.league_id})
+        
+    def _save_players_cache(self, players_data: Dict, cache_key: str = "default") -> None:
+        """
+        Save player data to cache with timestamp
+        
+        Args:
+            players_data: Dictionary containing player data to cache
+            cache_key: Optional key to differentiate different cached datasets
+        """
+        if not players_data or not isinstance(players_data, dict):
+            return
+            
+        try:
+            # Create cache directory if it doesn't exist
+            cache_dir = os.path.join(os.getcwd(), ".cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            
+            # Create cache object with timestamp
+            cache_obj = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "data": players_data
+            }
+            
+            # Save to disk
+            cache_file = os.path.join(cache_dir, f"players_{cache_key}.pkl")
+            with open(cache_file, "wb") as f:
+                pickle.dump(cache_obj, f)
+                
+            if st.session_state.get('debug_mode', False):
+                st.success(f"Saved {len(players_data.get('players', []))} players to cache")
+        except Exception as e:
+            if st.session_state.get('debug_mode', False):
+                st.error(f"Failed to save player cache: {str(e)}")
+    
+    def _load_players_cache(self, cache_key: str = "default", max_age_hours: int = 24) -> Tuple[bool, Dict]:
+        """
+        Load player data from cache if available and not expired
+        
+        Args:
+            cache_key: Key to identify the cached dataset
+            max_age_hours: Maximum age of cache in hours before considering it expired
+            
+        Returns:
+            Tuple of (success, data)
+        """
+        try:
+            cache_dir = os.path.join(os.getcwd(), ".cache")
+            cache_file = os.path.join(cache_dir, f"players_{cache_key}.pkl")
+            
+            # Check if cache file exists
+            if not os.path.exists(cache_file):
+                return False, {}
+                
+            # Load cache
+            with open(cache_file, "rb") as f:
+                cache_obj = pickle.load(f)
+                
+            # Check timestamp
+            timestamp = datetime.datetime.fromisoformat(cache_obj["timestamp"])
+            age = datetime.datetime.now() - timestamp
+            
+            # Check if cache is expired
+            if age.total_seconds() > (max_age_hours * 3600):
+                if st.session_state.get('debug_mode', False):
+                    st.info(f"Cache expired (age: {age.total_seconds()/3600:.1f} hours)")
+                return False, {}
+                
+            # Return cache data
+            data = cache_obj["data"]
+            if st.session_state.get('debug_mode', False):
+                st.success(f"Loaded {len(data.get('players', []))} players from cache (age: {age.total_seconds()/3600:.1f} hours)")
+            return True, data
+            
+        except Exception as e:
+            if st.session_state.get('debug_mode', False):
+                st.error(f"Failed to load player cache: {str(e)}")
+            return False, {}
         
     def get_available_players(self, 
                              position: str = None, 
@@ -480,6 +560,9 @@ class FantraxAPI:
                                 return {"players": alt_players}
             
             # APPROACH 4: Try the getLeagueInfo endpoint which sometimes includes player information
+            # Define the base URL for all API requests
+            api_url = "https://www.fantrax.com/fxea/req"
+            
             league_info_payload = {
                 "msgs": [{
                     "method": "getLeagueInfo",
@@ -494,7 +577,7 @@ class FantraxAPI:
                 st.info("Trying league info API endpoint...")
             
             league_info_response = self.session.post(
-                alternative_url, 
+                api_url, 
                 json=league_info_payload, 
                 headers=headers, 
                 timeout=30
@@ -534,6 +617,36 @@ class FantraxAPI:
                                         if st.session_state.get('debug_mode', False):
                                             st.success(f"Found {len(players)} players in league info response")
                                         return {"players": players}
+                    
+                    # Define the recursive search function here to ensure it's in scope
+                    def find_players_in_obj(obj, path=""):
+                        """Recursively search for player arrays in the response"""
+                        if not isinstance(obj, dict):
+                            return None
+                        
+                        # Check if this object has players
+                        player_containers = ["players", "playerInfo", "playersInfo", "playersList", "poolPlayers"]
+                        for container in player_containers:
+                            if container in obj and isinstance(obj[container], list):
+                                players = obj[container]
+                                if len(players) > 0 and isinstance(players[0], dict) and "name" in players[0]:
+                                    if st.session_state.get('debug_mode', False):
+                                        st.success(f"Found players in {path}.{container}")
+                                    return players
+                        
+                        # Recursively check all dict properties
+                        for key, value in obj.items():
+                            if isinstance(value, dict):
+                                result = find_players_in_obj(value, f"{path}.{key}")
+                                if result:
+                                    return result
+                            elif isinstance(value, list):
+                                for i, item in enumerate(value):
+                                    if isinstance(item, dict):
+                                        result = find_players_in_obj(item, f"{path}.{key}[{i}]")
+                                        if result:
+                                            return result
+                        return None
                     
                     # If standard extraction failed, try recursive search
                     players = find_players_in_obj(league_info_data, "league_info")
