@@ -645,49 +645,63 @@ def render_team_card(team_row):
     """Render a card for a team with its DDI information"""
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
+    logo_url = get_team_logo_url(team_name)
     
-    # Create a card with team colors - using static CSS instead of onmouseover/onmouseout events
+    # Create a card with team colors - using the same style as prospect systems
     card_html = f"""
-    <div class="team-card" style="
+    <div class="prospect-card" style="
         background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
         border-radius: 10px;
-        padding: 15px;
-        margin: 8px 0;
-        color: white;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
+        padding: 1.5rem;
+        margin: 1rem 0;
         position: relative;
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;">
-        
-        <div style="font-size: 24px; font-weight: bold; margin-right: 15px; 
-                    background: rgba(255,255,255,0.2); width: 40px; height: 40px; 
-                    display: flex; align-items: center; justify-content: center; 
-                    border-radius: 50%;">
-            {int(team_row['Rank'])}
-        </div>
-        
-        <div style="flex-grow: 1;">
-            <div style="font-size: 18px; font-weight: bold;">{team_name}</div>
-            <div style="font-size: 14px; opacity: 0.9;">DDI Score: {team_row['DDI Score']:.1f}</div>
-            <div style="display: flex; margin-top: 5px;">
-                <div style="flex: 0.35; font-size: 12px;">Power: {team_row['Power Score']:.1f}</div>
-                <div style="flex: 0.25; font-size: 12px;">Prospects: {team_row['Prospect Score']:.1f}</div>
-                <div style="flex: 0.4; font-size: 12px;">Historical: {team_row['Historical Score']:.1f}</div>
-            </div>
-        </div>
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
         
         <div style="
             position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0.1;
-            font-size: 80px;
+            left: -10px;
+            top: -10px;
+            width: 40px;
+            height: 40px;
+            background: {team_colors['primary']};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-weight: bold;
-            z-index: 1;">
-            {int(team_row['Rank'])}
+            border: 2px solid {team_colors['secondary']};
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{int(team_row['Rank'])}</div>
+        
+        {f'<img src="{logo_url}" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 100px; height: 100px; opacity: 0.8; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+        
+        <div class="prospect-content" style="position: relative; z-index: 2;">
+            <div style="flex-grow: 1;">
+                <div style="
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: white;
+                    margin-bottom: 0.5rem;
+                    ">{team_name}</div>
+                <div style="
+                    font-size: 0.9rem;
+                    color: rgba(255, 255, 255, 0.8);
+                    margin-bottom: 0.5rem;
+                    ">
+                    <span style="font-weight: 700;">DDI Score: {team_row['DDI Score']:.1f}</span>
+                </div>
+                <div style="display: flex; margin-top: 0.5rem;">
+                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                        <span style="opacity: 0.7;">Power:</span> {team_row['Power Score']:.1f}
+                    </div>
+                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                        <span style="opacity: 0.7;">Prospects:</span> {team_row['Prospect Score']:.1f}
+                    </div>
+                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                        <span style="opacity: 0.7;">Historical:</span> {team_row['Historical Score']:.1f}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     """
