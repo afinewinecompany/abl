@@ -256,7 +256,10 @@ class FantraxAPI:
                              team: str = None, 
                              sort_stat: str = None,
                              page: int = 1,
-                             max_results: int = 100) -> Dict:
+                             max_results: int = 100,
+                             use_cache: bool = True,
+                             force_refresh: bool = False,
+                             cache_max_age_hours: int = 24) -> Dict:
         """
         Fetch available players from the league using a simpler, more direct approach
         
@@ -266,6 +269,9 @@ class FantraxAPI:
             sort_stat: Sort by stat category
             page: Page number for pagination
             max_results: Maximum number of results per page
+            use_cache: Whether to try loading from cache
+            force_refresh: Force refresh from API even if cache is available
+            cache_max_age_hours: Maximum age of cache in hours before refresh
             
         Returns:
             Dictionary containing available players data
@@ -273,6 +279,15 @@ class FantraxAPI:
         if not self.is_authenticated():
             st.error("User is not authenticated with Fantrax. Please log in first.")
             return {"players": []}
+            
+        # Check cache first if enabled
+        cache_key = "available"  # Use static key for all players since we retrieve all at once
+        if use_cache and not force_refresh:
+            cache_success, cache_data = self._load_players_cache(cache_key, cache_max_age_hours)
+            if cache_success and cache_data and "players" in cache_data:
+                if st.session_state.get('debug_mode', False):
+                    st.success(f"📦 Using cached data with {len(cache_data['players'])} players")
+                return cache_data
         
         try:
             # Apply authentication to ensure we have valid cookies
