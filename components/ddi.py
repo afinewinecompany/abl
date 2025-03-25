@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Union, Tuple
 import os
 import numpy as np
 
@@ -636,23 +636,20 @@ def render_team_card(team_row):
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
     
-    # Create a card with team colors
+    # Create a card with team colors - using static CSS instead of onmouseover/onmouseout events
     card_html = f"""
-    <div style="
+    <div class="team-card" style="
         background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
         border-radius: 10px;
         padding: 15px;
-        margin: 5px 0;
+        margin: 8px 0;
         color: white;
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         display: flex;
         align-items: center;
-        transition: transform 0.3s ease;
-        cursor: pointer;
         position: relative;
-        overflow: hidden;"
-        onmouseover="this.style.transform='scale(1.02)'"
-        onmouseout="this.style.transform='scale(1)'">
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;">
         
         <div style="font-size: 24px; font-weight: bold; margin-right: 15px; 
                     background: rgba(255,255,255,0.2); width: 40px; height: 40px; 
@@ -674,12 +671,26 @@ def render_team_card(team_row):
         <div style="
             position: absolute;
             right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
             opacity: 0.1;
             font-size: 80px;
-            font-weight: bold;">
+            font-weight: bold;
+            z-index: 1;">
             {int(team_row['Rank'])}
         </div>
     </div>
+    """
+    
+    # Add CSS for hover effect
+    card_html = f"""
+    <style>
+    .team-card:hover {{
+        transform: scale(1.02);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }}
+    </style>
+    {card_html}
     """
     
     return card_html
@@ -741,61 +752,50 @@ def render(roster_data: pd.DataFrame):
         
         # Create visualization tabs
         vis_tab1, vis_tab2, vis_tab3, vis_tab4 = st.tabs([
-            "Bubble Visualization", 
+            "Team Rankings", 
             "Team Cards", 
             "Component Breakdown",
             "Top Teams Comparison"
         ])
         
-        # Tab 1: Interactive Bubble Visualization
+        # Tab 1: Interactive Team Rankings Visualization
         with vis_tab1:
             st.markdown("""
-            ### Team Bubbles
-            Click on a team bubble to make it "pop"! Each bubble represents a team, sized by their DDI score.
+            ### Dynasty Dominance Index - Team Rankings
+            Interactive visualizations of team performance across all dimensions of the Dynasty Dominance Index.
             """)
-            # Create the bubble chart
-            bubble_chart = create_bubble_chart(display_df)
             
-            # Add a click handler to "pop" bubbles
-            bubble_chart_config = {
-                'displayModeBar': False,
-                'responsive': True
-            }
+            # Use tabs for different visualizations within the first tab
+            viz_1, viz_2 = st.tabs(["Treemap View", "Component Heatmap"])
             
-            # Add JavaScript to handle bubble popping
-            st.markdown("""
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const gd = document.querySelector('.js-plotly-plot');
-                gd.on('plotly_click', function(data) {
-                    const point = data.points[0];
-                    const teamName = point.customdata[0];
-                    
-                    // Create a popping animation
-                    const update = {
-                        'marker.size': [0],
-                        'marker.opacity': [0]
-                    };
-                    
-                    Plotly.restyle(gd, update, [point.curveNumber]);
-                    
-                    // Add a "pop" sound effect
-                    const audio = new Audio('data:audio/mp3;base64,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');
-                    audio.play();
-                    
-                    // Show team info
-                    const teamInfo = document.getElementById('team-info');
-                    if (teamInfo) {
-                        teamInfo.innerHTML = `<h3>${teamName} has been eliminated!</h3>`;
-                        teamInfo.style.display = 'block';
-                    }
-                });
-            });
-            </script>
-            <div id="team-info" style="display:none; text-align:center; margin-top:20px;"></div>
-            """, unsafe_allow_html=True)
+            with viz_1:
+                st.markdown("""
+                ### Team Rankings Treemap
+                Size and color represent DDI score. Larger and darker boxes indicate higher scores.
+                """)
+                
+                # Create the treemap chart
+                treemap_chart = create_treemap_chart(display_df)
+                
+                # Simple config without unnecessary controls
+                chart_config = {
+                    'displayModeBar': True,
+                    'responsive': True,
+                    'modeBarButtonsToRemove': ['lasso2d', 'select2d']
+                }
+                
+                # Display the treemap visualization
+                st.plotly_chart(treemap_chart, use_container_width=True, config=chart_config)
             
-            st.plotly_chart(bubble_chart, use_container_width=True, config=bubble_chart_config)
+            with viz_2:
+                st.markdown("""
+                ### Team Performance by Component
+                Heatmap showing how each team performs across the three DDI components.
+                """)
+                
+                # Display the heatmap as a secondary visualization
+                heatmap_chart = create_heatmap_chart(display_df)
+                st.plotly_chart(heatmap_chart, use_container_width=True, config=chart_config)
         
         # Tab 2: Team Cards 
         with vis_tab2:

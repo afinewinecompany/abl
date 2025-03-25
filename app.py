@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions, ddi
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
@@ -486,22 +487,38 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
-    st.title("⚾ ABL Analytics")
+    try:
+        st.title("⚾ ABL Analytics")
 
-    # Streamlined sidebar
-    with st.sidebar:
-        st.markdown("### 🔄 League Controls")
-        if st.button("Refresh Data", use_container_width=True):
-            st.experimental_rerun()
+        # Add error notification box
+        err_placeholder = st.empty()
+
+        # Streamlined sidebar
+        with st.sidebar:
+            st.markdown("### 🔄 League Controls")
+            if st.button("Refresh Data", use_container_width=True):
+                st.experimental_rerun()
+                
+            # Add data source selector
+            data_source = st.radio("Data Source", ["Current API", "Fantrax API"])
+
+            st.markdown("---")
+            st.markdown("""
+            ### About ABL Analytics
+            Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+            """)
             
-        # Add data source selector
-        data_source = st.radio("Data Source", ["Current API", "Fantrax API"])
-
-        st.markdown("---")
-        st.markdown("""
-        ### About ABL Analytics
-        Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
-        """)
+            # Add debugging information
+            st.markdown("---")
+            st.markdown("### Debug Info")
+            st.write(f"Streamlit version: {st.__version__}")
+            st.write(f"Current directory: {os.getcwd()}")
+            import sys
+            st.write(f"Python version: {sys.version}")
+    except Exception as e:
+        st.error(f"Error in main UI setup: {str(e)}")
+        import traceback
+        st.write(traceback.format_exc())
 
     try:
         # Fetch appropriate data based on selected data source
