@@ -534,12 +534,47 @@ def main():
         if st.session_state.get("fantrax_logged_in", False):
             try:
                 api_client = FantraxAPI()
+                
+                # Add debug info about what we're doing
+                if st.session_state.get('debug_mode', False):
+                    st.info("📡 Attempting to fetch available players from Fantrax API...")
+                
+                # Get raw player data from API
                 available_players_raw = api_client.get_available_players()
+                
+                # Debug raw data structure
+                if st.session_state.get('debug_mode', False):
+                    if available_players_raw:
+                        player_count = len(available_players_raw.get('players', []))
+                        st.info(f"✅ Received raw data with {player_count} players from API")
+                        
+                        # Inspect first player if available
+                        players = available_players_raw.get('players', [])
+                        if players and len(players) > 0:
+                            first_player = players[0]
+                            st.info(f"Sample player keys: {list(first_player.keys())}")
+                            if 'name' in first_player:
+                                st.success(f"Found player with name: {first_player['name']}")
+                    else:
+                        st.warning("⚠️ API returned empty or invalid data structure")
+                
+                # Process the data if we have it
                 if available_players_raw:
                     data_processor = __import__('data_processor').DataProcessor()
                     available_players_data = data_processor.process_available_players(available_players_raw)
+                    
+                    # Debug processed data
+                    if st.session_state.get('debug_mode', False):
+                        if not available_players_data.empty:
+                            st.success(f"Successfully processed {len(available_players_data)} players!")
+                        else:
+                            st.error("❌ Processing resulted in empty DataFrame")
+                
             except Exception as e:
                 st.warning(f"Could not fetch available players: {str(e)}")
+                if st.session_state.get('debug_mode', False):
+                    import traceback
+                    st.error(f"Detailed error: {traceback.format_exc()}")
                 
         # Load MLB player IDs for headshots
         mlb_player_ids = available_players.fetch_mlb_player_ids()

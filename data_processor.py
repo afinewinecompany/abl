@@ -175,6 +175,15 @@ class DataProcessor:
     def process_available_players(self, players_data: Dict) -> pd.DataFrame:
         """Process available players data into a DataFrame"""
         try:
+            # Debug info in verbose mode
+            if st.session_state.get('debug_mode', False):
+                st.info("🔍 Starting player data processing...")
+                
+                if not players_data or not isinstance(players_data, dict):
+                    st.error("❌ Invalid player data format - data is empty or not a dictionary")
+                else:
+                    st.success(f"✅ Received player data with keys: {list(players_data.keys())}")
+            
             if not players_data or not isinstance(players_data, dict):
                 # Only show warning if this isn't first load (silent fail on first load)
                 if 'loaded_once' in st.session_state and st.session_state.loaded_once:
@@ -193,6 +202,9 @@ class DataProcessor:
             # Try to find players in different places in the response
             if 'players' in players_data:
                 players = players_data['players']
+                if st.session_state.get('debug_mode', False):
+                    player_count = len(players) if isinstance(players, list) else "not a list"
+                    st.info(f"Found {player_count} players in 'players' key")
             elif 'msgs' in players_data and len(players_data['msgs']) > 0:
                 msg = players_data['msgs'][0]
                 if 'data' in msg:
@@ -252,9 +264,9 @@ class DataProcessor:
                                 player_name = player[key]
                                 break
                 
-                # Debug print for player name field
-                if st.session_state.get('debug_mode', False):
-                    st.write(f"Player object keys: {list(player.keys())}")
+                # Debug print for player name field - only for first few players to avoid overwhelming the UI
+                if st.session_state.get('debug_mode', False) and len(players_list) < 5:
+                    st.write(f"Player #{len(players_list)+1} keys: {list(player.keys())}")
                     if 'name' in player:
                         st.write(f"Found 'name' field: {player['name']}")
                 
