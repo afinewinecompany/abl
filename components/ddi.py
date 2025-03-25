@@ -495,140 +495,138 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
     
     return fig
 
-def create_bubble_chart(ddi_df: pd.DataFrame) -> go.Figure:
-    """Create an interactive bubble chart with team colors and logos"""
+def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
+    """Create an interactive treemap visualization of DDI scores"""
     
     # Create a copy of the DataFrame for manipulation
-    bubble_df = ddi_df.copy()
+    tm_df = ddi_df.copy()
     
-    # Generate bubble sizes based on DDI Score (normalized between 30 and 100)
-    min_size = 30
-    max_size = 100
-    bubble_df['bubble_size'] = min_size + (bubble_df['DDI Score'] - bubble_df['DDI Score'].min()) / (bubble_df['DDI Score'].max() - bubble_df['DDI Score'].min()) * (max_size - min_size)
-    
-    # Create a figure
-    fig = go.Figure()
-    
-    # Add bubbles for each team
-    for _, row in bubble_df.iterrows():
-        team_name = row['Team']
-        team_colors = get_team_colors(team_name)
-        
-        # Format hover information
+    # Create custom hover text
+    hover_texts = []
+    for _, row in tm_df.iterrows():
         hover_text = (
-            f"<b>{team_name}</b><br>" +
+            f"<b>{row['Team']}</b><br>" +
             f"DDI Score: {row['DDI Score']:.1f}<br>" +
             f"Rank: #{row['Rank']}<br>" +
             f"Power Score: {row['Power Score']:.1f}<br>" +
             f"Prospect Score: {row['Prospect Score']:.1f}<br>" +
             f"Historical Score: {row['Historical Score']:.1f}"
         )
-        
-        # Calculate position on a circle to spread teams out
-        angle = 2 * np.pi * (row['Rank'] / len(bubble_df))
-        radius = 5
-        x = radius * np.cos(angle)
-        y = radius * np.sin(angle)
-        
-        # Add bubble
-        fig.add_trace(go.Scatter(
-            x=[x],
-            y=[y],
-            mode='markers+text',
-            marker=dict(
-                size=row['bubble_size'],
-                color=team_colors['primary'],
-                line=dict(
-                    color=team_colors['secondary'],
-                    width=3
-                ),
-                opacity=0.8,
-                symbol='circle'
-            ),
-            text=str(int(row['Rank'])),
-            textposition='middle center',
-            textfont=dict(
-                family='Arial Black',
-                size=14,
-                color='white'
-            ),
-            name=team_name,
-            hovertext=hover_text,
-            hoverinfo='text',
-            customdata=[team_name],  # Store team name for click events
-        ))
-        
-        # Try to add team logo as an image
-        try:
-            logo_url = get_team_logo_url(team_name)
-            logo_size = row['bubble_size'] * 0.8 / 100  # Scale logo size
-            
-            fig.add_layout_image(
-                dict(
-                    source=logo_url,
-                    x=x,
-                    y=y,
-                    xref="x",
-                    yref="y",
-                    sizex=logo_size,
-                    sizey=logo_size,
-                    xanchor="center",
-                    yanchor="middle",
-                    opacity=0.8,
-                    layer="above"
-                )
-            )
-        except:
-            # If logo can't be added, just use the bubble
-            pass
+        hover_texts.append(hover_text)
     
-    # Add JavaScript for click interactions
+    tm_df['hover_text'] = hover_texts
+    
+    # Get team colors for markers
+    marker_colors = []
+    for team in tm_df['Team']:
+        colors = get_team_colors(team)
+        marker_colors.append(colors['primary'])
+    
+    # Create treemap figure
+    fig = px.treemap(
+        tm_df,
+        ids=tm_df.index,
+        names='Team',
+        parents=["" for _ in range(len(tm_df))],
+        values='DDI Score',
+        color='DDI Score',
+        hover_data=['Power Score', 'Prospect Score', 'Historical Score'],
+        color_continuous_scale='RdBu',
+        color_continuous_midpoint=tm_df['DDI Score'].mean()
+    )
+    
+    # Customize appearance
+    fig.update_traces(
+        hovertemplate=tm_df['hover_text'],
+        textfont=dict(
+            family='Arial',
+            size=14
+        ),
+        textposition="middle center",
+        texttemplate="<b>%{label}</b><br>#%{customdata[0]}<br>%{value:.1f}"
+    )
+    
+    # Add rank to customdata
+    fig.update_traces(
+        customdata=tm_df[['Rank']].values
+    )
+    
+    # Update layout
     fig.update_layout(
-        clickmode='event+select',
-        height=700,
-        margin=dict(l=20, r=20, t=50, b=20),
         title={
-            'text': 'Dynasty Dominance Index - Team Bubbles',
+            'text': 'Dynasty Dominance Index - Team Rankings',
             'y': 0.98,
             'x': 0.5,
             'xanchor': 'center',
             'yanchor': 'top'
         },
+        margin=dict(l=20, r=20, t=50, b=20),
+        coloraxis_showscale=True,
+        height=600
+    )
+    
+    return fig
+
+def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
+    """Create an interactive heatmap of DDI components across teams"""
+    
+    # Create a subset of data with just the components we want
+    heat_df = ddi_df[['Team', 'Power Score', 'Prospect Score', 'Historical Score']].copy()
+    
+    # Sort by overall DDI score (which is the ordering in the input DataFrame)
+    heat_df = heat_df.sort_values('Team')
+    
+    # Melt the dataframe to get it in the right format for the heatmap
+    melted_df = pd.melt(
+        heat_df, 
+        id_vars=['Team'], 
+        value_vars=['Power Score', 'Prospect Score', 'Historical Score'],
+        var_name='Component',
+        value_name='Score'
+    )
+    
+    # Create custom hover text
+    melted_df['hover_text'] = melted_df.apply(
+        lambda row: f"<b>{row['Team']}</b><br>{row['Component']}: {row['Score']:.1f}", 
+        axis=1
+    )
+    
+    # Create the heatmap
+    fig = px.imshow(
+        heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score']],
+        labels=dict(x="Component", y="Team", color="Score"),
+        x=['Power', 'Prospects', 'Historical'],
+        y=heat_df['Team'],
+        color_continuous_scale='Viridis',
+        aspect="auto"
+    )
+    
+    # Customize appearance
+    fig.update_traces(
+        text=heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score']].round(1).values,
+        texttemplate="%{text}",
+        textfont={"size": 12, "color": "white"}
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title={
+            'text': 'Team Performance by Component',
+            'y': 0.98,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        },
+        margin=dict(l=50, r=20, t=50, b=20),
+        height=800,
         xaxis=dict(
-            visible=False,
-            range=[-6, 6]
+            title="Component",
+            side="top"
         ),
         yaxis=dict(
-            visible=False,
-            range=[-6, 6]
-        ),
-        plot_bgcolor='rgba(0, 0, 0, 0)',
-        paper_bgcolor='rgba(0, 0, 0, 0)',
-        showlegend=False,
-        updatemenus=[
-            dict(
-                type="buttons",
-                buttons=[
-                    dict(
-                        label="Reset View",
-                        method="update",
-                        args=[{"visible": [True] * len(bubble_df)}]
-                    )
-                ],
-                direction="right",
-                pad={"r": 10, "t": 10},
-                showactive=True,
-                x=0.1,
-                xanchor="left",
-                y=1.1,
-                yanchor="top"
-            )
-        ],
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=12,
-            font_family="Arial"
-        ),
+            title="Team",
+            autorange="reversed"
+        )
     )
     
     return fig
