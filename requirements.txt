@@ -15,3 +15,5 @@ openai
 trafilatura
 openai
 twilio
+beautifulsoup4
+lxml
