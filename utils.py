@@ -77,26 +77,53 @@ def fetch_fantrax_data():
             status_container = st.empty()
             status_container.progress(0)
             
-            # Fetch league info
+            # Fetch league info with error handling
             status_container.progress(20)
-            league_info = fantrax_client.get_league_info()
+            try:
+                league_info = fantrax_client.get_league_info()
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch league info: {str(e)}")
+                league_info = {}
             
-            # Fetch standings
+            # Fetch standings with error handling
             status_container.progress(40)
-            standings = fantrax_client.get_standings()
+            try:
+                standings = fantrax_client.get_standings()
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch standings: {str(e)}")
+                standings = pd.DataFrame()
             
-            # Fetch team rosters
+            # Fetch team rosters with error handling
             status_container.progress(60)
-            rosters = fantrax_client.get_team_rosters()
+            try:
+                rosters = fantrax_client.get_team_rosters()
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch team rosters: {str(e)}")
+                rosters = {}
             
-            # Fetch transactions
-            status_container.progress(80)
-            transactions = fantrax_client.get_transactions(limit=20)
+            # Fetch transactions with error handling
+            status_container.progress(75)
+            try:
+                transactions = fantrax_client.get_transactions(limit=20)
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch transactions: {str(e)}")
+                transactions = []
             
-            # Fetch scoring periods and current matchups
-            status_container.progress(90)
-            scoring_periods = fantrax_client.get_scoring_periods()
-            current_matchups = fantrax_client.get_matchups_for_period(0)  # Current period
+            # Fetch scoring periods with error handling
+            status_container.progress(85)
+            try:
+                scoring_periods = fantrax_client.get_scoring_periods()
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch scoring periods: {str(e)}")
+                scoring_periods = []
+            
+            # Fetch current matchups with error handling
+            status_container.progress(95)
+            try:
+                current_matchups = fantrax_client.get_matchups_for_period()
+            except Exception as e:
+                st.warning(f"Warning: Could not fetch matchups: {str(e)}")
+                current_matchups = []
             
             # Clear the progress bar
             status_container.empty()
@@ -105,11 +132,20 @@ def fetch_fantrax_data():
             roster_df = []
             for team_name, players in rosters.items():
                 for player in players:
-                    player['team'] = team_name
-                    roster_df.append(player)
+                    player_data = player.copy()  # Make a copy to avoid modifying the original
+                    player_data['team'] = team_name
+                    roster_df.append(player_data)
             
             if roster_df:
+                # Ensure roster data has the required columns
                 roster_df = pd.DataFrame(roster_df)
+                required_columns = ['team', 'player_name', 'position', 'team', 'status']
+                for col in required_columns:
+                    if col not in roster_df.columns:
+                        if col == 'player_name' and 'name' in roster_df.columns:
+                            roster_df['player_name'] = roster_df['name']
+                        else:
+                            roster_df[col] = 'Unknown'
             else:
                 roster_df = pd.DataFrame()
             
@@ -119,7 +155,8 @@ def fetch_fantrax_data():
                 'roster_data': roster_df,
                 'transactions': transactions,
                 'scoring_periods': scoring_periods,
-                'current_matchups': current_matchups
+                'current_matchups': current_matchups,
+                'source': 'fantrax'
             }
     except Exception as e:
         with st.sidebar:
