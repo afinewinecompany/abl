@@ -45,6 +45,19 @@ def auto_login() -> Tuple[bool, str]:
     username = os.getenv("FANTRAX_EMAIL")
     password = os.getenv("FANTRAX_PASSWORD")
     
+    # Debug information if debug mode is enabled
+    if st.session_state.get('debug_mode', False):
+        st.info("🔑 Attempting auto-login with stored credentials")
+        if username:
+            st.info(f"📧 Found username/email in environment: {username[:3]}...{username[-3:] if len(username) > 6 else ''}")
+        else:
+            st.warning("❌ No username/email found in environment variables")
+        
+        if password:
+            st.info("🔒 Found password in environment")
+        else:
+            st.warning("❌ No password found in environment variables")
+    
     if not username or not password:
         return False, "No credentials found in .env file"
     
@@ -54,8 +67,16 @@ def auto_login() -> Tuple[bool, str]:
         st.session_state.fantrax_auth = session_data
         st.session_state.fantrax_logged_in = True
         st.session_state.fantrax_username = username
+        
+        # Add debug info for cookies if in debug mode
+        if st.session_state.get('debug_mode', False) and session_data and 'cookies' in session_data:
+            cookie_count = len(session_data['cookies'])
+            st.success(f"✅ Authentication successful with {cookie_count} cookies")
+        
         return True, "Auto-login successful!"
     else:
+        if st.session_state.get('debug_mode', False):
+            st.error(f"❌ Authentication failed: {message}")
         return False, message
 
 def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optional[Dict]]:
@@ -64,10 +85,19 @@ def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optio
     Returns a tuple of (success, message, session_data)
     """
     try:
+        # Debug mode check
+        debug_mode = st.session_state.get('debug_mode', False)
+        
+        if debug_mode:
+            st.info("🔄 Starting authentication process with Fantrax...")
+        
         # Create a session to maintain cookies
         session = requests.Session()
         
         # Step 1: First request to get CSRF token and initial cookies
+        if debug_mode:
+            st.info("👋 Step 1: Initial request to get cookies...")
+            
         initial_response = session.get(
             "https://www.fantrax.com/login", 
             headers={
@@ -76,9 +106,21 @@ def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optio
         )
         
         if initial_response.status_code != 200:
-            return False, f"Failed to connect to Fantrax. Status code: {initial_response.status_code}", None
+            error_msg = f"Failed to connect to Fantrax. Status code: {initial_response.status_code}"
+            if debug_mode:
+                st.error(f"❌ {error_msg}")
+                st.error(f"Response text: {initial_response.text[:200]}...")
+            return False, error_msg, None
+        
+        # Count initial cookies
+        if debug_mode:
+            initial_cookies = {cookie.name: cookie.value for cookie in session.cookies}
+            st.success(f"✅ Initial request successful with {len(initial_cookies)} cookies")
         
         # Step 2: Login request
+        if debug_mode:
+            st.info("🔑 Step 2: Submitting login credentials...")
+            
         login_data = {
             "username": username,
             "password": password,
@@ -97,16 +139,32 @@ def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optio
         
         # Check if login was successful
         if login_response.status_code != 200:
-            return False, f"Login failed. Status code: {login_response.status_code}", None
+            error_msg = f"Login failed. Status code: {login_response.status_code}"
+            if debug_mode:
+                st.error(f"❌ {error_msg}")
+                st.error(f"Response text: {login_response.text[:200]}...")
+            return False, error_msg, None
         
+        # Try to parse JSON response
         try:
             login_json = login_response.json()
+            if debug_mode:
+                st.success(f"✅ Login response received: {list(login_json.keys())}")
+                
             if login_json.get("errorMessage"):
-                return False, login_json.get("errorMessage", "Login failed"), None
-        except:
-            pass  # Response might not be JSON
+                error_msg = login_json.get("errorMessage", "Login failed")
+                if debug_mode:
+                    st.error(f"❌ {error_msg}")
+                return False, error_msg, None
+        except Exception as json_error:
+            if debug_mode:
+                st.warning(f"⚠️ Could not parse login response as JSON: {str(json_error)}")
+                st.info(f"Response text: {login_response.text[:200]}...")
         
         # Step 3: Verify we're logged in by making a simple authenticated request
+        if debug_mode:
+            st.info("🔍 Step 3: Verifying authentication...")
+            
         verify_response = session.get(
             "https://www.fantrax.com/fxea/user/getMyProfile",
             headers={
@@ -116,15 +174,40 @@ def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optio
         )
         
         if verify_response.status_code != 200:
-            return False, "Authentication verification failed", None
+            error_msg = f"Authentication verification failed: {verify_response.status_code}"
+            if debug_mode:
+                st.error(f"❌ {error_msg}")
+                st.error(f"Response text: {verify_response.text[:200]}...")
+            return False, error_msg, None
+        
+        # Check verify response content
+        if debug_mode:
+            try:
+                verify_json = verify_response.json()
+                if isinstance(verify_json, dict):
+                    st.success(f"✅ Profile data received: {list(verify_json.keys())}")
+                    if 'user' in verify_json:
+                        user_data = verify_json['user']
+                        if isinstance(user_data, dict) and 'fullName' in user_data:
+                            st.success(f"✅ Logged in as: {user_data['fullName']}")
+            except:
+                st.warning("⚠️ Could not parse profile response as JSON")
         
         # Extract and store all relevant cookies
         cookies = {cookie.name: cookie.value for cookie in session.cookies}
         
+        if debug_mode:
+            st.success(f"🍪 Collected {len(cookies)} cookies for authentication")
+            if 'JSESSIONID' in cookies:
+                st.info("✅ Found critical JSESSIONID cookie")
+            else:
+                st.warning("⚠️ Missing JSESSIONID cookie - this may cause issues")
+        
         # Store headers that might be needed for future requests
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Content-Type": "application/json"
         }
         
         # Return session data
@@ -136,7 +219,12 @@ def authenticate_fantrax(username: str, password: str) -> Tuple[bool, str, Optio
         return True, "Login successful", session_data
         
     except Exception as e:
-        return False, f"Login error: {str(e)}", None
+        error_msg = f"Login error: {str(e)}"
+        if st.session_state.get('debug_mode', False):
+            st.error(f"❌ {error_msg}")
+            import traceback
+            st.error(traceback.format_exc())
+        return False, error_msg, None
 
 def logout():
     """Remove authentication data from session state"""

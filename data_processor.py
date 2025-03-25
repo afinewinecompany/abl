@@ -199,26 +199,45 @@ class DataProcessor:
             players_list = []
             players = []
             
-            # Try to find players in different places in the response
+            # Try to extract players from all known response structures
+            # STRUCTURE 1: Direct 'players' key in the root
             if 'players' in players_data:
                 players = players_data['players']
                 if st.session_state.get('debug_mode', False):
                     player_count = len(players) if isinstance(players, list) else "not a list"
                     st.info(f"Found {player_count} players in 'players' key")
+            
+            # STRUCTURE 2: New API response structure with 'responses' array
+            elif 'responses' in players_data and isinstance(players_data['responses'], list) and len(players_data['responses']) > 0:
+                response_data = players_data['responses'][0]
+                if isinstance(response_data, dict) and 'data' in response_data:
+                    response_body = response_data['data']
+                    if 'players' in response_body and isinstance(response_body['players'], list):
+                        players = response_body['players']
+                        if st.session_state.get('debug_mode', False):
+                            st.success(f"Found {len(players)} players in 'responses[0].data.players'")
+            
+            # STRUCTURE 3: Old API response structure with 'msgs' array
             elif 'msgs' in players_data and len(players_data['msgs']) > 0:
                 msg = players_data['msgs'][0]
                 if 'data' in msg:
                     data = msg['data']
                     if 'players' in data:
                         players = data['players'] 
+                        if st.session_state.get('debug_mode', False):
+                            st.info(f"Found {len(players)} players in 'msgs[0].data.players'")
                     elif 'playerInfo' in data:
                         players = data['playerInfo']
+                        if st.session_state.get('debug_mode', False):
+                            st.info(f"Found {len(players)} players in 'msgs[0].data.playerInfo'")
                     elif 'poolData' in data and isinstance(data['poolData'], dict):
                         pool_data = data['poolData']
                         if 'playerInfo' in pool_data:
                             players = pool_data['playerInfo']
+                            if st.session_state.get('debug_mode', False):
+                                st.info(f"Found {len(players)} players in 'msgs[0].data.poolData.playerInfo'")
             
-            if not players:
+            if not players or not isinstance(players, list) or len(players) == 0:
                 st.error("Could not find player data in the Fantrax API response")
                 # Show detailed debug info
                 st.info(f"API response structure: {str(players_data.keys())}")

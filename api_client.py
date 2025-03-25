@@ -217,13 +217,13 @@ class FantraxAPI:
                 "Sec-Fetch-Site": "same-origin"
             }
             
-            # APPROACH 1: Direct API call using the latest Fantrax API endpoint structure
+            # APPROACH 1: Direct API call to Fantrax's available players page
             url = "https://www.fantrax.com/fxpa/req"
             
-            # Updated payload based on the latest Fantrax API structure
+            # Updated payload based on debugging the Fantrax API structure
             payload = {
                 "msgs": [{
-                    "method": "getPlayersListForPool",  # Updated method name
+                    "method": "getPlayersListForPool",  # Method name for player pool
                     "data": {
                         "leagueId": self.league_id,
                         "poolId": None,
@@ -239,7 +239,7 @@ class FantraxAPI:
                         "filterInactivePlayers": False,
                         "teamId": team
                     },
-                    "uri": "/playerPool/players"  # Updated URI path
+                    "uri": "/playerPool/players"  # URI path for player pool
                 }]
             }
             
@@ -253,67 +253,99 @@ class FantraxAPI:
                 
                 if st.session_state.get('debug_mode', False):
                     st.success(f"✅ API request successful with status {response.status_code}")
-                    
-                    # Debug response structure
-                    if isinstance(data, dict) and "msgs" in data and data["msgs"]:
-                        st.info(f"Response 'msgs' count: {len(data['msgs'])}")
-                        if data["msgs"] and "data" in data["msgs"][0]:
-                            msg_data = data["msgs"][0]
-                            st.info(f"First message keys: {list(msg_data.keys())}")
-                            if "data" in msg_data:
-                                st.info(f"Data keys: {list(msg_data['data'].keys())}")
+                    # Debug full response structure
+                    if isinstance(data, dict):
+                        st.info(f"Raw response keys: {list(data.keys() if isinstance(data, dict) else [])}")
+                        
+                        # Try to get detailed data from the response
+                        if "responses" in data and isinstance(data["responses"], list) and len(data["responses"]) > 0:
+                            # Extract responses array which might contain our player data
+                            response_data = data["responses"][0]
+                            if isinstance(response_data, dict):
+                                st.info(f"First response keys: {list(response_data.keys())}")
                                 
-                                # Look for players or playerPool data
-                                data_obj = msg_data["data"]
-                                if "players" in data_obj and isinstance(data_obj["players"], list):
-                                    player_count = len(data_obj["players"])
-                                    st.success(f"Found {player_count} players in response!")
+                                # Check if this response has data
+                                if "data" in response_data:
+                                    response_body = response_data["data"]
+                                    st.info(f"Response data keys: {list(response_body.keys())}")
                                     
-                                    # Show sample player data
-                                    if player_count > 0:
-                                        sample_player = data_obj["players"][0]
-                                        st.info(f"Sample player keys: {list(sample_player.keys())}")
+                                    # Check for players
+                                    if "players" in response_body and isinstance(response_body["players"], list):
+                                        player_count = len(response_body["players"])
+                                        st.success(f"Found {player_count} players in responses[0].data.players!")
                                         
-                                        # Check if name field exists
-                                        if "name" in sample_player:
-                                            st.success(f"Sample player name: {sample_player['name']}")
+                                        # Sample the first player
+                                        if player_count > 0:
+                                            sample_player = response_body["players"][0]
+                                            st.info(f"Sample player keys: {list(sample_player.keys())}")
+                                            if "name" in sample_player:
+                                                st.success(f"Sample player name: {sample_player['name']}")
                 
-                # Extract players based on API response structure
+                # PRIMARY EXTRACTION APPROACH: Based on debug data, try "responses" array first
+                if isinstance(data, dict) and "responses" in data and isinstance(data["responses"], list) and len(data["responses"]) > 0:
+                    response_data = data["responses"][0]
+                    if isinstance(response_data, dict) and "data" in response_data:
+                        response_body = response_data["data"]
+                        if "players" in response_body and isinstance(response_body["players"], list):
+                            players = response_body["players"]
+                            if st.session_state.get('debug_mode', False):
+                                st.success(f"Successfully extracted {len(players)} players from responses[0].data.players")
+                            return {"players": players}
+                
+                # FALLBACK 1: Try with the old approach (msgs array)
                 if isinstance(data, dict) and "msgs" in data and data["msgs"]:
                     msg = data["msgs"][0]
                     if "data" in msg and "players" in msg["data"]:
                         players = msg["data"]["players"]
                         if isinstance(players, list):
                             if st.session_state.get('debug_mode', False):
-                                st.success(f"Successfully extracted {len(players)} players from API response")
+                                st.success(f"Successfully extracted {len(players)} players from msgs[0].data.players")
                             return {"players": players}
                 
-                # If we couldn't find players in the expected structure, try a different path
-                if st.session_state.get('debug_mode', False):
-                    st.warning("Couldn't find players in the expected response structure")
-                    # Return raw data structure for inspection
-                    st.info(f"Raw response keys: {list(data.keys() if isinstance(data, dict) else [])}")
+                # FALLBACK A: Check in regular data key
+                if isinstance(data, dict) and "data" in data:
+                    data_obj = data["data"]
+                    # Check if data contains players directly
+                    if isinstance(data_obj, dict) and "players" in data_obj and isinstance(data_obj["players"], list):
+                        players = data_obj["players"]
+                        if st.session_state.get('debug_mode', False):
+                            st.success(f"Successfully extracted {len(players)} players from data.players")
+                        return {"players": players}
                 
-                # FALLBACK 1: Check for players in a different structure
-                if isinstance(data, dict) and "msgs" in data and data["msgs"]:
-                    msg = data["msgs"][0]
-                    if "data" in msg:
-                        data_obj = msg["data"]
-                        # Try different possible player containers
-                        player_containers = ["players", "playerInfo", "playersInfo", "playersList", "poolPlayers"]
-                        for container in player_containers:
-                            if container in data_obj and isinstance(data_obj[container], list):
-                                return {"players": data_obj[container]}
+                # FALLBACK B: Generalized extraction - search for player arrays in any container
+                def find_players_in_obj(obj, path=""):
+                    """Recursively search for player arrays in the response"""
+                    if not isinstance(obj, dict):
+                        return None
+                    
+                    # Check if this object has players
+                    player_containers = ["players", "playerInfo", "playersInfo", "playersList", "poolPlayers"]
+                    for container in player_containers:
+                        if container in obj and isinstance(obj[container], list):
+                            players = obj[container]
+                            if len(players) > 0 and isinstance(players[0], dict) and "name" in players[0]:
+                                if st.session_state.get('debug_mode', False):
+                                    st.success(f"Found players in {path}.{container}")
+                                return players
+                    
+                    # Recursively check all dict properties
+                    for key, value in obj.items():
+                        if isinstance(value, dict):
+                            result = find_players_in_obj(value, f"{path}.{key}")
+                            if result:
+                                return result
+                        elif isinstance(value, list):
+                            for i, item in enumerate(value):
+                                if isinstance(item, dict):
+                                    result = find_players_in_obj(item, f"{path}.{key}[{i}]")
+                                    if result:
+                                        return result
+                    return None
                 
-                # FALLBACK 2: Alternative structure (pool data)
-                if isinstance(data, dict) and "msgs" in data and data["msgs"]:
-                    msg = data["msgs"][0]
-                    if "data" in msg and "poolData" in msg["data"]:
-                        pool_data = msg["data"]["poolData"]
-                        player_containers = ["playerInfo", "players", "items"]
-                        for container in player_containers:
-                            if container in pool_data and isinstance(pool_data[container], list):
-                                return {"players": pool_data[container]}
+                # Try to find players recursively
+                players = find_players_in_obj(data, "root")
+                if players:
+                    return {"players": players}
             else:
                 # API request failed
                 if st.session_state.get('debug_mode', False):
