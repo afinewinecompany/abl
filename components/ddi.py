@@ -123,97 +123,79 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
 
 def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
     """
-    Get team prospect scores using the exact same method as the prospects.py component.
+    Get team prospect scores using the exact same method as the rosters.py component.
     This ensures consistency across the application.
     """
     try:
-        # Use the same method as the prospects component
+        # Method 100% matching the rosters.py component
+        from components.prospects import normalize_name
+        
+        # Read prospect import data the same way as rosters.py
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
         
-        # Helper function to normalize player names - identical to prospects.py
-        def normalize_name(name: str) -> str:
-            """Simple normalization for player names"""
-            if pd.isna(name):
-                return ""
-            if not isinstance(name, str):
-                return str(name).strip()
-            
-            name = name.lower()
-            name = name.split('(')[0].strip()
-            name = name.replace('.', '').strip()
-            return ' '.join(name.split())
-        
-        # Normalize names in prospect import
+        # Normalize names the same way
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
         
-        # Create a copy of roster data with clean_name for matching
-        prospects_data = roster_data.copy()
-        prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
-        prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
+        # Create team-level results
+        team_prospect_scores = []
         
-        # Debug info
-        print(f"Total prospects in import: {len(prospect_import)}")
-        print(f"Total players in roster data: {len(prospects_data)}")
+        # Process each team exactly as in rosters.py
+        for team in roster_data['team'].unique():
+            # Filter data by team
+            team_roster = roster_data[roster_data['team'] == team].copy()
+            team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
+            
+            # Get ONLY minors players like in rosters.py
+            minors_players = team_roster[team_roster['status'].str.upper() == 'MINORS'].copy()
+            
+            # If team has no minors players, add a default entry
+            if len(minors_players) == 0:
+                team_prospect_scores.append({
+                    'team': team,
+                    'total_score': 0,
+                    'avg_score': 0,
+                    'prospect_count': 0
+                })
+                continue
+                
+            # Merge with prospect data - exactly like rosters.py
+            minors_players = pd.merge(
+                minors_players,
+                prospect_import[['Name', 'Score']],
+                left_on='clean_name',
+                right_on='Name',
+                how='left'
+            )
+            
+            # Calculate prospect stats - exactly like rosters.py
+            total_score = minors_players['Score'].fillna(0).sum()
+            avg_score = minors_players['Score'].fillna(0).mean() if len(minors_players) > 0 else 0
+            count = len(minors_players)
+            
+            # Add to results
+            team_prospect_scores.append({
+                'team': team,
+                'total_score': total_score,
+                'avg_score': avg_score,
+                'prospect_count': count
+            })
+            
+            # Debug for specific teams
+            if team in ["Baltimore Orioles", "Kansas City Royals", "Atlanta Braves"]:
+                print(f"Team '{team}' prospect details:")
+                print(f"  Total minors players: {len(minors_players)}")
+                print(f"  Players with scores: {minors_players['Score'].notna().sum()}")
+                print(f"  Total score: {total_score:.2f}")
         
-        # Merge using the IDENTICAL method to prospects.py component
-        ranked_prospects = pd.merge(
-            prospects_data,
-            prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
-            left_on='clean_name',
-            right_on='Name',  # Fixed: use string column name, not the actual column
-            how='outer'  # Outer join to keep all players
-        )
-        
-        # This is important: Use the exact same fields as prospects.py
-        ranked_prospects['prospect_score'] = pd.to_numeric(ranked_prospects['Score'].fillna(0), errors='coerce')
-        ranked_prospects['player_name'] = ranked_prospects['player_name'].fillna(ranked_prospects['Name'])
-        
-        # Remove duplicates but keep the one with rank if available
-        ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
-            subset=['Name'], 
-            keep='first'
-        )
-        
-        # Debug merged data
-        print(f"Total records after merge: {len(ranked_prospects)}")
-        print(f"Number of prospects found: {ranked_prospects['Score'].notna().sum()}")
-        
-        # Calculate team scores - identical to prospects.py
-        team_scores = ranked_prospects.groupby('team').agg({
-            'prospect_score': ['sum', 'mean', 'count']
-        }).reset_index()
-        
-        # Clean up column names - identical to prospects.py
-        team_scores.columns = ['team', 'total_score', 'avg_score', 'prospect_count']
-        
-        # Debug team scores
-        print(f"Teams with prospect data: {len(team_scores)}")
-        
-        # Handle teams with NA or missing values
-        team_scores['total_score'] = team_scores['total_score'].fillna(0)
-        team_scores['avg_score'] = team_scores['avg_score'].fillna(0)
-        team_scores['prospect_count'] = team_scores['prospect_count'].fillna(0)
-        
-        # Make sure all teams are included
-        all_teams = roster_data['team'].unique()
-        for team in all_teams:
-            if team not in team_scores['team'].values:
-                team_scores = pd.concat([
-                    team_scores,
-                    pd.DataFrame({
-                        'team': [team],
-                        'total_score': [0],
-                        'avg_score': [0],
-                        'prospect_count': [0]
-                    })
-                ])
+        # Convert to DataFrame
+        team_scores = pd.DataFrame(team_prospect_scores)
         
         # Additional debug info
-        print("Team prospect scores:")
-        for _, row in team_scores.iterrows():
+        print("Team prospect scores (top 5):")
+        for _, row in team_scores.sort_values('total_score', ascending=False).head(5).iterrows():
             print(f"{row['team']}: {row['total_score']:.2f} (Count: {int(row['prospect_count'])})")
         
-        # Special debug for the teams you mentioned
+        # Special debug for the teams mentioned
         for team_name in ["Baltimore Orioles", "Kansas City Royals", "Atlanta Braves"]:
             team_data = team_scores[team_scores['team'] == team_name]
             if len(team_data) > 0:
