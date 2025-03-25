@@ -4,7 +4,7 @@ import streamlit as st
 import time
 import json
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 
 class FantraxAPI:
     def __init__(self):
@@ -30,12 +30,40 @@ class FantraxAPI:
         if st.session_state.get("fantrax_logged_in", False):
             auth_data = st.session_state.get("fantrax_auth", {})
             if auth_data:
-                # Apply cookies
+                # Create a completely fresh session
+                self.session = requests.Session()
+                
+                # We'll set timeouts individually on requests
+                
+                # Apply retry strategy
+                retry_strategy = Retry(
+                    total=3,
+                    backoff_factor=0.5,
+                    status_forcelist=[429, 500, 502, 503, 504],
+                    allowed_methods=["GET", "POST"]
+                )
+                adapter = HTTPAdapter(max_retries=retry_strategy)
+                self.session.mount("http://", adapter)
+                self.session.mount("https://", adapter)
+                
+                # Apply cookies to session
                 cookies = auth_data.get("cookies", {})
                 for name, value in cookies.items():
                     self.session.cookies.set(name, value)
                 
-                # Apply headers
+                # Add important headers required by Fantrax
+                self.session.headers.update({
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Origin": "https://www.fantrax.com",
+                    "Referer": f"https://www.fantrax.com/fantasy/league/{self.league_id}/players",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache"
+                })
+                
+                # Apply any custom headers from auth data
                 headers = auth_data.get("headers", {})
                 self.session.headers.update(headers)
     

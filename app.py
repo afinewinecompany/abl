@@ -623,11 +623,24 @@ def main():
                     elif message:
                         st.error(message)
         else:
-            st.info("Using mock data for development...")
+            st.error("Failed to load league data.")
+            st.markdown("""
+            ### Troubleshooting League Data
+            Unable to access the league data. Please check the following:
+            
+            - Verify your internet connection
+            - Make sure the required CSV files are in the attached_assets folder
+            - Try refreshing the page
+            """)
 
     except Exception as e:
         st.error(f"An error occurred while loading data: {str(e)}")
-        st.info("Using mock data for development...")
+        st.markdown("""
+        ### Data Access Error
+        There was a problem retrieving the necessary data. The system logs have captured the error.
+        
+        Please try refreshing the page or check if all required data files are available.
+        """)
 
 if __name__ == "__main__":
     main()

@@ -17,3 +17,4 @@ openai
 twilio
 beautifulsoup4
 lxml
+urllib3
