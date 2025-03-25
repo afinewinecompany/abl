@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, Any
+from typing import Dict, List, Any, Union
 import streamlit as st
 import time
 from requests.adapters import HTTPAdapter
@@ -21,7 +21,7 @@ class FantraxAPI:
         self.session = requests.Session()
         self.session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
 
-    def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
+    def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""
         try:
             response = self.session.get(
@@ -39,7 +39,7 @@ class FantraxAPI:
             st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
             return self._get_mock_data(endpoint)
 
-    def _get_mock_data(self, endpoint: str) -> Dict:
+    def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Return mock data for development when API is unavailable"""
         if endpoint == "getLeagueInfo":
             return {
@@ -77,26 +77,121 @@ class FantraxAPI:
                     "teamName": "Test Team",
                     "teamId": "team1",
                     "rank": 1,
-                    "points": "10-5-0",
+                    "wins": 10,
+                    "losses": 5,
+                    "ties": 0,
                     "winPercentage": 0.667,
-                    "gamesBack": 0.0
+                    "pointsFor": 100.5,
+                    "pointsAgainst": 80.2,
+                    "gamesBack": 0.0,
+                    "streakDescription": "W3"
+                }
+            ]
+        elif endpoint == "getScoringPeriods":
+            # Mock scoring periods data
+            return [
+                {
+                    "periodName": "Week 1",
+                    "periodNum": 1,
+                    "startDate": "2025-04-01",
+                    "endDate": "2025-04-07",
+                    "isCurrent": True,
+                    "isComplete": False,
+                    "isFuture": False
+                },
+                {
+                    "periodName": "Week 2",
+                    "periodNum": 2,
+                    "startDate": "2025-04-08",
+                    "endDate": "2025-04-14",
+                    "isCurrent": False,
+                    "isComplete": False,
+                    "isFuture": True
+                }
+            ]
+        elif endpoint == "getMatchups":
+            # Mock matchups data
+            return [
+                {
+                    "id": "match1",
+                    "awayTeam": {"name": "Away Team"},
+                    "homeTeam": {"name": "Home Team"},
+                    "awayScore": 95.5,
+                    "homeScore": 87.2
+                },
+                {
+                    "id": "match2",
+                    "awayTeam": {"name": "Visitors"},
+                    "homeTeam": {"name": "Hosts"},
+                    "awayScore": 78.4,
+                    "homeScore": 102.6
+                }
+            ]
+        elif endpoint == "getTransactions":
+            # Mock transactions data
+            return [
+                {
+                    "dateTime": "Apr 5, 2025, 2:30PM",
+                    "teamName": "Savvy Squad",
+                    "playerName": "John Smith",
+                    "playerTeam": "LAD",
+                    "playerPosition": "SP",
+                    "type": "ADD"
+                },
+                {
+                    "dateTime": "Apr 3, 2025, 10:15AM",
+                    "teamName": "Power Hitters",
+                    "playerName": "Mike Johnson",
+                    "playerTeam": "NYY",
+                    "playerPosition": "1B",
+                    "type": "DROP"
                 }
             ]
         return {}
 
-    def get_player_ids(self) -> Dict:
+    def get_player_ids(self) -> Dict[str, Any]:
         """Fetch player IDs"""
         return self._make_request("getPlayerIds", {"sport": "MLB"})
 
-    def get_league_info(self) -> Dict:
+    def get_league_info(self) -> Dict[str, Any]:
         """Fetch league information"""
         return self._make_request("getLeagueInfo", {"leagueId": self.league_id})
 
-    def get_team_rosters(self) -> Dict:
+    def get_team_rosters(self) -> Dict[str, Any]:
         """Fetch team rosters"""
         return self._make_request("getTeamRosters", 
                               {"leagueId": self.league_id, "period": "1"})
 
-    def get_standings(self) -> Dict:
+    def get_standings(self) -> List[Dict[str, Any]]:
         """Fetch standings data"""
         return self._make_request("getStandings", {"leagueId": self.league_id})
+        
+    def get_scoring_periods(self) -> List[Dict[str, Any]]:
+        """Fetch scoring periods"""
+        return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
+        
+    def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
+        """Fetch matchups for a specific period"""
+        return self._make_request("getMatchups", 
+                               {"leagueId": self.league_id, "scoringPeriod": period_id})
+        
+    def get_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch recent transactions"""
+        return self._make_request("getTransactions", 
+                               {"leagueId": self.league_id, "limit": limit})
+                               
+    def get_teams(self) -> List[Dict[str, Any]]:
+        """Fetch all teams"""
+        # Extract from team rosters instead of direct endpoint
+        roster_data = self.get_team_rosters()
+        teams = []
+        
+        if isinstance(roster_data, dict) and 'rosters' in roster_data:
+            for team_id, team_info in roster_data.get('rosters', {}).items():
+                if isinstance(team_info, dict):
+                    teams.append({
+                        'id': team_id,
+                        'name': team_info.get('teamName', f'Team {team_id}')
+                    })
+        
+        return teams

@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union, cast
 from api_client import FantraxAPI
 
 class FantraxAPIWrapper:
@@ -300,7 +300,7 @@ class FantraxAPIWrapper:
             st.error(f"Failed to fetch scoring periods: {str(e)}")
             return []
 
-    def get_matchups_for_period(_self, period_id: int = None) -> List[Dict[str, Any]]:
+    def get_matchups_for_period(_self, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get matchups for a specific scoring period."""
         try:
             # If no period_id specified, find the current period
@@ -309,14 +309,22 @@ class FantraxAPIWrapper:
                     periods = _self.get_scoring_periods()
                     for period in periods:
                         if period.get('is_current', False):
-                            period_id = period.get('week')
-                            break
+                            week = period.get('week')
+                            if week is not None:
+                                period_id = int(week)
+                                break
                     
                     # If still no period found, use the first one
                     if period_id is None and periods:
-                        period_id = periods[0].get('week')
+                        week = periods[0].get('week')
+                        if week is not None:
+                            period_id = int(week)
                 except:
                     period_id = 1  # Fallback to period 1
+                
+            # Ensure we have a valid period ID
+            if period_id is None:
+                period_id = 1
             
             # Get matchups from API
             matchups = _self._api.get_matchups(period_id)
