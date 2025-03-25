@@ -1,12 +1,6 @@
 import streamlit as st
-import os
-from dotenv import load_dotenv
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, fantrax_auth, available_players
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
 from utils import fetch_api_data
-from api_client import FantraxAPI
-
-# Load environment variables from .env file
-load_dotenv()
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -492,51 +486,11 @@ st.markdown("""
 def main():
     st.title("⚾ ABL Analytics")
 
-    # Initialize session state variables if not present
-    if "fantrax_logged_in" not in st.session_state:
-        st.session_state.fantrax_logged_in = False
-    if "fantrax_auth" not in st.session_state:
-        st.session_state.fantrax_auth = None
-    if "fantrax_username" not in st.session_state:
-        st.session_state.fantrax_username = None
-    
-    # Streamlined sidebar with Fantrax authentication
+    # Streamlined sidebar
     with st.sidebar:
-        st.markdown("### 🔐 Fantrax Account")
-        
-        # Force auto-login on app startup
-        if not st.session_state.get("fantrax_logged_in", False):
-            success, message = fantrax_auth.auto_login()
-            if success:
-                st.success(f"✅ Automatically logged in as {st.session_state.get('fantrax_username', 'User')}")
-            else:
-                st.error(f"⚠️ Auto-login failed: {message}")
-                # Show manual login form as fallback
-                fantrax_auth.render_auth_status()
-        else:
-            # Already logged in, show status
-            st.success(f"✅ Logged in as {st.session_state.get('fantrax_username', 'User')}")
-            if st.button("Logout"):
-                fantrax_auth.logout()
-                st.rerun()
-        
-        st.markdown("---")
-        
         st.markdown("### 🔄 League Controls")
         if st.button("Refresh Data", use_container_width=True):
-            st.rerun()
-            
-        # Add debug mode toggle
-        debug_mode = st.checkbox("Enable Debug Mode", value=False)
-        st.session_state.debug_mode = debug_mode
-        
-        if debug_mode:
-            st.info("Debug mode enabled - additional logging will be displayed")
-            # Display auth info for debugging
-            if "fantrax_auth" in st.session_state and st.session_state.fantrax_auth:
-                cookies = st.session_state.fantrax_auth.get("cookies", {})
-                st.write(f"Auth cookies: {len(cookies)} cookies stored")
-                st.write(f"League ID: {os.getenv('FANTRAX_LEAGUE_ID', 'not set')}")
+            st.experimental_rerun()
 
         st.markdown("---")
         st.markdown("""
@@ -547,68 +501,15 @@ def main():
     try:
         # Fetch all data using the utility function
         data = fetch_api_data()
-        
-        # Initialize available_players_data
-        available_players_data = None
-        
-        # Fetch available players if user is authenticated
-        if st.session_state.get("fantrax_logged_in", False):
-            try:
-                api_client = FantraxAPI()
-                
-                # Add debug info about what we're doing
-                if st.session_state.get('debug_mode', False):
-                    st.info("📡 Attempting to fetch available players from Fantrax API...")
-                
-                # Get raw player data from API
-                available_players_raw = api_client.get_available_players()
-                
-                # Debug raw data structure
-                if st.session_state.get('debug_mode', False):
-                    if available_players_raw:
-                        player_count = len(available_players_raw.get('players', []))
-                        st.info(f"✅ Received raw data with {player_count} players from API")
-                        
-                        # Inspect first player if available
-                        players = available_players_raw.get('players', [])
-                        if players and len(players) > 0:
-                            first_player = players[0]
-                            st.info(f"Sample player keys: {list(first_player.keys())}")
-                            if 'name' in first_player:
-                                st.success(f"Found player with name: {first_player['name']}")
-                    else:
-                        st.warning("⚠️ API returned empty or invalid data structure")
-                
-                # Process the data if we have it
-                if available_players_raw:
-                    data_processor = __import__('data_processor').DataProcessor()
-                    available_players_data = data_processor.process_available_players(available_players_raw)
-                    
-                    # Debug processed data
-                    if st.session_state.get('debug_mode', False):
-                        if not available_players_data.empty:
-                            st.success(f"Successfully processed {len(available_players_data)} players!")
-                        else:
-                            st.error("❌ Processing resulted in empty DataFrame")
-                
-            except Exception as e:
-                st.warning(f"Could not fetch available players: {str(e)}")
-                if st.session_state.get('debug_mode', False):
-                    import traceback
-                    st.error(f"Detailed error: {traceback.format_exc()}")
-                
-        # Load MLB player IDs for headshots
-        mlb_player_ids = available_players.fetch_mlb_player_ids()
 
         if data:
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "📚 Handbook",
-                "📈 Projected Rankings",
-                "🔍 Available Players"
+                "📈 Projected Rankings"
             ])
 
             with tab1:
@@ -625,89 +526,12 @@ def main():
 
             with tab5:
                 projected_rankings.render(data['roster_data'])
-                
-            with tab6:
-                if st.session_state.get("fantrax_logged_in", False):
-                    st.markdown("### 🔍 Available Players from Fantrax League")
-                    
-                    if available_players_data is not None and not available_players_data.empty:
-                        # Data loaded successfully - display player cards
-                        available_players.render(available_players_data, mlb_player_ids)
-                    else:
-                        # Data failed to load - show authorization status and guidance
-                        st.error("⚠️ Unable to fetch players from Fantrax")
-                        st.markdown("""
-                        We encountered an issue retrieving available players from your Fantrax league. This could be due to:
-                        - API access restrictions
-                        - Session timeout
-                        - Invalid league ID or permissions
-                        
-                        **Troubleshooting steps:**
-                        1. Try logging out and back into your Fantrax account using the sidebar
-                        2. Refresh the page
-                        3. Make sure you have access to view available players in your league
-                        """)
-                        
-                        # Show debugging options for advanced users
-                        if st.checkbox("Show debugging options"):
-                            st.info("ℹ️ Debug Information")
-                            
-                            if "fantrax_auth" in st.session_state and st.session_state.fantrax_auth:
-                                auth_data = st.session_state.fantrax_auth
-                                cookie_count = len(auth_data.get("cookies", {}))
-                                st.info(f"Authentication: Active with {cookie_count} cookies")
-                            else:
-                                st.warning("No authentication data found in session")
-                                
-                            # Option to force retry
-                            if st.button("Force API Refresh"):
-                                api_client = FantraxAPI()
-                                available_players_raw = api_client.get_available_players()
-                                if available_players_raw:
-                                    data_processor = __import__('data_processor').DataProcessor()
-                                    available_players_data = data_processor.process_available_players(available_players_raw)
-                                    if not available_players_data.empty:
-                                        st.success(f"Successfully loaded {len(available_players_data)} players!")
-                                        available_players.render(available_players_data, mlb_player_ids)
-                                    else:
-                                        st.error("API returned empty player data")
-                else:
-                    # Not logged in - prompt to log in
-                    st.warning("⚠️ Fantrax Authentication Required")
-                    st.markdown("""
-                    To view available players from your league, please log in to your Fantrax account 
-                    using the login form in the sidebar.
-                    
-                    This allows us to securely access the player pool data from your specific league.
-                    """)
-                    
-                    # Display login form directly in the content area as well
-                    st.markdown("### 🔐 Fantrax Login")
-                    success, message = fantrax_auth.login_form()
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    elif message:
-                        st.error(message)
         else:
-            st.error("Failed to load league data.")
-            st.markdown("""
-            ### Troubleshooting League Data
-            Unable to access the league data. Please check the following:
-            
-            - Verify your internet connection
-            - Make sure the required CSV files are in the attached_assets folder
-            - Try refreshing the page
-            """)
+            st.info("Using mock data for development...")
 
     except Exception as e:
         st.error(f"An error occurred while loading data: {str(e)}")
-        st.markdown("""
-        ### Data Access Error
-        There was a problem retrieving the necessary data. The system logs have captured the error.
-        
-        Please try refreshing the page or check if all required data files are available.
-        """)
+        st.info("Using mock data for development...")
 
 if __name__ == "__main__":
     main()
