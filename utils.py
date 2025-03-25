@@ -105,8 +105,14 @@ def fetch_fantrax_data():
             status_container.progress(75)
             try:
                 transactions = fantrax_client.get_transactions(limit=20)
+                st.sidebar.info(f"Found {len(transactions)} transactions")
+                
+                # Debug the first transaction if available
+                if transactions and len(transactions) > 0:
+                    st.sidebar.info(f"First transaction keys: {list(transactions[0].keys())}")
+                    
             except Exception as e:
-                st.warning(f"Warning: Could not fetch transactions: {str(e)}")
+                st.sidebar.error(f"Warning: Could not fetch transactions: {str(e)}")
                 transactions = []
             
             # Fetch scoring periods with error handling

@@ -128,23 +128,64 @@ class FantraxAPI:
                 }
             ]
         elif endpoint == "getTransactions":
-            # Mock transactions data
+            # Mock transactions data with all required fields for Transaction object structure
             return [
                 {
+                    "id": "tx1",
                     "dateTime": "Apr 5, 2025, 2:30PM",
                     "teamName": "Savvy Squad",
                     "playerName": "John Smith",
                     "playerTeam": "LAD",
                     "playerPosition": "SP",
-                    "type": "ADD"
+                    "type": "ADD",
+                    "count": 1,
+                    "players": [
+                        {"name": "John Smith", "team": "LAD", "position": "SP"}
+                    ],
+                    "finalized": True
                 },
                 {
+                    "id": "tx2",
                     "dateTime": "Apr 3, 2025, 10:15AM",
                     "teamName": "Power Hitters",
                     "playerName": "Mike Johnson",
                     "playerTeam": "NYY",
                     "playerPosition": "1B",
-                    "type": "DROP"
+                    "type": "DROP",
+                    "count": 1,
+                    "players": [
+                        {"name": "Mike Johnson", "team": "NYY", "position": "1B"}
+                    ],
+                    "finalized": True
+                },
+                {
+                    "id": "tx3",
+                    "dateTime": "Apr 8, 2025, 3:45PM",
+                    "teamName": "Draft Kings",
+                    "playerName": "Alex Rodriguez",
+                    "playerTeam": "BOS",
+                    "playerPosition": "3B",
+                    "type": "TRADE",
+                    "count": 2,
+                    "players": [
+                        {"name": "Alex Rodriguez", "team": "BOS", "position": "3B"},
+                        {"name": "David Martinez", "team": "CHC", "position": "OF"}
+                    ],
+                    "finalized": True
+                },
+                {
+                    "id": "tx4",
+                    "dateTime": "Apr 10, 2025, 9:00AM",
+                    "teamName": "Batting Champs",
+                    "playerName": "Chris Johnson",
+                    "playerTeam": "ATL",
+                    "playerPosition": "RP",
+                    "type": "CLAIM",
+                    "count": 1,
+                    "players": [
+                        {"name": "Chris Johnson", "team": "ATL", "position": "RP"}
+                    ],
+                    "finalized": False
                 }
             ]
         return {}

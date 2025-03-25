@@ -205,7 +205,11 @@ class FantraxAPIWrapper:
             transactions = _self._api.get_transactions(limit)
             
             if not transactions or not isinstance(transactions, list):
+                # Return an empty list with a debug message
+                st.sidebar.warning("No transactions returned from API.")
                 return []
+            
+            st.sidebar.success(f"Successfully fetched {len(transactions)} transactions from API.")
                 
             transactions_data = []
             
@@ -216,6 +220,11 @@ class FantraxAPIWrapper:
                 
                 # Process transaction ID
                 transaction_id = tx.get('id', '') or tx.get('transactionId', '')
+                
+                # Generate a random ID if none exists to ensure we have an ID for every transaction
+                if not transaction_id:
+                    import random
+                    transaction_id = f"tx-{random.randint(1000, 9999)}"
                 
                 # Process transaction date
                 date_str = tx.get('dateTime', '') or tx.get('date', '')
@@ -253,7 +262,7 @@ class FantraxAPIWrapper:
                 # Get transaction type
                 transaction_type = tx.get('type', 'Unknown')
                 
-                # Get player count
+                # Get player count - can be string or int
                 player_count = tx.get('count', '0')
                 
                 # Get players list
@@ -277,7 +286,17 @@ class FantraxAPIWrapper:
                 # Get finalized status
                 finalized = tx.get('finalized', True)  # Default to True if not specified
                 
-                transactions_data.append({
+                # Create player_name for single-player convenience
+                player_name = None
+                if players_list and len(players_list) > 0:
+                    if isinstance(players_list[0], dict) and 'name' in players_list[0]:
+                        player_name = players_list[0]['name']
+                
+                # Use playerName directly if available and player_name is still None
+                if not player_name and 'playerName' in tx:
+                    player_name = tx.get('playerName')
+                
+                tx_data = {
                     'id': transaction_id,
                     'date': formatted_date,
                     'team': team_name,
@@ -285,8 +304,15 @@ class FantraxAPIWrapper:
                     'players': players_list,
                     'transaction_type': transaction_type,
                     'finalized': finalized
-                })
+                }
+                
+                # Only add player_name if we have it
+                if player_name:
+                    tx_data['player_name'] = player_name
+                
+                transactions_data.append(tx_data)
             
+            st.sidebar.success(f"Processed {len(transactions_data)} transactions.")
             return transactions_data
         except Exception as e:
             st.error(f"Failed to fetch transactions: {str(e)}")

@@ -666,9 +666,19 @@ def main():
                     projected_rankings.render(fantrax_data['roster_data'])
                     
                 with tab6:
-                    # Use the transactions component with filtering capabilities
-                    transactions_data = fantrax_data['transactions']
-                    transactions.render(transactions_data)
+                    # Debug information for transactions tab
+                    st.write(f"Debug: fantrax_data keys: {list(fantrax_data.keys())}")
+                    
+                    # Check if transactions key exists in the data
+                    if 'transactions' in fantrax_data:
+                        transactions_data = fantrax_data['transactions']
+                        st.write(f"Debug: transactions_data type: {type(transactions_data)}")
+                        st.write(f"Debug: transactions_data length: {len(transactions_data)}")
+                        
+                        # Use the transactions component with filtering capabilities
+                        transactions.render(transactions_data)
+                    else:
+                        st.error("Transactions data not found in Fantrax data")
             else:
                 st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
 
