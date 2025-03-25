@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
+import unicodedata
+import os
 import plotly.express as px
 from typing import Dict
-import os
-import unicodedata
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
+
+# This file is kept for imports but the page is no longer displayed
+# Projected Rankings have been removed as they're no longer relevant for this season
 
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
