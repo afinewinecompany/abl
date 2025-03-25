@@ -253,7 +253,8 @@ class FantraxAPI:
             )
             
             # Debug response status
-            st.info(f"Player API response status: {player_response.status_code}")
+            if st.session_state.get('debug_mode', False):
+                st.info(f"Player API response status: {player_response.status_code}")
             
             # If response failed, try the general league data approach
             if player_response.status_code != 200:
@@ -376,7 +377,26 @@ class FantraxAPI:
                 player_data = player_response.json()
                 
                 # Debug response structure
-                st.info(f"Response structure: {list(player_data.keys()) if isinstance(player_data, dict) else 'Not a dict'}")
+                if st.session_state.get('debug_mode', False):
+                    st.info(f"Response structure: {list(player_data.keys()) if isinstance(player_data, dict) else 'Not a dict'}")
+                    
+                    # In debug mode, dump a full sample of the data structure for analysis
+                    if isinstance(player_data, dict) and "msgs" in player_data and len(player_data["msgs"]) > 0:
+                        msg_data = player_data["msgs"][0]
+                        if "data" in msg_data:
+                            data = msg_data["data"]
+                            
+                            # Check different player containers
+                            if "players" in data and isinstance(data["players"], list) and len(data["players"]) > 0:
+                                sample_player = data["players"][0]
+                                st.info(f"Sample player keys: {list(sample_player.keys())}")
+                                if 'name' in sample_player:
+                                    st.success(f"Found 'name' field in player object with value: {sample_player['name']}")
+                            elif "playerInfo" in data and isinstance(data["playerInfo"], list) and len(data["playerInfo"]) > 0:
+                                sample_player = data["playerInfo"][0]
+                                st.info(f"Sample playerInfo keys: {list(sample_player.keys())}")
+                                if 'name' in sample_player:
+                                    st.success(f"Found 'name' field in playerInfo object with value: {sample_player['name']}")
                 
                 # Extract players based on response structure
                 if isinstance(player_data, dict):

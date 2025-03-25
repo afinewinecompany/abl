@@ -505,6 +505,17 @@ def main():
         st.markdown("### 🔄 League Controls")
         if st.button("Refresh Data", use_container_width=True):
             st.rerun()
+            
+        # Add debug mode toggle
+        debug_mode = st.checkbox("Enable Debug Mode", value=False)
+        st.session_state.debug_mode = debug_mode
+        
+        if debug_mode:
+            st.info("Debug mode enabled - additional logging will be displayed")
+            # Display any auth info
+            if "fantrax_auth" in st.session_state and st.session_state.fantrax_auth:
+                cookies = st.session_state.fantrax_auth.get("cookies", {})
+                st.write(f"Auth cookies: {len(cookies)} cookies stored")
 
         st.markdown("---")
         st.markdown("""

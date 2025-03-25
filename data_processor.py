@@ -233,18 +233,30 @@ class DataProcessor:
                 # Extract player details - handle multiple potential structures
                 player_id = player.get('id', player.get('playerId', ''))
                 
-                # Name could be in several locations
+                # Name could be in several locations - prioritize 'name' field
                 player_name = None
-                name_keys = ['name', 'playerName', 'fullName', 'firstName', 'lastName']
-                for key in name_keys:
-                    if key in player and player[key]:
-                        if key == 'firstName' and 'lastName' in player:
-                            # If we have separate first/last name fields
-                            player_name = f"{player['firstName']} {player['lastName']}"
-                            break
-                        elif key != 'firstName' and key != 'lastName':
-                            player_name = player[key]
-                            break
+                
+                # IMPORTANT: Direct check for 'name' field since that's the exact header we need
+                if 'name' in player and player['name']:
+                    player_name = player['name']
+                else:
+                    # Fall back to other possible name fields
+                    name_keys = ['playerName', 'fullName', 'firstName', 'lastName']
+                    for key in name_keys:
+                        if key in player and player[key]:
+                            if key == 'firstName' and 'lastName' in player:
+                                # If we have separate first/last name fields
+                                player_name = f"{player['firstName']} {player['lastName']}"
+                                break
+                            elif key != 'firstName' and key != 'lastName':
+                                player_name = player[key]
+                                break
+                
+                # Debug print for player name field
+                if st.session_state.get('debug_mode', False):
+                    st.write(f"Player object keys: {list(player.keys())}")
+                    if 'name' in player:
+                        st.write(f"Found 'name' field: {player['name']}")
                 
                 # If we still don't have a name, skip this player
                 if not player_name:
