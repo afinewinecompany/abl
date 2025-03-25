@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions, ddi
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
 
@@ -510,12 +510,13 @@ def main():
             
             if data:
                 # Create tabs for different sections
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
-                    "📈 Projected Rankings"
+                    "📈 Projected Rankings",
+                    "🏆 DDI Rankings"
                 ])
 
                 with tab1:
@@ -532,6 +533,9 @@ def main():
 
                 with tab5:
                     projected_rankings.render(data['roster_data'])
+                    
+                with tab6:
+                    ddi.render(data['roster_data'])
             else:
                 st.info("No data available from the current API. Try switching to the Fantrax API.")
         else:

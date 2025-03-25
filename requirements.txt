@@ -16,3 +16,5 @@ trafilatura
 openai
 twilio
 fantraxapi
+numpy
+plotly
