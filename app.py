@@ -1,6 +1,7 @@
 import streamlit as st
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, fantrax_auth, available_players
 from utils import fetch_api_data
+from api_client import FantraxAPI
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -486,8 +487,21 @@ st.markdown("""
 def main():
     st.title("⚾ ABL Analytics")
 
-    # Streamlined sidebar
+    # Initialize session state variables if not present
+    if "fantrax_logged_in" not in st.session_state:
+        st.session_state.fantrax_logged_in = False
+    if "fantrax_auth" not in st.session_state:
+        st.session_state.fantrax_auth = None
+    if "fantrax_username" not in st.session_state:
+        st.session_state.fantrax_username = None
+    
+    # Streamlined sidebar with Fantrax authentication
     with st.sidebar:
+        st.markdown("### 🔐 Fantrax Account")
+        fantrax_auth.render_auth_status()
+        
+        st.markdown("---")
+        
         st.markdown("### 🔄 League Controls")
         if st.button("Refresh Data", use_container_width=True):
             st.experimental_rerun()
@@ -501,15 +515,33 @@ def main():
     try:
         # Fetch all data using the utility function
         data = fetch_api_data()
+        
+        # Initialize available_players_data
+        available_players_data = None
+        
+        # Fetch available players if user is authenticated
+        if st.session_state.get("fantrax_logged_in", False):
+            try:
+                api_client = FantraxAPI()
+                available_players_raw = api_client.get_available_players()
+                if available_players_raw:
+                    data_processor = __import__('data_processor').DataProcessor()
+                    available_players_data = data_processor.process_available_players(available_players_raw)
+            except Exception as e:
+                st.warning(f"Could not fetch available players: {str(e)}")
+                
+        # Load MLB player IDs for headshots
+        mlb_player_ids = available_players.fetch_mlb_player_ids()
 
         if data:
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "📚 Handbook",
-                "📈 Projected Rankings"
+                "📈 Projected Rankings",
+                "🔍 Available Players"
             ])
 
             with tab1:
@@ -526,6 +558,16 @@ def main():
 
             with tab5:
                 projected_rankings.render(data['roster_data'])
+                
+            with tab6:
+                if available_players_data is not None:
+                    available_players.render(available_players_data, mlb_player_ids)
+                else:
+                    if st.session_state.get("fantrax_logged_in", False):
+                        st.warning("Could not fetch available players data. Please try refreshing the page.")
+                    else:
+                        st.info("You need to log in with your Fantrax account to view available players.")
+                        st.info("Use the login form in the sidebar to authenticate.")
         else:
             st.info("Using mock data for development...")
 
