@@ -189,7 +189,17 @@ class FantraxAPIWrapper:
 
     @st.cache_data(ttl=3600)  # Cache data for 1 hour
     def get_transactions(_self, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get recent transactions."""
+        """
+        Get recent transactions using the Transaction object structure.
+        
+        Transaction object fields:
+        - id (str): Transaction ID
+        - team (Team): Team who made the transaction
+        - date (datetime): Transaction date
+        - count (str): Number of players in the transaction
+        - players (List[Player]): Players in the transaction
+        - finalized (bool): Whether all players have been added
+        """
         try:
             # Get transactions data from API
             transactions = _self._api.get_transactions(limit)
@@ -199,13 +209,16 @@ class FantraxAPIWrapper:
                 
             transactions_data = []
             
-            # Format transaction data
+            # Format transaction data using the Transaction object structure
             for tx in transactions:
                 if not isinstance(tx, dict):
                     continue
-                    
-                # Try to parse the date string
-                date_str = tx.get('dateTime', '')
+                
+                # Process transaction ID
+                transaction_id = tx.get('id', '') or tx.get('transactionId', '')
+                
+                # Process transaction date
+                date_str = tx.get('dateTime', '') or tx.get('date', '')
                 try:
                     # Handle various date formats
                     from datetime import datetime
@@ -228,21 +241,50 @@ class FantraxAPIWrapper:
                     formatted_date = "Unknown Date"
                 
                 # Get team information
-                team_name = tx.get('teamName', 'Unknown Team')
+                team_info = tx.get('team', {})
+                team_name = ''
                 
-                # Process player information
-                player_name = tx.get('playerName', 'Unknown Player')
-                player_team = tx.get('playerTeam', 'Unknown Team')
-                player_position = tx.get('playerPosition', 'Unknown')
+                if isinstance(team_info, dict):
+                    team_name = team_info.get('name', '')
+                
+                if not team_name:
+                    team_name = tx.get('teamName', 'Unknown Team')
+                
+                # Get transaction type
                 transaction_type = tx.get('type', 'Unknown')
                 
+                # Get player count
+                player_count = tx.get('count', '0')
+                
+                # Get players list
+                players_list = tx.get('players', [])
+                
+                # If players is not a list but we have player info in the transaction
+                if not players_list and 'playerName' in tx:
+                    player_name = tx.get('playerName', 'Unknown Player')
+                    player_team = tx.get('playerTeam', 'Unknown Team')
+                    player_position = tx.get('playerPosition', 'Unknown')
+                    
+                    # Create a player object
+                    player = {
+                        'name': player_name,
+                        'team': player_team,
+                        'position': player_position
+                    }
+                    
+                    players_list = [player]
+                
+                # Get finalized status
+                finalized = tx.get('finalized', True)  # Default to True if not specified
+                
                 transactions_data.append({
+                    'id': transaction_id,
                     'date': formatted_date,
                     'team': team_name,
-                    'player_name': player_name,
-                    'player_team': player_team,
-                    'player_position': player_position,
-                    'transaction_type': transaction_type
+                    'count': player_count,
+                    'players': players_list,
+                    'transaction_type': transaction_type,
+                    'finalized': finalized
                 })
             
             return transactions_data

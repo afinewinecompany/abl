@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
+from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings, transactions
 from utils import fetch_api_data, fetch_fantrax_data
 
 # This must be the first Streamlit command
@@ -545,7 +545,7 @@ def main():
                     "🏆 Power Rankings",
                     "📚 Handbook",
                     "📈 Projected Rankings",
-                    "🏅 Matchups & Transactions"
+                    "📋 Transactions"
                 ])
 
                 with tab1:
@@ -666,31 +666,9 @@ def main():
                     projected_rankings.render(fantrax_data['roster_data'])
                     
                 with tab6:
-                    # New tab for matchups and transactions
-                    st.header("Current Matchups")
-                    matchups = fantrax_data['current_matchups']
-                    
-                    if matchups:
-                        matchup_df = pd.DataFrame(matchups)
-                        st.dataframe(matchup_df[[
-                            'away_team', 'away_score', 'home_team', 'home_score', 
-                            'winner', 'score_difference'
-                        ]])
-                    else:
-                        st.info("No current matchups available")
-                    
-                    # Display recent transactions
-                    st.header("Recent Transactions")
-                    transactions = fantrax_data['transactions']
-                    
-                    if transactions:
-                        transactions_df = pd.DataFrame(transactions)
-                        st.dataframe(transactions_df[[
-                            'date', 'team', 'player_name', 'player_position', 
-                            'transaction_type'
-                        ]])
-                    else:
-                        st.info("No recent transactions available")
+                    # Use the transactions component with filtering capabilities
+                    transactions_data = fantrax_data['transactions']
+                    transactions.render(transactions_data)
             else:
                 st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
 
