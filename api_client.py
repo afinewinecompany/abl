@@ -160,21 +160,71 @@ class FantraxAPI:
         if not self.is_authenticated():
             st.warning("You must be logged in to view available players")
             return {"players": []}
-        
-        params = {
-            "leagueId": self.league_id,
-            "view": "AVAILABLE",  # Available players view
-            "pageNumber": page,
-            "maxResultsPerPage": max_results
-        }
-        
-        # Add filters if provided
-        if position:
-            params["positionOrGroup"] = position
-        if team:
-            params["mlbTeam"] = team
-        if sort_stat:
-            params["sortStat"] = sort_stat
             
-        # This endpoint is slightly different than others
-        return self._make_request("league/players", params)
+        try:
+            # The URL for available players is directly hitting the players endpoint
+            direct_url = f"https://www.fantrax.com/fantasy/league/{self.league_id}/players"
+            
+            # Make a direct GET request to the players page first to get any required tokens/cookies
+            response = self.session.get(
+                direct_url,
+                timeout=10,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                }
+            )
+            response.raise_for_status()
+            
+            # Now make the API call to get the actual player data
+            params = {
+                "leagueId": self.league_id,
+                "view": "AVAILABLE",
+                "pageNumber": page,
+                "maxResultsPerPage": max_results,
+                "statisticType": "SEASON_PROJECTION_FANTASY",
+                "offset": (page - 1) * max_results,
+                "limit": max_results,
+                "sortStatId": "-1",  # Default sort
+                "sortDirection": "DESC"
+            }
+            
+            # Add filters if provided
+            if position:
+                params["positionOrGroup"] = position
+            if team:
+                params["mlbTeam"] = team
+            if sort_stat:
+                params["sortStat"] = sort_stat
+                
+            # This endpoint is in a different format
+            endpoint = "fxpa/league/playerPool"
+            response = self.session.get(
+                f"https://www.fantrax.com/{endpoint}",
+                params=params,
+                timeout=15,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                    "Accept": "application/json",
+                    "Referer": direct_url
+                }
+            )
+            response.raise_for_status()
+            
+            # Parse the JSON response
+            data = response.json()
+            
+            # Check if we have actual player data
+            if "players" not in data:
+                st.warning("No players found in the response")
+                # Debug information
+                st.info(f"Response data keys: {list(data.keys())}")
+                return {"players": []}
+                
+            return data
+            
+        except Exception as e:
+            st.error(f"Error fetching available players: {str(e)}")
+            # Try printing more debug info
+            st.info("Please try logging in again or refreshing the page")
+            return {"players": []}

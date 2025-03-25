@@ -504,7 +504,7 @@ def main():
         
         st.markdown("### 🔄 League Controls")
         if st.button("Refresh Data", use_container_width=True):
-            st.experimental_rerun()
+            st.rerun()
 
         st.markdown("---")
         st.markdown("""

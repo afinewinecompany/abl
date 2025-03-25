@@ -176,46 +176,124 @@ class DataProcessor:
         """Process available players data into a DataFrame"""
         try:
             if not players_data or not isinstance(players_data, dict):
+                st.warning("No valid player data received")
                 return pd.DataFrame(
                     columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'stats']
                 )
-                
+            
+            # Get players list
             players_list = []
             players = players_data.get('players', [])
+            
+            if not players:
+                st.warning("No players found in the data")
+                # Debug information only shown if there's an issue
+                st.info(f"Available data keys: {list(players_data.keys())}")
+                return pd.DataFrame(
+                    columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'stats']
+                )
             
             for player in players:
                 if not isinstance(player, dict):
                     continue
                     
-                # Extract player details
-                player_id = player.get('id', '')
-                player_name = player.get('name', 'Unknown')
-                position = player.get('position', 'N/A')
-                mlb_team = player.get('team', 'N/A')
-                status = player.get('status', 'Active')
+                # Extract player details - adapting to Fantrax's specific structure
+                player_id = player.get('id', player.get('playerId', ''))
+                player_name = player.get('name', player.get('playerName', 'Unknown'))
                 
-                # Process eligibility if available
-                eligibility = player.get('eligibility', [])
+                # For position - try multiple possible keys
+                position = 'N/A'
+                position_keys = ['position', 'pos', 'primaryPosition']
+                for key in position_keys:
+                    if key in player:
+                        position = player[key]
+                        break
+                
+                # Similar approach for team
+                mlb_team = 'N/A'
+                team_keys = ['team', 'mlbTeam', 'proTeamAbbreviation']
+                for key in team_keys:
+                    if key in player:
+                        mlb_team = player[key]
+                        break
+                
+                # And status
+                status = 'Active'
+                status_keys = ['status', 'playerStatus', 'rosterStatus']
+                for key in status_keys:
+                    if key in player:
+                        status_val = player[key]
+                        # Handle different status formats
+                        if status_val and isinstance(status_val, str):
+                            if status_val.lower() in ['active', 'a']:
+                                status = 'Active'
+                            elif status_val.lower() in ['injured', 'il', 'i']:
+                                status = 'IL'
+                            elif status_val.lower() in ['na', 'n', 'minors']:
+                                status = 'Minors'
+                            else:
+                                status = status_val
+                        break
+                
+                # Process eligibility - could be in different formats
                 eligible_positions = []
-                if isinstance(eligibility, list):
-                    eligible_positions = [pos.get('shortName', '') for pos in eligibility if isinstance(pos, dict)]
                 
-                # Stats dictionary to hold player statistics
+                # Check for eligibility array
+                if 'eligibility' in player and isinstance(player['eligibility'], list):
+                    eligible_positions = []
+                    for pos in player['eligibility']:
+                        if isinstance(pos, dict) and 'shortName' in pos:
+                            eligible_positions.append(pos['shortName'])
+                        elif isinstance(pos, str):
+                            eligible_positions.append(pos)
+                # Check for positions array
+                elif 'positions' in player and isinstance(player['positions'], list):
+                    eligible_positions = player['positions']
+                
+                # Stats processing - handle different formats
                 stats = {}
-                # Process player stats if available
-                player_stats = player.get('stats', {})
-                if isinstance(player_stats, dict):
-                    # Extract hitting stats
-                    hitting = player_stats.get('hitting', {})
-                    if isinstance(hitting, dict):
-                        for stat_name, stat_value in hitting.items():
-                            stats[f'hit_{stat_name}'] = stat_value
+                
+                # Check if stats is directly in player object
+                if 'stats' in player:
+                    player_stats = player['stats']
                     
-                    # Extract pitching stats
-                    pitching = player_stats.get('pitching', {})
-                    if isinstance(pitching, dict):
-                        for stat_name, stat_value in pitching.items():
-                            stats[f'pit_{stat_name}'] = stat_value
+                    # Could be dict with hitting/pitching keys
+                    if isinstance(player_stats, dict):
+                        # First check for hitting/pitching structure
+                        if 'hitting' in player_stats:
+                            hitting = player_stats['hitting']
+                            if isinstance(hitting, dict):
+                                for stat_name, stat_value in hitting.items():
+                                    stats[f'hit_{stat_name}'] = stat_value
+                        
+                        if 'pitching' in player_stats:
+                            pitching = player_stats['pitching']
+                            if isinstance(pitching, dict):
+                                for stat_name, stat_value in pitching.items():
+                                    stats[f'pit_{stat_name}'] = stat_value
+                                    
+                        # If not that structure, might be direct stat keys
+                        for stat_name, stat_value in player_stats.items():
+                            if stat_name not in ['hitting', 'pitching'] and not stat_name.startswith('hit_') and not stat_name.startswith('pit_'):
+                                # Determine if hitting or pitching stat
+                                if stat_name in ['AVG', 'HR', 'RBI', 'R', 'SB', 'OBP', 'OPS', 'H', '2B', '3B', 'BB', 'PA', 'AB']:
+                                    stats[f'hit_{stat_name}'] = stat_value
+                                elif stat_name in ['ERA', 'WHIP', 'W', 'SV', 'SO', 'QS', 'IP', 'H', 'ER', 'HLD', 'BB']:
+                                    stats[f'pit_{stat_name}'] = stat_value
+                                else:
+                                    stats[stat_name] = stat_value
+                
+                # Process any stats directly in player object (common in Fantrax)
+                stat_keys = ['AVG', 'HR', 'RBI', 'R', 'SB', 'OBP', 'OPS', 'ERA', 'WHIP', 'W', 'SV', 'SO', 'QS']
+                for key in stat_keys:
+                    if key in player and key not in stats:
+                        # Determine category
+                        if key in ['AVG', 'HR', 'RBI', 'R', 'SB', 'OBP', 'OPS']:
+                            stats[f'hit_{key}'] = player[key]
+                        elif key in ['ERA', 'WHIP', 'W', 'SV', 'SO', 'QS']:
+                            stats[f'pit_{key}'] = player[key]
+                        else:
+                            stats[key] = player[key]
                 
                 player_info = {
                     'player_id': player_id,
@@ -234,10 +312,15 @@ class DataProcessor:
                 columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'eligible_positions', 'stats']
             )
             
+            # Only show success message if we have a small number of players (likely debugging)
+            if len(df) < 10:
+                st.success(f"Successfully processed {len(df)} players")
             return df
             
         except Exception as e:
             st.error(f"Error processing available players: {str(e)}")
+            import traceback
+            st.error(traceback.format_exc())
             return pd.DataFrame(
                 columns=['player_id', 'player_name', 'position', 'mlb_team', 'status', 'eligible_positions', 'stats']
             )
