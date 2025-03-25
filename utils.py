@@ -3,6 +3,8 @@ from api_client import FantraxAPI
 from data_processor import DataProcessor
 from typing import Any, Dict
 import pandas as pd
+# Import the new Fantrax API wrapper
+from fantrax_integration import fantrax_client
 
 @st.cache_data
 def fetch_api_data():
@@ -62,3 +64,64 @@ def calculate_stats(df: pd.DataFrame, column: str) -> Dict[str, float]:
         'max': df[column].max(),
         'min': df[column].min()
     }
+
+@st.cache_data
+def fetch_fantrax_data():
+    """
+    Fetch all required data from the Fantrax API using the new integration.
+    Returns processed data or None if an error occurs.
+    """
+    try:
+        # Create a placeholder in the sidebar for a single loading indicator
+        with st.sidebar:
+            status_container = st.empty()
+            status_container.progress(0)
+            
+            # Fetch league info
+            status_container.progress(20)
+            league_info = fantrax_client.get_league_info()
+            
+            # Fetch standings
+            status_container.progress(40)
+            standings = fantrax_client.get_standings()
+            
+            # Fetch team rosters
+            status_container.progress(60)
+            rosters = fantrax_client.get_team_rosters()
+            
+            # Fetch transactions
+            status_container.progress(80)
+            transactions = fantrax_client.get_transactions(limit=20)
+            
+            # Fetch scoring periods and current matchups
+            status_container.progress(90)
+            scoring_periods = fantrax_client.get_scoring_periods()
+            current_matchups = fantrax_client.get_matchups_for_period(0)  # Current period
+            
+            # Clear the progress bar
+            status_container.empty()
+            
+            # Convert roster dictionary to DataFrame format for compatibility with existing code
+            roster_df = []
+            for team_name, players in rosters.items():
+                for player in players:
+                    player['team'] = team_name
+                    roster_df.append(player)
+            
+            if roster_df:
+                roster_df = pd.DataFrame(roster_df)
+            else:
+                roster_df = pd.DataFrame()
+            
+            return {
+                'league_data': league_info,
+                'standings_data': standings,
+                'roster_data': roster_df,
+                'transactions': transactions,
+                'scoring_periods': scoring_periods,
+                'current_matchups': current_matchups
+            }
+    except Exception as e:
+        with st.sidebar:
+            st.error(f"❌ Error loading Fantrax data: {str(e)}")
+        return None

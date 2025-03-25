@@ -1,6 +1,6 @@
 import streamlit as st
 from components import league_info, rosters, standings, power_rankings, prospects, projected_rankings
-from utils import fetch_api_data
+from utils import fetch_api_data, fetch_fantrax_data
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -491,6 +491,9 @@ def main():
         st.markdown("### 🔄 League Controls")
         if st.button("Refresh Data", use_container_width=True):
             st.experimental_rerun()
+            
+        # Add data source selector
+        data_source = st.radio("Data Source", ["Current API", "Fantrax API"])
 
         st.markdown("---")
         st.markdown("""
@@ -499,39 +502,145 @@ def main():
         """)
 
     try:
-        # Fetch all data using the utility function
-        data = fetch_api_data()
+        # Fetch appropriate data based on selected data source
+        if data_source == "Current API":
+            data = fetch_api_data()
+            
+            if data:
+                # Create tabs for different sections
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                    "🏠 League Info",
+                    "👥 Team Rosters",
+                    "🏆 Power Rankings",
+                    "📚 Handbook",
+                    "📈 Projected Rankings"
+                ])
 
-        if data:
-            # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                "🏠 League Info",
-                "👥 Team Rosters",
-                "🏆 Power Rankings",
-                "📚 Handbook",
-                "📈 Projected Rankings"
-            ])
+                with tab1:
+                    league_info.render(data['league_data'])
 
-            with tab1:
-                league_info.render(data['league_data'])
+                with tab2:
+                    rosters.render(data['roster_data'])
 
-            with tab2:
-                rosters.render(data['roster_data'])
+                with tab3:
+                    power_rankings.render(data['standings_data'])
 
-            with tab3:
-                power_rankings.render(data['standings_data'])
+                with tab4:
+                    prospects.render(data['roster_data'])
 
-            with tab4:
-                prospects.render(data['roster_data'])
-
-            with tab5:
-                projected_rankings.render(data['roster_data'])
+                with tab5:
+                    projected_rankings.render(data['roster_data'])
+            else:
+                st.info("No data available from the current API. Try switching to the Fantrax API.")
         else:
-            st.info("Using mock data for development...")
+            # Using Fantrax API
+            fantrax_data = fetch_fantrax_data()
+            
+            if fantrax_data:
+                # Create tabs for different sections with Fantrax data
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                    "🏠 League Info",
+                    "👥 Team Rosters",
+                    "🏆 Power Rankings",
+                    "📚 Handbook",
+                    "📈 Projected Rankings",
+                    "🏅 Matchups & Transactions"
+                ])
+
+                with tab1:
+                    # Display league info from Fantrax
+                    st.header("League Information")
+                    league_data = fantrax_data['league_data']
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("League Name", league_data.get('name', 'N/A'))
+                    with col2:
+                        st.metric("Sport", league_data.get('sport', 'N/A'))
+                    with col3:
+                        st.metric("Season", league_data.get('season', 'N/A'))
+                        
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Scoring Type", league_data.get('scoring_type', 'N/A'))
+                    with col2:
+                        st.metric("Teams", league_data.get('teams_count', 'N/A'))
+                    with col3:
+                        st.metric("Current Week", league_data.get('current_week', 'N/A'))
+
+                with tab2:
+                    # Display rosters from Fantrax
+                    st.header("Team Rosters")
+                    roster_data = fantrax_data['roster_data']
+                    
+                    # Team selector
+                    teams = sorted(roster_data['team'].unique()) if not roster_data.empty else []
+                    if teams:
+                        selected_team = st.selectbox("Select Team", teams)
+                        team_roster = roster_data[roster_data['team'] == selected_team]
+                        
+                        # Display active and injured players
+                        st.subheader("Active Players")
+                        active_players = team_roster[team_roster['status'] == 'Active']
+                        st.dataframe(active_players[['player_name', 'position', 'team', 'injured', 'suspended']])
+                        
+                        st.subheader("Injured Players")
+                        injured_players = team_roster[team_roster['status'] == 'Injured']
+                        st.dataframe(injured_players[['player_name', 'position', 'team', 'injured', 'suspended']])
+                    else:
+                        st.info("No roster data available")
+
+                with tab3:
+                    # Display standings/power rankings from Fantrax
+                    st.header("Current Standings")
+                    standings_data = fantrax_data['standings_data']
+                    
+                    if not standings_data.empty:
+                        st.dataframe(standings_data[[
+                            'rank', 'team', 'wins', 'losses', 'ties', 
+                            'win_percentage', 'points_for', 'points_against'
+                        ]])
+                    else:
+                        st.info("No standings data available")
+
+                with tab4:
+                    prospects.render(fantrax_data['roster_data'])
+
+                with tab5:
+                    projected_rankings.render(fantrax_data['roster_data'])
+                    
+                with tab6:
+                    # New tab for matchups and transactions
+                    st.header("Current Matchups")
+                    matchups = fantrax_data['current_matchups']
+                    
+                    if matchups:
+                        matchup_df = pd.DataFrame(matchups)
+                        st.dataframe(matchup_df[[
+                            'away_team', 'away_score', 'home_team', 'home_score', 
+                            'winner', 'score_difference'
+                        ]])
+                    else:
+                        st.info("No current matchups available")
+                    
+                    # Display recent transactions
+                    st.header("Recent Transactions")
+                    transactions = fantrax_data['transactions']
+                    
+                    if transactions:
+                        transactions_df = pd.DataFrame(transactions)
+                        st.dataframe(transactions_df[[
+                            'date', 'team', 'player_name', 'player_position', 
+                            'transaction_type'
+                        ]])
+                    else:
+                        st.info("No recent transactions available")
+            else:
+                st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
 
     except Exception as e:
         st.error(f"An error occurred while loading data: {str(e)}")
-        st.info("Using mock data for development...")
+        st.info("Try switching to a different data source.")
 
 if __name__ == "__main__":
     main()
