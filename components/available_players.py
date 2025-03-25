@@ -15,25 +15,14 @@ def render(available_players_df: pd.DataFrame, mlb_ids_df: Optional[pd.DataFrame
     """
     st.header("Available Players", divider="blue")
     
-    # Check if we should use sample data for demonstration
-    use_sample_data = False
     if available_players_df.empty:
         if st.session_state.get('fantrax_logged_in', False):
-            # Option to use sample data when authenticated but no API results
-            use_sample_data = st.checkbox("Use sample player data for demonstration", value=True)
-            if not use_sample_data:
-                st.info("No available players data found. Try adjusting your filters or refresh the page.")
-                return
+            st.error("No available players data found from Fantrax. There may be an issue with the API connection.")
+            st.info("Please check the console for error details and try logging in again.")
+            return
         else:
             st.warning("Please log in with your Fantrax account to view available players.")
-            # Option to use sample data even without authentication
-            use_sample_data = st.checkbox("Use sample player data for demonstration", value=True)
-            if not use_sample_data:
-                return
-    
-    # Use sample data if needed
-    if use_sample_data:
-        available_players_df = generate_sample_player_data()
+            return
     
     # Create filters
     col1, col2, col3 = st.columns(3)

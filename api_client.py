@@ -160,246 +160,229 @@ class FantraxAPI:
         if not self.is_authenticated():
             st.warning("You must be logged in to view available players")
             return {"players": []}
+            
+        # Debug the session cookies
+        cookie_str = "; ".join([f"{k}={v}" for k, v in self.session.cookies.items()])
+        st.info(f"Current cookie count: {len(self.session.cookies.items())}")
         
         try:
-            # Direct URL to the players page
-            direct_url = f"https://www.fantrax.com/fantasy/league/{self.league_id}/players"
-            st.info(f"Attempting to scrape player data from: {direct_url}")
+            # First make sure cookies and authentication are fresh
+            self.apply_user_auth()
             
-            # Try web scraping approach
-            try:
-                from bs4 import BeautifulSoup
-                import re
-                import json
-                
-                # Make request to the players page
-                html_response = self.session.get(
-                    direct_url,
-                    timeout=30,  # Increase timeout for potential large page
-                    headers={
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-                    }
-                )
-                html_response.raise_for_status()
-                
-                # Parse the HTML content
-                soup = BeautifulSoup(html_response.text, 'lxml')
-                
-                # Look for player data in script tags
-                script_tags = soup.find_all("script")
-                player_data = []
-                
-                for script in script_tags:
-                    script_content = script.string
-                    if script_content and "playerInfo" in script_content:
-                        # Try to extract JSON data from script
-                        try:
-                            # Find JSON object with player data
-                            json_matches = re.findall(r'window\.__INITIAL_STATE__\s*=\s*({.+?});', script_content)
-                            if json_matches:
-                                state_data = json.loads(json_matches[0])
-                                if "playerInfo" in str(state_data):
-                                    # Look for player data in various places
-                                    if "playerPool" in state_data and "playerInfo" in state_data["playerPool"]:
-                                        player_data = state_data["playerPool"]["playerInfo"]
-                                    elif "fantasySports" in state_data:
-                                        fantasy = state_data["fantasySports"]
-                                        if "playerPool" in fantasy and "playerInfo" in fantasy["playerPool"]:
-                                            player_data = fantasy["playerPool"]["playerInfo"]
-                        except Exception as json_err:
-                            st.warning(f"Error extracting player data from script: {str(json_err)}")
-                
-                # If we found player data, convert to the expected format
-                if player_data:
-                    st.success(f"Successfully scraped {len(player_data)} players")
-                    return {"players": player_data}
-                
-                # Try looking for table data
-                player_table = soup.find("table", class_="playerTableContents")
-                if player_table:
-                    players = []
-                    rows = player_table.find_all("tr", class_=lambda c: c and "ng-scope" in c)
-                    
-                    for row in rows:
-                        try:
-                            player = {}
-                            # Extract player name
-                            name_cell = row.find("td", class_="playerNameCol")
-                            if name_cell:
-                                player["name"] = name_cell.get_text(strip=True)
-                            
-                            # Extract position
-                            pos_cell = row.find("td", class_="posCol")
-                            if pos_cell:
-                                player["position"] = pos_cell.get_text(strip=True)
-                            
-                            # Extract team
-                            team_cell = row.find("td", class_="teamCol")
-                            if team_cell:
-                                player["team"] = team_cell.get_text(strip=True)
-                            
-                            # Add player if we have a name
-                            if player.get("name"):
-                                players.append(player)
-                        except Exception as row_err:
-                            continue
-                    
-                    if players:
-                        st.success(f"Successfully scraped {len(players)} players from table")
-                        return {"players": players}
-            except ImportError:
-                st.warning("BeautifulSoup or lxml not available for web scraping")
-            except Exception as scrape_err:
-                st.error(f"Error scraping player data: {str(scrape_err)}")
+            # Direct request to load the main players page to ensure cookies are set correctly
+            main_url = f"https://www.fantrax.com/fantasy/league/{self.league_id}/players"
+            st.info(f"Making initial request to: {main_url}")
             
-            # If web scraping fails, try the API approaches as fallback
-            st.warning("Web scraping failed, trying API endpoints...")
-            
-            # Log the request for debugging purposes
-            st.info("Making request to Fantrax API for player data...")
-            
-            # Try API approach 1: Direct player pool endpoint
-            params = {
-                "leagueId": self.league_id,
-                "view": "AVAILABLE",
-                "pageNumber": page,
-                "maxResultsPerPage": max_results,
-                "statisticType": "SEASON_PROJECTION_FANTASY",
-                "offset": (page - 1) * max_results,
-                "limit": max_results,
-                "scoring": "HEAD2HEAD",  # This was missing and might be required
-                "sortStatId": "-1",  # Default sort
-                "sortDirection": "DESC"
-            }
-            
-            # Add filters if provided
-            if position:
-                params["positionOrGroup"] = position
-            if team:
-                params["mlbTeam"] = team
-            if sort_stat:
-                params["sortStat"] = sort_stat
-            
-            # Use the format found in actual Fantrax requests
-            endpoint = "fxpa/league/playerPool"
-            response = self.session.get(
-                f"https://www.fantrax.com/{endpoint}",
-                params=params,
-                timeout=15,
+            main_response = self.session.get(
+                main_url,
+                timeout=30,
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                    "Accept": "application/json",
-                    "Origin": "https://www.fantrax.com",
-                    "Referer": direct_url,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
                 }
             )
-            response.raise_for_status()
+            main_response.raise_for_status()
             
-            # Parse the JSON response
-            data = response.json()
+            # Headers needed for API requests
+            api_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": main_url,
+                "Origin": "https://www.fantrax.com",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "X-Requested-With": "XMLHttpRequest"
+            }
             
-            # Check if we have actual player data
-            if "players" not in data:
-                st.warning("No players found in the API response")
-                # Debug information
-                st.info(f"Response data keys: {list(data.keys())}")
+            # Use the most direct approach based on real Fantrax API
+            st.info("Making player pool request to Fantrax API...")
+            
+            # This is the correct endpoint format based on latest Fantrax API
+            player_url = "https://www.fantrax.com/fxpa/req"
+            
+            # Build the payload for the player request
+            player_params = {
+                "msgs": [{
+                    "method": "getLeaguePlayersDetails",
+                    "data": {
+                        "leagueId": self.league_id,
+                        "view": "AVAILABLE",  # or "ALL" to see all players
+                        "pageNumber": page,
+                        "maxResultsPerPage": max_results
+                    },
+                    "uri": "/league/player-pool"
+                }]
+            }
+
+            # Make the request
+            player_response = self.session.post(
+                player_url,
+                json=player_params,
+                headers=api_headers,
+                timeout=30
+            )
+            
+            # Debug response status
+            st.info(f"Player API response status: {player_response.status_code}")
+            
+            # If response failed, try the general league data approach
+            if player_response.status_code != 200:
+                st.warning(f"Player request failed with status {player_response.status_code}, trying alternative...")
                 
-                # Try API approach 2: General AJAX endpoint
-                st.info("Trying alternative endpoint...")
-                
-                ajax_params = {
-                    "leagueId": self.league_id,
-                    "fetchType": "PLAYERS_POOL",
-                    "scoringCategoryType": "SEASON_PROJECTION_FANTASY",
-                    "scoringPeriodId": 0,  # current period
-                    "seasonType": "REGULAR_SEASON",
-                    "view": "AVAILABLE",
-                    "lineupType": None,
-                    "sortDirection": "DESC",
-                    "pageSize": max_results,
-                    "pageNumber": page,
-                    "filters": {},
+                general_url = "https://www.fantrax.com/fxea/req"
+                general_params = {
+                    "msgs": [{
+                        "method": "loadLeagueData",
+                        "data": {
+                            "leagueId": self.league_id,
+                            "fetchType": "PLAYERS_POOL",
+                            "view": "AVAILABLE",
+                            "pageNumber": 1,
+                            "pageSize": max_results
+                        },
+                        "uri": "/general"
+                    }]
                 }
                 
-                if position:
-                    ajax_params["filters"]["positionOrGroup"] = position
-                if team:
-                    ajax_params["filters"]["teamId"] = team
+                general_response = self.session.post(
+                    general_url,
+                    json=general_params,
+                    headers=api_headers,
+                    timeout=30
+                )
                 
+                st.info(f"Alternative API response status: {general_response.status_code}")
+                
+                if general_response.status_code == 200:
+                    try:
+                        general_data = general_response.json()
+                        st.info(f"Alternative response keys: {list(general_data.keys()) if isinstance(general_data, dict) else 'Not a dict'}")
+                        
+                        # Try to extract players from different possible structures
+                        if isinstance(general_data, dict):
+                            if "msgs" in general_data and len(general_data["msgs"]) > 0:
+                                msg_data = general_data["msgs"][0]
+                                if "data" in msg_data and "players" in msg_data["data"]:
+                                    return {"players": msg_data["data"]["players"]}
+                                elif "data" in msg_data and "poolData" in msg_data["data"]:
+                                    pool_data = msg_data["data"]["poolData"]
+                                    if "playerInfo" in pool_data:
+                                        return {"players": pool_data["playerInfo"]}
+                    except Exception as gen_err:
+                        st.error(f"Error parsing alternative response: {str(gen_err)}")
+                
+                # If all API attempts fail, try web scraping as last resort
                 try:
-                    ajax_response = self.session.post(
-                        "https://www.fantrax.com/fxea/general/loadLeagueData",
-                        json=ajax_params,
-                        headers={
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "Origin": "https://www.fantrax.com",
-                            "Referer": direct_url,
-                            "X-Requested-With": "XMLHttpRequest",
-                        }
-                    )
-                    ajax_response.raise_for_status()
-                    ajax_data = ajax_response.json()
+                    from bs4 import BeautifulSoup
+                    import re
                     
-                    # Debug info for alternative endpoint
-                    st.info(f"Alternative endpoint keys: {list(ajax_data.keys()) if isinstance(ajax_data, dict) else 'Not a dict'}")
+                    st.info("Attempting to scrape player data directly...")
                     
-                    # If this contains player data, return it
-                    if isinstance(ajax_data, dict) and ajax_data.get("players"):
-                        return ajax_data
+                    # Parse the HTML content from the main response
+                    soup = BeautifulSoup(main_response.text, 'lxml')
                     
-                    # Try to extract players from the pool data
-                    if isinstance(ajax_data, dict) and "poolData" in ajax_data:
-                        pool_data = ajax_data["poolData"]
-                        if isinstance(pool_data, dict) and "playerInfo" in pool_data:
-                            players = pool_data["playerInfo"]
-                            if isinstance(players, list) and len(players) > 0:
-                                return {"players": players}
-                except Exception as ajax_err:
-                    st.warning(f"Alternative endpoint failed: {str(ajax_err)}")
+                    # Look for player data in the page
+                    script_tags = soup.find_all("script")
+                    for script in script_tags:
+                        if script.string and "window.__INITIAL_STATE__" in str(script.string):
+                            state_match = re.search(r'window\.__INITIAL_STATE__\s*=\s*({.+?});', str(script.string))
+                            if state_match:
+                                try:
+                                    state_json = json.loads(state_match.group(1))
+                                    
+                                    # Try to find player data in the state
+                                    if "fantasySports" in state_json:
+                                        fantasy = state_json["fantasySports"]
+                                        if "playerPool" in fantasy and "playerInfo" in fantasy["playerPool"]:
+                                            players = fantasy["playerPool"]["playerInfo"]
+                                            return {"players": players}
+                                except Exception as state_err:
+                                    st.error(f"Error parsing state JSON: {str(state_err)}")
+                                
+                    # If we got here, try looking for players in a table
+                    player_table = soup.find("table", class_="playerTableContents")
+                    if player_table:
+                        players_list = []
+                        rows = player_table.find_all("tr")
+                        
+                        for row in rows:
+                            if "player-row" in str(row.get("class", "")):
+                                try:
+                                    player = {}
+                                    # Get player name
+                                    name_cell = row.find("td", class_=lambda c: c and "playerName" in c)
+                                    if name_cell:
+                                        player["name"] = name_cell.get_text(strip=True)
+                                    
+                                    # Get position
+                                    pos_cell = row.find("td", class_=lambda c: c and "position" in c)
+                                    if pos_cell:
+                                        player["position"] = pos_cell.get_text(strip=True)
+                                    
+                                    # Get team
+                                    team_cell = row.find("td", class_=lambda c: c and "team" in c)
+                                    if team_cell:
+                                        player["team"] = team_cell.get_text(strip=True)
+                                    
+                                    if player.get("name"):
+                                        players_list.append(player)
+                                except Exception:
+                                    continue
+                                    
+                        if players_list:
+                            st.success(f"Extracted {len(players_list)} players from table")
+                            return {"players": players_list}
                 
-                # If all attempts fail, return empty players list
+                except ImportError:
+                    st.warning("BeautifulSoup or lxml not available")
+                except Exception as scrape_err:
+                    st.error(f"Error during scraping: {str(scrape_err)}")
+                
+                st.error("All attempts to fetch player data failed")
+                return {"players": []}
+            
+            # Process successful response
+            try:
+                player_data = player_response.json()
+                
+                # Debug response structure
+                st.info(f"Response structure: {list(player_data.keys()) if isinstance(player_data, dict) else 'Not a dict'}")
+                
+                # Extract players based on response structure
+                if isinstance(player_data, dict):
+                    # Try to find players in the response structure
+                    if "msgs" in player_data and len(player_data["msgs"]) > 0:
+                        msg_data = player_data["msgs"][0]
+                        if "data" in msg_data:
+                            data = msg_data["data"]
+                            
+                            # Check for players in different possible structures
+                            if "players" in data:
+                                players = data["players"]
+                                return {"players": players}
+                            elif "playerInfo" in data:
+                                players = data["playerInfo"]
+                                return {"players": players}
+                            elif "playersInfo" in data:
+                                players = data["playersInfo"]
+                                return {"players": players}
+                    
+                    # Direct structure with players key
+                    if "players" in player_data:
+                        return player_data
+                
+                # If we reached here and didn't return, we couldn't find players
+                st.warning("Couldn't find players in the response structure")
                 return {"players": []}
                 
-            return data
-            
+            except Exception as parse_err:
+                st.error(f"Error parsing player response: {str(parse_err)}")
+                return {"players": []}
+                
         except Exception as e:
             st.error(f"Error fetching available players: {str(e)}")
             import traceback
             st.error(traceback.format_exc())
-            
-            # Try final API approach - the simplest API endpoint
-            try:
-                st.info("Trying final fallback endpoint...")
-                
-                # This is the most basic endpoint that should work if the user is logged in
-                simple_params = {
-                    "leagueId": self.league_id,
-                    "view": "AVAILABLE",
-                }
-                
-                simple_response = self.session.get(
-                    "https://www.fantrax.com/fxpa/stats/MLB/players",
-                    params=simple_params,
-                    headers={
-                        "Accept": "application/json",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                    }
-                )
-                simple_response.raise_for_status()
-                simple_data = simple_response.json()
-                
-                # Debug info
-                if isinstance(simple_data, dict):
-                    st.info(f"Final fallback endpoint keys: {list(simple_data.keys())}")
-                    if "players" in simple_data and isinstance(simple_data["players"], list):
-                        return simple_data
-                
-            except Exception as final_err:
-                st.warning(f"All API attempts failed: {str(final_err)}")
-                
-            # Try printing more debug info
-            st.info("Please try logging in again or refreshing the page")
             return {"players": []}

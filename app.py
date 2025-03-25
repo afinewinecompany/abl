@@ -560,14 +560,68 @@ def main():
                 projected_rankings.render(data['roster_data'])
                 
             with tab6:
-                if available_players_data is not None:
-                    available_players.render(available_players_data, mlb_player_ids)
-                else:
-                    if st.session_state.get("fantrax_logged_in", False):
-                        st.warning("Could not fetch available players data. Please try refreshing the page.")
+                if st.session_state.get("fantrax_logged_in", False):
+                    st.markdown("### 🔍 Available Players from Fantrax League")
+                    
+                    if available_players_data is not None and not available_players_data.empty:
+                        # Data loaded successfully - display player cards
+                        available_players.render(available_players_data, mlb_player_ids)
                     else:
-                        st.info("You need to log in with your Fantrax account to view available players.")
-                        st.info("Use the login form in the sidebar to authenticate.")
+                        # Data failed to load - show authorization status and guidance
+                        st.error("⚠️ Unable to fetch players from Fantrax")
+                        st.markdown("""
+                        We encountered an issue retrieving available players from your Fantrax league. This could be due to:
+                        - API access restrictions
+                        - Session timeout
+                        - Invalid league ID or permissions
+                        
+                        **Troubleshooting steps:**
+                        1. Try logging out and back into your Fantrax account using the sidebar
+                        2. Refresh the page
+                        3. Make sure you have access to view available players in your league
+                        """)
+                        
+                        # Show debugging options for advanced users
+                        if st.checkbox("Show debugging options"):
+                            st.info("ℹ️ Debug Information")
+                            
+                            if "fantrax_auth" in st.session_state and st.session_state.fantrax_auth:
+                                auth_data = st.session_state.fantrax_auth
+                                cookie_count = len(auth_data.get("cookies", {}))
+                                st.info(f"Authentication: Active with {cookie_count} cookies")
+                            else:
+                                st.warning("No authentication data found in session")
+                                
+                            # Option to force retry
+                            if st.button("Force API Refresh"):
+                                api_client = FantraxAPI()
+                                available_players_raw = api_client.get_available_players()
+                                if available_players_raw:
+                                    data_processor = __import__('data_processor').DataProcessor()
+                                    available_players_data = data_processor.process_available_players(available_players_raw)
+                                    if not available_players_data.empty:
+                                        st.success(f"Successfully loaded {len(available_players_data)} players!")
+                                        available_players.render(available_players_data, mlb_player_ids)
+                                    else:
+                                        st.error("API returned empty player data")
+                else:
+                    # Not logged in - prompt to log in
+                    st.warning("⚠️ Fantrax Authentication Required")
+                    st.markdown("""
+                    To view available players from your league, please log in to your Fantrax account 
+                    using the login form in the sidebar.
+                    
+                    This allows us to securely access the player pool data from your specific league.
+                    """)
+                    
+                    # Display login form directly in the content area as well
+                    st.markdown("### 🔐 Fantrax Login")
+                    success, message = fantrax_auth.login_form()
+                    if success:
+                        st.success(message)
+                        st.rerun()
+                    elif message:
+                        st.error(message)
         else:
             st.info("Using mock data for development...")
 
