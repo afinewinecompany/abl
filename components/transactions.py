@@ -12,6 +12,13 @@ def render(transactions_data: List[Dict[str, Any]]):
     """
     st.header("Transactions")
     
+    # Debug information
+    st.write(f"Transactions data type: {type(transactions_data)}")
+    st.write(f"Number of transactions: {len(transactions_data) if isinstance(transactions_data, list) else 'Not a list'}")
+    
+    if transactions_data and isinstance(transactions_data, list) and len(transactions_data) > 0:
+        st.write("First transaction keys:", list(transactions_data[0].keys()))
+    
     if not transactions_data:
         st.info("No transaction data available")
         return
