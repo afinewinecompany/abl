@@ -21,9 +21,9 @@ HISTORY_WEIGHTS = {
 
 # Playoff finish weights
 PLAYOFF_POINTS = {
-    "1st": 30,  # Points for championship
-    "2nd": 20,  # Points for runner-up
-    "3rd": 10,  # Points for third place
+    "1st": 45,  # Points for championship
+    "2nd": 30,  # Points for runner-up
+    "3rd": 15,  # Points for third place
 }
 
 # Historical playoff finishes
