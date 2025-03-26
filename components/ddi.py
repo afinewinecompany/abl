@@ -765,15 +765,9 @@ def render(roster_data: pd.DataFrame):
         with vis_tab2:
             st.markdown("### Dynasty Dominance Rankings")
             
-            # Show team cards in a 2-column layout
-            col1, col2 = st.columns(2)
-            
-            # Display team cards in alternating columns
-            for i, (_, team_row) in enumerate(display_df.iterrows()):
-                if i % 2 == 0:
-                    col1.markdown(render_team_card(team_row), unsafe_allow_html=True)
-                else:
-                    col2.markdown(render_team_card(team_row), unsafe_allow_html=True)
+            # Show team cards in a single column for better readability
+            for _, team_row in display_df.iterrows():
+                st.markdown(render_team_card(team_row), unsafe_allow_html=True)
             
             # Also show the traditional table below
             with st.expander("View as Table"):
