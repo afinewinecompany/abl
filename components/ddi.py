@@ -220,6 +220,12 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
         max_fpts = data['FPts'].max()
         fpts_score = (fpts / max_fpts) * 100 if max_fpts > 0 else 0
         
+        # Add smaller bonus for top 3 FPts teams
+        fpts_rank = data.sort_values('FPts', ascending=False).index[data['Team'] == team_data['Team'].values[0]].min()
+        if fpts_rank < 3:  # Top 3 finisher
+            fpts_bonus = {0: 8, 1: 5, 2: 3}.get(fpts_rank, 0)  # 8 for 1st, 5 for 2nd, 3 for 3rd
+            fpts_score += fpts_bonus
+        
         # Combine the three metrics with equal weighting
         season_score = (win_pct_score + rank_score + fpts_score) / 3
         
