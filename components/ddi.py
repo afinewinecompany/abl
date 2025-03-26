@@ -804,11 +804,61 @@ def render_team_card(team_row):
     """Render a team card - now uses the native implementation"""
     return render_team_card_native(team_row)
 
+def get_team_achievements(team_name: str) -> list:
+    """Get team playoff achievements for trophy case"""
+    achievements = []
+    
+    # Handle Athletics name variations
+    search_names = [team_name]
+    if team_name in ["Athletics", "Las Vegas Athletics", "Oakland Athletics"]:
+        search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
+    
+    # Check for achievements in playoff history
+    for year, places in PLAYOFF_HISTORY.items():
+        for place, playoff_team in places.items():
+            if place != "semifinalist":
+                # Handle Athletics name variations for non-semifinalist entries
+                if playoff_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
+                    playoff_team = "Las Vegas Athletics"
+                elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
+                    playoff_team = "Oakland Athletics"
+                    
+                # Check if playoff team matches any of our search names
+                if any(playoff_team == search_name for search_name in search_names):
+                    achievements.append({
+                        'year': year,
+                        'result': place,
+                        'label': f"🏆 {year} {place.upper()}" if place == "1st" else f"🥈 {year} {place.upper()}"
+                    })
+            else:
+                # Handle semifinalist list
+                for semi_team in playoff_team:
+                    # Handle Athletics name variations
+                    if semi_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
+                        semi_team = "Las Vegas Athletics"
+                    elif semi_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
+                        semi_team = "Oakland Athletics"
+                    
+                    # Check if semifinalist team matches any of our search names
+                    if any(semi_team == search_name for search_name in search_names):
+                        achievements.append({
+                            'year': year,
+                            'result': 'semifinalist',
+                            'label': f"🏅 {year} SEMIFINALIST"
+                        })
+                        break
+    
+    # Sort achievements by year (newest first)
+    return sorted(achievements, key=lambda x: x['year'], reverse=True)
+
 def render_team_card_native(team_row):
     """Render a stylish modern card for a team with its DDI information using native Streamlit components"""
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
     logo_initials = get_team_logo_url(team_name)
+    
+    # Get team achievements for trophy case
+    achievements = get_team_achievements(team_name)
     
     # Calculate normalized scores for progress bars (ensure they're between 0-100)
     power_norm = min(100, max(0, team_row['Power Score'])) / 100
@@ -981,8 +1031,54 @@ def render_team_card_native(team_row):
         </div>
         """, unsafe_allow_html=True)
         
-        # Add a small bottom margin
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        # Trophy case section (if team has achievements)
+        if achievements:
+            st.markdown(f"""
+            <div style="
+                background-color: #2A2A35; 
+                border-radius: 8px; 
+                padding: 8px 12px; 
+                margin: 10px 0;
+                border-left: 3px solid {team_colors['primary']};
+            ">
+                <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">
+                    🏆 Trophy Case
+                </div>
+            """, unsafe_allow_html=True)
+            
+            for achievement in achievements:
+                result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
+                result_label = f"{achievement['result'].upper()}" if achievement['result'] != "semifinalist" else "SEMIFINALIST"
+                st.markdown(f"""
+                <div style="
+                    margin: 5px 0;
+                    padding: 5px;
+                    background-color: rgba(255,255,255,0.05);
+                    border-radius: 4px;
+                    font-size: 13px;
+                ">
+                    {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span> - {result_label}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("""</div>""", unsafe_allow_html=True)
+        else:
+            # If no achievements, show empty trophy case message
+            st.markdown(f"""
+            <div style="
+                background-color: #2A2A35; 
+                border-radius: 8px; 
+                padding: 8px 12px; 
+                margin: 10px 0;
+                opacity: 0.6;
+                border-left: 3px solid #777;
+                text-align: center;
+            ">
+                <div style="font-size: 13px;">
+                    🏆 No playoff achievements yet
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
                 
         # End of card container
         st.markdown("<hr style='margin: 15px 0 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
