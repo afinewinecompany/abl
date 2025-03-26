@@ -50,20 +50,20 @@ print("===========================\n")
 def load_historical_data() -> Dict[str, pd.DataFrame]:
     """Load historical season data from CSV files"""
     history_data = {}
-    
+
     # Check if the historical data files exist
     for year in ["2021", "2022", "2023", "2024"]:
         csv_path = f"attached_assets/abl history - {year}.csv"
         if os.path.exists(csv_path):
             history_data[year] = pd.read_csv(csv_path)
-    
+
     return history_data
 
 def calculate_playoff_score(team_name: str) -> float:
     """Calculate a team's playoff performance score based on playoff history and division wins"""
-    
+
     total_playoff_score = 0.0
-    
+
     # Check for division wins across all years
     for year in ["2021", "2022", "2023", "2024"]:
         csv_path = f"attached_assets/abl history - {year}.csv"
@@ -77,30 +77,30 @@ def calculate_playoff_score(team_name: str) -> float:
                     team_search = ["Las Vegas Athletics"]
                 else:
                     team_search = ["Oakland Athletics"]
-            
+
             # Check if team won their division (Rank 1)
             div_winners = df[df['Rk'] == 1]['Team']
             if any(winner in team_search for winner in div_winners):
                 total_playoff_score += PLAYOFF_POINTS['division_winner']
-    
+
     # Debug output for specific teams - add Athletics to the list
     debug_teams = ["Seattle Mariners", "Philadelphia Phillies", "Cleveland Guardians", "Atlanta Braves", 
                   "Baltimore Orioles", "Los Angeles Dodgers", "Athletics", "Saint Louis Cardinals"]
     debug_mode = team_name in debug_teams or "Athletics" in team_name
-    
+
     if debug_mode:
         print(f"\nCalculating playoff score for {team_name}...")
-    
+
     # Handle special cases for team name variations in historical data
     search_names = [team_name]
     if team_name == "Athletics" or team_name == "Las Vegas Athletics" or team_name == "Oakland Athletics":
         search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
         if debug_mode:
             print(f"  Using expanded search names for Athletics: {search_names}")
-    
+
     # Track each playoff achievement separately (no year weighting)
     playoff_achievements = []
-    
+
     # Process each year in playoff history - NO YEAR WEIGHTING for playoffs
     for year, places in PLAYOFF_HISTORY.items():
         # Check if this team appears in playoff results
@@ -112,7 +112,7 @@ def calculate_playoff_score(team_name: str) -> float:
                     playoff_team = "Las Vegas Athletics"
                 elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
                     playoff_team = "Oakland Athletics"
-                    
+
                 # Check if playoff team matches any of our search names
                 if any(playoff_team == search_name for search_name in search_names):
                     playoff_result = place
@@ -121,24 +121,24 @@ def calculate_playoff_score(team_name: str) -> float:
                 # Handle semifinalist list
                 if debug_mode:
                     print(f"  Checking semifinalists for {year}: {playoff_team}")
-                    
+
                 for semi_team in playoff_team:
                     # Handle Athletics name variations
                     if semi_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
                         semi_team = "Las Vegas Athletics"
                     elif semi_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
                         semi_team = "Oakland Athletics"
-                    
+
                     if debug_mode:
                         print(f"    Comparing semifinalist '{semi_team}' with search names {search_names}")
-                        
+
                     # Check if semifinalist team matches any of our search names
                     if any(semi_team == search_name for search_name in search_names):
                         playoff_result = place
                         if debug_mode:
                             print(f"    Found match! {team_name} was a semifinalist in {year}")
                         break
-        
+
         # If team has a playoff finish, add unweighted points
         if playoff_result:
             playoff_points = PLAYOFF_POINTS.get(playoff_result, 0)
@@ -148,42 +148,42 @@ def calculate_playoff_score(team_name: str) -> float:
                 'points': playoff_points
             })
             total_playoff_score += playoff_points  # No year weighting applied
-    
+
     # Calculate max possible score (winning every year)
     # 4 years * 45 points = 180 points max possible
     years_count = len(PLAYOFF_HISTORY)
     max_possible = 45.0 * years_count
-    
+
     # Normalize to 0-100 scale
     normalized_score = (total_playoff_score / max_possible * 100) if max_possible > 0 else 0
-    
+
     if debug_mode:
         print(f"Playoff achievements for {team_name}:")
         for achievement in playoff_achievements:
             print(f"  {achievement['year']}: {achievement['result']} ({achievement['points']} points)")
         print(f"Final playoff score for {team_name}: {normalized_score:.2f} (from raw score: {total_playoff_score:.2f})")
-    
+
     return normalized_score
 
 def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFrame]) -> float:
     """Calculate a team's historical performance score based on past seasons (excluding playoffs)"""
-    
+
     if not history_data:
         return 0.0
-        
+
     total_score = 0.0
-    
+
     # Handle special cases for team name variations in historical data
     search_names = [team_name]
     if team_name == "Athletics" or team_name == "Las Vegas Athletics" or team_name == "Oakland Athletics":
         search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
-    
+
     # Debug info
     print(f"Calculating historical score for team: {team_name}, searching: {search_names}")
-    
+
     for year, data in history_data.items():
         year_weight = HISTORY_WEIGHTS.get(year, 0.0)
-        
+
         # Try all possible team names
         team_data = None
         for search_name in search_names:
@@ -193,45 +193,45 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
             # If we're in 2021-2023 and searching for Las Vegas Athletics, use Oakland Athletics
             elif year != "2024" and search_name == "Las Vegas Athletics":
                 search_name = "Oakland Athletics"
-                
+
             # Find the team in this year's data
             found_data = data[data['Team'] == search_name]
             if len(found_data) > 0:
                 team_data = found_data
                 break
-        
+
         # If no team data found with any name, skip this year
         if team_data is None or len(team_data) == 0:
             print(f"No data found for {team_name} in {year}")
             continue
-            
+
         # Calculate score based on Win% (scale from 0-100)
         win_pct = team_data['Win%'].values[0]
         win_pct_score = win_pct * 100
-        
+
         # Get team rank and calculate rank score (1st = 100, 30th = 0, linear scale)
         rank = team_data['Rk'].values[0]
         total_teams = len(data['Team'].unique())
         rank_score = 100 * (1 - ((rank - 1) / (total_teams - 1)) if total_teams > 1 else 1)
-        
+
         # Get fantasy points and calculate relative score
         # (team points / max points in that year) * 100
         fpts = team_data['FPts'].values[0]
         max_fpts = data['FPts'].max()
         fpts_score = (fpts / max_fpts) * 100 if max_fpts > 0 else 0
-        
+
         # Add smaller bonus for top 3 FPts teams
         fpts_rank = data.sort_values('FPts', ascending=False).index[data['Team'] == team_data['Team'].values[0]].min()
         if fpts_rank < 3:  # Top 3 finisher
             fpts_bonus = {0: 8, 1: 5, 2: 3}.get(fpts_rank, 0)  # 8 for 1st, 5 for 2nd, 3 for 3rd
             fpts_score += fpts_bonus
-        
+
         # Combine the three metrics with equal weighting
         season_score = (win_pct_score + rank_score + fpts_score) / 3
-        
+
         # Apply year weighting and add to total
         total_score += season_score * year_weight
-    
+
     return total_score
 
 def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
@@ -242,22 +242,22 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
     try:
         # Import the normalize_name function
         from components.prospects import normalize_name
-        
+
         # Read prospect import data
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
-        
+
         # Normalize names in prospect import
         prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
-        
+
         # Create team-level results
         team_prospect_scores = []
-        
+
         # Process each team
         for team in roster_data['team'].unique():
             # Filter data by team
             team_roster = roster_data[roster_data['team'] == team].copy()
             team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
-            
+
             # IMPORTANT: Include ALL players, not just minors
             # Merge with prospect data
             team_prospects = pd.merge(
@@ -267,15 +267,15 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
                 right_on='Name',
                 how='left'
             )
-            
+
             # Only include players that actually matched with the prospect data (have a Score)
             team_prospects = team_prospects[team_prospects['Score'].notna()]
-            
+
             # Calculate prospect stats
             total_score = team_prospects['Score'].fillna(0).sum()
             avg_score = team_prospects['Score'].fillna(0).mean() if len(team_prospects) > 0 else 0
             count = len(team_prospects)
-            
+
             # Add to results
             team_prospect_scores.append({
                 'team': team,
@@ -283,7 +283,7 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
                 'avg_score': avg_score,
                 'prospect_count': count
             })
-            
+
             # Debug for specific teams
             if team in ["Baltimore Orioles", "Kansas City Royals", "Atlanta Braves"]:
                 print(f"Team '{team}' ALL prospects details:")
@@ -296,15 +296,15 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
                     print(f"  Top 5 prospects:")
                     for _, row in top_5.iterrows():
                         print(f"    {row['player_name']} - Score: {row['Score']:.2f}, Rank: {row['Rank'] if pd.notna(row['Rank']) else 'N/A'}")
-        
+
         # Convert to DataFrame
         team_scores = pd.DataFrame(team_prospect_scores)
-        
+
         # Additional debug info - show the top teams
         print("\nTeam prospect scores (top 5):")
         for _, row in team_scores.sort_values('total_score', ascending=False).head(5).iterrows():
             print(f"{row['team']}: {row['total_score']:.2f} (Count: {int(row['prospect_count'])})")
-        
+
         # Special debug for the teams mentioned
         print("\nReference team scores:")
         for team_name in ["Baltimore Orioles", "Kansas City Royals", "Atlanta Braves"]:
@@ -313,9 +313,9 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
                 print(f"  {team_name}: {team_data['total_score'].values[0]:.2f}")
             else:
                 print(f"  {team_name}: not found in team_scores")
-        
+
         return team_scores
-        
+
     except Exception as e:
         st.error(f"Error calculating team prospect scores: {str(e)}")
         import traceback
@@ -331,34 +331,34 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame, history_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Calculate the Dynasty Dominance Index for all teams"""
-    
+
     # Get team prospect scores directly from the handbook calculation
     team_prospect_scores = get_team_prospect_scores(roster_data)
-    
+
     # Extract unique teams from roster data
     teams = roster_data['team'].unique()
-    
+
     # Create a DataFrame to store DDI components and total scores
     ddi_data = []
-    
+
     for team in teams:
         # Account for "Oakland Athletics" / "Athletics" naming variants
         team_display = team  # Use this name for display
-        
+
         # Handle Athletics name variation
         team_search = team
         team_history_search = team
-        
+
         # For current API data (team might be "Athletics")
         if team == "Athletics" or team == "Las Vegas Athletics" or team == "Oakland Athletics":
             team_search = "Las Vegas Athletics"  # For current data
             team_history_search = "Oakland Athletics"  # For historical years 2021-2023
-        
+
         # Get power ranking score (normalized from 0-100, where 100 is best)
         # Try multiple possible column names for team and power score (handle different formats)
         team_col = 'team_name' if 'team_name' in power_rankings.columns else 'Team'
         score_col = 'power_score' if 'power_score' in power_rankings.columns else 'Power Score'
-        
+
         team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
         if len(team_power) > 0:
             # Normalize power score where highest is 100
@@ -371,7 +371,7 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
         else:
             # Default to 100 as requested
             power_score = 100
-            
+
         # Get prospect score from the handbook calculation (total_score from each team)
         team_prospects = team_prospect_scores[(team_prospect_scores['team'] == team) | (team_prospect_scores['team'] == team_search)]
         if len(team_prospects) > 0:
@@ -382,13 +382,13 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
             prospect_score = (total_prospect_score / max_prospect_score) * 100 if max_prospect_score > 0 else 0
         else:
             prospect_score = 0
-            
+
         # Get historical performance score
         history_score = calculate_historical_score(team, history_data)
-        
+
         # Get playoff performance score
         playoff_score = calculate_playoff_score(team)
-        
+
         # Calculate overall DDI score with component weighting
         ddi_score = (
             (power_score * POWER_RANK_WEIGHT) +
@@ -396,7 +396,7 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
             (history_score * HISTORY_WEIGHT) +
             (playoff_score * PLAYOFF_WEIGHT)
         )
-        
+
         # Add to our data collection
         ddi_data.append({
             'Team': team,
@@ -406,17 +406,17 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
             'Playoff Score': playoff_score,
             'DDI Score': ddi_score
         })
-    
+
     # Convert to DataFrame and sort by DDI Score
     ddi_df = pd.DataFrame(ddi_data)
     ddi_df = ddi_df.sort_values('DDI Score', ascending=False).reset_index(drop=True)
-    
+
     # Add rank column based on DDI Score
     ddi_df['Rank'] = ddi_df.index + 1
-    
+
     # Reorder columns to put Rank first
     ddi_df = ddi_df[['Rank', 'Team', 'DDI Score', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']]
-    
+
     return ddi_df
 
 def get_team_colors(team_name: str) -> dict:
@@ -456,7 +456,7 @@ def get_team_colors(team_name: str) -> dict:
         'Toronto Blue Jays': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
         'Washington Nationals': {'primary': '#AB0003', 'secondary': '#14225A'},
     }
-    
+
     # Default to a standard color if team not found
     return team_colors.get(team_name, {'primary': '#1E88E5', 'secondary': '#0D47A1'})
 
@@ -499,24 +499,24 @@ def get_team_logo_url(team_name: str) -> str:
         "Toronto Blue Jays": "https://www.mlbstatic.com/team-logos/team-cap-on-light/141.svg",
         "Washington Nationals": "https://www.mlbstatic.com/team-logos/team-cap-on-light/120.svg"
     }
-    
+
     # Return the logo URL if available, or generate initials as fallback
     if team_name in team_logo_urls:
         return f'<img src="{team_logo_urls[team_name]}" width="30" height="30" alt="{team_name}">'
-    
+
     # Fallback to initials if team not found
     team_initials = "".join([word[0] for word in team_name.split() if word[0].isalpha()]).upper()
     return team_initials
 
 def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
     """Create a stacked bar visualization of DDI components"""
-    
+
     # Prepare data for visualization
     fig = go.Figure()
-    
+
     # Sort by DDI Score (highest to lowest)
     sorted_df = ddi_df.sort_values('DDI Score', ascending=False)
-    
+
     # Add stacked components
     fig.add_trace(go.Bar(
         y=sorted_df['Team'],
@@ -527,7 +527,7 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         text=[f"{score:.1f}" for score in sorted_df['Power Score']],
         hovertemplate="Power Score: %{text}<extra></extra>"
     ))
-    
+
     fig.add_trace(go.Bar(
         y=sorted_df['Team'],
         x=sorted_df['Prospect Score'] * PROSPECT_WEIGHT,
@@ -537,7 +537,7 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         text=[f"{score:.1f}" for score in sorted_df['Prospect Score']],
         hovertemplate="Prospect Score: %{text}<extra></extra>"
     ))
-    
+
     fig.add_trace(go.Bar(
         y=sorted_df['Team'],
         x=sorted_df['Historical Score'] * HISTORY_WEIGHT,
@@ -547,7 +547,7 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         text=[f"{score:.1f}" for score in sorted_df['Historical Score']],
         hovertemplate="Historical Score: %{text}<extra></extra>"
     ))
-    
+
     fig.add_trace(go.Bar(
         y=sorted_df['Team'],
         x=sorted_df['Playoff Score'] * PLAYOFF_WEIGHT,
@@ -557,7 +557,7 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         text=[f"{score:.1f}" for score in sorted_df['Playoff Score']],
         hovertemplate="Playoff Score: %{text}<extra></extra>"
     ))
-    
+
     # Add ranking markers
     for i, (_, row) in enumerate(sorted_df.iterrows()):
         fig.add_annotation(
@@ -573,12 +573,12 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
             xanchor='right',
             xshift=-10
         )
-    
+
     # Update layout
     fig.update_layout(
         title='Dynasty Dominance Index (DDI) - Component Breakdown',
         barmode='stack',
-        height=600,
+        height=6000,
         margin=dict(l=20, r=20, t=80, b=20),
         legend=dict(
             orientation="h",
@@ -599,20 +599,20 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         paper_bgcolor='rgba(0, 0, 0, 0)',
         font=dict(color='white')
     )
-    
+
     return fig
 
 def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
     """Create a radar chart comparing top teams across dimensions"""
-    
+
     # Take top 5 teams for radar chart
     top_teams = ddi_df.head(5)
-    
+
     # Set up categories for radar chart
     categories = ['Power Ranking', 'Prospect System', 'Historical Performance', 'Playoff Success']
-    
+
     fig = go.Figure()
-    
+
     # Add traces for each team
     for _, team in top_teams.iterrows():
         team_name = team['Team']
@@ -629,7 +629,7 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
             line=dict(color=get_team_colors(team_name)['primary']),
             opacity=0.8
         ))
-    
+
     # Update layout
     fig.update_layout(
         title="Top Dynasty Teams - Dimensional Comparison",
@@ -660,15 +660,15 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
         paper_bgcolor='rgba(0, 0, 0, 0)',
         font=dict(color='white')
     )
-    
+
     return fig
 
 def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     """Create an interactive treemap visualization of DDI scores"""
-    
+
     # Create a copy of the DataFrame for manipulation
     tm_df = ddi_df.copy()
-    
+
     # Create custom hover text
     hover_texts = []
     for _, row in tm_df.iterrows():
@@ -682,15 +682,15 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
             f"Playoff Score: {row['Playoff Score']:.1f}"
         )
         hover_texts.append(hover_text)
-    
+
     tm_df['hover_text'] = hover_texts
-    
+
     # Get team colors for markers
     marker_colors = []
     for team in tm_df['Team']:
         colors = get_team_colors(team)
         marker_colors.append(colors['primary'])
-    
+
     # Create treemap figure
     fig = px.treemap(
         tm_df,
@@ -703,7 +703,7 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],  # Red for high, Blue for low
         color_continuous_midpoint=tm_df['DDI Score'].median()
     )
-    
+
     # Customize appearance
     fig.update_traces(
         hovertemplate=tm_df['hover_text'],
@@ -714,12 +714,12 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         textposition="middle center",
         texttemplate="<b>%{label}</b><br>#%{customdata[0]}<br>%{value:.1f}"
     )
-    
+
     # Add rank to customdata
     fig.update_traces(
         customdata=tm_df[['Rank']].values
     )
-    
+
     # Update layout
     fig.update_layout(
         title={
@@ -733,18 +733,18 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         coloraxis_showscale=True,
         height=600
     )
-    
+
     return fig
 
 def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     """Create an interactive heatmap of DDI components across teams"""
-    
+
     # Create a subset of data with just the components we want
     heat_df = ddi_df[['Team', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']].copy()
-    
+
     # Sort by overall DDI score (which is the ordering in the input DataFrame)
     heat_df = heat_df.sort_values('Team')
-    
+
     # Melt the dataframe to get it in the right format for the heatmap
     melted_df = pd.melt(
         heat_df, 
@@ -753,13 +753,13 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         var_name='Component',
         value_name='Score'
     )
-    
+
     # Create custom hover text
     melted_df['hover_text'] = melted_df.apply(
         lambda row: f"<b>{row['Team']}</b><br>{row['Component']}: {row['Score']:.1f}", 
         axis=1
     )
-    
+
     # Create the heatmap
     fig = px.imshow(
         heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']],
@@ -769,14 +769,14 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         color_continuous_scale='Viridis',
         aspect="auto"
     )
-    
+
     # Customize appearance
     fig.update_traces(
         text=heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']].round(1).values,
         texttemplate="%{text}",
         textfont={"size": 12, "color": "white"}
     )
-    
+
     # Update layout
     fig.update_layout(
         title={
@@ -797,7 +797,7 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
             autorange="reversed"
         )
     )
-    
+
     return fig
 
 def render_team_card(team_row):
@@ -807,19 +807,19 @@ def render_team_card(team_row):
 def get_team_achievements(team_name: str) -> list:
     """Get team playoff achievements for trophy case"""
     achievements = []
-    
+
     # Load division data
-    divisions_df = pd.read_csv("attached_assets/divisions.csv")
-    team_division = divisions_df[divisions_df['team_name'] == team_name]['division'].iloc[0] if len(divisions_df[divisions_df['team_name'] == team_name]) > 0 else None
-    
+    divisions_df = pd.read_csv("attached_assets/divisions.csv", names=['division', 'team'])
+    team_division = divisions_df[divisions_df['team'] == team_name]['division'].iloc[0] if len(divisions_df[divisions_df['team'] == team_name]) > 0 else None
+
     # Handle Athletics name variations
     search_names = [team_name]
     if team_name in ["Athletics", "Las Vegas Athletics", "Oakland Athletics"]:
         search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
         # Try to get division for Athletics with proper name variation
         if team_division is None:
-            team_division = divisions_df[divisions_df['team_name'] == "Las Vegas Athletics"]['division'].iloc[0] if len(divisions_df[divisions_df['team_name'] == "Las Vegas Athletics"]) > 0 else None
-    
+            team_division = divisions_df[divisions_df['team'] == "Las Vegas Athletics"]['division'].iloc[0] if len(divisions_df[divisions_df['team'] == "Las Vegas Athletics"]) > 0 else None
+
     # Check for achievements in playoff history
     for year, places in PLAYOFF_HISTORY.items():
         for place, playoff_team in places.items():
@@ -829,7 +829,7 @@ def get_team_achievements(team_name: str) -> list:
                     playoff_team = "Las Vegas Athletics"
                 elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
                     playoff_team = "Oakland Athletics"
-                    
+
                 # Check if playoff team matches any of our search names
                 if any(playoff_team == search_name for search_name in search_names):
                     # Determine proper label based on place
@@ -839,7 +839,7 @@ def get_team_achievements(team_name: str) -> list:
                         label = f"🥈 {year} World Series Runner-Up"
                     else:
                         label = f"🏅 {year} {place.upper()}"
-                        
+
                     achievements.append({
                         'year': year,
                         'result': place,
@@ -853,7 +853,7 @@ def get_team_achievements(team_name: str) -> list:
                         semi_team = "Las Vegas Athletics"
                     elif semi_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
                         semi_team = "Oakland Athletics"
-                    
+
                     # Check if semifinalist team matches any of our search names
                     if any(semi_team == search_name for search_name in search_names):
                         # Determine if team is AL or NL based on division
@@ -863,14 +863,14 @@ def get_team_achievements(team_name: str) -> list:
                             series_label = "ALCS"
                         else:
                             series_label = "Championship Series"
-                            
+
                         achievements.append({
                             'year': year,
                             'result': 'semifinalist',
                             'label': f"🏅 {year} {series_label}"
                         })
                         break
-    
+
     # Sort achievements by year (newest first)
     return sorted(achievements, key=lambda x: x['year'], reverse=True)
 
@@ -879,16 +879,16 @@ def render_team_card_native(team_row):
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
     logo_initials = get_team_logo_url(team_name)
-    
+
     # Get team achievements for trophy case
     achievements = get_team_achievements(team_name)
-    
+
     # Calculate normalized scores for progress bars (ensure they're between 0-100)
     power_norm = min(100, max(0, team_row['Power Score'])) / 100
     prospect_norm = min(100, max(0, team_row['Prospect Score'])) / 100
     history_norm = min(100, max(0, team_row['Historical Score'])) / 100
     playoff_norm = min(100, max(0, team_row['Playoff Score'])) / 100
-    
+
     # Create card container with custom styling and mobile-friendly design
     with st.container():
         # Add a colored border at the top
@@ -903,10 +903,10 @@ def render_team_card_native(team_row):
         ">
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Header Row: Rank, Logo, Team Name, DDI Score
         header_cols = st.columns([1, 1, 6, 3])
-        
+
         # Rank badge
         with header_cols[0]:
             st.markdown(f"""
@@ -926,7 +926,7 @@ def render_team_card_native(team_row):
                 #{int(team_row['Rank'])}
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Team logo image
         with header_cols[1]:
             st.markdown(f"""
@@ -941,7 +941,7 @@ def render_team_card_native(team_row):
                 {logo_initials}
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Team name (with clearer styling)
         with header_cols[2]:
             st.markdown(f"""
@@ -949,7 +949,7 @@ def render_team_card_native(team_row):
                 <span style="font-size: 20px; font-weight: bold;">{team_name}</span>
             </div>
             """, unsafe_allow_html=True)
-            
+
         # DDI score badge
         with header_cols[3]:
             st.markdown(f"""
@@ -969,14 +969,14 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Add some spacing
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        
+
         # Components with scores and labels - more mobile-friendly 2x2 grid
         # First row: Power and Prospects
         score_row1 = st.columns(2)
-        
+
         with score_row1[0]:
             # Power score with more obvious label and compact display
             st.markdown(f"""
@@ -990,7 +990,7 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         with score_row1[1]:
             # Prospects score
             st.markdown(f"""
@@ -1004,10 +1004,10 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Second row: History and Playoff
         score_row2 = st.columns(2)
-        
+
         with score_row2[0]:
             # History score
             st.markdown(f"""
@@ -1021,7 +1021,7 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         with score_row2[1]:
             # Playoff score
             st.markdown(f"""
@@ -1035,7 +1035,7 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Component weights with clearer display on mobile 
         st.markdown(f"""
         <div style="
@@ -1053,7 +1053,7 @@ def render_team_card_native(team_row):
             <span>Playoff (15%)</span>
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Trophy case section (if team has achievements)
         if achievements:
             st.markdown(f"""
@@ -1068,7 +1068,7 @@ def render_team_card_native(team_row):
                     🏆 Trophy Case
                 </div>
             """, unsafe_allow_html=True)
-            
+
             for achievement in achievements:
                 result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
                 result_label = f"{achievement['result'].upper()}" if achievement['result'] != "semifinalist" else "SEMIFINALIST"
@@ -1083,7 +1083,7 @@ def render_team_card_native(team_row):
                     {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span> - {result_label}
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             st.markdown("""</div>""", unsafe_allow_html=True)
         else:
             # If no achievements, show empty trophy case message
@@ -1102,42 +1102,42 @@ def render_team_card_native(team_row):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-                
+
         # End of card container
         st.markdown("<hr style='margin: 15px 0 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
 
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
-    
+
     st.title("Dynasty Dominance Index (DDI)")
-    
+
     st.markdown("""
     ### What is DDI?
     The Dynasty Dominance Index (DDI) combines a team's current power ranking, prospect system, historical performance, and playoff success to create a comprehensive evaluation of dynasty team health and trajectory.
-    
+
     #### DDI Components:
     - **Current Power Rankings (30%)**: How strong is the team right now?
     - **Prospect System (20%)**: How strong is the team's future talent pipeline?
     - **Historical Performance (25%)**: How consistently successful has the team been over time?
     - **Playoff Success (25%)**: How well has the team performed in the playoffs?
     """)
-    
+
     # Create a horizontal rule
     st.markdown("---")
-    
+
     try:
         # Load historical data
         st.write("Loading historical performance data...")
         history_data = load_historical_data()
-        
+
         if not history_data:
             st.error("Historical data files could not be found. Please check the attached_assets directory.")
             return
-            
+
         # Calculate power rankings (we'll need to use the existing power_rankings component logic)
         # For this example, we'll create a simple power ranking based on available roster data
         teams = roster_data['team'].unique()
-        
+
         # Try to import the power_rankings logic first
         try:
             from components import power_rankings
@@ -1153,30 +1153,30 @@ def render(roster_data: pd.DataFrame):
                     'Power Score': power_score
                 })
             power_rankings_df = pd.DataFrame(power_rankings_data)
-        
+
         # Calculate DDI scores
         ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
-        
+
         # Format DDI dataframe for display
         display_df = ddi_df.copy()
         for col in ['DDI Score', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']:
             display_df[col] = display_df[col].round(1)
-        
+
         # Create visualization tabs - Team Cards first as default
         vis_tab1, vis_tab2, vis_tab3 = st.tabs([
             "Team Cards",
             "Team Rankings", 
             "Component Breakdown"
         ])
-        
+
         # Tab 1: Team Cards (now first tab as default view)
         with vis_tab1:
             st.markdown("### Dynasty Dominance Rankings")
-            
+
             # Show team cards using native Streamlit components
             for _, team_row in display_df.iterrows():
                 render_team_card_native(team_row)
-            
+
             # Also show the traditional table below
             with st.expander("View as Table"):
                 st.dataframe(
@@ -1220,46 +1220,46 @@ def render(roster_data: pd.DataFrame):
                     use_container_width=True,
                     hide_index=True,
                 )
-        
+
         # Tab 2: Team Rankings Visualization
         with vis_tab2:
             st.markdown("""
             ### Dynasty Dominance Index - Team Rankings
             Interactive visualizations of team performance across all dimensions of the Dynasty Dominance Index.
             """)
-            
+
             # Use tabs for different visualizations within the first tab
             viz_1, viz_2 = st.tabs(["Treemap View", "Component Heatmap"])
-            
+
             with viz_1:
                 st.markdown("""
                 ### Team Rankings Treemap
                 Size and color represent DDI score. Larger and darker boxes indicate higher scores.
                 """)
-                
+
                 # Create the treemap chart
                 treemap_chart = create_treemap_chart(display_df)
-                
+
                 # Simple config without unnecessary controls
                 chart_config = {
                     'displayModeBar': True,
                     'responsive': True,
                     'modeBarButtonsToRemove': ['lasso2d', 'select2d']
                 }
-                
+
                 # Display the treemap visualization
                 st.plotly_chart(treemap_chart, use_container_width=True, config=chart_config)
-            
+
             with viz_2:
                 st.markdown("""
                 ### Team Performance by Component
                 Heatmap showing how each team performs across all four DDI components.
                 """)
-                
+
                 # Display the heatmap as a secondary visualization
                 heatmap_chart = create_heatmap_chart(display_df)
                 st.plotly_chart(heatmap_chart, use_container_width=True, config=chart_config)
-                
+
             # Add breakdown of historical weighting
             with st.expander("Historical Performance Weighting"):
                 st.info(f"""
@@ -1269,7 +1269,7 @@ def render(roster_data: pd.DataFrame):
                 - 2022 Season: {HISTORY_WEIGHTS['2022']*100}%
                 - 2021 Season: {HISTORY_WEIGHTS['2021']*100}%
                 """)
-            
+
             # Add breakdown of playoff scoring
             with st.expander("Playoff Success Points"):
                 st.info(f"""
@@ -1277,14 +1277,14 @@ def render(roster_data: pd.DataFrame):
                 - 1st Place: {PLAYOFF_POINTS['1st']} points
                 - 2nd Place: {PLAYOFF_POINTS['2nd']} points
                 - Semifinalist: {PLAYOFF_POINTS['semifinalist']} points
-                
+
                 Playoff points are normalized to a 0-100 scale.
                 """)
-                
+
         # Tab 3: Component Breakdown
         with vis_tab3:
             st.plotly_chart(create_ddi_visualization(ddi_df), use_container_width=True)
-            
+
             # Add explanation of component weighting
             st.info(f"""
             **DDI Component Weighting:**
@@ -1293,7 +1293,7 @@ def render(roster_data: pd.DataFrame):
             - Historical Performance: {HISTORY_WEIGHT*100}%
             - Playoff Success: {PLAYOFF_WEIGHT*100}%
             """)
-        
+
     except Exception as e:
         st.error(f"Error calculating DDI rankings: {str(e)}")
         import traceback
@@ -1308,60 +1308,60 @@ def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.Dat
         # Import power_rankings module and get actual power rankings data
         from components import power_rankings
         from utils import fetch_api_data, fetch_fantrax_data
-        
+
         # First try to get real standings data from app.py's data flow
         try:
             data = fetch_api_data()
             if data and 'standings_data' in data:
                 # Create a mock version of power_rankings.render()
                 # that returns the actual power rankings DataFrame
-                
+
                 # Import the original function
                 from components.power_rankings import calculate_power_score
-                
+
                 # Process the data the same way as in power_rankings.render()
                 rankings_df = data['standings_data'].copy()
-                
+
                 # Add required fields for power score calculation
                 rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
                 rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
                 rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
                 rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
-                
+
                 # Calculate power scores
                 rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
                 rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
-                
+
                 # Rename columns to match expected format
                 rankings_df = rankings_df.rename(columns={
                     'team_name': 'Team',
                     'power_score': 'Power Score'
                 })
-                
+
                 # Keep only the columns we need
                 if 'Team' not in rankings_df.columns and 'team_name' in rankings_df.columns:
                     rankings_df['Team'] = rankings_df['team_name']
-                
+
                 if 'Power Score' not in rankings_df.columns and 'power_score' in rankings_df.columns:
                     rankings_df['Power Score'] = rankings_df['power_score']
-                    
+
                 rankings_df = rankings_df[['Team', 'Power Score']]
-                
+
                 return rankings_df
         except Exception as e:
             print(f"Error getting power rankings from API data: {str(e)}")
             # Fall back to generating power scores directly
-        
+
         # If we can't get real data, create power scores with the right calculation method
         from components.power_rankings import calculate_power_score
-        
+
         # Group data by team
         teams = roster_data['team'].unique()
         power_data = []
-        
+
         for team in teams:
             team_roster = roster_data[roster_data['team'] == team]
-            
+
             # Create a reasonably realistic row with the required fields
             mock_row = pd.Series({
                 'total_points': len(team_roster) * 10,
@@ -1369,32 +1369,32 @@ def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.Dat
                 'recent_wins': min(len(team_roster) / 4, 8),  # Scale with roster size, max 8
                 'recent_losses': min(10 - (len(team_roster) / 4), 4)  # Scale inversely
             })
-            
+
             # Calculate power score using the real function
             power_score = calculate_power_score(mock_row, pd.DataFrame([mock_row]))
-            
+
             power_data.append({
                 'Team': team,
                 'Power Score': power_score
             })
-            
+
         return pd.DataFrame(power_data)
-        
+
     except ImportError:
         # If we can't import power_rankings, create a basic version 
         # but with more realistic values that won't be zero
         teams = roster_data['team'].unique()
         power_rankings_data = []
-        
+
         for team in teams:
             team_df = roster_data[roster_data['team'] == team]
             # Use roster size as a realistic proxy for team strength
             # Multiply by a factor to get scores in a reasonable range (50-150)
             power_score = len(team_df) * 4 + 30
-            
+
             power_rankings_data.append({
                 'Team': team,
                 'Power Score': power_score
             })
-            
+
         return pd.DataFrame(power_rankings_data)
