@@ -1070,8 +1070,38 @@ def render_team_card_native(team_row):
             """, unsafe_allow_html=True)
 
             for achievement in achievements:
+                # Set emoji based on achievement type
                 result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
-                result_label = f"{achievement['result'].upper()}" if achievement['result'] != "semifinalist" else "SEMIFINALIST"
+                
+                # Set baseball-specific terminology based on achievement
+                if achievement['result'] == "1st":
+                    result_label = "WORLD SERIES CHAMPION"
+                elif achievement['result'] == "2nd":
+                    result_label = "WORLD SERIES RUNNER-UP"
+                elif achievement['result'] == "semifinalist":
+                    # Determine if team is AL or NL based on division
+                    if any(div in team for div in ["NL East", "NL West", "NL Central"]):
+                        result_label = "NLCS"
+                    elif any(div in team for div in ["AL East", "AL West", "AL Central"]):
+                        result_label = "ALCS"
+                    else:
+                        # Check specific team names if we can't determine from division
+                        nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins",  # NL East
+                                   "Cardinals", "Cubs", "Brewers", "Reds", "Pirates",      # NL Central
+                                   "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"] # NL West
+                        al_teams = ["Yankees", "Red Sox", "Blue Jays", "Orioles", "Rays",   # AL East
+                                   "White Sox", "Guardians", "Tigers", "Royals", "Twins",   # AL Central
+                                   "Astros", "Angels", "Athletics", "Mariners", "Rangers"]  # AL West
+                        
+                        if any(nl_team in team for nl_team in nl_teams):
+                            result_label = "NLCS"
+                        elif any(al_team in team for al_team in al_teams):
+                            result_label = "ALCS"
+                        else:
+                            result_label = "SEMIFINALIST"
+                else:
+                    result_label = achievement['result'].upper()
+                    
                 st.markdown(f"""
                 <div style="
                     margin: 5px 0;
