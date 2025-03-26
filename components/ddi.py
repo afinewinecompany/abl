@@ -808,10 +808,17 @@ def get_team_achievements(team_name: str) -> list:
     """Get team playoff achievements for trophy case"""
     achievements = []
     
+    # Load division data
+    divisions_df = pd.read_csv("attached_assets/divisions.csv")
+    team_division = divisions_df[divisions_df['team_name'] == team_name]['division'].iloc[0] if len(divisions_df[divisions_df['team_name'] == team_name]) > 0 else None
+    
     # Handle Athletics name variations
     search_names = [team_name]
     if team_name in ["Athletics", "Las Vegas Athletics", "Oakland Athletics"]:
         search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
+        # Try to get division for Athletics with proper name variation
+        if team_division is None:
+            team_division = divisions_df[divisions_df['team_name'] == "Las Vegas Athletics"]['division'].iloc[0] if len(divisions_df[divisions_df['team_name'] == "Las Vegas Athletics"]) > 0 else None
     
     # Check for achievements in playoff history
     for year, places in PLAYOFF_HISTORY.items():
@@ -825,10 +832,18 @@ def get_team_achievements(team_name: str) -> list:
                     
                 # Check if playoff team matches any of our search names
                 if any(playoff_team == search_name for search_name in search_names):
+                    # Determine proper label based on place
+                    if place == "1st":
+                        label = f"🏆 {year} World Series Champion"
+                    elif place == "2nd":
+                        label = f"🥈 {year} World Series Runner-Up"
+                    else:
+                        label = f"🏅 {year} {place.upper()}"
+                        
                     achievements.append({
                         'year': year,
                         'result': place,
-                        'label': f"🏆 {year} {place.upper()}" if place == "1st" else f"🥈 {year} {place.upper()}"
+                        'label': label
                     })
             else:
                 # Handle semifinalist list
@@ -841,10 +856,18 @@ def get_team_achievements(team_name: str) -> list:
                     
                     # Check if semifinalist team matches any of our search names
                     if any(semi_team == search_name for search_name in search_names):
+                        # Determine if team is AL or NL based on division
+                        if team_division and team_division.startswith('NL'):
+                            series_label = "NLCS"
+                        elif team_division and team_division.startswith('AL'):
+                            series_label = "ALCS"
+                        else:
+                            series_label = "Championship Series"
+                            
                         achievements.append({
                             'year': year,
                             'result': 'semifinalist',
-                            'label': f"🏅 {year} SEMIFINALIST"
+                            'label': f"🏅 {year} {series_label}"
                         })
                         break
     
