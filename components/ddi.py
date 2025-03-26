@@ -748,17 +748,21 @@ def render_team_card_native(team_row):
     history_norm = min(100, max(0, team_row['Historical Score'])) / 100
     playoff_norm = min(100, max(0, team_row['Playoff Score'])) / 100
     
+    # Create a unique ID for this card
+    card_id = f"team_card_{team_name.replace(' ', '_')}"
+    
     # Create card container with custom styling
     with st.container():
-        # Add a border and styling
+        # Add a border and styling with the unique ID for later capture
         st.markdown(f"""
-        <div style="
+        <div id="{card_id}" style="
             border: 1px solid rgba(230, 230, 230, 0.2);
             border-radius: 10px;
             padding: 15px;
             margin: 10px 0;
             background-color: rgba(49, 51, 63, 0.7);
             border-top: 5px solid {team_colors['primary']};
+            position: relative;
         ">
         </div>
         """, unsafe_allow_html=True)
@@ -806,8 +810,53 @@ def render_team_card_native(team_row):
             </div>
             """, unsafe_allow_html=True)
         
-        # Team name column
-        with col3:
+        # Team name column with share button
+        share_col, name_col = st.columns([1, 9])
+        
+        with share_col:
+            # Add the share button with download functionality
+            st.markdown(f"""
+            <div style="margin-top:5px">
+                <a href="#" id="share-{card_id}" title="Share this team card">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                </a>
+            </div>
+            
+            <script>
+                // Wait for the DOM to be fully loaded
+                document.addEventListener("DOMContentLoaded", function() {{
+                    const shareButton = document.getElementById("share-{card_id}");
+                    if (shareButton) {{
+                        shareButton.addEventListener("click", function(e) {{
+                            e.preventDefault();
+                            
+                            // Use html2canvas to capture the team card
+                            const cardElement = document.getElementById("{card_id}");
+                            if (cardElement) {{
+                                html2canvas(cardElement).then(canvas => {{
+                                    // Convert canvas to image data URL
+                                    const dataUrl = canvas.toDataURL("image/png");
+                                    
+                                    // Create a download link
+                                    const downloadLink = document.createElement("a");
+                                    downloadLink.href = dataUrl;
+                                    downloadLink.download = "{team_name} - DDI Card.png";
+                                    document.body.appendChild(downloadLink);
+                                    downloadLink.click();
+                                    document.body.removeChild(downloadLink);
+                                }});
+                            }}
+                        }});
+                    }}
+                }});
+            </script>
+            """, unsafe_allow_html=True)
+        
+        with name_col:
             st.markdown(f"### {team_name}")
             
         # DDI score column
@@ -861,8 +910,17 @@ def render_team_card_native(team_row):
         </div>
         """, unsafe_allow_html=True)
 
+def add_html2canvas_library():
+    """Add the html2canvas library to the Streamlit app for screenshot functionality"""
+    st.markdown("""
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    """, unsafe_allow_html=True)
+
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
+    
+    # Add the html2canvas library for screenshot functionality
+    add_html2canvas_library()
     
     st.title("Dynasty Dominance Index (DDI)")
     
