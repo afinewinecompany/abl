@@ -748,34 +748,30 @@ def render_team_card_native(team_row):
     history_norm = min(100, max(0, team_row['Historical Score'])) / 100
     playoff_norm = min(100, max(0, team_row['Playoff Score'])) / 100
     
-    # Create a unique ID for this card
-    card_id = f"team_card_{team_name.replace(' ', '_')}"
-    
-    # Create card container with custom styling
+    # Create card container with custom styling and mobile-friendly design
     with st.container():
-        # Add a border and styling with the unique ID for later capture
+        # Add a colored border at the top
         st.markdown(f"""
-        <div id="{card_id}" style="
+        <div style="
             border: 1px solid rgba(230, 230, 230, 0.2);
             border-radius: 10px;
-            padding: 15px;
+            padding: 10px 15px;
             margin: 10px 0;
             background-color: rgba(49, 51, 63, 0.7);
             border-top: 5px solid {team_colors['primary']};
-            position: relative;
         ">
         </div>
         """, unsafe_allow_html=True)
         
-        # Layout the header with columns
-        col1, col2, col3, col4 = st.columns([1, 1, 5, 2])
+        # Header Row: Rank, Logo, Team Name, DDI Score
+        header_cols = st.columns([1, 1, 6, 3])
         
-        # Rank column
-        with col1:
+        # Rank badge
+        with header_cols[0]:
             st.markdown(f"""
             <div style="
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                height: 36px;
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
                 border-radius: 8px;
                 display: flex;
@@ -783,19 +779,19 @@ def render_team_card_native(team_row):
                 align-items: center;
                 color: white;
                 font-weight: bold;
-                font-size: 20px;
+                font-size: 18px;
                 text-align: center;
             ">
                 #{int(team_row['Rank'])}
             </div>
             """, unsafe_allow_html=True)
         
-        # Logo/Initials column
-        with col2:
+        # Team logo/initials
+        with header_cols[1]:
             st.markdown(f"""
             <div style="
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                height: 36px;
                 background-color: {team_colors['primary']};
                 color: white;
                 font-weight: bold;
@@ -810,64 +806,24 @@ def render_team_card_native(team_row):
             </div>
             """, unsafe_allow_html=True)
         
-        # Team name column with share button
-        share_col, name_col = st.columns([1, 9])
-        
-        with share_col:
-            # Add the share button with download functionality
+        # Team name (with clearer styling)
+        with header_cols[2]:
             st.markdown(f"""
-            <div style="margin-top:5px">
-                <a href="#" id="share-{card_id}" title="Share this team card">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                        <polyline points="16 6 12 2 8 6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                    </svg>
-                </a>
+            <div style="padding-top: 5px;">
+                <span style="font-size: 20px; font-weight: bold;">{team_name}</span>
             </div>
-            
-            <script>
-                // Wait for the DOM to be fully loaded
-                document.addEventListener("DOMContentLoaded", function() {{
-                    const shareButton = document.getElementById("share-{card_id}");
-                    if (shareButton) {{
-                        shareButton.addEventListener("click", function(e) {{
-                            e.preventDefault();
-                            
-                            // Use html2canvas to capture the team card
-                            const cardElement = document.getElementById("{card_id}");
-                            if (cardElement) {{
-                                html2canvas(cardElement).then(canvas => {{
-                                    // Convert canvas to image data URL
-                                    const dataUrl = canvas.toDataURL("image/png");
-                                    
-                                    // Create a download link
-                                    const downloadLink = document.createElement("a");
-                                    downloadLink.href = dataUrl;
-                                    downloadLink.download = "{team_name} - DDI Card.png";
-                                    document.body.appendChild(downloadLink);
-                                    downloadLink.click();
-                                    document.body.removeChild(downloadLink);
-                                }});
-                            }}
-                        }});
-                    }}
-                }});
-            </script>
             """, unsafe_allow_html=True)
-        
-        with name_col:
-            st.markdown(f"### {team_name}")
             
-        # DDI score column
-        with col4:
+        # DDI score badge
+        with header_cols[3]:
             st.markdown(f"""
             <div style="
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
                 border-radius: 8px;
-                padding: 8px;
+                padding: 5px 8px;
                 text-align: center;
                 color: white;
+                width: 100%;
             ">
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
                     DDI SCORE
@@ -878,37 +834,113 @@ def render_team_card_native(team_row):
             </div>
             """, unsafe_allow_html=True)
         
-        # Component scores with metrics and progress bars
-        st.markdown("<br>", unsafe_allow_html=True)
-        comp_col1, comp_col2, comp_col3, comp_col4 = st.columns(4)
+        # Add some spacing
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         
-        with comp_col1:
-            st.metric("Power", f"{team_row['Power Score']:.1f}")
-            st.progress(power_norm)
+        # Components with scores and labels - more mobile-friendly 2x2 grid
+        # First row: Power and Prospects
+        score_row1 = st.columns(2)
         
-        with comp_col2:
-            st.metric("Prospects", f"{team_row['Prospect Score']:.1f}")
-            st.progress(prospect_norm)
+        with score_row1[0]:
+            # Power score with more obvious label and compact display
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 14px; color: #4CAF50; font-weight: bold;">Power</span>
+                    <span style="font-size: 16px; font-weight: bold;">{team_row['Power Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
+                    <div style="width: {power_norm*100}%; height: 100%; background: #4CAF50; border-radius: 3px;"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        with comp_col3:
-            st.metric("History", f"{team_row['Historical Score']:.1f}")
-            st.progress(history_norm)
+        with score_row1[1]:
+            # Prospects score
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 14px; color: #2196F3; font-weight: bold;">Prospects</span>
+                    <span style="font-size: 16px; font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
+                    <div style="width: {prospect_norm*100}%; height: 100%; background: #2196F3; border-radius: 3px;"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        with comp_col4:
-            st.metric("Playoff", f"{team_row['Playoff Score']:.1f}")
-            st.progress(playoff_norm)
+        # Second row: History and Playoff
+        score_row2 = st.columns(2)
         
-        # Component weights indicator
-        st.markdown("""
+        with score_row2[0]:
+            # History score
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 14px; color: #FFC107; font-weight: bold;">History</span>
+                    <span style="font-size: 16px; font-weight: bold;">{team_row['Historical Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
+                    <div style="width: {history_norm*100}%; height: 100%; background: #FFC107; border-radius: 3px;"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with score_row2[1]:
+            # Playoff score
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 14px; color: #E91E63; font-weight: bold;">Playoff</span>
+                    <span style="font-size: 16px; font-weight: bold;">{team_row['Playoff Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
+                    <div style="width: {playoff_norm*100}%; height: 100%; background: #E91E63; border-radius: 3px;"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Component weights with clearer display on mobile 
+        st.markdown(f"""
         <div style="
+            display: flex;
+            justify-content: space-between;
             font-size: 10px; 
-            color: #999999; 
-            text-align: right; 
+            color: #AAAAAA; 
+            text-align: center;
             margin-top: 5px;
+            padding: 0 5px;
         ">
-            Power (35%) · Prospects (25%) · History (25%) · Playoff (15%)
+            <span>Power (35%)</span>
+            <span>Prospects (25%)</span>
+            <span>History (25%)</span>
+            <span>Playoff (15%)</span>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Add a share button at the bottom that copies text to clipboard (more reliable than image download)
+        share_text = f"{team_name} DDI Score: {team_row['DDI Score']:.1f} | Power: {team_row['Power Score']:.1f} | Prospects: {team_row['Prospect Score']:.1f} | History: {team_row['Historical Score']:.1f} | Playoff: {team_row['Playoff Score']:.1f}"
+        
+        share_col1, share_col2 = st.columns([4, 1])
+        with share_col2:
+            if st.button(f"Share {team_name}", key=f"share_{team_name}".replace(" ", "_")):
+                st.toast(f"📋 Text copied for {team_name}!", icon="📊")
+                st.write(f"DDI data for {team_name} ready to share")
+        
+        with share_col1:
+            if st.button(f"Copy Stats to Clipboard", key=f"copy_{team_name}".replace(" ", "_")):
+                # Use JavaScript to copy to clipboard (more reliable than previous approach)
+                st.markdown(f"""
+                <script>
+                    navigator.clipboard.writeText('{share_text}')
+                        .then(() => console.log('Text copied to clipboard'))
+                        .catch(err => console.error('Error copying text: ', err));
+                </script>
+                """, unsafe_allow_html=True)
+                st.success(f"DDI stats for {team_name} copied to clipboard!")
+                
+        # End of card container
+        st.markdown("<hr style='margin: 15px 0 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
 
 def add_html2canvas_library():
     """Add the html2canvas library to the Streamlit app for screenshot functionality"""
