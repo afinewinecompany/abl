@@ -1031,109 +1031,76 @@ def render_team_card_native(team_row):
             </div>
             """, unsafe_allow_html=True)
 
-        # Trophy case section (mobile-optimized)
+        # Achievements section integrated directly into card
         if achievements:
-            # Create a dropdown/expander for achievements
-            with st.expander("🏆 Trophy Case", expanded=False):
-                # Create a compact, mobile-friendly display of achievements
-                # Use columns to display multiple achievements in a row
-                num_achievements = len(achievements)
-                
-                # Create rows of 2 achievements each for better mobile display
-                for i in range(0, num_achievements, 2):
-                    cols = st.columns(2)
+            # Add small margin
+            st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+            
+            # Display achievements in a horizontal row
+            achievement_cols = st.columns(min(4, len(achievements)))
+            
+            for i, col in enumerate(achievement_cols):
+                if i < len(achievements):
+                    achievement = achievements[i]
+                    # Set emoji based on achievement type
+                    result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
                     
-                    # First achievement in this row
-                    with cols[0]:
-                        achievement = achievements[i]
-                        # Set emoji based on achievement type
-                        result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
+                    # Set baseball-specific terminology based on achievement
+                    if achievement['result'] == "1st":
+                        result_label = "WS CHAMP"  # Shortened for mobile
+                    elif achievement['result'] == "2nd":
+                        result_label = "WS RUNNER-UP"
+                    elif achievement['result'] == "semifinalist":
+                        # Simplified league championship series detection
+                        nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins", "Cardinals", "Cubs", 
+                                  "Brewers", "Reds", "Pirates", "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"]
                         
-                        # Set baseball-specific terminology based on achievement
-                        if achievement['result'] == "1st":
-                            result_label = "WS CHAMP"  # Shortened for mobile
-                        elif achievement['result'] == "2nd":
-                            result_label = "WS RUNNER-UP"
-                        elif achievement['result'] == "semifinalist":
-                            # Simplified league championship series detection
-                            nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins", "Cardinals", "Cubs", 
-                                      "Brewers", "Reds", "Pirates", "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"]
-                            
-                            if any(nl_team in team_name for nl_team in nl_teams):
-                                result_label = "NLCS"
-                            else:
-                                result_label = "ALCS"  # Default to ALCS if not NL
+                        if any(nl_team in team_name for nl_team in nl_teams):
+                            result_label = "NLCS"
                         else:
-                            result_label = achievement['result'].upper()
-                        
-                        # Render single achievement card
+                            result_label = "ALCS"  # Default to ALCS if not NL
+                    else:
+                        result_label = achievement['result'].upper()
+                    
+                    # Render achievement badge directly in the card
+                    with col:
                         st.markdown(f"""
                         <div style="
                             background-color: rgba(255,255,255,0.05); 
                             border-radius: 6px;
-                            padding: 6px;
-                            margin-bottom: 4px;
-                            font-size: 12px;
+                            padding: 5px 3px;
+                            margin: 0;
+                            font-size: 11px;
                             text-align: center;
                         ">
-                            <div>
-                                {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span>
+                            <div style="display: flex; align-items: center; justify-content: center;">
+                                {result_emoji}<span style="font-weight: bold; margin-left: 2px;">{achievement['year']}</span>
                             </div>
-                            <div style="font-size: 10px; opacity: 0.8;">
+                            <div style="font-size: 9px; opacity: 0.8; margin-top: 2px;">
                                 {result_label}
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                    
-                    # Second achievement in this row (if exists)
-                    if i + 1 < num_achievements:
-                        with cols[1]:
-                            achievement = achievements[i + 1]
-                            result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
-                            
-                            if achievement['result'] == "1st":
-                                result_label = "WS CHAMP"
-                            elif achievement['result'] == "2nd":
-                                result_label = "WS RUNNER-UP"
-                            elif achievement['result'] == "semifinalist":
-                                nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins", "Cardinals", "Cubs", 
-                                          "Brewers", "Reds", "Pirates", "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"]
-                                
-                                if any(nl_team in team_name for nl_team in nl_teams):
-                                    result_label = "NLCS"
-                                else:
-                                    result_label = "ALCS"
-                            else:
-                                result_label = achievement['result'].upper()
-                            
-                            st.markdown(f"""
-                            <div style="
-                                background-color: rgba(255,255,255,0.05); 
-                                border-radius: 6px;
-                                padding: 6px;
-                                margin-bottom: 4px;
-                                font-size: 12px;
-                                text-align: center;
-                            ">
-                                <div>
-                                    {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span>
-                                </div>
-                                <div style="font-size: 10px; opacity: 0.8;">
-                                    {result_label}
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-        else:
-            # If no achievements, show compact message within an expander
-            with st.expander("🏆 Trophy Case", expanded=False):
-                st.markdown("""
+        
+            # If there are more achievements than will fit in one row, add a "+X more" badge in the last slot
+            if len(achievements) > 4:
+                additional = len(achievements) - 3
+                st.markdown(f"""
                 <div style="
-                    padding: 8px;
+                    background-color: rgba(255,255,255,0.05);
+                    border-radius: 6px;
+                    padding: 5px 3px;
+                    margin: 0;
+                    font-size: 11px;
                     text-align: center;
-                    font-size: 12px;
-                    color: #999;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
                 ">
-                    No playoff achievements yet
+                    <div style="opacity: 0.8;">
+                        +{additional} more
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
