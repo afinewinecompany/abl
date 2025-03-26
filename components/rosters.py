@@ -117,10 +117,12 @@ def render_team_header(
     salary_penalty: float,
     prospect_stats: Dict,
     power_rank: float,
-    team_colors: Dict
+    team_colors: Dict,
+    roster_data: pd.DataFrame
 ):
     """Render the team dashboard header"""
-    dynascore = calculate_dynascore(power_rank, prospect_stats.get('total_score', 0))
+    # Get the team's DDI rank instead of calculating Dynascore
+    ddi_rank = get_team_ddi_rank(team, roster_data, power_rank, prospect_stats.get('total_score', 0))
 
     st.markdown(f"""
         <style>
@@ -179,7 +181,7 @@ def render_team_header(
             color: white;
         }}
         .help-icon:hover::after {{
-            content: "Dynasty Dominance Index is Dylan's custom formulation of a team's True Dynasty Rank, this score will become active once the season is underway.";
+            content: "Dynasty Dominance Index is a comprehensive team evaluation combining current strength, prospect system quality, and historical performance.";
             position: absolute;
             bottom: 100%;
             left: 50%;
@@ -203,10 +205,10 @@ def render_team_header(
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">
-                        DDI™
+                        DDI™ Rank
                         <span class="help-icon">?</span>
                     </div>
-                    <div class="stat-value">{dynascore}</div>
+                    <div class="stat-value">#{ddi_rank}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Power Rank</div>
@@ -416,7 +418,8 @@ def render(roster_data: pd.DataFrame):
             salary_penalty,
             prospect_stats,
             power_rank,
-            team_colors
+            team_colors,
+            roster_data
         )
 
         # Split roster by status and sort by position
