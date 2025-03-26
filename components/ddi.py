@@ -7,9 +7,10 @@ import os
 import numpy as np
 
 # Define weighting factors
-POWER_RANK_WEIGHT = 0.45  # 45% of the score based on current power ranking
+POWER_RANK_WEIGHT = 0.40  # 40% of the score based on current power ranking
 PROSPECT_WEIGHT = 0.30    # 30% of the score based on prospect strength
-HISTORY_WEIGHT = 0.25     # 25% of the score based on historical performance
+HISTORY_WEIGHT = 0.20     # 20% of the score based on historical performance
+PLAYOFF_WEIGHT = 0.10     # 10% of the score based on playoff performance
 
 # Historical weights (more recent years weighted more heavily)
 HISTORY_WEIGHTS = {
@@ -46,8 +47,48 @@ def load_historical_data() -> Dict[str, pd.DataFrame]:
     
     return history_data
 
+def calculate_playoff_score(team_name: str) -> float:
+    """Calculate a team's playoff performance score based on playoff history"""
+    
+    total_playoff_score = 0.0
+    
+    # Handle special cases for team name variations in historical data
+    search_names = [team_name]
+    if team_name == "Athletics" or team_name == "Las Vegas Athletics":
+        search_names = ["Oakland Athletics", "Las Vegas Athletics"]
+    
+    # Process each year in playoff history
+    for year, places in PLAYOFF_HISTORY.items():
+        year_weight = HISTORY_WEIGHTS.get(year, 0.0)
+        
+        # Check if this team appears in playoff results
+        playoff_result = None
+        for place, playoff_team in places.items():
+            # Handle Athletics name variations
+            if playoff_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
+                playoff_team = "Las Vegas Athletics"
+            elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
+                playoff_team = "Oakland Athletics"
+                
+            # Check if playoff team matches any of our search names
+            if any(playoff_team == search_name for search_name in search_names):
+                playoff_result = place
+                break
+                
+        # If team has a playoff finish, add weighted points
+        if playoff_result:
+            playoff_points = PLAYOFF_POINTS.get(playoff_result, 0)
+            total_playoff_score += playoff_points * year_weight
+    
+    # Normalize to 0-100 scale based on maximum possible points
+    # Max possible = winning 1st place every year (45 points * sum of year weights)
+    max_possible = 45.0 * sum(HISTORY_WEIGHTS.values())
+    normalized_score = (total_playoff_score / max_possible * 100) if max_possible > 0 else 0
+    
+    return normalized_score
+
 def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFrame]) -> float:
-    """Calculate a team's historical performance score based on past seasons"""
+    """Calculate a team's historical performance score based on past seasons (excluding playoffs)"""
     
     if not history_data:
         return 0.0
@@ -104,18 +145,6 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
         # Combine the three metrics with equal weighting
         season_score = (win_pct_score + rank_score + fpts_score) / 3
         
-        # Add playoff bonus if applicable
-        playoff_result = None
-        for place, playoff_team in PLAYOFF_HISTORY.get(year, {}).items():
-            # Check if playoff team matches any of our search names
-            if any(playoff_team == search_name for search_name in search_names):
-                playoff_result = place
-                break
-                
-        if playoff_result:
-            playoff_bonus = PLAYOFF_POINTS.get(playoff_result, 0)
-            season_score += playoff_bonus
-            
         # Apply year weighting and add to total
         total_score += season_score * year_weight
     
@@ -277,11 +306,15 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
         # Get historical performance score
         history_score = calculate_historical_score(team, history_data)
         
+        # Get playoff performance score
+        playoff_score = calculate_playoff_score(team)
+        
         # Calculate overall DDI score with component weighting
         ddi_score = (
             (power_score * POWER_RANK_WEIGHT) +
             (prospect_score * PROSPECT_WEIGHT) +
-            (history_score * HISTORY_WEIGHT)
+            (history_score * HISTORY_WEIGHT) +
+            (playoff_score * PLAYOFF_WEIGHT)
         )
         
         # Add to our data collection
@@ -290,6 +323,7 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
             'Power Score': power_score,
             'Prospect Score': prospect_score,
             'Historical Score': history_score,
+            'Playoff Score': playoff_score,
             'DDI Score': ddi_score
         })
     
@@ -301,7 +335,7 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
     ddi_df['Rank'] = ddi_df.index + 1
     
     # Reorder columns to put Rank first
-    ddi_df = ddi_df[['Rank', 'Team', 'DDI Score', 'Power Score', 'Prospect Score', 'Historical Score']]
+    ddi_df = ddi_df[['Rank', 'Team', 'DDI Score', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']]
     
     return ddi_df
 
