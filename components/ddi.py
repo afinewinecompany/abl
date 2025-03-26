@@ -700,7 +700,7 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         values='DDI Score',
         color='DDI Score',
         hover_data=['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score'],
-        color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],  # Red for high, Blue for low
+        color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],  # Blue for low, Red for high
         color_continuous_midpoint=tm_df['DDI Score'].median()
     )
 
@@ -766,7 +766,7 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         labels=dict(x="Component", y="Team", color="Score"),
         x=['Power', 'Prospects', 'Historical', 'Playoffs'],
         y=heat_df['Team'],
-        color_continuous_scale='Viridis',
+        color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],
         aspect="auto"
     )
 
