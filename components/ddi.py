@@ -733,43 +733,42 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     return fig
 
 def render_team_card(team_row):
-    """Render a stylish modern card for a team with its DDI information"""
+    """Render a team card - now uses the native implementation"""
+    return render_team_card_native(team_row)
+
+def render_team_card_native(team_row):
+    """Render a stylish modern card for a team with its DDI information using native Streamlit components"""
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
-    logo_url = get_team_logo_url(team_name)
+    logo_initials = get_team_logo_url(team_name)
     
     # Calculate normalized scores for progress bars (ensure they're between 0-100)
-    power_norm = min(100, max(0, team_row['Power Score']))
-    prospect_norm = min(100, max(0, team_row['Prospect Score']))
-    history_norm = min(100, max(0, team_row['Historical Score']))
-    playoff_norm = min(100, max(0, team_row['Playoff Score']))
+    power_norm = min(100, max(0, team_row['Power Score'])) / 100
+    prospect_norm = min(100, max(0, team_row['Prospect Score'])) / 100
+    history_norm = min(100, max(0, team_row['Historical Score'])) / 100
+    playoff_norm = min(100, max(0, team_row['Playoff Score'])) / 100
     
-    # Create a simplified modern card with team colors
-    card_html = f"""
-    <div style="
-        background: #1E1E28;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        color: white;
-        position: relative;
-    ">
-        <!-- Team color accent -->
+    # Create card container with custom styling
+    with st.container():
+        # Add a border and styling
+        st.markdown(f"""
         <div style="
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-            border-radius: 12px 12px 0 0;
-        "></div>
+            border: 1px solid rgba(230, 230, 230, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: rgba(49, 51, 63, 0.7);
+            border-top: 5px solid {team_colors['primary']};
+        ">
+        </div>
+        """, unsafe_allow_html=True)
         
-        <!-- Header with rank and team info -->
-        <div style="display: flex; align-items: center; margin: 10px 0 20px; padding-top: 10px;">
-            <!-- Rank -->
+        # Layout the header with columns
+        col1, col2, col3, col4 = st.columns([1, 1, 5, 2])
+        
+        # Rank column
+        with col1:
+            st.markdown(f"""
             <div style="
                 width: 40px;
                 height: 40px;
@@ -778,142 +777,89 @@ def render_team_card(team_row):
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                margin-right: 15px;
+                color: white;
+                font-weight: bold;
+                font-size: 20px;
+                text-align: center;
             ">
-                <span style="font-size: 20px; font-weight: bold; color: white;">
-                    #{int(team_row['Rank'])}
-                </span>
+                #{int(team_row['Rank'])}
             </div>
-            
-            <!-- Team logo/initials -->
+            """, unsafe_allow_html=True)
+        
+        # Logo/Initials column
+        with col2:
+            st.markdown(f"""
             <div style="
                 width: 40px;
                 height: 40px;
-                background: {team_colors['primary']};
+                background-color: {team_colors['primary']};
+                color: white;
+                font-weight: bold;
+                font-size: 16px;
                 border-radius: 50%;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                margin-right: 15px;
-                color: white;
-                font-weight: bold;
-                font-size: 16px;
-            ">{logo_url}</div>
-            
-            <!-- Team name -->
-            <div style="flex-grow: 1;">
-                <div style="font-size: 18px; font-weight: bold;">
-                    {team_name}
-                </div>
+                text-align: center;
+            ">
+                {logo_initials}
             </div>
+            """, unsafe_allow_html=True)
+        
+        # Team name column
+        with col3:
+            st.markdown(f"### {team_name}")
             
-            <!-- DDI Score badge -->
+        # DDI score column
+        with col4:
+            st.markdown(f"""
             <div style="
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
                 border-radius: 8px;
-                padding: 8px 12px;
+                padding: 8px;
+                text-align: center;
+                color: white;
             ">
-                <div style="text-align: center;">
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">
-                        DDI SCORE
-                    </div>
-                    <div style="font-size: 20px; font-weight: bold;">
-                        {team_row['DDI Score']:.1f}
-                    </div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
+                    DDI SCORE
+                </div>
+                <div style="font-size: 20px; font-weight: bold;">
+                    {team_row['DDI Score']:.1f}
                 </div>
             </div>
-        </div>
+            """, unsafe_allow_html=True)
         
-        <!-- Component scores with progress bars -->
-        <div style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-            margin: 15px 0;
-        ">
-            <!-- Power -->
-            <div style="
-                background-color: #2A2A35;
-                border-radius: 8px;
-                padding: 10px;
-                flex: 1 1 21%;
-                min-width: 130px;
-            ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Power</div>
-                    <div style="font-size: 16px; font-weight: bold;">{team_row['Power Score']:.1f}</div>
-                </div>
-                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
-                    <div style="width: {power_norm}%; height: 100%; background: #4CAF50; border-radius: 2px;"></div>
-                </div>
-            </div>
-            
-            <!-- Prospects -->
-            <div style="
-                background-color: #2A2A35;
-                border-radius: 8px;
-                padding: 10px;
-                flex: 1 1 21%;
-                min-width: 130px;
-            ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Prospects</div>
-                    <div style="font-size: 16px; font-weight: bold;">{team_row['Prospect Score']:.1f}</div>
-                </div>
-                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
-                    <div style="width: {prospect_norm}%; height: 100%; background: #2196F3; border-radius: 2px;"></div>
-                </div>
-            </div>
-            
-            <!-- History -->
-            <div style="
-                background-color: #2A2A35;
-                border-radius: 8px;
-                padding: 10px;
-                flex: 1 1 21%;
-                min-width: 130px;
-            ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">History</div>
-                    <div style="font-size: 16px; font-weight: bold;">{team_row['Historical Score']:.1f}</div>
-                </div>
-                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
-                    <div style="width: {history_norm}%; height: 100%; background: #FFC107; border-radius: 2px;"></div>
-                </div>
-            </div>
-            
-            <!-- Playoffs -->
-            <div style="
-                background-color: #2A2A35;
-                border-radius: 8px;
-                padding: 10px;
-                flex: 1 1 21%;
-                min-width: 130px;
-            ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Playoff</div>
-                    <div style="font-size: 16px; font-weight: bold;">{team_row['Playoff Score']:.1f}</div>
-                </div>
-                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
-                    <div style="width: {playoff_norm}%; height: 100%; background: #E91E63; border-radius: 2px;"></div>
-                </div>
-            </div>
-        </div>
+        # Component scores with metrics and progress bars
+        st.markdown("<br>", unsafe_allow_html=True)
+        comp_col1, comp_col2, comp_col3, comp_col4 = st.columns(4)
         
-        <!-- Component weights indicator -->
+        with comp_col1:
+            st.metric("Power", f"{team_row['Power Score']:.1f}")
+            st.progress(power_norm)
+        
+        with comp_col2:
+            st.metric("Prospects", f"{team_row['Prospect Score']:.1f}")
+            st.progress(prospect_norm)
+        
+        with comp_col3:
+            st.metric("History", f"{team_row['Historical Score']:.1f}")
+            st.progress(history_norm)
+        
+        with comp_col4:
+            st.metric("Playoff", f"{team_row['Playoff Score']:.1f}")
+            st.progress(playoff_norm)
+        
+        # Component weights indicator
+        st.markdown("""
         <div style="
             font-size: 10px; 
             color: #999999; 
             text-align: right; 
-            margin-top: 10px;
+            margin-top: 5px;
         ">
             Power (35%) · Prospects (25%) · History (25%) · Playoff (15%)
         </div>
-    </div>
-    """
-    
-    return card_html
+        """, unsafe_allow_html=True)
 
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
@@ -1022,9 +968,9 @@ def render(roster_data: pd.DataFrame):
         with vis_tab2:
             st.markdown("### Dynasty Dominance Rankings")
             
-            # Show team cards in a single column for better readability
+            # Show team cards using native Streamlit components
             for _, team_row in display_df.iterrows():
-                st.markdown(render_team_card(team_row), unsafe_allow_html=True)
+                render_team_card_native(team_row)
             
             # Also show the traditional table below
             with st.expander("View as Table"):
