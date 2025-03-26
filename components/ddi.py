@@ -829,12 +829,16 @@ def render_team_card(team_row):
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            justify-content: space-between;
+            margin: 15px 0;
         ">
             <!-- Power -->
             <div style="
                 background-color: #2A2A35;
                 border-radius: 8px;
                 padding: 10px;
+                flex: 1 1 21%;
+                min-width: 130px;
             ">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Power</div>
@@ -850,6 +854,8 @@ def render_team_card(team_row):
                 background-color: #2A2A35;
                 border-radius: 8px;
                 padding: 10px;
+                flex: 1 1 21%;
+                min-width: 130px;
             ">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Prospects</div>
@@ -865,6 +871,8 @@ def render_team_card(team_row):
                 background-color: #2A2A35;
                 border-radius: 8px;
                 padding: 10px;
+                flex: 1 1 21%;
+                min-width: 130px;
             ">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">History</div>
@@ -880,6 +888,8 @@ def render_team_card(team_row):
                 background-color: #2A2A35;
                 border-radius: 8px;
                 padding: 10px;
+                flex: 1 1 21%;
+                min-width: 130px;
             ">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Playoff</div>
