@@ -758,7 +758,7 @@ def render(roster_data: pd.DataFrame):
         
         # Format DDI dataframe for display
         display_df = ddi_df.copy()
-        for col in ['DDI Score', 'Power Score', 'Prospect Score', 'Historical Score']:
+        for col in ['DDI Score', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']:
             display_df[col] = display_df[col].round(1)
         
         # Create visualization tabs
@@ -848,6 +848,11 @@ def render(roster_data: pd.DataFrame):
                         "Historical Score": st.column_config.NumberColumn(
                             "History",
                             help="Historical performance score (0-100)",
+                            format="%.1f"
+                        ),
+                        "Playoff Score": st.column_config.NumberColumn(
+                            "Playoffs",
+                            help="Playoff success score (0-100)",
                             format="%.1f"
                         ),
                     },
