@@ -875,7 +875,7 @@ def get_team_achievements(team_name: str) -> list:
     return sorted(achievements, key=lambda x: x['year'], reverse=True)
 
 def render_team_card_native(team_row):
-    """Render a stylish modern card for a team with its DDI information using native Streamlit components"""
+    """Render a stylish modern card for a team with its DDI information using native Streamlit components - optimized for mobile"""
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
     logo_initials = get_team_logo_url(team_name)
@@ -891,250 +891,254 @@ def render_team_card_native(team_row):
 
     # Create card container with custom styling and mobile-friendly design
     with st.container():
-        # Add a colored border at the top
+        # Add a colored top border to the card container
         st.markdown(f"""
         <div style="
             border: 1px solid rgba(230, 230, 230, 0.2);
-            border-radius: 10px;
-            padding: 10px 15px;
-            margin: 10px 0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 8px 0;
             background-color: rgba(49, 51, 63, 0.7);
-            border-top: 5px solid {team_colors['primary']};
+            border-top: 4px solid {team_colors['primary']};
         ">
         </div>
         """, unsafe_allow_html=True)
 
-        # Header Row: Rank, Logo, Team Name, DDI Score
-        header_cols = st.columns([1, 1, 6, 3])
-
-        # Rank badge
-        with header_cols[0]:
+        # First row: Rank + Logo + Team Name
+        row1_cols = st.columns([1, 1, 8])
+        
+        # Rank badge (smaller and more compact)
+        with row1_cols[0]:
             st.markdown(f"""
             <div style="
-                width: 36px;
-                height: 36px;
+                width: 28px;
+                height: 28px;
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                border-radius: 8px;
+                border-radius: 6px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 color: white;
                 font-weight: bold;
-                font-size: 18px;
+                font-size: 13px;
                 text-align: center;
+                margin-top: 2px;
             ">
                 #{int(team_row['Rank'])}
             </div>
             """, unsafe_allow_html=True)
 
-        # Team logo image
-        with header_cols[1]:
+        # Team logo image (smaller)
+        with row1_cols[1]:
             st.markdown(f"""
             <div style="
-                width: 36px;
-                height: 36px;
+                width: 28px;
+                height: 28px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
+                margin-top: 2px;
             ">
                 {logo_initials}
             </div>
             """, unsafe_allow_html=True)
 
-        # Team name (with clearer styling)
-        with header_cols[2]:
+        # Team name and DDI score in same row
+        with row1_cols[2]:
             st.markdown(f"""
-            <div style="padding-top: 5px;">
-                <span style="font-size: 20px; font-weight: bold;">{team_name}</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # DDI score badge
-        with header_cols[3]:
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                border-radius: 8px;
-                padding: 5px 8px;
-                text-align: center;
-                color: white;
-                width: 100%;
-            ">
-                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
-                    DDI SCORE
-                </div>
-                <div style="font-size: 20px; font-weight: bold;">
-                    {team_row['DDI Score']:.1f}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Add some spacing
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-
-        # Components with scores and labels - more mobile-friendly 2x2 grid
-        # First row: Power and Prospects
-        score_row1 = st.columns(2)
-
-        with score_row1[0]:
-            # Power score with more obvious label and compact display
-            st.markdown(f"""
-            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-size: 14px; color: #4CAF50; font-weight: bold;">Power</span>
-                    <span style="font-size: 16px; font-weight: bold;">{team_row['Power Score']:.1f}</span>
-                </div>
-                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
-                    <div style="width: {power_norm*100}%; height: 100%; background: #4CAF50; border-radius: 3px;"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with score_row1[1]:
-            # Prospects score
-            st.markdown(f"""
-            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-size: 14px; color: #2196F3; font-weight: bold;">Prospects</span>
-                    <span style="font-size: 16px; font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
-                </div>
-                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
-                    <div style="width: {prospect_norm*100}%; height: 100%; background: #2196F3; border-radius: 3px;"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Second row: History and Playoff
-        score_row2 = st.columns(2)
-
-        with score_row2[0]:
-            # History score
-            st.markdown(f"""
-            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-size: 14px; color: #FFC107; font-weight: bold;">History</span>
-                    <span style="font-size: 16px; font-weight: bold;">{team_row['Historical Score']:.1f}</span>
-                </div>
-                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
-                    <div style="width: {history_norm*100}%; height: 100%; background: #FFC107; border-radius: 3px;"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with score_row2[1]:
-            # Playoff score
-            st.markdown(f"""
-            <div style="background-color: #2A2A35; border-radius: 8px; padding: 8px; margin-bottom: 5px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-size: 14px; color: #E91E63; font-weight: bold;">Playoff</span>
-                    <span style="font-size: 16px; font-weight: bold;">{team_row['Playoff Score']:.1f}</span>
-                </div>
-                <div style="width: 100%; height: 6px; background-color: #444450; border-radius: 3px;">
-                    <div style="width: {playoff_norm*100}%; height: 100%; background: #E91E63; border-radius: 3px;"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Component weights with clearer display on mobile 
-        st.markdown(f"""
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px; 
-            color: #AAAAAA; 
-            text-align: center;
-            margin-top: 5px;
-            padding: 0 5px;
-        ">
-            <span>Power (30%)</span>
-            <span>Prospects (20%)</span>
-            <span>History (25%)</span>
-            <span>Playoff (25%)</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Trophy case section (if team has achievements)
-        if achievements:
-            st.markdown(f"""
-            <div style="
-                background-color: #2A2A35; 
-                border-radius: 8px; 
-                padding: 8px 12px; 
-                margin: 10px 0;
-                border-left: 3px solid {team_colors['primary']};
-            ">
-                <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">
-                    🏆 Trophy Case
-                </div>
-            """, unsafe_allow_html=True)
-
-            for achievement in achievements:
-                # Set emoji based on achievement type
-                result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
-                
-                # Set baseball-specific terminology based on achievement
-                if achievement['result'] == "1st":
-                    result_label = "WORLD SERIES CHAMPION"
-                elif achievement['result'] == "2nd":
-                    result_label = "WORLD SERIES RUNNER-UP"
-                elif achievement['result'] == "semifinalist":
-                    # Determine if team is AL or NL based on division
-                    if any(div in team_name for div in ["NL East", "NL West", "NL Central"]):
-                        result_label = "NLCS"
-                    elif any(div in team_name for div in ["AL East", "AL West", "AL Central"]):
-                        result_label = "ALCS"
-                    else:
-                        # Check specific team names if we can't determine from division
-                        nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins",  # NL East
-                                   "Cardinals", "Cubs", "Brewers", "Reds", "Pirates",      # NL Central
-                                   "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"] # NL West
-                        al_teams = ["Yankees", "Red Sox", "Blue Jays", "Orioles", "Rays",   # AL East
-                                   "White Sox", "Guardians", "Tigers", "Royals", "Twins",   # AL Central
-                                   "Astros", "Angels", "Athletics", "Mariners", "Rangers"]  # AL West
-                        
-                        if any(nl_team in team_name for nl_team in nl_teams):
-                            result_label = "NLCS"
-                        elif any(al_team in team_name for al_team in al_teams):
-                            result_label = "ALCS"
-                        else:
-                            result_label = "SEMIFINALIST"
-                else:
-                    result_label = achievement['result'].upper()
-                    
-                st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 16px; font-weight: bold;">{team_name}</span>
                 <div style="
-                    margin: 5px 0;
-                    padding: 5px;
-                    background-color: rgba(255,255,255,0.05);
-                    border-radius: 4px;
-                    font-size: 13px;
+                    background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+                    border-radius: 6px;
+                    padding: 3px 6px;
+                    text-align: center;
+                    color: white;
+                    display: inline-block;
                 ">
-                    {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span> - {result_label}
+                    <div style="font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        DDI
+                    </div>
+                    <div style="font-size: 14px; font-weight: bold; line-height: 1;">
+                        {team_row['DDI Score']:.1f}
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Metric scores - All 4 in a single row with more compact display
+        # Each column has two mini-rows: label+value and progress bar
+        score_cols = st.columns(4)
+        
+        # Power score
+        with score_cols[0]:
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="font-size: 10px; color: #4CAF50; font-weight: bold;">Power</span>
+                    <span style="font-size: 12px; font-weight: bold;">{team_row['Power Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {power_norm*100}%; height: 100%; background: #4CAF50; border-radius: 2px;"></div>
+                </div>
+                <div style="text-align: center; font-size: 8px; color: #AAAAAA; margin-top: 2px;">30%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Prospects score
+        with score_cols[1]:
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="font-size: 10px; color: #2196F3; font-weight: bold;">Prosp</span>
+                    <span style="font-size: 12px; font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {prospect_norm*100}%; height: 100%; background: #2196F3; border-radius: 2px;"></div>
+                </div>
+                <div style="text-align: center; font-size: 8px; color: #AAAAAA; margin-top: 2px;">20%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # History score
+        with score_cols[2]:
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="font-size: 10px; color: #FFC107; font-weight: bold;">Hist</span>
+                    <span style="font-size: 12px; font-weight: bold;">{team_row['Historical Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {history_norm*100}%; height: 100%; background: #FFC107; border-radius: 2px;"></div>
+                </div>
+                <div style="text-align: center; font-size: 8px; color: #AAAAAA; margin-top: 2px;">25%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Playoff score
+        with score_cols[3]:
+            st.markdown(f"""
+            <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="font-size: 10px; color: #E91E63; font-weight: bold;">Plyoff</span>
+                    <span style="font-size: 12px; font-weight: bold;">{team_row['Playoff Score']:.1f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {playoff_norm*100}%; height: 100%; background: #E91E63; border-radius: 2px;"></div>
+                </div>
+                <div style="text-align: center; font-size: 8px; color: #AAAAAA; margin-top: 2px;">25%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Trophy case section (mobile-optimized)
+        if achievements:
+            # Create a dropdown/expander for achievements
+            with st.expander("🏆 Trophy Case", expanded=False):
+                # Create a compact, mobile-friendly display of achievements
+                # Use columns to display multiple achievements in a row
+                num_achievements = len(achievements)
+                
+                # Create rows of 2 achievements each for better mobile display
+                for i in range(0, num_achievements, 2):
+                    cols = st.columns(2)
+                    
+                    # First achievement in this row
+                    with cols[0]:
+                        achievement = achievements[i]
+                        # Set emoji based on achievement type
+                        result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
+                        
+                        # Set baseball-specific terminology based on achievement
+                        if achievement['result'] == "1st":
+                            result_label = "WS CHAMP"  # Shortened for mobile
+                        elif achievement['result'] == "2nd":
+                            result_label = "WS RUNNER-UP"
+                        elif achievement['result'] == "semifinalist":
+                            # Simplified league championship series detection
+                            nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins", "Cardinals", "Cubs", 
+                                      "Brewers", "Reds", "Pirates", "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"]
+                            
+                            if any(nl_team in team_name for nl_team in nl_teams):
+                                result_label = "NLCS"
+                            else:
+                                result_label = "ALCS"  # Default to ALCS if not NL
+                        else:
+                            result_label = achievement['result'].upper()
+                        
+                        # Render single achievement card
+                        st.markdown(f"""
+                        <div style="
+                            background-color: rgba(255,255,255,0.05); 
+                            border-radius: 6px;
+                            padding: 6px;
+                            margin-bottom: 4px;
+                            font-size: 12px;
+                            text-align: center;
+                        ">
+                            <div>
+                                {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span>
+                            </div>
+                            <div style="font-size: 10px; opacity: 0.8;">
+                                {result_label}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Second achievement in this row (if exists)
+                    if i + 1 < num_achievements:
+                        with cols[1]:
+                            achievement = achievements[i + 1]
+                            result_emoji = "🏆" if achievement['result'] == "1st" else "🥈" if achievement['result'] == "2nd" else "🏅"
+                            
+                            if achievement['result'] == "1st":
+                                result_label = "WS CHAMP"
+                            elif achievement['result'] == "2nd":
+                                result_label = "WS RUNNER-UP"
+                            elif achievement['result'] == "semifinalist":
+                                nl_teams = ["Braves", "Phillies", "Mets", "Nationals", "Marlins", "Cardinals", "Cubs", 
+                                          "Brewers", "Reds", "Pirates", "Dodgers", "Giants", "Padres", "Diamondbacks", "Rockies"]
+                                
+                                if any(nl_team in team_name for nl_team in nl_teams):
+                                    result_label = "NLCS"
+                                else:
+                                    result_label = "ALCS"
+                            else:
+                                result_label = achievement['result'].upper()
+                            
+                            st.markdown(f"""
+                            <div style="
+                                background-color: rgba(255,255,255,0.05); 
+                                border-radius: 6px;
+                                padding: 6px;
+                                margin-bottom: 4px;
+                                font-size: 12px;
+                                text-align: center;
+                            ">
+                                <div>
+                                    {result_emoji} <span style="font-weight: bold;">{achievement['year']}</span>
+                                </div>
+                                <div style="font-size: 10px; opacity: 0.8;">
+                                    {result_label}
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+        else:
+            # If no achievements, show compact message within an expander
+            with st.expander("🏆 Trophy Case", expanded=False):
+                st.markdown("""
+                <div style="
+                    padding: 8px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #999;
+                ">
+                    No playoff achievements yet
                 </div>
                 """, unsafe_allow_html=True)
-
-            st.markdown("""</div>""", unsafe_allow_html=True)
-        else:
-            # If no achievements, show empty trophy case message
-            st.markdown(f"""
-            <div style="
-                background-color: #2A2A35; 
-                border-radius: 8px; 
-                padding: 8px 12px; 
-                margin: 10px 0;
-                opacity: 0.6;
-                border-left: 3px solid #777;
-                text-align: center;
-            ">
-                <div style="font-size: 13px;">
-                    🏆 No playoff achievements yet
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # End of card container
-        st.markdown("<hr style='margin: 15px 0 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
+                
+        # End of card container - more subtle divider
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
