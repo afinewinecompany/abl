@@ -435,6 +435,16 @@ def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
         hovertemplate="Historical Score: %{text}<extra></extra>"
     ))
     
+    fig.add_trace(go.Bar(
+        y=sorted_df['Team'],
+        x=sorted_df['Playoff Score'] * PLAYOFF_WEIGHT,
+        name='Playoff Success',
+        orientation='h',
+        marker=dict(color='#E91E63'),
+        text=[f"{score:.1f}" for score in sorted_df['Playoff Score']],
+        hovertemplate="Playoff Score: %{text}<extra></extra>"
+    ))
+    
     # Add ranking markers
     for i, (_, row) in enumerate(sorted_df.iterrows()):
         fig.add_annotation(
@@ -486,7 +496,7 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
     top_teams = ddi_df.head(5)
     
     # Set up categories for radar chart
-    categories = ['Power Ranking', 'Prospect System', 'Historical Performance']
+    categories = ['Power Ranking', 'Prospect System', 'Historical Performance', 'Playoff Success']
     
     fig = go.Figure()
     
@@ -497,7 +507,8 @@ def create_radar_chart(ddi_df: pd.DataFrame) -> go.Figure:
             r=[
                 team['Power Score'], 
                 team['Prospect Score'], 
-                team['Historical Score']
+                team['Historical Score'],
+                team['Playoff Score']
             ],
             theta=categories,
             fill='toself',
@@ -554,7 +565,8 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
             f"Rank: #{row['Rank']}<br>" +
             f"Power Score: {row['Power Score']:.1f}<br>" +
             f"Prospect Score: {row['Prospect Score']:.1f}<br>" +
-            f"Historical Score: {row['Historical Score']:.1f}"
+            f"Historical Score: {row['Historical Score']:.1f}<br>" +
+            f"Playoff Score: {row['Playoff Score']:.1f}"
         )
         hover_texts.append(hover_text)
     
@@ -574,7 +586,7 @@ def create_treemap_chart(ddi_df: pd.DataFrame) -> go.Figure:
         parents=["" for _ in range(len(tm_df))],
         values='DDI Score',
         color='DDI Score',
-        hover_data=['Power Score', 'Prospect Score', 'Historical Score'],
+        hover_data=['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score'],
         color_continuous_scale=['blue', 'lightblue', 'white', 'pink', 'red'],  # Red for high, Blue for low
         color_continuous_midpoint=tm_df['DDI Score'].median()
     )
@@ -615,7 +627,7 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     """Create an interactive heatmap of DDI components across teams"""
     
     # Create a subset of data with just the components we want
-    heat_df = ddi_df[['Team', 'Power Score', 'Prospect Score', 'Historical Score']].copy()
+    heat_df = ddi_df[['Team', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']].copy()
     
     # Sort by overall DDI score (which is the ordering in the input DataFrame)
     heat_df = heat_df.sort_values('Team')
@@ -624,7 +636,7 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     melted_df = pd.melt(
         heat_df, 
         id_vars=['Team'], 
-        value_vars=['Power Score', 'Prospect Score', 'Historical Score'],
+        value_vars=['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score'],
         var_name='Component',
         value_name='Score'
     )
@@ -637,9 +649,9 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     
     # Create the heatmap
     fig = px.imshow(
-        heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score']],
+        heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']],
         labels=dict(x="Component", y="Team", color="Score"),
-        x=['Power', 'Prospects', 'Historical'],
+        x=['Power', 'Prospects', 'Historical', 'Playoffs'],
         y=heat_df['Team'],
         color_continuous_scale='Viridis',
         aspect="auto"
@@ -647,7 +659,7 @@ def create_heatmap_chart(ddi_df: pd.DataFrame) -> go.Figure:
     
     # Customize appearance
     fig.update_traces(
-        text=heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score']].round(1).values,
+        text=heat_df.set_index('Team')[['Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']].round(1).values,
         texttemplate="%{text}",
         textfont={"size": 12, "color": "white"}
     )
@@ -687,7 +699,7 @@ def render_team_card(team_row):
         <div style="text-align: right; font-size: 24px; font-weight: bold; margin-bottom: 5px;">#{int(team_row['Rank'])}</div>
         <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">{team_name}</div>
         <div style="font-weight: bold; margin-bottom: 10px;">DDI Score: {team_row['DDI Score']:.1f}</div>
-        <div>Power: <b>{team_row['Power Score']:.1f}</b> | Prospects: <b>{team_row['Prospect Score']:.1f}</b> | Historical: <b>{team_row['Historical Score']:.1f}</b></div>
+        <div>Power: <b>{team_row['Power Score']:.1f}</b> | Prospects: <b>{team_row['Prospect Score']:.1f}</b> | History: <b>{team_row['Historical Score']:.1f}</b> | Playoffs: <b>{team_row['Playoff Score']:.1f}</b></div>
     </div>
     """
     
@@ -700,12 +712,13 @@ def render(roster_data: pd.DataFrame):
     
     st.markdown("""
     ### What is DDI?
-    The Dynasty Dominance Index (DDI) combines a team's current power ranking, prospect system strength, and historical performance to create a comprehensive evaluation of dynasty team health and trajectory.
+    The Dynasty Dominance Index (DDI) combines a team's current power ranking, prospect system, historical performance, and playoff success to create a comprehensive evaluation of dynasty team health and trajectory.
     
     #### DDI Components:
-    - **Current Power Rankings (45%)**: How strong is the team right now?
+    - **Current Power Rankings (40%)**: How strong is the team right now?
     - **Prospect System (30%)**: How strong is the team's future talent pipeline?
-    - **Historical Performance (25%)**: How consistently successful has the team been over time?
+    - **Historical Performance (20%)**: How consistently successful has the team been over time?
+    - **Playoff Success (10%)**: How well has the team performed in the playoffs?
     """)
     
     # Create a horizontal rule
@@ -852,6 +865,7 @@ def render(roster_data: pd.DataFrame):
             - Power Rankings: {POWER_RANK_WEIGHT*100}%
             - Prospect System: {PROSPECT_WEIGHT*100}%
             - Historical Performance: {HISTORY_WEIGHT*100}%
+            - Playoff Success: {PLAYOFF_WEIGHT*100}%
             """)
             
         # Tab 4: Top Teams Comparison
@@ -865,8 +879,16 @@ def render(roster_data: pd.DataFrame):
             - 2023 Season: {HISTORY_WEIGHTS['2023']*100}%
             - 2022 Season: {HISTORY_WEIGHTS['2022']*100}%
             - 2021 Season: {HISTORY_WEIGHTS['2021']*100}%
+            """)
             
-            Plus playoff bonus points for top 3 finishes each season.
+            # Add breakdown of playoff scoring
+            st.info(f"""
+            **Playoff Success Points:**
+            - 1st Place: {PLAYOFF_POINTS['1st']} points
+            - 2nd Place: {PLAYOFF_POINTS['2nd']} points
+            - 3rd Place: {PLAYOFF_POINTS['3rd']} points
+            
+            Playoff points are weighted by season recency and normalized to a 0-100 scale.
             """)
         
     except Exception as e:
