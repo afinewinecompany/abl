@@ -437,17 +437,64 @@ def get_team_colors(team_name: str) -> dict:
 
 def get_team_logo_url(team_name: str) -> str:
     """Get MLB team logo URL"""
-    # Clean team name for URL formatting
-    clean_name = team_name.lower().replace(' ', '-')
+    # Map of team names to correct MLB logo URLs
+    team_logo_map = {
+        # AL East
+        "Baltimore Orioles": "baltimore-orioles",
+        "Boston Red Sox": "boston-red-sox",
+        "New York Yankees": "new-york-yankees",
+        "Tampa Bay Rays": "tampa-bay-rays",
+        "Toronto Blue Jays": "toronto-blue-jays",
+        
+        # AL Central
+        "Chicago White Sox": "chicago-white-sox",
+        "Cleveland Guardians": "cleveland-guardians",
+        "Detroit Tigers": "detroit-tigers",
+        "Kansas City Royals": "kansas-city-royals",
+        "Minnesota Twins": "minnesota-twins",
+        
+        # AL West
+        "Houston Astros": "houston-astros",
+        "Los Angeles Angels": "los-angeles-angels",
+        "Oakland Athletics": "oakland-athletics",
+        "Athletics": "oakland-athletics",
+        "Las Vegas Athletics": "oakland-athletics",  # Still using Oakland's logo for now
+        "Seattle Mariners": "seattle-mariners",
+        "Texas Rangers": "texas-rangers",
+        
+        # NL East
+        "Atlanta Braves": "atlanta-braves",
+        "Miami Marlins": "miami-marlins",
+        "New York Mets": "new-york-mets",
+        "Philadelphia Phillies": "philadelphia-phillies",
+        "Washington Nationals": "washington-nationals",
+        
+        # NL Central
+        "Chicago Cubs": "chicago-cubs",
+        "Cincinnati Reds": "cincinnati-reds",
+        "Milwaukee Brewers": "milwaukee-brewers",
+        "Pittsburgh Pirates": "pittsburgh-pirates",
+        "Saint Louis Cardinals": "st-louis-cardinals",  # Note the "Saint" vs "St" difference
+        "St. Louis Cardinals": "st-louis-cardinals",
+        
+        # NL West
+        "Arizona Diamondbacks": "arizona-diamondbacks",
+        "Colorado Rockies": "colorado-rockies",
+        "Los Angeles Dodgers": "los-angeles-dodgers",
+        "San Diego Padres": "san-diego-padres",
+        "San Francisco Giants": "san-francisco-giants"
+    }
     
-    # Handle special cases
-    if 'athletics' in clean_name:
-        clean_name = 'oakland-athletics'  # Use Oakland for now since that's the established logo
-    elif 'guardians' in clean_name:
-        clean_name = 'cleveland-guardians'
+    # Get the logo URL key from the map, or create a fallback
+    logo_key = team_logo_map.get(team_name)
+    
+    # If we don't have a mapping, try a simple transformation
+    if not logo_key:
+        logo_key = team_name.lower().replace(' ', '-')
+        print(f"No logo mapping found for '{team_name}', using '{logo_key}'")
     
     # Return the logo URL from MLB
-    return f"https://www.mlbstatic.com/team-logos/{clean_name}.svg"
+    return f"https://www.mlbstatic.com/team-logos/{logo_key}.svg"
 
 def create_ddi_visualization(ddi_df: pd.DataFrame) -> go.Figure:
     """Create a stacked bar visualization of DDI components"""
