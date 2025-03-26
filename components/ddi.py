@@ -991,7 +991,7 @@ def render_team_card_native(team_row):
             st.markdown(f"""
             <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                    <span style="font-size: 10px; color: #2196F3; font-weight: bold;">Prosp</span>
+                    <span style="font-size: 10px; color: #2196F3; font-weight: bold;">Prospect</span>
                     <span style="font-size: 12px; font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
                 </div>
                 <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
@@ -1006,7 +1006,7 @@ def render_team_card_native(team_row):
             st.markdown(f"""
             <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                    <span style="font-size: 10px; color: #FFC107; font-weight: bold;">Hist</span>
+                    <span style="font-size: 10px; color: #FFC107; font-weight: bold;">History</span>
                     <span style="font-size: 12px; font-weight: bold;">{team_row['Historical Score']:.1f}</span>
                 </div>
                 <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
@@ -1021,7 +1021,7 @@ def render_team_card_native(team_row):
             st.markdown(f"""
             <div style="background-color: #2A2A35; border-radius: 6px; padding: 5px; margin: 3px 1px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                    <span style="font-size: 10px; color: #E91E63; font-weight: bold;">Plyoff</span>
+                    <span style="font-size: 10px; color: #E91E63; font-weight: bold;">Playoff</span>
                     <span style="font-size: 12px; font-weight: bold;">{team_row['Playoff Score']:.1f}</span>
                 </div>
                 <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
