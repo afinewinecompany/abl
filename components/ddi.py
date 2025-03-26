@@ -24,7 +24,8 @@ HISTORY_WEIGHTS = {
 PLAYOFF_POINTS = {
     "1st": 45,  # Points for championship
     "2nd": 30,  # Points for runner-up
-    "semifinalist": 15  # Points for reaching semifinals
+    "semifinalist": 15,  # Points for reaching semifinals
+    "division_winner": 10  # Points for winning division
 }
 
 # Historical playoff finishes
@@ -59,9 +60,28 @@ def load_historical_data() -> Dict[str, pd.DataFrame]:
     return history_data
 
 def calculate_playoff_score(team_name: str) -> float:
-    """Calculate a team's playoff performance score based on playoff history"""
+    """Calculate a team's playoff performance score based on playoff history and division wins"""
     
     total_playoff_score = 0.0
+    
+    # Check for division wins across all years
+    for year in ["2021", "2022", "2023", "2024"]:
+        csv_path = f"attached_assets/abl history - {year}.csv"
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+            # Handle Athletics name variations
+            team_search = [team_name]
+            if team_name in ["Athletics", "Las Vegas Athletics", "Oakland Athletics"]:
+                team_search = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
+                if year == "2024":
+                    team_search = ["Las Vegas Athletics"]
+                else:
+                    team_search = ["Oakland Athletics"]
+            
+            # Check if team won their division (Rank 1)
+            div_winners = df[df['Rk'] == 1]['Team']
+            if any(winner in team_search for winner in div_winners):
+                total_playoff_score += PLAYOFF_POINTS['division_winner']
     
     # Debug output for specific teams - add Athletics to the list
     debug_teams = ["Seattle Mariners", "Philadelphia Phillies", "Cleveland Guardians", "Atlanta Braves", 
