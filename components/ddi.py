@@ -436,7 +436,49 @@ def get_team_colors(team_name: str) -> dict:
 
 
 def get_team_logo_url(team_name: str) -> str:
-    """Get team initials as a fallback approach instead of using external URLs"""
+    """Get team logo URL based on team name"""
+    # Map team names to MLB logo URLs - using SVG logos from MLB official site
+    team_logo_urls = {
+        "Arizona Diamondbacks": "https://www.mlbstatic.com/team-logos/team-cap-on-light/109.svg",
+        "Atlanta Braves": "https://www.mlbstatic.com/team-logos/team-cap-on-light/144.svg",
+        "Baltimore Orioles": "https://www.mlbstatic.com/team-logos/team-cap-on-light/110.svg",
+        "Boston Red Sox": "https://www.mlbstatic.com/team-logos/team-cap-on-light/111.svg",
+        "Chicago Cubs": "https://www.mlbstatic.com/team-logos/team-cap-on-light/112.svg",
+        "Chicago White Sox": "https://www.mlbstatic.com/team-logos/team-cap-on-light/145.svg",
+        "Cincinnati Reds": "https://www.mlbstatic.com/team-logos/team-cap-on-light/113.svg",
+        "Cleveland Guardians": "https://www.mlbstatic.com/team-logos/team-cap-on-light/114.svg",
+        "Colorado Rockies": "https://www.mlbstatic.com/team-logos/team-cap-on-light/115.svg",
+        "Detroit Tigers": "https://www.mlbstatic.com/team-logos/team-cap-on-light/116.svg",
+        "Houston Astros": "https://www.mlbstatic.com/team-logos/team-cap-on-light/117.svg",
+        "Kansas City Royals": "https://www.mlbstatic.com/team-logos/team-cap-on-light/118.svg",
+        "Los Angeles Angels": "https://www.mlbstatic.com/team-logos/team-cap-on-light/108.svg",
+        "Los Angeles Dodgers": "https://www.mlbstatic.com/team-logos/team-cap-on-light/119.svg",
+        "Miami Marlins": "https://www.mlbstatic.com/team-logos/team-cap-on-light/146.svg",
+        "Milwaukee Brewers": "https://www.mlbstatic.com/team-logos/team-cap-on-light/158.svg",
+        "Minnesota Twins": "https://www.mlbstatic.com/team-logos/team-cap-on-light/142.svg",
+        "New York Mets": "https://www.mlbstatic.com/team-logos/team-cap-on-light/121.svg",
+        "New York Yankees": "https://www.mlbstatic.com/team-logos/team-cap-on-light/147.svg",
+        "Oakland Athletics": "https://www.mlbstatic.com/team-logos/team-cap-on-light/133.svg",
+        "Las Vegas Athletics": "https://www.mlbstatic.com/team-logos/team-cap-on-light/133.svg", 
+        "Athletics": "https://www.mlbstatic.com/team-logos/team-cap-on-light/133.svg",
+        "Philadelphia Phillies": "https://www.mlbstatic.com/team-logos/team-cap-on-light/143.svg",
+        "Pittsburgh Pirates": "https://www.mlbstatic.com/team-logos/team-cap-on-light/134.svg",
+        "San Diego Padres": "https://www.mlbstatic.com/team-logos/team-cap-on-light/135.svg",
+        "San Francisco Giants": "https://www.mlbstatic.com/team-logos/team-cap-on-light/137.svg",
+        "Seattle Mariners": "https://www.mlbstatic.com/team-logos/team-cap-on-light/136.svg",
+        "St. Louis Cardinals": "https://www.mlbstatic.com/team-logos/team-cap-on-light/138.svg",
+        "Saint Louis Cardinals": "https://www.mlbstatic.com/team-logos/team-cap-on-light/138.svg",
+        "Tampa Bay Rays": "https://www.mlbstatic.com/team-logos/team-cap-on-light/139.svg",
+        "Texas Rangers": "https://www.mlbstatic.com/team-logos/team-cap-on-light/140.svg",
+        "Toronto Blue Jays": "https://www.mlbstatic.com/team-logos/team-cap-on-light/141.svg",
+        "Washington Nationals": "https://www.mlbstatic.com/team-logos/team-cap-on-light/120.svg"
+    }
+    
+    # Return the logo URL if available, or generate initials as fallback
+    if team_name in team_logo_urls:
+        return f'<img src="{team_logo_urls[team_name]}" width="30" height="30" alt="{team_name}">'
+    
+    # Fallback to initials if team not found
     team_initials = "".join([word[0] for word in team_name.split() if word[0].isalpha()]).upper()
     return team_initials
 
@@ -786,17 +828,12 @@ def render_team_card_native(team_row):
             </div>
             """, unsafe_allow_html=True)
         
-        # Team logo/initials
+        # Team logo image
         with header_cols[1]:
             st.markdown(f"""
             <div style="
                 width: 36px;
                 height: 36px;
-                background-color: {team_colors['primary']};
-                color: white;
-                font-weight: bold;
-                font-size: 16px;
-                border-radius: 50%;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -918,41 +955,14 @@ def render_team_card_native(team_row):
         </div>
         """, unsafe_allow_html=True)
         
-        # Add a share button at the bottom that copies text to clipboard (more reliable than image download)
-        share_text = f"{team_name} DDI Score: {team_row['DDI Score']:.1f} | Power: {team_row['Power Score']:.1f} | Prospects: {team_row['Prospect Score']:.1f} | History: {team_row['Historical Score']:.1f} | Playoff: {team_row['Playoff Score']:.1f}"
-        
-        share_col1, share_col2 = st.columns([4, 1])
-        with share_col2:
-            if st.button(f"Share {team_name}", key=f"share_{team_name}".replace(" ", "_")):
-                st.toast(f"📋 Text copied for {team_name}!", icon="📊")
-                st.write(f"DDI data for {team_name} ready to share")
-        
-        with share_col1:
-            if st.button(f"Copy Stats to Clipboard", key=f"copy_{team_name}".replace(" ", "_")):
-                # Use JavaScript to copy to clipboard (more reliable than previous approach)
-                st.markdown(f"""
-                <script>
-                    navigator.clipboard.writeText('{share_text}')
-                        .then(() => console.log('Text copied to clipboard'))
-                        .catch(err => console.error('Error copying text: ', err));
-                </script>
-                """, unsafe_allow_html=True)
-                st.success(f"DDI stats for {team_name} copied to clipboard!")
+        # Add a small bottom margin
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
         # End of card container
         st.markdown("<hr style='margin: 15px 0 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
 
-def add_html2canvas_library():
-    """Add the html2canvas library to the Streamlit app for screenshot functionality"""
-    st.markdown("""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    """, unsafe_allow_html=True)
-
 def render(roster_data: pd.DataFrame):
     """Render Dynasty Dominance Index (DDI) page"""
-    
-    # Add the html2canvas library for screenshot functionality
-    add_html2canvas_library()
     
     st.title("Dynasty Dominance Index (DDI)")
     
