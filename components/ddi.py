@@ -645,65 +645,15 @@ def render_team_card(team_row):
     """Render a card for a team with its DDI information"""
     team_name = team_row['Team']
     team_colors = get_team_colors(team_name)
-    logo_url = get_team_logo_url(team_name)
     
-    # Create a simpler card that will render properly
+    # Ultra-simple card that should render properly
     card_html = f"""
-    <div style="
-        background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-        border-radius: 10px;
-        padding: 20px;
-        margin: 15px 0;
-        color: white;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        position: relative;
-        overflow: hidden;
-        min-height: 120px;
-    ">
-        <!-- Rank circle -->
-        <div style="
-            position: absolute;
-            left: -10px;
-            top: -10px;
-            width: 40px;
-            height: 40px;
-            background-color: {team_colors['primary']};
-            border: 2px solid {team_colors['secondary']};
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            z-index: 5;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        ">#{int(team_row['Rank'])}</div>
-        
-        <!-- Team logo -->
-        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 1; opacity: 0.8;">
-            <img src="{logo_url}" width="100" height="100" alt="Team Logo" style="max-width: 100px;">
-        </div>
-        
-        <!-- Content -->
-        <div style="position: relative; z-index: 2;">
-            <h3 style="margin-top: 5px; margin-bottom: 10px; font-size: 20px;">{team_name}</h3>
-            <div style="font-weight: bold; margin-bottom: 10px;">DDI Score: {team_row['DDI Score']:.1f}</div>
-            
-            <div style="display: flex; flex-wrap: wrap;">
-                <div style="margin-right: 15px;">
-                    <span style="opacity: 0.7;">Power:</span> 
-                    <span style="font-weight: bold;">{team_row['Power Score']:.1f}</span>
-                </div>
-                <div style="margin-right: 15px;">
-                    <span style="opacity: 0.7;">Prospects:</span> 
-                    <span style="font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
-                </div>
-                <div>
-                    <span style="opacity: 0.7;">Historical:</span> 
-                    <span style="font-weight: bold;">{team_row['Historical Score']:.1f}</span>
-                </div>
-            </div>
-        </div>
+    <div style="background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%); 
+         border-radius: 10px; padding: 15px; margin: 10px 0; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+        <div style="text-align: right; font-size: 24px; font-weight: bold; margin-bottom: 5px;">#{int(team_row['Rank'])}</div>
+        <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">{team_name}</div>
+        <div style="font-weight: bold; margin-bottom: 10px;">DDI Score: {team_row['DDI Score']:.1f}</div>
+        <div>Power: <b>{team_row['Power Score']:.1f}</b> | Prospects: <b>{team_row['Prospect Score']:.1f}</b> | Historical: <b>{team_row['Historical Score']:.1f}</b></div>
     </div>
     """
     
