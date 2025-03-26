@@ -24,15 +24,15 @@ HISTORY_WEIGHTS = {
 PLAYOFF_POINTS = {
     "1st": 45,  # Points for championship
     "2nd": 30,  # Points for runner-up
-    "3rd": 15,  # Points for third place
+    "semifinalist": 15  # Points for reaching semifinals
 }
 
 # Historical playoff finishes
 PLAYOFF_HISTORY = {
-    "2021": {"1st": "Pittsburgh Pirates", "2nd": "Detroit Tigers", "3rd": "Philadelphia Phillies"},
-    "2022": {"1st": "Pittsburgh Pirates", "2nd": "Cleveland Guardians", "3rd": "Texas Rangers"},
-    "2023": {"1st": "Kansas City Royals", "2nd": "Los Angeles Dodgers", "3rd": "New York Yankees"},
-    "2024": {"1st": "Detroit Tigers", "2nd": "Pittsburgh Pirates", "3rd": "Los Angeles Dodgers"}
+    "2021": {"1st": "Pittsburgh Pirates", "2nd": "Detroit Tigers", "semifinalist": ["Philadelphia Phillies", "Seattle Mariners"]},
+    "2022": {"1st": "Pittsburgh Pirates", "2nd": "Cleveland Guardians", "semifinalist": ["Athletics", "Saint Louis Cardinals"]},
+    "2023": {"1st": "Kansas City Royals", "2nd": "Los Angeles Dodgers", "semifinalist": ["Cleveland Guardians", "Atlanta Braves"]},
+    "2024": {"1st": "Detroit Tigers", "2nd": "Pittsburgh Pirates", "semifinalist": ["Baltimore Orioles", "Los Angeles Dodgers"]}
 }
 
 def load_historical_data() -> Dict[str, pd.DataFrame]:
@@ -64,17 +64,31 @@ def calculate_playoff_score(team_name: str) -> float:
         # Check if this team appears in playoff results
         playoff_result = None
         for place, playoff_team in places.items():
-            # Handle Athletics name variations
-            if playoff_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
-                playoff_team = "Las Vegas Athletics"
-            elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
-                playoff_team = "Oakland Athletics"
-                
-            # Check if playoff team matches any of our search names
-            if any(playoff_team == search_name for search_name in search_names):
-                playoff_result = place
-                break
-                
+            if place != "semifinalist":
+                # Handle Athletics name variations for non-semifinalist entries
+                if playoff_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
+                    playoff_team = "Las Vegas Athletics"
+                elif playoff_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
+                    playoff_team = "Oakland Athletics"
+                    
+                # Check if playoff team matches any of our search names
+                if any(playoff_team == search_name for search_name in search_names):
+                    playoff_result = place
+                    break
+            else:
+                # Handle semifinalist list
+                for semi_team in playoff_team:
+                    # Handle Athletics name variations
+                    if semi_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
+                        semi_team = "Las Vegas Athletics"
+                    elif semi_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
+                        semi_team = "Oakland Athletics"
+                    
+                    # Check if semifinalist team matches any of our search names
+                    if any(semi_team == search_name for search_name in search_names):
+                        playoff_result = place
+                        break
+        
         # If team has a playoff finish, add weighted points
         if playoff_result:
             playoff_points = PLAYOFF_POINTS.get(playoff_result, 0)
@@ -891,7 +905,7 @@ def render(roster_data: pd.DataFrame):
             **Playoff Success Points:**
             - 1st Place: {PLAYOFF_POINTS['1st']} points
             - 2nd Place: {PLAYOFF_POINTS['2nd']} points
-            - 3rd Place: {PLAYOFF_POINTS['3rd']} points
+            - Semifinalist: {PLAYOFF_POINTS['semifinalist']} points
             
             Playoff points are weighted by season recency and normalized to a 0-100 scale.
             """)
