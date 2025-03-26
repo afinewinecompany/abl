@@ -647,74 +647,64 @@ def render_team_card(team_row):
     team_colors = get_team_colors(team_name)
     logo_url = get_team_logo_url(team_name)
     
-    # Create a card with team colors - using the same style as prospect systems
+    # Create a simpler card that will render properly
     card_html = f"""
-    <div class="prospect-card" style="
+    <div style="
         background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
         border-radius: 10px;
-        padding: 1.5rem;
-        margin: 1rem 0;
+        padding: 20px;
+        margin: 15px 0;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         position: relative;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-        
+        overflow: hidden;
+        min-height: 120px;
+    ">
+        <!-- Rank circle -->
         <div style="
             position: absolute;
             left: -10px;
             top: -10px;
             width: 40px;
             height: 40px;
-            background: {team_colors['primary']};
+            background-color: {team_colors['primary']};
+            border: 2px solid {team_colors['secondary']};
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            border: 2px solid {team_colors['secondary']};
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">#{int(team_row['Rank'])}</div>
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        ">#{int(team_row['Rank'])}</div>
         
-        {f'<img src="{logo_url}" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 100px; height: 100px; opacity: 0.8; z-index: 1;" alt="Team Logo">' if logo_url else ''}
+        <!-- Team logo -->
+        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 1; opacity: 0.8;">
+            <img src="{logo_url}" width="100" height="100" alt="Team Logo" style="max-width: 100px;">
+        </div>
         
-        <div class="prospect-content" style="position: relative; z-index: 2;">
-            <div style="flex-grow: 1;">
-                <div style="
-                    font-size: 1.2rem;
-                    font-weight: 600;
-                    color: white;
-                    margin-bottom: 0.5rem;
-                    ">{team_name}</div>
-                <div style="
-                    font-size: 0.9rem;
-                    color: rgba(255, 255, 255, 0.8);
-                    margin-bottom: 0.5rem;
-                    ">
-                    <span style="font-weight: 700;">DDI Score: {team_row['DDI Score']:.1f}</span>
+        <!-- Content -->
+        <div style="position: relative; z-index: 2;">
+            <h3 style="margin-top: 5px; margin-bottom: 10px; font-size: 20px;">{team_name}</h3>
+            <div style="font-weight: bold; margin-bottom: 10px;">DDI Score: {team_row['DDI Score']:.1f}</div>
+            
+            <div style="display: flex; flex-wrap: wrap;">
+                <div style="margin-right: 15px;">
+                    <span style="opacity: 0.7;">Power:</span> 
+                    <span style="font-weight: bold;">{team_row['Power Score']:.1f}</span>
                 </div>
-                <div style="display: flex; margin-top: 0.5rem;">
-                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
-                        <span style="opacity: 0.7;">Power:</span> {team_row['Power Score']:.1f}
-                    </div>
-                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
-                        <span style="opacity: 0.7;">Prospects:</span> {team_row['Prospect Score']:.1f}
-                    </div>
-                    <div style="flex: 0.35; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
-                        <span style="opacity: 0.7;">Historical:</span> {team_row['Historical Score']:.1f}
-                    </div>
+                <div style="margin-right: 15px;">
+                    <span style="opacity: 0.7;">Prospects:</span> 
+                    <span style="font-weight: bold;">{team_row['Prospect Score']:.1f}</span>
+                </div>
+                <div>
+                    <span style="opacity: 0.7;">Historical:</span> 
+                    <span style="font-weight: bold;">{team_row['Historical Score']:.1f}</span>
                 </div>
             </div>
         </div>
     </div>
-    """
-    
-    # Add CSS for hover effect
-    card_html = f"""
-    <style>
-    .team-card:hover {{
-        transform: scale(1.02);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }}
-    </style>
-    {card_html}
     """
     
     return card_html
