@@ -1047,10 +1047,10 @@ def render_team_card_native(team_row):
             margin-top: 5px;
             padding: 0 5px;
         ">
-            <span>Power (35%)</span>
-            <span>Prospects (25%)</span>
+            <span>Power (30%)</span>
+            <span>Prospects (20%)</span>
             <span>History (25%)</span>
-            <span>Playoff (15%)</span>
+            <span>Playoff (25%)</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1080,9 +1080,9 @@ def render_team_card_native(team_row):
                     result_label = "WORLD SERIES RUNNER-UP"
                 elif achievement['result'] == "semifinalist":
                     # Determine if team is AL or NL based on division
-                    if any(div in team for div in ["NL East", "NL West", "NL Central"]):
+                    if any(div in team_name for div in ["NL East", "NL West", "NL Central"]):
                         result_label = "NLCS"
-                    elif any(div in team for div in ["AL East", "AL West", "AL Central"]):
+                    elif any(div in team_name for div in ["AL East", "AL West", "AL Central"]):
                         result_label = "ALCS"
                     else:
                         # Check specific team names if we can't determine from division
@@ -1093,9 +1093,9 @@ def render_team_card_native(team_row):
                                    "White Sox", "Guardians", "Tigers", "Royals", "Twins",   # AL Central
                                    "Astros", "Angels", "Athletics", "Mariners", "Rangers"]  # AL West
                         
-                        if any(nl_team in team for nl_team in nl_teams):
+                        if any(nl_team in team_name for nl_team in nl_teams):
                             result_label = "NLCS"
-                        elif any(al_team in team for al_team in al_teams):
+                        elif any(al_team in team_name for al_team in al_teams):
                             result_label = "ALCS"
                         else:
                             result_label = "SEMIFINALIST"
@@ -1304,9 +1304,9 @@ def render(roster_data: pd.DataFrame):
             with st.expander("Playoff Success Points"):
                 st.info(f"""
                 **Playoff Success Points:**
-                - 1st Place: {PLAYOFF_POINTS['1st']} points
-                - 2nd Place: {PLAYOFF_POINTS['2nd']} points
-                - Semifinalist: {PLAYOFF_POINTS['semifinalist']} points
+                - World Series Champion: {PLAYOFF_POINTS['1st']} points
+                - World Series Runner-Up: {PLAYOFF_POINTS['2nd']} points
+                - ALCS/NLCS Appearance: {PLAYOFF_POINTS['semifinalist']} points
 
                 Playoff points are normalized to a 0-100 scale.
                 """)
