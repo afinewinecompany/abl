@@ -9,8 +9,8 @@ import numpy as np
 # Define weighting factors
 POWER_RANK_WEIGHT = 0.30  # 30% of the score based on current power ranking
 PROSPECT_WEIGHT = 0.20    # 20% of the score based on prospect strength
-HISTORY_WEIGHT = 0.30     # 30% of the score based on historical performance
-PLAYOFF_WEIGHT = 0.20     # 20% of the score based on playoff performance
+HISTORY_WEIGHT = 0.25     # 25% of the score based on historical performance
+PLAYOFF_WEIGHT = 0.25     # 25% of the score based on playoff performance
 
 # Historical weights (more recent years weighted more heavily)
 HISTORY_WEIGHTS = {
@@ -1095,8 +1095,8 @@ def render(roster_data: pd.DataFrame):
     #### DDI Components:
     - **Current Power Rankings (30%)**: How strong is the team right now?
     - **Prospect System (20%)**: How strong is the team's future talent pipeline?
-    - **Historical Performance (30%)**: How consistently successful has the team been over time?
-    - **Playoff Success (20%)**: How well has the team performed in the playoffs?
+    - **Historical Performance (25%)**: How consistently successful has the team been over time?
+    - **Playoff Success (25%)**: How well has the team performed in the playoffs?
     """)
     
     # Create a horizontal rule
