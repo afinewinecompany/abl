@@ -78,10 +78,11 @@ def calculate_playoff_score(team_name: str) -> float:
         if debug_mode:
             print(f"  Using expanded search names for Athletics: {search_names}")
     
-    # Process each year in playoff history
+    # Track each playoff achievement separately (no year weighting)
+    playoff_achievements = []
+    
+    # Process each year in playoff history - NO YEAR WEIGHTING for playoffs
     for year, places in PLAYOFF_HISTORY.items():
-        year_weight = HISTORY_WEIGHTS.get(year, 0.0)
-        
         # Check if this team appears in playoff results
         playoff_result = None
         for place, playoff_team in places.items():
@@ -118,17 +119,28 @@ def calculate_playoff_score(team_name: str) -> float:
                             print(f"    Found match! {team_name} was a semifinalist in {year}")
                         break
         
-        # If team has a playoff finish, add weighted points
+        # If team has a playoff finish, add unweighted points
         if playoff_result:
             playoff_points = PLAYOFF_POINTS.get(playoff_result, 0)
-            total_playoff_score += playoff_points * year_weight
+            playoff_achievements.append({
+                'year': year,
+                'result': playoff_result,
+                'points': playoff_points
+            })
+            total_playoff_score += playoff_points  # No year weighting applied
     
-    # Normalize to 0-100 scale based on maximum possible points
-    # Max possible = winning 1st place every year (45 points * sum of year weights)
-    max_possible = 45.0 * sum(HISTORY_WEIGHTS.values())
+    # Calculate max possible score (winning every year)
+    # 4 years * 45 points = 180 points max possible
+    years_count = len(PLAYOFF_HISTORY)
+    max_possible = 45.0 * years_count
+    
+    # Normalize to 0-100 scale
     normalized_score = (total_playoff_score / max_possible * 100) if max_possible > 0 else 0
     
     if debug_mode:
+        print(f"Playoff achievements for {team_name}:")
+        for achievement in playoff_achievements:
+            print(f"  {achievement['year']}: {achievement['result']} ({achievement['points']} points)")
         print(f"Final playoff score for {team_name}: {normalized_score:.2f} (from raw score: {total_playoff_score:.2f})")
     
     return normalized_score
@@ -143,8 +155,8 @@ def calculate_historical_score(team_name: str, history_data: Dict[str, pd.DataFr
     
     # Handle special cases for team name variations in historical data
     search_names = [team_name]
-    if team_name == "Athletics" or team_name == "Las Vegas Athletics":
-        search_names = ["Oakland Athletics", "Las Vegas Athletics"]
+    if team_name == "Athletics" or team_name == "Las Vegas Athletics" or team_name == "Oakland Athletics":
+        search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
     
     # Debug info
     print(f"Calculating historical score for team: {team_name}, searching: {search_names}")
@@ -312,12 +324,8 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
         team_history_search = team
         
         # For current API data (team might be "Athletics")
-        if team == "Athletics":
+        if team == "Athletics" or team == "Las Vegas Athletics" or team == "Oakland Athletics":
             team_search = "Las Vegas Athletics"  # For current data
-            team_history_search = "Oakland Athletics"  # For historical years 2021-2023
-        
-        # When looking at history data directly
-        elif team == "Las Vegas Athletics":
             team_history_search = "Oakland Athletics"  # For historical years 2021-2023
         
         # Get power ranking score (normalized from 0-100, where 100 is best)
