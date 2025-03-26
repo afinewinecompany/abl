@@ -30,7 +30,7 @@ PLAYOFF_POINTS = {
 # Historical playoff finishes
 PLAYOFF_HISTORY = {
     "2021": {"1st": "Pittsburgh Pirates", "2nd": "Detroit Tigers", "semifinalist": ["Philadelphia Phillies", "Seattle Mariners"]},
-    "2022": {"1st": "Pittsburgh Pirates", "2nd": "Cleveland Guardians", "semifinalist": ["Athletics", "Saint Louis Cardinals"]},
+    "2022": {"1st": "Pittsburgh Pirates", "2nd": "Cleveland Guardians", "semifinalist": ["Oakland Athletics", "Saint Louis Cardinals"]},
     "2023": {"1st": "Kansas City Royals", "2nd": "Los Angeles Dodgers", "semifinalist": ["Cleveland Guardians", "Atlanta Braves"]},
     "2024": {"1st": "Detroit Tigers", "2nd": "Pittsburgh Pirates", "semifinalist": ["Baltimore Orioles", "Los Angeles Dodgers"]}
 }
@@ -63,17 +63,20 @@ def calculate_playoff_score(team_name: str) -> float:
     
     total_playoff_score = 0.0
     
-    # Debug output for specific teams
-    debug_teams = ["Seattle Mariners", "Philadelphia Phillies", "Cleveland Guardians", "Atlanta Braves", "Baltimore Orioles", "Los Angeles Dodgers"]
-    debug_mode = team_name in debug_teams
+    # Debug output for specific teams - add Athletics to the list
+    debug_teams = ["Seattle Mariners", "Philadelphia Phillies", "Cleveland Guardians", "Atlanta Braves", 
+                  "Baltimore Orioles", "Los Angeles Dodgers", "Athletics", "Saint Louis Cardinals"]
+    debug_mode = team_name in debug_teams or "Athletics" in team_name
     
     if debug_mode:
         print(f"\nCalculating playoff score for {team_name}...")
     
     # Handle special cases for team name variations in historical data
     search_names = [team_name]
-    if team_name == "Athletics" or team_name == "Las Vegas Athletics":
-        search_names = ["Oakland Athletics", "Las Vegas Athletics"]
+    if team_name == "Athletics" or team_name == "Las Vegas Athletics" or team_name == "Oakland Athletics":
+        search_names = ["Oakland Athletics", "Las Vegas Athletics", "Athletics"]
+        if debug_mode:
+            print(f"  Using expanded search names for Athletics: {search_names}")
     
     # Process each year in playoff history
     for year, places in PLAYOFF_HISTORY.items():
