@@ -35,6 +35,17 @@ PLAYOFF_HISTORY = {
     "2024": {"1st": "Detroit Tigers", "2nd": "Pittsburgh Pirates", "semifinalist": ["Baltimore Orioles", "Los Angeles Dodgers"]}
 }
 
+# Print playoff history for debugging
+print("\n=== PLAYOFF HISTORY DATA ===")
+for year, data in PLAYOFF_HISTORY.items():
+    print(f"{year} PLAYOFFS:")
+    for place, teams in data.items():
+        if place == "semifinalist":
+            print(f"  Semifinalists: {teams}")
+        else:
+            print(f"  {place} Place: {teams}")
+print("===========================\n")
+
 def load_historical_data() -> Dict[str, pd.DataFrame]:
     """Load historical season data from CSV files"""
     history_data = {}
@@ -51,6 +62,13 @@ def calculate_playoff_score(team_name: str) -> float:
     """Calculate a team's playoff performance score based on playoff history"""
     
     total_playoff_score = 0.0
+    
+    # Debug output for specific teams
+    debug_teams = ["Seattle Mariners", "Philadelphia Phillies", "Cleveland Guardians", "Atlanta Braves", "Baltimore Orioles", "Los Angeles Dodgers"]
+    debug_mode = team_name in debug_teams
+    
+    if debug_mode:
+        print(f"\nCalculating playoff score for {team_name}...")
     
     # Handle special cases for team name variations in historical data
     search_names = [team_name]
@@ -77,6 +95,9 @@ def calculate_playoff_score(team_name: str) -> float:
                     break
             else:
                 # Handle semifinalist list
+                if debug_mode:
+                    print(f"  Checking semifinalists for {year}: {playoff_team}")
+                    
                 for semi_team in playoff_team:
                     # Handle Athletics name variations
                     if semi_team == "Oakland Athletics" and year == "2024" and "Las Vegas Athletics" in search_names:
@@ -84,9 +105,14 @@ def calculate_playoff_score(team_name: str) -> float:
                     elif semi_team == "Las Vegas Athletics" and year != "2024" and "Oakland Athletics" in search_names:
                         semi_team = "Oakland Athletics"
                     
+                    if debug_mode:
+                        print(f"    Comparing semifinalist '{semi_team}' with search names {search_names}")
+                        
                     # Check if semifinalist team matches any of our search names
                     if any(semi_team == search_name for search_name in search_names):
                         playoff_result = place
+                        if debug_mode:
+                            print(f"    Found match! {team_name} was a semifinalist in {year}")
                         break
         
         # If team has a playoff finish, add weighted points
@@ -98,6 +124,9 @@ def calculate_playoff_score(team_name: str) -> float:
     # Max possible = winning 1st place every year (45 points * sum of year weights)
     max_possible = 45.0 * sum(HISTORY_WEIGHTS.values())
     normalized_score = (total_playoff_score / max_possible * 100) if max_possible > 0 else 0
+    
+    if debug_mode:
+        print(f"Final playoff score for {team_name}: {normalized_score:.2f} (from raw score: {total_playoff_score:.2f})")
     
     return normalized_score
 
