@@ -1139,55 +1139,15 @@ def render(roster_data: pd.DataFrame):
         for col in ['DDI Score', 'Power Score', 'Prospect Score', 'Historical Score', 'Playoff Score']:
             display_df[col] = display_df[col].round(1)
         
-        # Create visualization tabs
-        vis_tab1, vis_tab2, vis_tab3, vis_tab4 = st.tabs([
+        # Create visualization tabs - Team Cards first as default
+        vis_tab1, vis_tab2, vis_tab3 = st.tabs([
+            "Team Cards",
             "Team Rankings", 
-            "Team Cards", 
-            "Component Breakdown",
-            "Top Teams Comparison"
+            "Component Breakdown"
         ])
         
-        # Tab 1: Interactive Team Rankings Visualization
+        # Tab 1: Team Cards (now first tab as default view)
         with vis_tab1:
-            st.markdown("""
-            ### Dynasty Dominance Index - Team Rankings
-            Interactive visualizations of team performance across all dimensions of the Dynasty Dominance Index.
-            """)
-            
-            # Use tabs for different visualizations within the first tab
-            viz_1, viz_2 = st.tabs(["Treemap View", "Component Heatmap"])
-            
-            with viz_1:
-                st.markdown("""
-                ### Team Rankings Treemap
-                Size and color represent DDI score. Larger and darker boxes indicate higher scores.
-                """)
-                
-                # Create the treemap chart
-                treemap_chart = create_treemap_chart(display_df)
-                
-                # Simple config without unnecessary controls
-                chart_config = {
-                    'displayModeBar': True,
-                    'responsive': True,
-                    'modeBarButtonsToRemove': ['lasso2d', 'select2d']
-                }
-                
-                # Display the treemap visualization
-                st.plotly_chart(treemap_chart, use_container_width=True, config=chart_config)
-            
-            with viz_2:
-                st.markdown("""
-                ### Team Performance by Component
-                Heatmap showing how each team performs across all four DDI components.
-                """)
-                
-                # Display the heatmap as a secondary visualization
-                heatmap_chart = create_heatmap_chart(display_df)
-                st.plotly_chart(heatmap_chart, use_container_width=True, config=chart_config)
-        
-        # Tab 2: Team Cards 
-        with vis_tab2:
             st.markdown("### Dynasty Dominance Rankings")
             
             # Show team cards using native Streamlit components
@@ -1238,6 +1198,66 @@ def render(roster_data: pd.DataFrame):
                     hide_index=True,
                 )
         
+        # Tab 2: Team Rankings Visualization
+        with vis_tab2:
+            st.markdown("""
+            ### Dynasty Dominance Index - Team Rankings
+            Interactive visualizations of team performance across all dimensions of the Dynasty Dominance Index.
+            """)
+            
+            # Use tabs for different visualizations within the first tab
+            viz_1, viz_2 = st.tabs(["Treemap View", "Component Heatmap"])
+            
+            with viz_1:
+                st.markdown("""
+                ### Team Rankings Treemap
+                Size and color represent DDI score. Larger and darker boxes indicate higher scores.
+                """)
+                
+                # Create the treemap chart
+                treemap_chart = create_treemap_chart(display_df)
+                
+                # Simple config without unnecessary controls
+                chart_config = {
+                    'displayModeBar': True,
+                    'responsive': True,
+                    'modeBarButtonsToRemove': ['lasso2d', 'select2d']
+                }
+                
+                # Display the treemap visualization
+                st.plotly_chart(treemap_chart, use_container_width=True, config=chart_config)
+            
+            with viz_2:
+                st.markdown("""
+                ### Team Performance by Component
+                Heatmap showing how each team performs across all four DDI components.
+                """)
+                
+                # Display the heatmap as a secondary visualization
+                heatmap_chart = create_heatmap_chart(display_df)
+                st.plotly_chart(heatmap_chart, use_container_width=True, config=chart_config)
+                
+            # Add breakdown of historical weighting
+            with st.expander("Historical Performance Weighting"):
+                st.info(f"""
+                **Historical Performance Weighting:**
+                - 2024 Season: {HISTORY_WEIGHTS['2024']*100}%
+                - 2023 Season: {HISTORY_WEIGHTS['2023']*100}%
+                - 2022 Season: {HISTORY_WEIGHTS['2022']*100}%
+                - 2021 Season: {HISTORY_WEIGHTS['2021']*100}%
+                """)
+            
+            # Add breakdown of playoff scoring
+            with st.expander("Playoff Success Points"):
+                st.info(f"""
+                **Playoff Success Points:**
+                - 1st Place: {PLAYOFF_POINTS['1st']} points
+                - 2nd Place: {PLAYOFF_POINTS['2nd']} points
+                - Semifinalist: {PLAYOFF_POINTS['semifinalist']} points
+                
+                Playoff points are normalized to a 0-100 scale.
+                """)
+                
         # Tab 3: Component Breakdown
         with vis_tab3:
             st.plotly_chart(create_ddi_visualization(ddi_df), use_container_width=True)
@@ -1249,29 +1269,6 @@ def render(roster_data: pd.DataFrame):
             - Prospect System: {PROSPECT_WEIGHT*100}%
             - Historical Performance: {HISTORY_WEIGHT*100}%
             - Playoff Success: {PLAYOFF_WEIGHT*100}%
-            """)
-            
-        # Tab 4: Top Teams Comparison
-        with vis_tab4:
-            st.plotly_chart(create_radar_chart(ddi_df), use_container_width=True)
-            
-            # Add breakdown of historical weighting
-            st.info(f"""
-            **Historical Performance Weighting:**
-            - 2024 Season: {HISTORY_WEIGHTS['2024']*100}%
-            - 2023 Season: {HISTORY_WEIGHTS['2023']*100}%
-            - 2022 Season: {HISTORY_WEIGHTS['2022']*100}%
-            - 2021 Season: {HISTORY_WEIGHTS['2021']*100}%
-            """)
-            
-            # Add breakdown of playoff scoring
-            st.info(f"""
-            **Playoff Success Points:**
-            - 1st Place: {PLAYOFF_POINTS['1st']} points
-            - 2nd Place: {PLAYOFF_POINTS['2nd']} points
-            - Semifinalist: {PLAYOFF_POINTS['semifinalist']} points
-            
-            Playoff points are weighted by season recency and normalized to a 0-100 scale.
             """)
         
     except Exception as e:
