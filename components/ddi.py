@@ -800,76 +800,61 @@ def render_team_card(team_row):
     history_norm = min(100, max(0, team_row['Historical Score']))
     playoff_norm = min(100, max(0, team_row['Playoff Score']))
     
-    # Create a modern glassmorphism card with team accent colors
+    # Create a simplified modern card with team colors
     card_html = f"""
     <div style="
-        background: rgba(30, 30, 40, 0.75);
-        backdrop-filter: blur(10px);
+        background: #1E1E28;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 20px;
         margin: 15px 0;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         color: white;
         position: relative;
-        overflow: hidden;
     ">
-        <!-- Decorative background elements -->
+        <!-- Team color accent -->
         <div style="
             position: absolute;
-            top: -20px;
-            right: -20px;
-            width: 120px;
-            height: 120px;
-            background: {team_colors['primary']};
-            opacity: 0.2;
-            border-radius: 50%;
-        "></div>
-        <div style="
-            position: absolute;
-            bottom: -30px;
-            left: -30px;
-            width: 150px;
-            height: 150px;
-            background: {team_colors['secondary']};
-            opacity: 0.1;
-            border-radius: 50%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
+            border-radius: 12px 12px 0 0;
         "></div>
         
         <!-- Header with rank and team info -->
-        <div style="display: flex; align-items: center; margin-bottom: 15px; position: relative;">
+        <div style="display: flex; align-items: center; margin: 10px 0 20px; padding-top: 10px;">
             <!-- Rank -->
             <div style="
-                width: 45px;
-                height: 45px;
+                width: 40px;
+                height: 40px;
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                border-radius: 12px;
+                border-radius: 8px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 margin-right: 15px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             ">
-                <span style="font-size: 22px; font-weight: 900; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                <span style="font-size: 20px; font-weight: bold; color: white;">
                     #{int(team_row['Rank'])}
                 </span>
             </div>
             
             <!-- Team logo -->
             <div style="
-                width: 42px;
-                height: 42px;
+                width: 40px;
+                height: 40px;
                 background-image: url('{logo_url}');
                 background-size: contain;
                 background-position: center;
                 background-repeat: no-repeat;
                 margin-right: 15px;
-                filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
             "></div>
             
             <!-- Team name -->
             <div style="flex-grow: 1;">
-                <div style="font-size: 20px; font-weight: 700; line-height: 1.2; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">
+                <div style="font-size: 18px; font-weight: bold;">
                     {team_name}
                 </div>
             </div>
@@ -877,15 +862,14 @@ def render_team_card(team_row):
             <!-- DDI Score badge -->
             <div style="
                 background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
-                border-radius: 12px;
-                padding: 8px 14px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+                border-radius: 8px;
+                padding: 8px 12px;
             ">
                 <div style="text-align: center;">
-                    <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">
                         DDI SCORE
                     </div>
-                    <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                    <div style="font-size: 20px; font-weight: bold;">
                         {team_row['DDI Score']:.1f}
                     </div>
                 </div>
@@ -896,145 +880,75 @@ def render_team_card(team_row):
         <div style="
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin: 20px 0 10px;
+            gap: 10px;
         ">
             <!-- Power -->
             <div style="
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 10px;
-                padding: 12px;
-                box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+                background-color: #2A2A35;
+                border-radius: 8px;
+                padding: 10px;
             ">
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                ">
-                    <div style="font-size: 13px; color: rgba(255, 255, 255, 0.75); font-weight: 600;">Power</div>
-                    <div style="font-size: 18px; font-weight: 700;">{team_row['Power Score']:.1f}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Power</div>
+                    <div style="font-size: 16px; font-weight: bold;">{team_row['Power Score']:.1f}</div>
                 </div>
-                <div style="
-                    width: 100%;
-                    height: 5px;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    border-radius: 3px;
-                    overflow: hidden;
-                ">
-                    <div style="
-                        width: {power_norm}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, #4CAF50, #8BC34A);
-                        border-radius: 3px;
-                    "></div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {power_norm}%; height: 100%; background: #4CAF50; border-radius: 2px;"></div>
                 </div>
             </div>
             
             <!-- Prospects -->
             <div style="
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 10px;
-                padding: 12px;
-                box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+                background-color: #2A2A35;
+                border-radius: 8px;
+                padding: 10px;
             ">
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                ">
-                    <div style="font-size: 13px; color: rgba(255, 255, 255, 0.75); font-weight: 600;">Prospects</div>
-                    <div style="font-size: 18px; font-weight: 700;">{team_row['Prospect Score']:.1f}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Prospects</div>
+                    <div style="font-size: 16px; font-weight: bold;">{team_row['Prospect Score']:.1f}</div>
                 </div>
-                <div style="
-                    width: 100%;
-                    height: 5px;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    border-radius: 3px;
-                    overflow: hidden;
-                ">
-                    <div style="
-                        width: {prospect_norm}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, #2196F3, #03A9F4);
-                        border-radius: 3px;
-                    "></div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {prospect_norm}%; height: 100%; background: #2196F3; border-radius: 2px;"></div>
                 </div>
             </div>
             
             <!-- History -->
             <div style="
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 10px;
-                padding: 12px;
-                box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+                background-color: #2A2A35;
+                border-radius: 8px;
+                padding: 10px;
             ">
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                ">
-                    <div style="font-size: 13px; color: rgba(255, 255, 255, 0.75); font-weight: 600;">History</div>
-                    <div style="font-size: 18px; font-weight: 700;">{team_row['Historical Score']:.1f}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">History</div>
+                    <div style="font-size: 16px; font-weight: bold;">{team_row['Historical Score']:.1f}</div>
                 </div>
-                <div style="
-                    width: 100%;
-                    height: 5px;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    border-radius: 3px;
-                    overflow: hidden;
-                ">
-                    <div style="
-                        width: {history_norm}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, #FFC107, #FFB300);
-                        border-radius: 3px;
-                    "></div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {history_norm}%; height: 100%; background: #FFC107; border-radius: 2px;"></div>
                 </div>
             </div>
             
             <!-- Playoffs -->
             <div style="
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 10px;
-                padding: 12px;
-                box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+                background-color: #2A2A35;
+                border-radius: 8px;
+                padding: 10px;
             ">
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                ">
-                    <div style="font-size: 13px; color: rgba(255, 255, 255, 0.75); font-weight: 600;">Playoff</div>
-                    <div style="font-size: 18px; font-weight: 700;">{team_row['Playoff Score']:.1f}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <div style="font-size: 12px; color: #CCCCCC; font-weight: bold;">Playoff</div>
+                    <div style="font-size: 16px; font-weight: bold;">{team_row['Playoff Score']:.1f}</div>
                 </div>
-                <div style="
-                    width: 100%;
-                    height: 5px;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    border-radius: 3px;
-                    overflow: hidden;
-                ">
-                    <div style="
-                        width: {playoff_norm}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, #E91E63, #F06292);
-                        border-radius: 3px;
-                    "></div>
+                <div style="width: 100%; height: 4px; background-color: #444450; border-radius: 2px;">
+                    <div style="width: {playoff_norm}%; height: 100%; background: #E91E63; border-radius: 2px;"></div>
                 </div>
             </div>
         </div>
         
-        <!-- Component weights indicator (small text) -->
+        <!-- Component weights indicator -->
         <div style="
             font-size: 10px; 
-            color: rgba(255, 255, 255, 0.5); 
+            color: #999999; 
             text-align: right; 
-            margin-top: 5px;
-            font-style: italic;
+            margin-top: 10px;
         ">
             Power (35%) · Prospects (25%) · History (25%) · Playoff (15%)
         </div>
