@@ -81,6 +81,35 @@ def calculate_dynascore(power_rank: float, total_prospect_score: float) -> float
 
     return round(dynascore, 1)
 
+def get_team_ddi_rank(team: str, roster_data: pd.DataFrame, power_rank: float, prospect_score: float) -> int:
+    """Get team's DDI rank from the full DDI calculations"""
+    # Import the necessary components for DDI calculation
+    from components.ddi import calculate_ddi_scores, load_historical_data, calculate_power_rankings_from_component
+    
+    try:
+        # Load historical data for DDI calculation
+        history_data = load_historical_data()
+        
+        # Get power rankings
+        power_rankings_df = calculate_power_rankings_from_component(roster_data)
+        
+        # Calculate full DDI scores for all teams
+        ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
+        
+        # Find the rank for our team
+        team_rank_row = ddi_df[ddi_df['Team'] == team]
+        
+        if len(team_rank_row) > 0:
+            # Return the rank (it's already a 1-based index)
+            return int(team_rank_row['Rank'].values[0])
+        else:
+            # Return a default value if team not found
+            return 30
+    except Exception as e:
+        # If anything fails, return a default value
+        print(f"Error getting DDI rank: {str(e)}")
+        return 30
+
 def render_team_header(
     team: str,
     total_players: int,
