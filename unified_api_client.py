@@ -46,11 +46,28 @@ class UnifiedAPIClient:
             fantrax_standings = _self._fantrax_wrapper.get_standings()
             
             if not fantrax_standings.empty:
+                # Normalize column names to ensure compatibility
+                if 'team' in fantrax_standings.columns and 'team_name' not in fantrax_standings.columns:
+                    fantrax_standings['team_name'] = fantrax_standings['team']
+                if 'win_percentage' in fantrax_standings.columns and 'winning_pct' not in fantrax_standings.columns:
+                    fantrax_standings['winning_pct'] = fantrax_standings['win_percentage']
+                # Ensure games_back is present
+                if 'games_back' not in fantrax_standings.columns:
+                    fantrax_standings['games_back'] = 0.0
+                
                 return fantrax_standings
             
             # Fall back to original API if Fantrax data is unavailable
             original_standings = _self._original_api.get_standings()
-            return _self._data_processor.process_standings(original_standings)
+            processed_standings = _self._data_processor.process_standings(original_standings)
+            
+            # Normalize column names for original API data too
+            if 'team_name' not in processed_standings.columns and 'team' in processed_standings.columns:
+                processed_standings['team_name'] = processed_standings['team']
+            if 'winning_pct' not in processed_standings.columns and 'win_percentage' in processed_standings.columns:
+                processed_standings['winning_pct'] = processed_standings['win_percentage']
+            
+            return processed_standings
         except Exception as e:
             st.error(f"Failed to fetch standings: {str(e)}")
             return pd.DataFrame()
@@ -69,6 +86,7 @@ class UnifiedAPIClient:
                     for player in players:
                         player_data = player.copy()
                         player_data['team'] = team_name
+                        player_data['team_name'] = team_name  # Ensure team_name exists
                         roster_df.append(player_data)
             
             if roster_df:
@@ -76,11 +94,13 @@ class UnifiedAPIClient:
                 roster_df = pd.DataFrame(roster_df)
                 
                 # Ensure required columns exist
-                required_columns = ['team', 'player_name', 'position', 'status']
+                required_columns = ['team', 'team_name', 'player_name', 'position', 'status']
                 for col in required_columns:
                     if col not in roster_df.columns:
                         if col == 'player_name' and 'name' in roster_df.columns:
                             roster_df['player_name'] = roster_df['name']
+                        elif col == 'team_name' and 'team' in roster_df.columns:
+                            roster_df['team_name'] = roster_df['team']
                         else:
                             roster_df[col] = 'Unknown'
                 
@@ -89,7 +109,13 @@ class UnifiedAPIClient:
             # If no data from Fantrax, fall back to original API
             roster_data = _self._original_api.get_team_rosters()
             player_ids = _self._original_api.get_player_ids()
-            return _self._data_processor.process_rosters(roster_data, player_ids)
+            processed_roster_data = _self._data_processor.process_rosters(roster_data, player_ids)
+            
+            # Ensure team_name exists in the original API data
+            if 'team_name' not in processed_roster_data.columns and 'team' in processed_roster_data.columns:
+                processed_roster_data['team_name'] = processed_roster_data['team']
+            
+            return processed_roster_data
         except Exception as e:
             st.error(f"Failed to fetch team rosters: {str(e)}")
             return pd.DataFrame()
@@ -123,7 +149,7 @@ class UnifiedAPIClient:
             st.error(f"Failed to fetch matchups: {str(e)}")
             return []
     
-    def fetch_all_data(self) -> Dict[str, Any]:
+    def fetch_all_data(_self) -> Dict[str, Any]:
         """Fetch all data at once and return as a consolidated dictionary."""
         try:
             # Create a placeholder in the sidebar for a loading indicator
@@ -131,40 +157,94 @@ class UnifiedAPIClient:
                 status_container = st.empty()
                 status_container.progress(0)
             
-            # Fetch and process all data
-            status_container.progress(20)
-            league_info = self.get_league_info()
+            result = {}
             
-            status_container.progress(40)
-            standings = self.get_standings()
+            # Fetch and process all data with error handling for each step
+            try:
+                status_container.progress(20)
+                league_info = _self.get_league_info()
+                result['league_data'] = league_info
+            except Exception as e:
+                st.warning(f"Error loading league info: {str(e)}")
+                result['league_data'] = {}
             
-            status_container.progress(60)
-            roster_data = self.get_team_rosters()
+            try:
+                status_container.progress(40)
+                standings = _self.get_standings()
+                result['standings_data'] = standings
+            except Exception as e:
+                st.warning(f"Error loading standings: {str(e)}")
+                result['standings_data'] = pd.DataFrame()
             
-            status_container.progress(75)
-            transactions = self.get_transactions()
+            try:
+                status_container.progress(60)
+                roster_data = _self.get_team_rosters()
+                result['roster_data'] = roster_data
+            except Exception as e:
+                st.warning(f"Error loading roster data: {str(e)}")
+                result['roster_data'] = pd.DataFrame()
             
-            status_container.progress(85)
-            scoring_periods = self.get_scoring_periods()
+            try:
+                status_container.progress(75)
+                transactions = _self.get_transactions()
+                result['transactions'] = transactions
+            except Exception as e:
+                st.warning(f"Error loading transactions: {str(e)}")
+                result['transactions'] = []
             
-            status_container.progress(95)
-            current_matchups = self.get_matchups_for_period()
+            try:
+                status_container.progress(85)
+                scoring_periods = _self.get_scoring_periods()
+                result['scoring_periods'] = scoring_periods
+            except Exception as e:
+                st.warning(f"Error loading scoring periods: {str(e)}")
+                result['scoring_periods'] = []
+            
+            try:
+                status_container.progress(95)
+                current_matchups = _self.get_matchups_for_period()
+                result['current_matchups'] = current_matchups
+            except Exception as e:
+                st.warning(f"Error loading matchups: {str(e)}")
+                result['current_matchups'] = []
             
             # Clear the progress bar
             status_container.empty()
             
-            return {
-                'league_data': league_info,
-                'standings_data': standings,
-                'roster_data': roster_data,
-                'transactions': transactions,
-                'scoring_periods': scoring_periods,
-                'current_matchups': current_matchups
-            }
+            # If we have at least some data, return it
+            if result.get('roster_data') is not None and not result['roster_data'].empty:
+                return result
+            
+            # As a last resort, try just returning the league data
+            if result.get('league_data'):
+                return result
+                
+            # If we have no data at all, return an empty dict so components have something to work with
+            if not any(result.values()):
+                st.error("No data could be loaded from any source.")
+                return {
+                    'league_data': {},
+                    'standings_data': pd.DataFrame(),
+                    'roster_data': pd.DataFrame(),
+                    'transactions': [],
+                    'scoring_periods': [],
+                    'current_matchups': []
+                }
+                
+            return result
         except Exception as e:
             with st.sidebar:
                 st.error(f"❌ Error loading data: {str(e)}")
-            return None
+            
+            # Return empty dataset as a fallback
+            return {
+                'league_data': {},
+                'standings_data': pd.DataFrame(),
+                'roster_data': pd.DataFrame(),
+                'transactions': [],
+                'scoring_periods': [],
+                'current_matchups': []
+            }
 
 # Initialize a global instance of the unified client
 unified_client = UnifiedAPIClient()
