@@ -77,10 +77,10 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     # Calculate points modifier
     points_mod = calculate_points_modifier(row['total_points'], all_teams_data['total_points'])
 
-    # Calculate hot/cold modifier based on recent record
+    # Calculate hot/cold modifier based on recent wins
     total_recent_games = row['recent_wins'] + row['recent_losses']
-    recent_record = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5  # Default to 0.5 if no games
-    hot_cold_mod = calculate_hot_cold_modifier(recent_record)
+    recent_win_pct = row['recent_wins'] / total_recent_games if total_recent_games > 0 else 0.5
+    hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
 
     return (weekly_avg * points_mod) * hot_cold_mod
 
@@ -133,13 +133,14 @@ def render(standings_data: pd.DataFrame):
 
     # Calculate power rankings
     rankings_df = standings_data.copy()
-    
+
     # Add required fields for new power score calculation
     rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
     rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    # Calculate recent wins/losses using rolling mean
     rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
     rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
-    
+
     # Calculate power scores
     rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
