@@ -488,10 +488,17 @@ st.markdown("""
 
 def main():
     try:
-        # Display logo image instead of text title
-        st.image("static/images/abl_logo.png", width=300)
-        # Add some space after the logo
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Display centered logo image with responsive sizing
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(
+                """
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                    <img src="static/images/abl_logo.png" style="width: 100%; max-width: 300px; margin: 0 auto;">
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
 
         # Add error notification box
         err_placeholder = st.empty()
@@ -663,7 +670,14 @@ def main():
 
             st.markdown("---")
             st.markdown("### About")
-            st.image("static/images/abl_logo.png", width=200)
+            st.markdown(
+                """
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                    <img src="static/images/abl_logo.png" style="width: 100%; max-width: 180px; margin: 0 auto;">
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
             st.markdown("Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.")
             
             # Add debugging information
