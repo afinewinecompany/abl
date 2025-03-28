@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
+from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results, save_player_points, load_player_points
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -523,6 +523,14 @@ def main():
                 else:
                     st.session_state.weekly_results = []
             
+            if 'player_points' not in st.session_state:
+                # Try to load saved player points
+                saved_player_points = load_player_points()
+                if saved_player_points:
+                    st.session_state.player_points = saved_player_points
+                else:
+                    st.session_state.player_points = {}
+            
             # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
             st.markdown("""
@@ -638,15 +646,68 @@ def main():
                         for error in errors:
                             st.write(f"- {error}")
             
+            # Section 3: Bulk data entry for player points
+            st.markdown("---")
+            st.subheader("Player Points")
+            st.markdown("""
+            Paste player points data in the format: `Player Name, Actual Points`  
+            Example:
+            ```
+            Aaron Judge, 250.5
+            Shohei Ohtani, 285.3
+            Juan Soto, 210.8
+            ```
+            *This will overwrite previous data for players included in the paste.*
+            """)
+            
+            # Text area for bulk player points data
+            player_points_data = st.text_area("Paste Player Points Data", height=200)
+            
+            if st.button("Process Player Points", use_container_width=True):
+                if player_points_data:
+                    # Process the pasted data
+                    lines = player_points_data.strip().split('\n')
+                    processed_count = 0
+                    errors = []
+                    
+                    for line in lines:
+                        try:
+                            parts = [part.strip() for part in line.split(',')]
+                            if len(parts) >= 2:
+                                player_name = parts[0]
+                                points = float(parts[1])
+                                
+                                # Update the session state
+                                st.session_state.player_points[player_name] = points
+                                processed_count += 1
+                            else:
+                                errors.append(f"Invalid format: {line}")
+                        except Exception as e:
+                            errors.append(f"Error processing line: {line}. {str(e)}")
+                    
+                    if processed_count > 0:
+                        # Save to persistent storage
+                        if save_player_points(st.session_state.player_points):
+                            st.success(f"Successfully processed and saved {processed_count} player(s)")
+                        else:
+                            st.warning(f"Processed {processed_count} player(s), but couldn't save to file")
+                    
+                    if errors:
+                        st.error("Errors encountered:")
+                        for error in errors:
+                            st.write(f"- {error}")
+            
             # Display current data
             if st.checkbox("Show Current Data"):
                 st.write("Season Stats:", st.session_state.power_rankings_data)
                 st.write("Weekly Results:", st.session_state.weekly_results)
+                st.write("Player Points:", st.session_state.player_points)
                 
                 # Add option to clear data
                 if st.button("Clear All Data", type="secondary"):
                     st.session_state.power_rankings_data = {}
                     st.session_state.weekly_results = []
+                    st.session_state.player_points = {}
                     
                     # Remove the data files
                     try:
@@ -654,7 +715,9 @@ def main():
                             os.remove('data/team_season_stats.csv')
                         if os.path.exists('data/weekly_results.csv'):
                             os.remove('data/weekly_results.csv')
-                        st.success("All power rankings data has been cleared from memory and storage")
+                        if os.path.exists('data/player_points.csv'):
+                            os.remove('data/player_points.csv')
+                        st.success("All data has been cleared from memory and storage")
                     except Exception as e:
                         st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
 
@@ -692,6 +755,9 @@ def main():
             
             if 'weekly_results' not in st.session_state:
                 st.session_state.weekly_results = []
+                
+            if 'player_points' not in st.session_state:
+                st.session_state.player_points = {}
             
             # Create tabs for different sections
             tab1, tab2, tab3, tab4, tab5 = st.tabs([

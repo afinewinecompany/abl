@@ -18,3 +18,5 @@ twilio
 fantraxapi
 numpy
 plotly
+pandas
+streamlit

@@ -258,8 +258,24 @@ def get_position_order(position: str) -> int:
 
 def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, prospect_score: Optional[float] = None):
     """Render an individual player card"""
+    import streamlit as st
+    
+    # Determine if we're using actual points
+    is_actual_points = False
+    player_name = player['player_name']
+    if 'player_points' in st.session_state and player_name in st.session_state.player_points:
+        is_actual_points = True
+    
     projected_points = player.get('projected_points', 0)
-    points_display = f"| {projected_points:.1f} pts" if projected_points > 0 else ""
+    
+    # Display points differently based on whether they're actual or projected
+    if projected_points > 0:
+        if is_actual_points:
+            points_display = f"| {projected_points:.1f} pts 📊" # Points emoji for actual
+        else:
+            points_display = f"| {projected_points:.1f} pts 📈" # Chart emoji for projected
+    else:
+        points_display = ""
     
     # For column layout, make a more compact display
     # Shorten MLB team name if it's long
@@ -306,8 +322,27 @@ def render_player_card(player: Dict, headshot_html: str, team_colors: Dict, pros
         </div>
     """
 
-def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame) -> float:
-    """Calculate total fantasy points for a player"""
+def calculate_total_points(player_name: str, hitters_proj: pd.DataFrame, pitchers_proj: pd.DataFrame, 
+                        player_points: Optional[Dict[str, float]] = None) -> float:
+    """
+    Calculate total fantasy points for a player
+    
+    Args:
+        player_name: Name of the player
+        hitters_proj: DataFrame with hitter projections
+        pitchers_proj: DataFrame with pitcher projections
+        player_points: Optional dictionary with actual player points data
+    
+    Returns:
+        float: Total fantasy points (actual if available, otherwise projected)
+    """
+    import streamlit as st
+    
+    # First check if we have actual points for this player
+    if player_points and player_name in player_points:
+        return player_points[player_name]
+        
+    # Fall back to projected points if no actual points available
     total_points = 0
     player_name = normalize_name(player_name)
 
@@ -376,9 +411,14 @@ def render(roster_data: pd.DataFrame):
         team_roster = roster_data[roster_data['team'] == selected_team].copy()
         team_roster['clean_name'] = team_roster['player_name'].fillna('').astype(str).apply(normalize_name)
 
-        # Calculate projected points for each player
+        # Get actual player points from session state, if available
+        player_points = None
+        if 'player_points' in st.session_state:
+            player_points = st.session_state.player_points
+            
+        # Calculate player points (actual if available, otherwise projected)
         team_roster['projected_points'] = team_roster['player_name'].apply(
-            lambda x: calculate_total_points(x, hitters_proj, pitchers_proj)
+            lambda x: calculate_total_points(x, hitters_proj, pitchers_proj, player_points)
         )
 
 
