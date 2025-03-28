@@ -238,9 +238,63 @@ class FantraxAPI:
         return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
         
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
-        """Fetch matchups for a specific period"""
-        return self._make_request("getMatchups", 
-                               {"leagueId": self.league_id, "scoringPeriod": period_id})
+        """
+        Fetch matchups for a specific period - since the 'getMatchups' endpoint
+        doesn't exist directly, we'll try to extract matchup data from another endpoint
+        """
+        # Try to get matchups from the league scoreboard instead
+        try:
+            # First, let's try "getLiveScoring" endpoint
+            data = self._make_request("getLiveScoring", 
+                                {"leagueId": self.league_id, "scoringPeriod": period_id})
+            
+            # Log the response keys for debugging
+            if isinstance(data, dict):
+                st.write(f"getLiveScoring response keys: {list(data.keys())}")
+                
+                # Look for matchups data in common locations
+                if "matchups" in data:
+                    return data.get("matchups", [])
+                elif "scoreboard" in data:
+                    return data.get("scoreboard", {}).get("matchups", [])
+                
+            # If we can't find matchups, try another endpoint
+            # "getScoreboard" is another common endpoint
+            data = self._make_request("getScoreboard", 
+                                {"leagueId": self.league_id, "scoringPeriod": period_id})
+            
+            if isinstance(data, dict):
+                st.write(f"getScoreboard response keys: {list(data.keys())}")
+                
+                # Look for matchups data in common locations
+                if "matchups" in data:
+                    return data.get("matchups", [])
+                elif "scoreboard" in data:
+                    return data.get("scoreboard", {}).get("matchups", [])
+            
+            # If we still can't find matchups, try one more approach
+            # Some APIs just return an array of matchups directly from getLeagueScoreboard
+            data = self._make_request("getLeagueScoreboard", 
+                                {"leagueId": self.league_id, "scoringPeriod": period_id})
+            
+            if isinstance(data, list):
+                # This might be a direct list of matchups
+                return data
+            elif isinstance(data, dict):
+                st.write(f"getLeagueScoreboard response keys: {list(data.keys())}")
+                
+                # Look for matchups data in common locations
+                if "matchups" in data:
+                    return data.get("matchups", [])
+                elif "scoreboard" in data:
+                    return data.get("scoreboard", {}).get("matchups", [])
+            
+            # If all attempts fail, return an empty list
+            return []
+            
+        except Exception as e:
+            st.error(f"Error trying to get matchups data: {str(e)}")
+            return []
         
     def get_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Fetch recent transactions"""
