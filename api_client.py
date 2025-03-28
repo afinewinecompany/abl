@@ -221,6 +221,36 @@ class FantraxAPI:
         return self._make_request("getTransactions", 
                                {"leagueId": self.league_id, "limit": limit})
                                
+    def get_live_scoring(self, scoring_period: int = 1, auth_token: str = None) -> Dict[str, Any]:
+        """Fetch live scoring data for a specific period"""
+        url = "https://www.fantrax.com/fxpa/req/league/liveScoring"
+        
+        # If no token is provided, use the default one or notify about the missing token
+        if not auth_token:
+            auth_token = "1647223044759"  # Default token from user, should be updated if needed
+            st.warning("Using default auth token for live scoring API call. If this doesn't work, please provide a valid token.")
+        
+        headers = {
+            "Authorization": f"Bearer {auth_token}",
+            "Content-Type": "application/json",
+        }
+        
+        payload = {
+            "leagueId": self.league_id,
+            "scoringPeriod": scoring_period
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            st.error(f"Live scoring API request failed: {str(e)}")
+            return {}
+        except ValueError as e:
+            st.error(f"Failed to parse JSON response from live scoring API: {str(e)}")
+            return {}
+        
     def get_teams(self) -> List[Dict[str, Any]]:
         """Fetch all teams"""
         # Extract from team rosters instead of direct endpoint
