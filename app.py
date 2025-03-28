@@ -516,7 +516,7 @@ def main():
             # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
             st.markdown("""
-            Paste team data in the format: `Team Name, Total Points, Weeks Played`  
+            Paste team data in the format: `Team, FPtsF, Weeks Played`  
             Example:
             ```
             Baltimore Orioles, 450.5, 10
@@ -567,7 +567,7 @@ def main():
             st.markdown("---")
             st.subheader("Weekly Results")
             st.markdown("""
-            Paste weekly results in the format: `Team Name, Week Number, Result(Win/Loss)`  
+            Paste weekly results in the format: `Team, Week Number, Result(Win/Loss)`  
             Example:
             ```
             Baltimore Orioles, 5, Win
