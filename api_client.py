@@ -253,18 +253,56 @@ class FantraxAPI:
             # Get matchups data from the API for the specified period
             matchups_data = self.get_matchups(period_id=scoring_period)
             
-            # Check if we got a valid response (should be a list)
-            if not isinstance(matchups_data, list):
-                st.warning(f"Invalid matchups data type: {type(matchups_data)}. Using empty dataset.")
+            # Log the raw response type for debugging
+            st.write(f"API Response Type: {type(matchups_data)}")
+            
+            # Process matchup data - could be a list or a dictionary
+            matchup_items = []
+            
+            # If we received a dictionary, extract the matchups
+            if isinstance(matchups_data, dict):
+                # Check for common dictionary structures that might contain matchups
+                if "matchups" in matchups_data:
+                    matchup_items = matchups_data.get("matchups", [])
+                    st.write("Found matchups key in response")
+                elif "data" in matchups_data:
+                    matchup_items = matchups_data.get("data", [])
+                    st.write("Found data key in response")
+                elif "items" in matchups_data:
+                    matchup_items = matchups_data.get("items", [])
+                    st.write("Found items key in response")
+                else:
+                    # If we can't find a known key, log all the keys for debugging
+                    st.write(f"Available keys in response: {list(matchups_data.keys())}")
+                    
+                    # Try to extract any list that might contain matchups
+                    for key, value in matchups_data.items():
+                        if isinstance(value, list) and len(value) > 0:
+                            matchup_items = value
+                            st.write(f"Using list from key: {key}")
+                            break
+            elif isinstance(matchups_data, list):
+                # If it's already a list, use it directly
+                matchup_items = matchups_data
+            else:
+                st.warning(f"Unexpected matchups data type: {type(matchups_data)}")
                 return {"liveScoringMatchups": []}
             
             # Transform the matchups data to the expected format
             formatted_matchups = []
             
-            for idx, matchup in enumerate(matchups_data):
+            if not isinstance(matchup_items, list):
+                st.warning(f"Expected list of matchups, got {type(matchup_items)}")
+                return {"liveScoringMatchups": []}
+                
+            for idx, matchup in enumerate(matchup_items):
                 # Check if the matchup is a dictionary
                 if not isinstance(matchup, dict):
                     continue
+                
+                # Log the keys in the first matchup for debugging
+                if idx == 0:
+                    st.write(f"Matchup keys: {list(matchup.keys())}")
                     
                 # Extract team data safely
                 home_team = matchup.get("homeTeam", {})
