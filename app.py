@@ -560,8 +560,9 @@ def main():
             
             if fantrax_data:
                 # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
                     "🏠 League Info",
+                    "📊 Standings",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
@@ -639,6 +640,26 @@ def main():
                         st.info("No standings data available")
 
                 with tab2:
+                    # Use our enhanced standings component
+                    standings_data = fantrax_data['standings_data']
+                    
+                    if not standings_data.empty:
+                        # Pass the standings data to the enhanced standings component
+                        standings.render(standings_data)
+                    else:
+                        st.error("No standings data available. Please check the API connection.")
+                        
+                        # Debug information
+                        with st.expander("Debug Information"):
+                            st.write("API Response Data Keys:", list(fantrax_data.keys()))
+                            st.write("Is 'standings_data' in keys?", 'standings_data' in fantrax_data)
+                            if 'standings_data' in fantrax_data:
+                                st.write("Standings Data Type:", type(fantrax_data['standings_data']))
+                                if isinstance(fantrax_data['standings_data'], pd.DataFrame):
+                                    st.write("Standings DataFrame is empty:", fantrax_data['standings_data'].empty)
+                                    st.write("Standings Data Columns:", list(fantrax_data['standings_data'].columns) if not fantrax_data['standings_data'].empty else "N/A")
+                
+                with tab3:
                     # Display rosters from Fantrax
                     st.header("Team Rosters")
                     roster_data = fantrax_data['roster_data']
@@ -660,30 +681,15 @@ def main():
                     else:
                         st.info("No roster data available")
 
-                with tab3:
-                    # Use the standings component for a better visualization
-                    standings_data = fantrax_data['standings_data']
-                    
-                    if not standings_data.empty:
-                        # Rename columns to match what the standings component expects
-                        if 'team' in standings_data.columns and 'team_name' not in standings_data.columns:
-                            standings_data = standings_data.rename(columns={'team': 'team_name'})
-                        if 'win_percentage' in standings_data.columns and 'winning_pct' not in standings_data.columns:
-                            standings_data = standings_data.rename(columns={'win_percentage': 'winning_pct'})
-                        
-                        # Add games_back if missing
-                        if 'games_back' not in standings_data.columns:
-                            standings_data['games_back'] = 0.0
-                            
-                        # Use the standings component for nice visualizations
-                        standings.render(standings_data)
-                    else:
-                        st.info("No standings data available")
-
                 with tab4:
-                    prospects.render(fantrax_data['roster_data'])
+                    # Power Rankings tab - we'll use a different approach than just standings
+                    power_rankings.render(fantrax_data['standings_data'])
 
                 with tab5:
+                    # Handbook tab with prospects information
+                    prospects.render(fantrax_data['roster_data'])
+
+                with tab6:
                     st.title("Matchups")
                     
                     # Add debug section for matchups
@@ -868,7 +874,7 @@ def main():
                             import traceback
                             st.code(traceback.format_exc())
                         
-                with tab6:
+                with tab7:
                     st.title("Transactions")
                     
                     # Debug information for transactions tab
