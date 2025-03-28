@@ -10,10 +10,26 @@ def render():
     
     # Add input for league URL with a default value
     league_url = st.text_input(
-        "Fantrax League URL",
-        value="https://www.fantrax.com/fantasy/league/grx2lginm1v4p5jd/standings",
-        help="Enter the URL of your Fantrax league standings page"
+        "Fantrax League URL or API Endpoint",
+        value="https://www.fantrax.com/fxea/general/getStandings?leagueId=grx2lginm1v4p5jd",
+        help="Enter the URL of your Fantrax league standings page or direct API endpoint"
     )
+    
+    # Show explanation of API endpoint vs league URL
+    with st.expander("About Fantrax URLs and API Endpoints"):
+        st.markdown("""
+        You can use either:
+        
+        1. **API Endpoint URL** (recommended): 
+           - Format: `https://www.fantrax.com/fxea/general/getStandings?leagueId=YOUR_LEAGUE_ID`
+           - More reliable and returns cleaner data
+           - Replace `YOUR_LEAGUE_ID` with your actual league ID
+        
+        2. **League Standings Page URL**:
+           - Format: `https://www.fantrax.com/fantasy/league/YOUR_LEAGUE_ID/standings`
+           - The scraper will attempt to extract the league ID and construct the API URL
+        """)
+        st.info("Your league ID is usually a string like 'grx2lginm1v4p5jd' in the URL of your Fantrax league.")
     
     # Add a fetch button
     if st.button("Fetch Standings", use_container_width=True):
@@ -115,14 +131,19 @@ def render():
     # Add information about the standings
     with st.expander("About Fantrax Standings"):
         st.markdown("""
-        This component fetches standings data directly from Fantrax by scraping the public standings page.
+        This component fetches standings data directly from the Fantrax API for real-time league standings.
         
         **How it works:**
-        1. Enter your Fantrax league standings URL
+        1. Enter your Fantrax league standings URL or API endpoint
         2. Click 'Fetch Standings' to load the data
         3. View the styled standings table
         4. Analyze the standings with the visualization tools
         5. Download the standings data as a CSV file
+        
+        **Benefits of using the API:**
+        - Get more complete, accurate data than scraping the public web page
+        - Access additional stats that might not be visible on the public page
+        - More reliable data retrieval that's less likely to break with website changes
         
         The data is automatically refreshed each time you click the 'Fetch Standings' button.
         """)
