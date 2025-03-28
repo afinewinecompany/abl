@@ -196,4 +196,13 @@ def render():
         for idx in range(start_idx, end_idx):
             create_matchup_card(matchups_df.iloc[idx])
     else:
-        st.error("No matchups data available. Please try refreshing or check your API connection.")
+        st.error("No matchups data available from the API.")
+        st.info("""
+        This could be due to one of the following reasons:
+        1. The API may require authentication credentials
+        2. The API endpoint might be temporarily unavailable
+        3. The league ID may be incorrect
+        4. There are no active matchups for the selected scoring period
+        
+        Please check the API configuration in api_client.py.
+        """)

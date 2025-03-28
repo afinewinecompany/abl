@@ -30,7 +30,26 @@ class FantraxAPI:
                 timeout=10
             )
             response.raise_for_status()
-            return response.json()
+            
+            # Parse the JSON response
+            data = response.json()
+            
+            # Check if the response contains an error message
+            if isinstance(data, dict) and "error" in data:
+                error_msg = data.get("error", "Unknown API error")
+                st.error(f"API returned an error: {error_msg}")
+                
+                # Log the full response for debugging
+                st.write(f"Full API response: {data}")
+                
+                # Return empty data
+                if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
+                    return []
+                else:
+                    return {}
+            
+            return data
+            
         except requests.exceptions.RequestException as e:
             st.error(f"API request to {endpoint} failed: {str(e)}")
             # Return empty data instead of mock data
