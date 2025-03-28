@@ -488,10 +488,20 @@ st.markdown("""
 
 def main():
     try:
-        # Display centered logo image with responsive sizing
+        # Display centered logo image with responsive sizing and a border
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image("static/images/header.png", width=300, use_column_width="auto")
+            st.markdown(
+                """
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                    <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 15px; 
+                         background: rgba(26, 28, 35, 0.7); max-width: 250px; margin: 0 auto; box-shadow: 0 0 20px rgba(255, 48, 48, 0.2);">
+                        <img src="static/images/header.png" style="width: 100%; display: block;">
+                    </div>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
 
         # Add error notification box
         err_placeholder = st.empty()
@@ -663,7 +673,17 @@ def main():
 
             st.markdown("---")
             st.markdown("### About")
-            st.image("static/images/header.png", width=180, use_column_width="auto")
+            st.markdown(
+                """
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                    <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 8px; 
+                         background: rgba(26, 28, 35, 0.7); max-width: 150px; margin: 0 auto; box-shadow: 0 0 15px rgba(255, 48, 48, 0.2);">
+                        <img src="static/images/header.png" style="width: 100%; display: block;">
+                    </div>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
             st.markdown("Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.")
             
             # Add debugging information
