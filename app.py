@@ -498,7 +498,20 @@ def main():
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
-                
+            
+            st.markdown("---")
+            st.markdown("### 🔐 Fantrax API Connection")
+            if os.path.exists("fantraxloggedin.cookie"):
+                st.success("✅ Fantrax authentication cookie found")
+                if st.button("Refresh Fantrax Authentication", use_container_width=True):
+                    import subprocess
+                    subprocess.Popen(["streamlit", "run", "create_fantrax_cookie.py"])
+            else:
+                st.warning("⚠️ Fantrax authentication not configured")
+                if st.button("Configure Fantrax Authentication", use_container_width=True):
+                    import subprocess
+                    subprocess.Popen(["streamlit", "run", "create_fantrax_cookie.py"])
+                    
             # Only showing Current API as data source now
             data_source = "Current API"
             

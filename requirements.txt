@@ -20,3 +20,15 @@ numpy
 plotly
 pandas
 streamlit
+python-dotenv
+requests
+components
+pandas
+pdf2image
+plotly
+pypdf2
+python-dotenv
+requests
+streamlit-pdf-viewer
+trafilatura
+twilio

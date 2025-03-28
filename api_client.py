@@ -1,238 +1,175 @@
-import requests
-from typing import Dict, List, Any, Union
-import streamlit as st
+import os
+import pickle
 import time
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+import json
+from typing import Dict, List, Any, Union
+import traceback
+import logging
+import pandas as pd
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Import the FantraxAPI library
+try:
+    from fantraxapi import Fantrax
+    from fantraxapi.exceptions import FantraxException
+except ImportError:
+    logger.error("Failed to import FantraxAPI. Please ensure the module is installed.")
 
 class FantraxAPI:
     def __init__(self):
-        self.base_url = "https://www.fantrax.com/fxea/general"
-        self.league_id = "grx2lginm1v4p5jd"
+        self.client = None
+        self.league_id = os.getenv('LEAGUE_ID', '0dw16pjfkmoc')  # Default to test league if not specified
+        self.mock_mode = False  # Default to real API mode
+        
+        # Try to initialize the client
+        self.init_fantrax_client()
 
-        # Configure retry strategy
-        retry_strategy = Retry(
-            total=3,  # number of retries
-            backoff_factor=1,  # wait 1, 2, 4 seconds between retries
-            status_forcelist=[429, 500, 502, 503, 504]  # HTTP status codes to retry on
-        )
-
-        # Create session with retry strategy
-        self.session = requests.Session()
-        self.session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
-
+    def init_fantrax_client(self):
+        """Initialize the official Fantrax API client with authentication"""
+        try:
+            # Check if cookie file exists
+            if os.path.exists("fantraxloggedin.cookie"):
+                logger.info("Using existing fantraxloggedin.cookie file")
+                cookies = pickle.load(open("fantraxloggedin.cookie", "rb"))
+                
+                # Initialize the Fantrax API client
+                self.client = Fantrax(cookies=cookies)
+                logger.info("Fantrax API client initialized successfully")
+                self.mock_mode = False
+            else:
+                logger.warning("No cookie file found. Falling back to mock mode.")
+                self.mock_mode = True
+        except Exception as e:
+            logger.error(f"Error initializing Fantrax client: {str(e)}")
+            logger.error(traceback.format_exc())
+            self.mock_mode = True
+    
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""
+        if self.mock_mode:
+            return self._get_mock_data(endpoint)
+            
+        if self.client is None:
+            # Try to initialize client again
+            self.init_fantrax_client()
+            if self.client is None:
+                logger.error("Fantrax client is not initialized")
+                return self._get_mock_data(endpoint)
+        
         try:
-            response = self.session.get(
-                f"{self.base_url}/{endpoint}",
-                params=params,
-                timeout=10
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            st.warning(f"API request to {endpoint} failed, using mock data")
-            # Return mock data based on the endpoint
+            # For now, just route to the appropriate API method
+            if endpoint == "getLeagueInfo":
+                return self.client.get_league(self.league_id)
+            elif endpoint == "getTeamRosters":
+                return self.client.get_league_rosters(self.league_id)
+            elif endpoint == "getStandings":
+                return self.client.get_league_standings(self.league_id)
+            elif endpoint == "getScoringPeriods":
+                return self.client.get_scoring_periods(self.league_id)
+            elif endpoint == "getMatchups":
+                return self.client.get_league_schedule(self.league_id)
+            elif endpoint == "getTransactions":
+                return self.client.get_league_messages(self.league_id)
+            elif endpoint == "getTeams":
+                return self.client.get_league_teams(self.league_id)
+            else:
+                logger.error(f"Unknown endpoint: {endpoint}")
+                return self._get_mock_data(endpoint)
+                
+        except FantraxException as e:
+            logger.error(f"Fantrax API error for endpoint {endpoint}: {str(e)}")
             return self._get_mock_data(endpoint)
-        except ValueError as e:
-            st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error for endpoint {endpoint}: {str(e)}")
+            logger.error(traceback.format_exc())
             return self._get_mock_data(endpoint)
-
+    
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Return mock data for development when API is unavailable"""
+        logger.warning(f"Using mock data for endpoint: {endpoint}")
+        
+        # Create path to mock data file
+        mock_file = f"mock_data/{endpoint}.json"
+        
+        # Check if the mock data directory exists, if not create it
+        if not os.path.exists("mock_data"):
+            os.makedirs("mock_data")
+            
+        # Check if specific mock file exists
+        if os.path.exists(mock_file):
+            # Return the saved mock data
+            try:
+                with open(mock_file, "r") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Error loading mock data: {str(e)}")
+        
+        # If we got here, either the file doesn't exist or couldn't be loaded
+        # Return placeholder mock data
         if endpoint == "getLeagueInfo":
-            return {
-                "draftSettings": {},
-                "scoringSettings": {
-                    "scoringPeriod": "Weekly"
-                },
-                "name": "ABL Development",
-                "season": "2025",
-                "teams": 30,
-                "sport": "MLB"
-            }
-        elif endpoint == "getPlayerIds":
-            return {"player1": {"name": "Test Player", "team": "Test Team"}}
+            return {"id": self.league_id, "name": "Mock League", "scoringStyle": "H2H"}
         elif endpoint == "getTeamRosters":
-            return {
-                "rosters": {
-                    "team1": {
-                        "teamName": "Test Team",
-                        "rosterItems": [
-                            {
-                                "id": "player1",
-                                "name": "Test Player",
-                                "position": "OF",
-                                "status": "Active",
-                                "salary": 10
-                            }
-                        ]
-                    }
-                }
-            }
+            return {"rosters": [
+                {"teamId": "1", "teamName": "Mock Team 1", "players": []},
+                {"teamId": "2", "teamName": "Mock Team 2", "players": []}
+            ]}
         elif endpoint == "getStandings":
             return [
-                {
-                    "teamName": "Test Team",
-                    "teamId": "team1",
-                    "rank": 1,
-                    "wins": 10,
-                    "losses": 5,
-                    "ties": 0,
-                    "winPercentage": 0.667,
-                    "pointsFor": 100.5,
-                    "pointsAgainst": 80.2,
-                    "gamesBack": 0.0,
-                    "streakDescription": "W3"
-                }
+                {"teamId": "1", "teamName": "Mock Team 1", "wins": 5, "losses": 2, "points": 450.5},
+                {"teamId": "2", "teamName": "Mock Team 2", "wins": 3, "losses": 4, "points": 380.2}
             ]
         elif endpoint == "getScoringPeriods":
-            # Mock scoring periods data
             return [
-                {
-                    "periodName": "Week 1",
-                    "periodNum": 1,
-                    "startDate": "2025-04-01",
-                    "endDate": "2025-04-07",
-                    "isCurrent": True,
-                    "isComplete": False,
-                    "isFuture": False
-                },
-                {
-                    "periodName": "Week 2",
-                    "periodNum": 2,
-                    "startDate": "2025-04-08",
-                    "endDate": "2025-04-14",
-                    "isCurrent": False,
-                    "isComplete": False,
-                    "isFuture": True
-                }
+                {"id": 1, "startDate": "2025-04-01", "endDate": "2025-04-07", "isCurrent": True},
+                {"id": 2, "startDate": "2025-04-08", "endDate": "2025-04-14", "isCurrent": False}
             ]
         elif endpoint == "getMatchups":
-            # Mock matchups data
             return [
-                {
-                    "id": "match1",
-                    "awayTeam": {"name": "Away Team"},
-                    "homeTeam": {"name": "Home Team"},
-                    "awayScore": 95.5,
-                    "homeScore": 87.2
-                },
-                {
-                    "id": "match2",
-                    "awayTeam": {"name": "Visitors"},
-                    "homeTeam": {"name": "Hosts"},
-                    "awayScore": 78.4,
-                    "homeScore": 102.6
-                }
+                {"periodId": 1, "homeTeamId": "1", "awayTeamId": "2", "homeScore": 150.5, "awayScore": 130.2}
             ]
         elif endpoint == "getTransactions":
-            # Mock transactions data with all required fields for Transaction object structure
             return [
-                {
-                    "id": "tx1",
-                    "dateTime": "Apr 5, 2025, 2:30PM",
-                    "teamName": "Savvy Squad",
-                    "playerName": "John Smith",
-                    "playerTeam": "LAD",
-                    "playerPosition": "SP",
-                    "type": "ADD",
-                    "count": 1,
-                    "players": [
-                        {"name": "John Smith", "team": "LAD", "position": "SP"}
-                    ],
-                    "finalized": True
-                },
-                {
-                    "id": "tx2",
-                    "dateTime": "Apr 3, 2025, 10:15AM",
-                    "teamName": "Power Hitters",
-                    "playerName": "Mike Johnson",
-                    "playerTeam": "NYY",
-                    "playerPosition": "1B",
-                    "type": "DROP",
-                    "count": 1,
-                    "players": [
-                        {"name": "Mike Johnson", "team": "NYY", "position": "1B"}
-                    ],
-                    "finalized": True
-                },
-                {
-                    "id": "tx3",
-                    "dateTime": "Apr 8, 2025, 3:45PM",
-                    "teamName": "Draft Kings",
-                    "playerName": "Alex Rodriguez",
-                    "playerTeam": "BOS",
-                    "playerPosition": "3B",
-                    "type": "TRADE",
-                    "count": 2,
-                    "players": [
-                        {"name": "Alex Rodriguez", "team": "BOS", "position": "3B"},
-                        {"name": "David Martinez", "team": "CHC", "position": "OF"}
-                    ],
-                    "finalized": True
-                },
-                {
-                    "id": "tx4",
-                    "dateTime": "Apr 10, 2025, 9:00AM",
-                    "teamName": "Batting Champs",
-                    "playerName": "Chris Johnson",
-                    "playerTeam": "ATL",
-                    "playerPosition": "RP",
-                    "type": "CLAIM",
-                    "count": 1,
-                    "players": [
-                        {"name": "Chris Johnson", "team": "ATL", "position": "RP"}
-                    ],
-                    "finalized": False
-                }
+                {"id": "1", "date": "2025-03-28", "type": "TRADE", "description": "Mock Trade"}
             ]
-        return {}
-
+        elif endpoint == "getTeams":
+            return [
+                {"id": "1", "name": "Mock Team 1", "owner": "Owner 1"},
+                {"id": "2", "name": "Mock Team 2", "owner": "Owner 2"}
+            ]
+        else:
+            return {}
+            
     def get_player_ids(self) -> Dict[str, Any]:
         """Fetch player IDs"""
-        return self._make_request("getPlayerIds", {"sport": "MLB"})
-
+        return self._make_request("getPlayerIds")
+        
     def get_league_info(self) -> Dict[str, Any]:
         """Fetch league information"""
-        return self._make_request("getLeagueInfo", {"leagueId": self.league_id})
-
+        return self._make_request("getLeagueInfo")
+        
     def get_team_rosters(self) -> Dict[str, Any]:
         """Fetch team rosters"""
-        return self._make_request("getTeamRosters", 
-                              {"leagueId": self.league_id, "period": "1"})
-
+        return self._make_request("getTeamRosters")
+        
     def get_standings(self) -> List[Dict[str, Any]]:
         """Fetch standings data"""
-        return self._make_request("getStandings", {"leagueId": self.league_id})
+        return self._make_request("getStandings")
         
     def get_scoring_periods(self) -> List[Dict[str, Any]]:
         """Fetch scoring periods"""
-        return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
+        return self._make_request("getScoringPeriods")
         
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
         """Fetch matchups for a specific period"""
-        return self._make_request("getMatchups", 
-                               {"leagueId": self.league_id, "scoringPeriod": period_id})
+        return self._make_request("getMatchups", {"periodId": period_id})
         
     def get_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Fetch recent transactions"""
-        return self._make_request("getTransactions", 
-                               {"leagueId": self.league_id, "limit": limit})
-                               
+        return self._make_request("getTransactions", {"limit": limit})
+        
     def get_teams(self) -> List[Dict[str, Any]]:
         """Fetch all teams"""
-        # Extract from team rosters instead of direct endpoint
-        roster_data = self.get_team_rosters()
-        teams = []
-        
-        if isinstance(roster_data, dict) and 'rosters' in roster_data:
-            for team_id, team_info in roster_data.get('rosters', {}).items():
-                if isinstance(team_info, dict):
-                    teams.append({
-                        'id': team_id,
-                        'name': team_info.get('teamName', f'Team {team_id}')
-                    })
-        
-        return teams
+        return self._make_request("getTeams")
