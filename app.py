@@ -488,15 +488,18 @@ st.markdown("""
 
 def main():
     try:
-        # Display centered logo image with responsive sizing and a border
-        col1, col2, col3 = st.columns([1, 2, 1])
+        # Display stylized header text instead of an image
+        col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
             st.markdown(
                 """
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
                     <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 15px; 
-                         background: rgba(26, 28, 35, 0.7); max-width: 250px; margin: 0 auto; box-shadow: 0 0 20px rgba(255, 48, 48, 0.2);">
-                        <img src="static/logo.svg" style="width: 100%; display: block;">
+                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; box-shadow: 0 0 20px rgba(255, 48, 48, 0.2);">
+                        <h1 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 2.5rem; 
+                                   color: #00ccff; text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff;">
+                            ABL <span style="color: #ff3030; text-shadow: 0 0 10px #ff3030, 0 0 20px #ff3030;">⚾</span> ANALYTICS
+                        </h1>
                     </div>
                 </div>
                 """, 
@@ -677,8 +680,11 @@ def main():
                 """
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
                     <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 8px; 
-                         background: rgba(26, 28, 35, 0.7); max-width: 150px; margin: 0 auto; box-shadow: 0 0 15px rgba(255, 48, 48, 0.2);">
-                        <img src="static/logo.svg" style="width: 100%; display: block;">
+                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; box-shadow: 0 0 15px rgba(255, 48, 48, 0.2);">
+                        <h3 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 1.2rem; 
+                                  color: #00ccff; text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff;">
+                            ABL <span style="color: #ff3030; text-shadow: 0 0 5px #ff3030, 0 0 10px #ff3030;">⚾</span>
+                        </h3>
                     </div>
                 </div>
                 """, 
