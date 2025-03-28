@@ -493,12 +493,15 @@ def main():
         with col2:
             st.markdown(
                 """
-                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 15px; 
-                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; box-shadow: 0 0 20px rgba(255, 48, 48, 0.2);">
+                <div style="width: 100%;">
+                    <div style="border-radius: 10px; padding: 20px; 
+                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
+                         box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);">
                         <h1 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 2.5rem; 
-                                   color: #00ccff; text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff;">
-                            ABL <span style="color: #ff3030; text-shadow: 0 0 10px #ff3030, 0 0 20px #ff3030;">⚾</span> ANALYTICS
+                                   color: #00ccff; text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff; 
+                                   display: flex; justify-content: center; align-items: center;">
+                            ABL <span style="color: #ff3030; text-shadow: 0 0 10px #ff3030, 0 0 20px #ff3030; 
+                                           margin: 0 10px;">⚾</span> ANALYTICS
                         </h1>
                     </div>
                 </div>
@@ -678,12 +681,14 @@ def main():
             st.markdown("### About")
             st.markdown(
                 """
-                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 8px; 
-                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; box-shadow: 0 0 15px rgba(255, 48, 48, 0.2);">
+                <div style="width: 100%;">
+                    <div style="border-radius: 10px; padding: 8px; 
+                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
+                         box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);">
                         <h3 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 1.2rem; 
-                                  color: #00ccff; text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff;">
-                            ABL <span style="color: #ff3030; text-shadow: 0 0 5px #ff3030, 0 0 10px #ff3030;">⚾</span>
+                                  color: #00ccff; text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff;
+                                  display: flex; justify-content: center; align-items: center;">
+                            ABL <span style="color: #ff3030; text-shadow: 0 0 5px #ff3030, 0 0 10px #ff3030; margin: 0 5px;">⚾</span>
                         </h3>
                     </div>
                 </div>
