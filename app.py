@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
+# Import matchups with a more distinct name to avoid confusion with parameter names
+from components import matchups as matchups_component
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
@@ -687,7 +689,7 @@ def main():
                         try:
                             # Ensure we have list data before attempting to render
                             if isinstance(fantrax_data['current_matchups'], list) and isinstance(fantrax_data['scoring_periods'], list):
-                                matchups.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                                matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
                             else:
                                 st.error("Matchups or scoring periods data is not in the expected format.")
                                 st.info("Attempting to reload matchups data directly...")
@@ -697,7 +699,7 @@ def main():
                                 scoring_periods = fantrax_client.get_scoring_periods()
                                 
                                 if direct_matchups and scoring_periods:
-                                    matchups.render(direct_matchups, scoring_periods)
+                                    matchups_component.render(direct_matchups, scoring_periods)
                                 else:
                                     st.warning("Unable to fetch matchups data directly.")
                         except Exception as e:
