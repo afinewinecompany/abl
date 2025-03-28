@@ -3,8 +3,7 @@ import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data, fetch_fantrax_data
-from fantrax_integration import fantrax_client
+from utils import fetch_unified_data
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -499,14 +498,13 @@ def main():
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
-                
-            # Add data source selector
-            data_source = st.radio("Data Source", ["Current API", "Fantrax API"])
 
             st.markdown("---")
             st.markdown("""
             ### About ABL Analytics
             Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
+            
+            Using Unified API that combines data from multiple sources.
             """)
             
             # Add debugging information
@@ -522,218 +520,46 @@ def main():
         st.write(traceback.format_exc())
 
     try:
-        # Fetch appropriate data based on selected data source
-        if data_source == "Current API":
-            data = fetch_api_data()
-            
-            if data:
-                # Create tabs for different sections
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                    "🏠 League Info",
-                    "👥 Team Rosters",
-                    "🏆 Power Rankings",
-                    "📚 Handbook", 
-                    "🏆 DDI Rankings"
-                ])
+        # Fetch data using the unified API client
+        data = fetch_unified_data()
+        
+        if data:
+            # Create tabs for different sections
+            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                "🏠 League Info",
+                "👥 Team Rosters",
+                "🏆 Power Rankings",
+                "📚 Handbook", 
+                "🏆 DDI Rankings",
+                "🔄 Transactions"
+            ])
 
-                with tab1:
-                    league_info.render(data['league_data'])
+            with tab1:
+                league_info.render(data['league_data'])
 
-                with tab2:
-                    rosters.render(data['roster_data'])
+            with tab2:
+                rosters.render(data['roster_data'])
 
-                with tab3:
-                    power_rankings.render(data['standings_data'])
+            with tab3:
+                power_rankings.render(data['standings_data'])
 
-                with tab4:
-                    prospects.render(data['roster_data'])
+            with tab4:
+                prospects.render(data['roster_data'])
 
-                with tab5:
-                    ddi.render(data['roster_data'])
-            else:
-                st.info("No data available from the current API. Try switching to the Fantrax API.")
+            with tab5:
+                ddi.render(data['roster_data'])
+                
+            with tab6:
+                if 'transactions' in data and data['transactions']:
+                    transactions.render(data['transactions'])
+                else:
+                    st.info("No transaction data available.")
         else:
-            # Using Fantrax API
-            fantrax_data = fetch_fantrax_data()
-            
-            if fantrax_data:
-                # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                    "🏠 League Info",
-                    "👥 Team Rosters",
-                    "🏆 Power Rankings",
-                    "📚 Handbook",
-                    "📋 Transactions"
-                ])
-
-                with tab1:
-                    # Display league info from Fantrax
-                    st.header("League Information")
-                    league_data = fantrax_data['league_data']
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("League Name", league_data.get('name', 'N/A'))
-                    with col2:
-                        st.metric("Sport", league_data.get('sport', 'N/A'))
-                    with col3:
-                        st.metric("Season", league_data.get('season', 'N/A'))
-                        
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Scoring Type", league_data.get('scoring_type', 'N/A'))
-                    with col2:
-                        st.metric("Teams", league_data.get('teams_count', 'N/A'))
-                    with col3:
-                        st.metric("Current Week", league_data.get('current_week', 'N/A'))
-                    
-                    # Add Standings section to League Info tab
-                    st.header("League Standings")
-                    standings_data = fantrax_data['standings_data']
-                    
-                    if not standings_data.empty:
-                        # Sort standings by rank
-                        standings_data = standings_data.sort_values('rank') if 'rank' in standings_data.columns else standings_data
-                        
-                        # Display standings table with enhanced formatting
-                        st.dataframe(
-                            standings_data,
-                            column_config={
-                                "team": st.column_config.TextColumn("Team"),
-                                "rank": st.column_config.NumberColumn("Rank", format="%d"),
-                                "wins": st.column_config.NumberColumn("Wins", format="%d"),
-                                "losses": st.column_config.NumberColumn("Losses", format="%d"),
-                                "ties": st.column_config.NumberColumn("Ties", format="%d"),
-                                "win_percentage": st.column_config.NumberColumn("Win %", format="%.3f"),
-                                "points_for": st.column_config.NumberColumn("Points For", format="%.1f"),
-                                "points_against": st.column_config.NumberColumn("Points Against", format="%.1f"),
-                                "streak": "Streak"
-                            },
-                            hide_index=True
-                        )
-                        
-                        # Add Current Matchups section
-                        st.header("Current Matchups")
-                        matchups = fantrax_data['current_matchups']
-                        
-                        if matchups:
-                            matchup_df = pd.DataFrame(matchups)
-                            st.dataframe(
-                                matchup_df,
-                                column_config={
-                                    "away_team": "Away Team",
-                                    "away_score": st.column_config.NumberColumn("Away Score", format="%.1f"),
-                                    "home_team": "Home Team", 
-                                    "home_score": st.column_config.NumberColumn("Home Score", format="%.1f"),
-                                    "winner": "Winner",
-                                    "score_difference": st.column_config.NumberColumn("Difference", format="%.1f")
-                                },
-                                hide_index=True
-                            )
-                        else:
-                            st.info("No current matchups available")
-                    else:
-                        st.info("No standings data available")
-
-                with tab2:
-                    # Display rosters from Fantrax
-                    st.header("Team Rosters")
-                    roster_data = fantrax_data['roster_data']
-                    
-                    # Team selector
-                    teams = sorted(roster_data['team'].unique()) if not roster_data.empty else []
-                    if teams:
-                        selected_team = st.selectbox("Select Team", teams)
-                        team_roster = roster_data[roster_data['team'] == selected_team]
-                        
-                        # Display active and injured players
-                        st.subheader("Active Players")
-                        active_players = team_roster[team_roster['status'] == 'Active']
-                        st.dataframe(active_players[['player_name', 'position', 'team', 'injured', 'suspended']])
-                        
-                        st.subheader("Injured Players")
-                        injured_players = team_roster[team_roster['status'] == 'Injured']
-                        st.dataframe(injured_players[['player_name', 'position', 'team', 'injured', 'suspended']])
-                    else:
-                        st.info("No roster data available")
-
-                with tab3:
-                    # Use the standings component for a better visualization
-                    standings_data = fantrax_data['standings_data']
-                    
-                    if not standings_data.empty:
-                        # Rename columns to match what the standings component expects
-                        if 'team' in standings_data.columns and 'team_name' not in standings_data.columns:
-                            standings_data = standings_data.rename(columns={'team': 'team_name'})
-                        if 'win_percentage' in standings_data.columns and 'winning_pct' not in standings_data.columns:
-                            standings_data = standings_data.rename(columns={'win_percentage': 'winning_pct'})
-                        
-                        # Add games_back if missing
-                        if 'games_back' not in standings_data.columns:
-                            standings_data['games_back'] = 0.0
-                            
-                        # Use the standings component for nice visualizations
-                        standings.render(standings_data)
-                    else:
-                        st.info("No standings data available")
-
-                with tab4:
-                    prospects.render(fantrax_data['roster_data'])
-
-                with tab5:
-                    st.title("Transactions")
-                    
-                    # Debug information for transactions tab
-                    st.sidebar.markdown("### Debug Information")
-                    st.sidebar.write(f"fantrax_data keys: {list(fantrax_data.keys())}")
-                    
-                    # Check if transactions key exists in the data
-                    if 'transactions' in fantrax_data:
-                        transactions_data = fantrax_data['transactions']
-                        st.sidebar.write(f"transactions_data type: {type(transactions_data)}")
-                        st.sidebar.write(f"transactions_data length: {len(transactions_data)}")
-                        
-                        if transactions_data and len(transactions_data) > 0:
-                            st.sidebar.write(f"First transaction keys: {list(transactions_data[0].keys()) if transactions_data and isinstance(transactions_data[0], dict) else 'No keys found'}")
-                            st.sidebar.write(f"Sample transaction: {transactions_data[0]}")
-                        else:
-                            st.sidebar.warning("Transactions list is empty")
-                            
-                            # Let's try to fetch some basic transactions directly for debugging
-                            try:
-                                st.info("Attempting to fetch transactions directly...")
-                                direct_transactions = fantrax_client.get_transactions(limit=10)
-                                st.sidebar.write(f"Direct fetch - transactions count: {len(direct_transactions)}")
-                                
-                                if direct_transactions and len(direct_transactions) > 0:
-                                    # Use these transactions instead
-                                    transactions_data = direct_transactions
-                                    st.success(f"Successfully fetched {len(transactions_data)} transactions directly.")
-                                    st.sidebar.write(f"First direct transaction: {direct_transactions[0]}")
-                            except Exception as e:
-                                st.error(f"Failed to fetch transactions directly: {str(e)}")
-                        
-                        # Use the transactions component with filtering capabilities
-                        transactions.render(transactions_data)
-                    else:
-                        st.error("Transactions data not found in Fantrax data")
-                        try:
-                            st.info("Attempting to fetch transactions directly...")
-                            direct_transactions = fantrax_client.get_transactions(limit=10)
-                            
-                            if direct_transactions and len(direct_transactions) > 0:
-                                st.success(f"Successfully fetched {len(direct_transactions)} transactions directly.")
-                                transactions.render(direct_transactions)
-                            else:
-                                st.warning("No transactions found when fetching directly.")
-                        except Exception as e:
-                            st.error(f"Failed to fetch transactions directly: {str(e)}")
-            else:
-                st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
+            st.error("Unable to fetch data. Please check the server logs for more information.")
 
     except Exception as e:
         st.error(f"An error occurred while loading data: {str(e)}")
-        st.info("Try switching to a different data source.")
+        st.info("Please check your connection or try refreshing the page.")
 
 if __name__ == "__main__":
     main()
