@@ -501,6 +501,66 @@ def main():
                 
             # Only showing Current API as data source now
             data_source = "Current API"
+            
+            # Add power rankings data input section
+            st.markdown("---")
+            st.markdown("### 📊 Power Rankings Data")
+            
+            # Initialize session state for power rankings data if not exists
+            if 'power_rankings_data' not in st.session_state:
+                st.session_state.power_rankings_data = {}
+            
+            if 'weekly_results' not in st.session_state:
+                st.session_state.weekly_results = []
+            
+            # Section 1: Total points and weeks played
+            st.subheader("Team Season Stats")
+            st.markdown("*This will overwrite previous data for the selected team*")
+            
+            # Get list of teams from standings data
+            teams = []
+            if 'standings_data' in st.session_state and not st.session_state.standings_data.empty:
+                teams = st.session_state.standings_data['team_name'].tolist()
+            
+            selected_team = st.selectbox("Select Team", teams if teams else ["No teams available"])
+            
+            if selected_team != "No teams available":
+                col1, col2 = st.columns(2)
+                with col1:
+                    total_points = st.number_input("Total Points", min_value=0.0, value=0.0, step=0.1, format="%.1f")
+                with col2:
+                    weeks_played = st.number_input("Weeks Played", min_value=1, value=1, step=1)
+                
+                if st.button("Save Season Stats", use_container_width=True):
+                    # Update or add team data
+                    st.session_state.power_rankings_data[selected_team] = {
+                        'total_points': total_points,
+                        'weeks_played': weeks_played
+                    }
+                    st.success(f"Updated season stats for {selected_team}")
+            
+            # Section 2: Weekly results
+            st.markdown("---")
+            st.subheader("Weekly Results")
+            st.markdown("*This will add to previous weekly data*")
+            
+            if selected_team != "No teams available":
+                week_number = st.number_input("Week Number", min_value=1, step=1)
+                result = st.radio("Result", ["Win", "Loss"])
+                
+                if st.button("Add Weekly Result", use_container_width=True):
+                    # Add weekly result
+                    st.session_state.weekly_results.append({
+                        'team': selected_team,
+                        'week': week_number,
+                        'result': result
+                    })
+                    st.success(f"Added {result} for {selected_team} in week {week_number}")
+            
+            # Display current data
+            if st.checkbox("Show Current Data"):
+                st.write("Season Stats:", st.session_state.power_rankings_data)
+                st.write("Weekly Results:", st.session_state.weekly_results)
 
             st.markdown("---")
             st.markdown("""
@@ -525,6 +585,10 @@ def main():
         data = fetch_api_data()
         
         if data:
+            # Store standings data in session state for power rankings input
+            if 'standings_data' not in st.session_state:
+                st.session_state.standings_data = data['standings_data']
+            
             # Create tabs for different sections
             tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "🏠 League Info",

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from typing import Dict
 
 # Import team colors and IDs from prospects.py
@@ -134,12 +135,57 @@ def render(standings_data: pd.DataFrame):
     # Calculate power rankings
     rankings_df = standings_data.copy()
 
-    # Add required fields for new power score calculation
-    rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
-    rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
-    # Calculate recent wins/losses using rolling mean
-    rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
-    rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
+    # Use custom input data if available in session state, otherwise calculate from standings
+    if 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
+        # We have custom data from user input
+        for team_name, team_data in st.session_state.power_rankings_data.items():
+            # Only update teams that exist in the standings_data
+            if team_name in rankings_df['team_name'].values:
+                # Find the index for this team
+                idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
+                # Update the data
+                rankings_df.at[idx, 'total_points'] = team_data['total_points']
+                rankings_df.at[idx, 'weeks_played'] = team_data['weeks_played']
+    else:
+        # Calculate default values if no custom data
+        rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
+        rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    
+    # Fill any missing values with defaults
+    rankings_df['total_points'] = rankings_df['total_points'].fillna(rankings_df['wins'] * 2)
+    rankings_df['weeks_played'] = rankings_df['weeks_played'].fillna(rankings_df['wins'] + rankings_df['losses'])
+    
+    # Recent wins/losses - use custom data if available
+    if 'weekly_results' in st.session_state and st.session_state.weekly_results:
+        # Process weekly results to get recent wins/losses for each team
+        team_names = rankings_df['team_name'].unique()
+        recent_weeks = 3  # How many weeks to consider for "recent" performance
+        
+        # Initialize recent wins/losses columns
+        rankings_df['recent_wins'] = 0
+        rankings_df['recent_losses'] = 0
+        
+        for team_name in team_names:
+            # Get this team's results
+            team_results = [r for r in st.session_state.weekly_results if r['team'] == team_name]
+            
+            # Sort by week number and get the most recent X weeks
+            team_results.sort(key=lambda x: x['week'], reverse=True)
+            recent_results = team_results[:recent_weeks]
+            
+            # Count wins and losses
+            recent_wins = sum(1 for r in recent_results if r['result'] == 'Win')
+            recent_losses = sum(1 for r in recent_results if r['result'] == 'Loss')
+            
+            # Update the dataframe
+            if team_name in rankings_df['team_name'].values:
+                idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
+                rankings_df.at[idx, 'recent_wins'] = recent_wins
+                rankings_df.at[idx, 'recent_losses'] = recent_losses
+    else:
+        # Calculate recent wins/losses using rolling mean as default
+        rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
+        rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
 
     # Calculate power scores
     rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
