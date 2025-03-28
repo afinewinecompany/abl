@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data
-from api_client import FantraxAPI
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -525,68 +524,30 @@ def main():
         # Use the Current API
         data = fetch_api_data()
         
-        # Debug info
-        st.info(f"Data keys: {list(data.keys() if data else 'No data fetched')}")
-        
         if data:
-            try:
-                # Create tabs for different sections
-                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-                    "🏠 League Info",
-                    "👥 Team Rosters",
-                    "🏆 Power Rankings",
-                    "📚 Handbook", 
-                    "🏆 DDI Rankings",
-                    "🎮 Matchups"
-                ])
+            # Create tabs for different sections
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "🏠 League Info",
+                "👥 Team Rosters",
+                "🏆 Power Rankings",
+                "📚 Handbook", 
+                "🏆 DDI Rankings"
+            ])
 
-                with tab1:
-                    league_info.render(data['league_data'])
+            with tab1:
+                league_info.render(data['league_data'])
 
-                with tab2:
-                    rosters.render(data['roster_data'])
+            with tab2:
+                rosters.render(data['roster_data'])
 
-                with tab3:
-                    power_rankings.render(data['standings_data'])
+            with tab3:
+                power_rankings.render(data['standings_data'])
 
-                with tab4:
-                    prospects.render(data['roster_data'])
+            with tab4:
+                prospects.render(data['roster_data'])
 
-                with tab5:
-                    ddi.render(data['roster_data'])
-                    
-                with tab6:
-                    # Check if matchups data exists
-                    if 'matchups_data' in data and data['matchups_data']:
-                        try:
-                            matchups.render(data['matchups_data'])
-                        except Exception as match_err:
-                            st.error(f"Error rendering matchups: {str(match_err)}")
-                            import traceback
-                            st.code(traceback.format_exc())
-                    else:
-                        st.info("No matchup data available. Please try refreshing the page.")
-                        # Add a button to fetch matchup data
-                        if st.button("Fetch Matchup Data", key="fetch_matchups"):
-                            try:
-                                api_client = FantraxAPI()
-                                matchup_data = api_client.get_selenium_matchups()
-                                if matchup_data:
-                                    st.success("Successfully fetched matchup data!")
-                                    try:
-                                        matchups.render(matchup_data)
-                                    except Exception as render_err:
-                                        st.error(f"Error rendering matchups: {str(render_err)}")
-                                else:
-                                    st.error("Failed to fetch matchup data.")
-                            except Exception as e:
-                                st.error(f"Error fetching matchup data: {str(e)}")
-                                import traceback
-                                st.code(traceback.format_exc())
-            except Exception as tabs_error:
-                st.error(f"Error creating tabs: {str(tabs_error)}")
-                import traceback
-                st.code(traceback.format_exc())
+            with tab5:
+                ddi.render(data['roster_data'])
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 

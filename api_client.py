@@ -2,22 +2,8 @@ import requests
 from typing import Dict, List, Any, Union
 import streamlit as st
 import time
-import os
-import json
-from datetime import datetime
-import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-
-# Load environment variables
-load_dotenv()
 
 class FantraxAPI:
     def __init__(self):
@@ -124,29 +110,21 @@ class FantraxAPI:
                 }
             ]
         elif endpoint == "getMatchups":
-            # Mock matchups data with consistent snake_case keys
+            # Mock matchups data
             return [
                 {
                     "id": "match1",
-                    "away_team": "Away Team",
-                    "home_team": "Home Team",
-                    "away_score": 95.5,
-                    "home_score": 87.2,
-                    "winner": "Away Team",
-                    "score_difference": 8.3,
-                    "is_complete": False,
-                    "week": "current"
+                    "awayTeam": {"name": "Away Team"},
+                    "homeTeam": {"name": "Home Team"},
+                    "awayScore": 95.5,
+                    "homeScore": 87.2
                 },
                 {
                     "id": "match2",
-                    "away_team": "Visitors",
-                    "home_team": "Hosts",
-                    "away_score": 78.4,
-                    "home_score": 102.6,
-                    "winner": "Hosts",
-                    "score_difference": 24.2,
-                    "is_complete": False,
-                    "week": "current"
+                    "awayTeam": {"name": "Visitors"},
+                    "homeTeam": {"name": "Hosts"},
+                    "awayScore": 78.4,
+                    "homeScore": 102.6
                 }
             ]
         elif endpoint == "getTransactions":
@@ -258,183 +236,3 @@ class FantraxAPI:
                     })
         
         return teams
-        
-    def get_selenium_matchups(self, week: int = None) -> List[Dict[str, Any]]:
-        """
-        Fetch matchup data from Fantrax using Selenium.
-        
-        Args:
-            week (int, optional): The week number to fetch matchups for. Defaults to the current week.
-            
-        Returns:
-            List[Dict[str, Any]]: A list of matchup data dictionaries.
-        """
-        # Set up Chrome options for headless mode
-        chrome_options = Options()
-        chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        
-        # Set up user agent to mimic a browser
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        
-        # Additional options to fix "background" error
-        chrome_options.add_argument("--disable-background-networking")
-        chrome_options.add_argument("--disable-background-timer-throttling")
-        chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-        
-        # Get credentials from environment variables
-        username = os.getenv("FANTRAX_USERNAME")
-        password = os.getenv("FANTRAX_PASSWORD")
-        league_id = os.getenv("FANTRAX_LEAGUE_ID", self.league_id)
-        
-        if not username or not password:
-            st.error("Fantrax login credentials are missing. Please check the .env file.")
-            return self._get_mock_data("getMatchups")
-            
-        # Initialize WebDriver
-        try:
-            # Use system Chrome in Replit environment
-            try:
-                # Add additional options for Replit's Chrome installation
-                chrome_options.binary_location = "/nix/store/d7ipwzsra7g9ssbavj0jg6znccyifpn5-chromium-120.0.6099.199/bin/chromium"
-                chrome_options.add_argument("--no-sandbox")
-                chrome_options.add_argument("--disable-dev-shm-usage")
-                
-                driver = webdriver.Chrome(options=chrome_options)
-            except Exception as driver_error:
-                st.error(f"Error initializing Chrome driver: {str(driver_error)}")
-                # We don't want to use mock data as instructed by the user
-                raise
-            
-            # Set up the cache file path
-            cache_dir = os.path.join(os.getcwd(), "cache")
-            os.makedirs(cache_dir, exist_ok=True)
-            cache_file = os.path.join(cache_dir, f"matchups_week_{week if week else 'current'}.json")
-            
-            # Check if cache exists and is less than 6 hours old
-            if os.path.exists(cache_file):
-                cache_time = os.path.getmtime(cache_file)
-                current_time = datetime.now().timestamp()
-                # If cache is less than 6 hours old (21600 seconds)
-                if current_time - cache_time < 21600:
-                    with open(cache_file, 'r') as f:
-                        st.info("Loading matchup data from cache.")
-                        return json.load(f)
-            
-            st.info("Fetching matchup data from Fantrax... This may take a moment.")
-            
-            # Login flow
-            driver.get("https://www.fantrax.com/login")
-            
-            # Wait for the login form to load
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.ID, "mat-input-0"))
-            )
-            
-            # Enter username
-            username_field = driver.find_element(By.ID, "mat-input-0")
-            username_field.clear()
-            username_field.send_keys(username)
-            
-            # Enter password
-            password_field = driver.find_element(By.ID, "mat-input-1")
-            password_field.clear()
-            password_field.send_keys(password)
-            
-            # Click login button
-            login_button = driver.find_element(By.XPATH, "//button[@type='submit']")
-            login_button.click()
-            
-            # Wait for login to complete (dashboard to load)
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "dashboard-page"))
-            )
-            
-            # Navigate to the matchups page
-            matchups_url = f"https://www.fantrax.com/fantasy/league/{league_id}/livescoring?mobileMatchupView=false"
-            if week:
-                matchups_url += f"&timeframeId={week}"
-                
-            driver.get(matchups_url)
-            
-            # Wait for the matchups to load
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "ng-star-inserted"))
-            )
-            
-            # Give some extra time for the page to render completely
-            time.sleep(3)
-            
-            # Find all matchup containers
-            matchup_containers = driver.find_elements(By.XPATH, "//div[contains(@class, 'matchupContainer')]")
-            
-            # Extract matchup data
-            matchups = []
-            
-            for container in matchup_containers:
-                try:
-                    # Get team names
-                    teams = container.find_elements(By.XPATH, ".//div[contains(@class, 'teamName')]")
-                    if len(teams) < 2:
-                        continue
-                        
-                    away_team = teams[0].text.strip()
-                    home_team = teams[1].text.strip()
-                    
-                    # Get scores
-                    scores = container.find_elements(By.XPATH, ".//div[contains(@class, 'teamScore')]")
-                    if len(scores) < 2:
-                        continue
-                        
-                    away_score_text = scores[0].text.strip()
-                    home_score_text = scores[1].text.strip()
-                    
-                    # Parse scores with error handling
-                    try:
-                        away_score = float(away_score_text) if away_score_text else 0.0
-                    except ValueError:
-                        away_score = 0.0
-                        
-                    try:
-                        home_score = float(home_score_text) if home_score_text else 0.0
-                    except ValueError:
-                        home_score = 0.0
-                    
-                    # Determine winner
-                    winner = away_team if away_score > home_score else home_team if home_score > away_score else "Tie"
-                    
-                    # Calculate score difference
-                    score_difference = abs(away_score - home_score)
-                    
-                    matchups.append({
-                        "id": f"{away_team.lower().replace(' ', '_')}_vs_{home_team.lower().replace(' ', '_')}",
-                        "away_team": away_team,
-                        "home_team": home_team,
-                        "away_score": away_score,
-                        "home_score": home_score,
-                        "winner": winner if away_score != home_score else "Tie",
-                        "score_difference": score_difference,
-                        "is_complete": False,  # Determine based on week status
-                        "week": week if week else "current"
-                    })
-                    
-                except Exception as e:
-                    st.warning(f"Error parsing matchup: {str(e)}")
-                    continue
-            
-            # Cache the matchup data
-            with open(cache_file, 'w') as f:
-                json.dump(matchups, f)
-                
-            return matchups
-                
-        except Exception as e:
-            st.error(f"Error fetching matchups from Fantrax: {str(e)}")
-            # Raise the error instead of returning mock data
-            raise Exception(f"Failed to fetch matchups data: {str(e)}")
-        finally:
-            if 'driver' in locals():
-                driver.quit()
