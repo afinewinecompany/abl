@@ -496,7 +496,7 @@ def main():
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
                     <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 15px; 
                          background: rgba(26, 28, 35, 0.7); max-width: 250px; margin: 0 auto; box-shadow: 0 0 20px rgba(255, 48, 48, 0.2);">
-                        <img src="static/logo.png" style="width: 100%; display: block;">
+                        <img src="static/logo.svg" style="width: 100%; display: block;">
                     </div>
                 </div>
                 """, 
@@ -678,7 +678,7 @@ def main():
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
                     <div style="border: 2px solid rgba(255, 48, 48, 0.5); border-radius: 10px; padding: 8px; 
                          background: rgba(26, 28, 35, 0.7); max-width: 150px; margin: 0 auto; box-shadow: 0 0 15px rgba(255, 48, 48, 0.2);">
-                        <img src="static/logo.png" style="width: 100%; display: block;">
+                        <img src="static/logo.svg" style="width: 100%; display: block;">
                     </div>
                 </div>
                 """, 

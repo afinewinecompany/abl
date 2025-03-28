@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect x="0" y="0" width="600" height="400" fill="#0a0f1a" />
+  
+  <!-- Home plate/diamond shape outline -->
+  <path d="M300 50 L450 170 L300 290 L150 170 Z" 
+        fill="none" 
+        stroke="#00ccff" 
+        stroke-width="6" 
+        filter="drop-shadow(0 0 10px #00ccff)"/>
+        
+  <!-- Red home plate lines -->
+  <path d="M300 290 L150 170" 
+        fill="none" 
+        stroke="#ff3030" 
+        stroke-width="6" 
+        filter="drop-shadow(0 0 10px #ff3030)"/>
+  
+  <path d="M300 290 L450 170" 
+        fill="none" 
+        stroke="#ff3030" 
+        stroke-width="6" 
+        filter="drop-shadow(0 0 10px #ff3030)"/>
+        
+  <!-- Baseball outline with glow -->
+  <circle cx="400" cy="110" r="25" 
+          fill="none" 
+          stroke="#ff3030" 
+          stroke-width="4" 
+          filter="drop-shadow(0 0 10px #ff3030)"/>
+  
+  <!-- Baseball stitches -->
+  <path d="M390 95 C395 100, 405 100, 410 95" 
+        fill="none" 
+        stroke="#ff3030" 
+        stroke-width="2.5" 
+        filter="drop-shadow(0 0 5px #ff3030)"/>
+  
+  <path d="M390 125 C395 120, 405 120, 410 125" 
+        fill="none" 
+        stroke="#ff3030" 
+        stroke-width="2.5" 
+        filter="drop-shadow(0 0 5px #ff3030)"/>
+  
+  <!-- Batter silhouette -->
+  <path d="M225 130 C235 110, 245 120, 245 130 L250 150 C260 160, 265 180, 260 190 
+           L240 240 C235 255, 210 255, 205 240 L200 200 C195 180, 205 150, 215 140 Z" 
+        fill="none" 
+        stroke="#00ccff" 
+        stroke-width="6" 
+        filter="drop-shadow(0 0 10px #00ccff)"/>
+        
+  <!-- Bat -->
+  <path d="M250 150 L190 90" 
+        fill="none" 
+        stroke="#00ccff" 
+        stroke-width="8" 
+        stroke-linecap="round" 
+        filter="drop-shadow(0 0 10px #00ccff)"/>
+        
+  <!-- Neon text ABL ANALYTICS -->
+  <text x="300" y="350" 
+        font-family="Arial, sans-serif" 
+        font-size="40" 
+        font-weight="bold" 
+        text-anchor="middle" 
+        fill="#00ccff" 
+        filter="drop-shadow(0 0 8px #00ccff)">
+    ABL ANALYTICS
+  </text>
+</svg>
