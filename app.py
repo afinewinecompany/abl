@@ -513,54 +513,123 @@ def main():
             if 'weekly_results' not in st.session_state:
                 st.session_state.weekly_results = []
             
-            # Section 1: Total points and weeks played
+            # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
-            st.markdown("*This will overwrite previous data for the selected team*")
+            st.markdown("""
+            Paste team data in the format: `Team Name, Total Points, Weeks Played`  
+            Example:
+            ```
+            Baltimore Orioles, 450.5, 10
+            Boston Red Sox, 380.2, 10
+            New York Yankees, 410.8, 10
+            ```
+            *This will overwrite previous data for all teams included in the paste.*
+            """)
             
-            # Get list of teams from standings data
-            teams = []
-            if 'standings_data' in st.session_state and not st.session_state.standings_data.empty:
-                teams = st.session_state.standings_data['team_name'].tolist()
+            # Text area for bulk data entry
+            bulk_data = st.text_area("Paste Team Data", height=200)
             
-            selected_team = st.selectbox("Select Team", teams if teams else ["No teams available"])
+            if st.button("Process Team Data", use_container_width=True):
+                if bulk_data:
+                    # Process the pasted data
+                    lines = bulk_data.strip().split('\n')
+                    processed_count = 0
+                    errors = []
+                    
+                    for line in lines:
+                        try:
+                            parts = [part.strip() for part in line.split(',')]
+                            if len(parts) >= 3:
+                                team_name = parts[0]
+                                total_points = float(parts[1])
+                                weeks_played = int(parts[2])
+                                
+                                # Update the session state
+                                st.session_state.power_rankings_data[team_name] = {
+                                    'total_points': total_points,
+                                    'weeks_played': weeks_played
+                                }
+                                processed_count += 1
+                            else:
+                                errors.append(f"Invalid format: {line}")
+                        except Exception as e:
+                            errors.append(f"Error processing line: {line}. {str(e)}")
+                    
+                    if processed_count > 0:
+                        st.success(f"Successfully processed {processed_count} team(s)")
+                    
+                    if errors:
+                        st.error("Errors encountered:")
+                        for error in errors:
+                            st.write(f"- {error}")
             
-            if selected_team != "No teams available":
-                col1, col2 = st.columns(2)
-                with col1:
-                    total_points = st.number_input("Total Points", min_value=0.0, value=0.0, step=0.1, format="%.1f")
-                with col2:
-                    weeks_played = st.number_input("Weeks Played", min_value=1, value=1, step=1)
-                
-                if st.button("Save Season Stats", use_container_width=True):
-                    # Update or add team data
-                    st.session_state.power_rankings_data[selected_team] = {
-                        'total_points': total_points,
-                        'weeks_played': weeks_played
-                    }
-                    st.success(f"Updated season stats for {selected_team}")
-            
-            # Section 2: Weekly results
+            # Section 2: Bulk data entry for weekly results
             st.markdown("---")
             st.subheader("Weekly Results")
-            st.markdown("*This will add to previous weekly data*")
+            st.markdown("""
+            Paste weekly results in the format: `Team Name, Week Number, Result(Win/Loss)`  
+            Example:
+            ```
+            Baltimore Orioles, 5, Win
+            Boston Red Sox, 5, Loss
+            New York Yankees, 5, Win
+            ```
+            *This will add to previous weekly data.*
+            """)
             
-            if selected_team != "No teams available":
-                week_number = st.number_input("Week Number", min_value=1, step=1)
-                result = st.radio("Result", ["Win", "Loss"])
-                
-                if st.button("Add Weekly Result", use_container_width=True):
-                    # Add weekly result
-                    st.session_state.weekly_results.append({
-                        'team': selected_team,
-                        'week': week_number,
-                        'result': result
-                    })
-                    st.success(f"Added {result} for {selected_team} in week {week_number}")
+            # Text area for bulk weekly results
+            weekly_results_data = st.text_area("Paste Weekly Results", height=200)
+            
+            if st.button("Process Weekly Results", use_container_width=True):
+                if weekly_results_data:
+                    # Process the pasted data
+                    lines = weekly_results_data.strip().split('\n')
+                    processed_count = 0
+                    errors = []
+                    
+                    for line in lines:
+                        try:
+                            parts = [part.strip() for part in line.split(',')]
+                            if len(parts) >= 3:
+                                team_name = parts[0]
+                                week_number = int(parts[1])
+                                result = parts[2]
+                                
+                                # Validate result value
+                                if result.lower() not in ['win', 'loss']:
+                                    errors.append(f"Invalid result '{result}'. Use 'Win' or 'Loss': {line}")
+                                    continue
+                                
+                                # Add to the session state
+                                st.session_state.weekly_results.append({
+                                    'team': team_name,
+                                    'week': week_number,
+                                    'result': result.capitalize()
+                                })
+                                processed_count += 1
+                            else:
+                                errors.append(f"Invalid format: {line}")
+                        except Exception as e:
+                            errors.append(f"Error processing line: {line}. {str(e)}")
+                    
+                    if processed_count > 0:
+                        st.success(f"Successfully processed {processed_count} weekly result(s)")
+                    
+                    if errors:
+                        st.error("Errors encountered:")
+                        for error in errors:
+                            st.write(f"- {error}")
             
             # Display current data
             if st.checkbox("Show Current Data"):
                 st.write("Season Stats:", st.session_state.power_rankings_data)
                 st.write("Weekly Results:", st.session_state.weekly_results)
+                
+                # Add option to clear data
+                if st.button("Clear All Data", type="secondary"):
+                    st.session_state.power_rankings_data = {}
+                    st.session_state.weekly_results = []
+                    st.success("All power rankings data has been cleared")
 
             st.markdown("---")
             st.markdown("""
