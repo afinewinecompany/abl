@@ -406,9 +406,17 @@ def render(roster_data: pd.DataFrame):
         non_minors_roster = team_roster[team_roster['status'].str.upper() != 'MINORS']
         total_salary = non_minors_roster['salary'].sum() + salary_penalty
 
-        # Get power rank (assuming 15 is middle if not found)
+        # Get power rank from the calculated power rankings
         power_rank = 15.0  # Default value
-        # You would normally get this from your power rankings calculation
+        if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
+            # Find the team in the power rankings
+            power_rankings_df = st.session_state.power_rankings_calculated
+            team_rank_row = power_rankings_df[power_rankings_df['team_name'] == selected_team]
+            if not team_rank_row.empty:
+                # Get the index which represents the rank (1-based)
+                power_rank = float(team_rank_row.index[0])
+            else:
+                st.info(f"Team '{selected_team}' not found in power rankings data.")
 
         # Render team header
         render_team_header(
