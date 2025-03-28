@@ -501,16 +501,79 @@ def main():
             
             st.markdown("---")
             st.markdown("### 🔐 Fantrax API Connection")
+            
+            # Authentication tab in the main interface instead of launching a new process
+            if 'show_auth_interface' not in st.session_state:
+                st.session_state.show_auth_interface = False
+                
             if os.path.exists("fantraxloggedin.cookie"):
                 st.success("✅ Fantrax authentication cookie found")
-                if st.button("Refresh Fantrax Authentication", use_container_width=True):
-                    import subprocess
-                    subprocess.Popen(["streamlit", "run", "create_fantrax_cookie.py"])
+                if st.button("Manage Fantrax Authentication", use_container_width=True):
+                    st.session_state.show_auth_interface = not st.session_state.show_auth_interface
             else:
                 st.warning("⚠️ Fantrax authentication not configured")
                 if st.button("Configure Fantrax Authentication", use_container_width=True):
-                    import subprocess
-                    subprocess.Popen(["streamlit", "run", "create_fantrax_cookie.py"])
+                    st.session_state.show_auth_interface = not st.session_state.show_auth_interface
+                    
+            if st.session_state.show_auth_interface:
+                st.markdown("---")
+                st.markdown("#### Authentication Instructions")
+                st.write("""
+                ### Creating Authentication Cookie
+                
+                To use the Fantrax API, we need to create an authentication cookie.
+                Unfortunately, Fantrax doesn't provide a direct API authentication method, so we need to use a workaround.
+                
+                ### Instructions:
+                
+                1. Install required packages on your local computer:
+                   ```
+                   pip install selenium webdriver-manager
+                   ```
+                   
+                2. Run the code below on your local computer:
+                   ```python
+                   import pickle
+                   import time
+                   from selenium import webdriver
+                   from selenium.webdriver.chrome.service import Service
+                   from selenium.webdriver.chrome.options import Options
+                   from webdriver_manager.chrome import ChromeDriverManager
+
+                   service = Service(ChromeDriverManager().install())
+
+                   options = Options()
+                   options.add_argument("--window-size=1920,1600")
+                   options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")
+
+                   with webdriver.Chrome(service=service, options=options) as driver:
+                       driver.get("https://www.fantrax.com/login")
+                       time.sleep(30)  # Give yourself time to log in manually
+                       pickle.dump(driver.get_cookies(), open("fantraxloggedin.cookie", "wb"))
+                   ```
+                   
+                3. When the Chrome browser opens, log in to your Fantrax account
+                4. Wait 30 seconds for the cookie file to be created
+                5. Upload the created 'fantraxloggedin.cookie' file here:
+                """)
+                
+                uploaded_file = st.file_uploader("Upload fantraxloggedin.cookie file", type=["cookie"])
+                
+                if uploaded_file is not None:
+                    try:
+                        # Save the uploaded cookie file
+                        with open("fantraxloggedin.cookie", "wb") as f:
+                            f.write(uploaded_file.getvalue())
+                        
+                        st.success("Cookie file uploaded successfully! You can now use the Fantrax API.")
+                        st.info("Please refresh the page to apply the changes.")
+                        
+                    except Exception as e:
+                        st.error(f"Error saving cookie file: {str(e)}")
+                        
+                if st.button("Close Authentication Interface", use_container_width=True):
+                    st.session_state.show_auth_interface = False
+                    st.experimental_rerun()
                     
             # Only showing Current API as data source now
             data_source = "Current API"
