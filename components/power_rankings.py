@@ -139,38 +139,53 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         </style>
     """, unsafe_allow_html=True)
 
-    # Calculate power rankings
+    # Start with the enhanced standings data from the API
     rankings_df = standings_data.copy()
-
-    # Use provided custom data or fetch from session state, or calculate defaults
-    if power_rankings_data:
-        # Use the provided power rankings data
-        custom_data = power_rankings_data
-    elif 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
-        # Use data from session state
-        custom_data = st.session_state.power_rankings_data
-    else:
-        # No custom data available
-        custom_data = {}
     
-    # Apply custom data if available
-    if custom_data:
-        for team_name, team_data in custom_data.items():
-            # Only update teams that exist in the standings_data
-            if team_name in rankings_df['team_name'].values:
-                # Find the index for this team
-                idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
-                # Update the data
-                rankings_df.at[idx, 'total_points'] = team_data['total_points']
-                rankings_df.at[idx, 'weeks_played'] = team_data['weeks_played']
-    else:
-        # Calculate default values if no custom data
-        rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
-        rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    st.sidebar.success("⚡ Using live standings data from Fantrax API")
+    
+    # Check if we already have these fields from API data processing
+    api_data_available = all(col in rankings_df.columns for col in ['total_points', 'weeks_played'])
+    
+    # Use provided custom data or fetch from session state if API data is insufficient
+    if not api_data_available:
+        if power_rankings_data:
+            # Use the provided power rankings data
+            custom_data = power_rankings_data
+        elif 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
+            # Use data from session state
+            custom_data = st.session_state.power_rankings_data
+        else:
+            # No custom data available
+            custom_data = {}
+        
+        # Apply custom data if available
+        if custom_data:
+            for team_name, team_data in custom_data.items():
+                # Only update teams that exist in the standings_data
+                if team_name in rankings_df['team_name'].values:
+                    # Find the index for this team
+                    idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
+                    # Update the data
+                    rankings_df.at[idx, 'total_points'] = team_data['total_points']
+                    rankings_df.at[idx, 'weeks_played'] = team_data['weeks_played']
+        else:
+            # Calculate default values if no custom data
+            rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
+            rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    
+    # Display a info message about data source
+    st.info("Power rankings are calculated using live standings data from Fantrax API combined with your manual data entries for recent performance.")
     
     # Fill any missing values with defaults
-    rankings_df['total_points'] = rankings_df['total_points'].fillna(rankings_df['wins'] * 2)
-    rankings_df['weeks_played'] = rankings_df['weeks_played'].fillna(rankings_df['wins'] + rankings_df['losses'])
+    if 'total_points' not in rankings_df.columns:
+        rankings_df['total_points'] = rankings_df['wins'] * 2
+    if 'weeks_played' not in rankings_df.columns:
+        rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+        
+    # Ensure we have numeric values for calculations
+    rankings_df['total_points'] = pd.to_numeric(rankings_df['total_points'], errors='coerce').fillna(0)
+    rankings_df['weeks_played'] = pd.to_numeric(rankings_df['weeks_played'], errors='coerce').fillna(1)  # Avoid div by zero
     
     # Use provided weekly results or fetch from session state
     if weekly_results:

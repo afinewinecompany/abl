@@ -204,8 +204,21 @@ class FantraxAPI:
                               {"leagueId": self.league_id, "period": "1"})
 
     def get_standings(self) -> List[Dict[str, Any]]:
-        """Fetch standings data"""
-        return self._make_request("getStandings", {"leagueId": self.league_id})
+        """Fetch standings data directly from the API for power rankings calculation"""
+        try:
+            response = self.session.get(
+                "https://www.fantrax.com/fxea/general/getStandings",
+                params={"leagueId": self.league_id},
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            st.warning(f"Standings API request failed: {str(e)}")
+            return self._get_mock_data("getStandings")
+        except ValueError as e:
+            st.error(f"Failed to parse JSON response from standings API: {str(e)}")
+            return self._get_mock_data("getStandings")
         
     def get_scoring_periods(self) -> List[Dict[str, Any]]:
         """Fetch scoring periods"""

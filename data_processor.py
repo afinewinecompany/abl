@@ -124,11 +124,14 @@ class DataProcessor:
             }
 
     def process_standings(self, standings_data: List) -> pd.DataFrame:
-        """Process standings data into a DataFrame"""
+        """
+        Process standings data into a DataFrame with enhanced fields for power rankings
+        """
         try:
             if not standings_data or not isinstance(standings_data, list):
                 return pd.DataFrame(
-                    columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
+                    columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 
+                             'games_back', 'points_for', 'points_against', 'streak', 'last_10']
                 )
 
             standings_list = []
@@ -137,13 +140,23 @@ class DataProcessor:
                 if not isinstance(team, dict):
                     continue
 
-                # Default to '0-0-0' if points not found
+                # Parse record from points string (format: "W-L-T")
                 points_str = team.get('points', '0-0-0')
                 try:
                     wins, losses, ties = map(int, points_str.split('-'))
                 except (ValueError, AttributeError):
                     wins, losses, ties = 0, 0, 0
-
+                
+                # Extract the direction (W/L) and number from streak
+                streak_desc = team.get('streakDescription', '')
+                streak_direction = streak_desc[0] if streak_desc else ''
+                streak_count = int(streak_desc[1:]) if len(streak_desc) > 1 and streak_desc[1:].isdigit() else 0
+                
+                # Calculate points for and against if available
+                points_for = team.get('pointsFor', 0.0)
+                points_against = team.get('pointsAgainst', 0.0)
+                
+                # Create enhanced team stats dictionary
                 team_stats = {
                     'team_name': team.get('teamName', 'Unknown'),
                     'team_id': team.get('teamId', 'N/A'),
@@ -152,14 +165,35 @@ class DataProcessor:
                     'losses': losses,
                     'ties': ties,
                     'winning_pct': team.get('winPercentage', 0.0),
-                    'games_back': team.get('gamesBack', 0.0)
+                    'games_back': team.get('gamesBack', 0.0),
+                    'points_for': float(points_for if points_for else 0.0),
+                    'points_against': float(points_against if points_against else 0.0),
+                    'streak_direction': streak_direction,
+                    'streak_count': streak_count,
+                    'streak': streak_desc
                 }
                 standings_list.append(team_stats)
 
             df = pd.DataFrame(standings_list) if standings_list else pd.DataFrame(
-                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
+                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 
+                         'games_back', 'points_for', 'points_against', 'streak', 'streak_direction', 'streak_count']
             )
 
+            # Calculate additional metrics for power rankings
+            if not df.empty:
+                # Total games played
+                df['games_played'] = df['wins'] + df['losses'] + df['ties']
+                
+                # Points per game
+                df['points_per_game'] = df.apply(
+                    lambda row: row['points_for'] / row['games_played'] if row['games_played'] > 0 else 0, 
+                    axis=1
+                )
+                
+                # Initialize total_points and weeks_played for power rankings calculation
+                df['total_points'] = df['points_for']
+                df['weeks_played'] = df['games_played'].apply(lambda x: max(x, 1))  # Avoid division by zero
+            
             # Ensure rank is numeric and sort by it
             df['rank'] = pd.to_numeric(df['rank'], errors='coerce').fillna(0).astype(int)
             df = df.sort_values('rank', ascending=True).reset_index(drop=True)
@@ -169,5 +203,6 @@ class DataProcessor:
         except Exception as e:
             st.error(f"Error processing standings: {str(e)}")
             return pd.DataFrame(
-                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
+                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 
+                         'games_back', 'points_for', 'points_against', 'streak']
             )
