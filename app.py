@@ -502,12 +502,17 @@ def main():
             st.markdown("---")
             st.markdown("### 🔐 Fantrax API Connection")
             
-            # Authentication tab in the main interface instead of launching a new process
+            # Authentication tab in the main interface
             if 'show_auth_interface' not in st.session_state:
                 st.session_state.show_auth_interface = False
+            
+            # Check if we have either authentication method
+            has_token = os.getenv("FANTRAX_TOKEN") is not None
+            has_cookie = os.path.exists("fantraxloggedin.cookie")
                 
-            if os.path.exists("fantraxloggedin.cookie"):
-                st.success("✅ Fantrax authentication cookie found")
+            if has_token or has_cookie:
+                auth_method = "token" if has_token else "cookie"
+                st.success(f"✅ Fantrax authenticated using {auth_method}")
                 if st.button("Manage Fantrax Authentication", use_container_width=True):
                     st.session_state.show_auth_interface = not st.session_state.show_auth_interface
             else:
@@ -517,60 +522,78 @@ def main():
                     
             if st.session_state.show_auth_interface:
                 st.markdown("---")
-                st.markdown("#### Authentication Instructions")
-                st.write("""
-                ### Creating Authentication Cookie
                 
-                To use the Fantrax API, we need to create an authentication cookie.
-                Unfortunately, Fantrax doesn't provide a direct API authentication method, so we need to use a workaround.
+                # Create tabs for different authentication methods
+                auth_tabs = st.tabs(["Token Authentication (Recommended)", "Cookie Authentication (Legacy)"])
                 
-                ### Instructions:
+                # Tab 1: Token Authentication (New Method)
+                with auth_tabs[0]:
+                    st.markdown("### 🔑 Token Authentication")
+                    st.write("""
+                    This is the recommended authentication method. It's simpler and more reliable than the cookie method.
+                    """)
+                    
+                    # Import login form from selenium_login.py
+                    from selenium_login import streamlit_login_form
+                    
+                    # Display login form
+                    streamlit_login_form()
                 
-                1. Install required packages on your local computer:
-                   ```
-                   pip install selenium webdriver-manager
-                   ```
-                   
-                2. Run the code below on your local computer:
-                   ```python
-                   import pickle
-                   import time
-                   from selenium import webdriver
-                   from selenium.webdriver.chrome.service import Service
-                   from selenium.webdriver.chrome.options import Options
-                   from webdriver_manager.chrome import ChromeDriverManager
+                # Tab 2: Cookie Authentication (Old Method)
+                with auth_tabs[1]:
+                    st.markdown("### 🍪 Cookie Authentication")
+                    st.write("""
+                    This is the legacy authentication method. It's more complex and less reliable.
+                    Use only if token authentication doesn't work for you.
+                    
+                    ### Instructions:
+                    
+                    1. Install required packages on your local computer:
+                       ```
+                       pip install selenium webdriver-manager
+                       ```
+                       
+                    2. Run the code below on your local computer:
+                       ```python
+                       import pickle
+                       import time
+                       from selenium import webdriver
+                       from selenium.webdriver.chrome.service import Service
+                       from selenium.webdriver.chrome.options import Options
+                       from webdriver_manager.chrome import ChromeDriverManager
 
-                   service = Service(ChromeDriverManager().install())
+                       service = Service(ChromeDriverManager().install())
 
-                   options = Options()
-                   options.add_argument("--window-size=1920,1600")
-                   options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")
+                       options = Options()
+                       options.add_argument("--window-size=1920,1600")
+                       options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")
 
-                   with webdriver.Chrome(service=service, options=options) as driver:
-                       driver.get("https://www.fantrax.com/login")
-                       time.sleep(30)  # Give yourself time to log in manually
-                       pickle.dump(driver.get_cookies(), open("fantraxloggedin.cookie", "wb"))
-                   ```
-                   
-                3. When the Chrome browser opens, log in to your Fantrax account
-                4. Wait 30 seconds for the cookie file to be created
-                5. Upload the created 'fantraxloggedin.cookie' file here:
-                """)
+                       with webdriver.Chrome(service=service, options=options) as driver:
+                           driver.get("https://www.fantrax.com/login")
+                           time.sleep(30)  # Give yourself time to log in manually
+                           pickle.dump(driver.get_cookies(), open("fantraxloggedin.cookie", "wb"))
+                       ```
+                       
+                    3. When the Chrome browser opens, log in to your Fantrax account
+                    4. Wait 30 seconds for the cookie file to be created
+                    5. Upload the created 'fantraxloggedin.cookie' file here:
+                    """)
+                    
+                    # Add file uploader for cookie file
+                    uploaded_file = st.file_uploader("Upload fantraxloggedin.cookie file", type=["cookie"])
+                    
+                    if uploaded_file is not None:
+                        try:
+                            # Save the uploaded cookie file
+                            with open("fantraxloggedin.cookie", "wb") as f:
+                                f.write(uploaded_file.getvalue())
+                            
+                            st.success("Cookie file uploaded successfully! You can now use the Fantrax API.")
+                            st.info("Please refresh the page to apply the changes.")
+                            
+                        except Exception as e:
+                            st.error(f"Error saving cookie file: {str(e)}")
                 
-                uploaded_file = st.file_uploader("Upload fantraxloggedin.cookie file", type=["cookie"])
-                
-                if uploaded_file is not None:
-                    try:
-                        # Save the uploaded cookie file
-                        with open("fantraxloggedin.cookie", "wb") as f:
-                            f.write(uploaded_file.getvalue())
-                        
-                        st.success("Cookie file uploaded successfully! You can now use the Fantrax API.")
-                        st.info("Please refresh the page to apply the changes.")
-                        
-                    except Exception as e:
-                        st.error(f"Error saving cookie file: {str(e)}")
-                        
                 if st.button("Close Authentication Interface", use_container_width=True):
                     st.session_state.show_auth_interface = False
                     st.experimental_rerun()

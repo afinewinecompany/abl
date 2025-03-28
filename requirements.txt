@@ -32,3 +32,6 @@ requests
 streamlit-pdf-viewer
 trafilatura
 twilio
+selenium
+python-dotenv
+selenium

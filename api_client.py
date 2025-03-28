@@ -12,13 +12,17 @@ from requests import Session
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Import the FantraxAPI library
+# Import the original FantraxAPI library
 from fantraxapi.fantrax import FantraxAPI as Fantrax
 from fantraxapi.exceptions import FantraxException
+
+# Import our token-based client
+from fantrax_api import FantraxClient
 
 class FantraxAPI:
     def __init__(self):
         self.client = None
+        self.token_client = None
         self.league_id = os.getenv('LEAGUE_ID', '0dw16pjfkmoc')  # Default to test league if not specified
         self.mock_mode = False  # Default to real API mode
         
@@ -26,9 +30,21 @@ class FantraxAPI:
         self.init_fantrax_client()
 
     def init_fantrax_client(self):
-        """Initialize the official Fantrax API client with authentication"""
+        """Initialize the Fantrax API client with authentication"""
         try:
-            # Check if cookie file exists
+            # First, try token-based authentication (preferred)
+            if os.getenv("FANTRAX_TOKEN"):
+                logger.info("Using token-based authentication")
+                self.token_client = FantraxClient(self.league_id)
+                
+                if self.token_client.is_authenticated():
+                    logger.info("Token authentication successful")
+                    self.mock_mode = False
+                    return
+                else:
+                    logger.warning("Token authentication failed")
+            
+            # Fall back to cookie-based authentication
             if os.path.exists("fantraxloggedin.cookie"):
                 logger.info("Using existing fantraxloggedin.cookie file")
                 cookies = pickle.load(open("fantraxloggedin.cookie", "rb"))
@@ -42,7 +58,7 @@ class FantraxAPI:
                 logger.info("Fantrax API client initialized successfully")
                 self.mock_mode = False
             else:
-                logger.warning("No cookie file found. Falling back to mock mode.")
+                logger.warning("No authentication method available. Falling back to mock mode.")
                 self.mock_mode = True
         except Exception as e:
             logger.error(f"Error initializing Fantrax client: {str(e)}")
@@ -57,7 +73,56 @@ class FantraxAPI:
             
         if self.mock_mode:
             return self._get_mock_data(endpoint)
-            
+        
+        # First try to use token-based client if available
+        if self.token_client and self.token_client.is_authenticated():
+            try:
+                logger.info(f"Using token-based client for endpoint: {endpoint}")
+                
+                if endpoint == "getLeagueInfo":
+                    return self.token_client.get_league_info()
+                elif endpoint == "getStandings":
+                    return self.token_client.get_standings()
+                elif endpoint == "getScoringPeriods":
+                    return self.token_client.get_scoring_periods()
+                elif endpoint == "getTeams":
+                    return self.token_client.get_teams()
+                elif endpoint == "getTransactions":
+                    return self.token_client.get_transactions(limit=params.get('limit', 50))
+                elif endpoint == "getTeamRosters":
+                    # We'll need to process this result differently
+                    # The token client returns a different format
+                    roster_data = self.token_client.get_team_rosters()
+                    # Process the data into our expected format
+                    # This would be implemented based on what the token client returns
+                    logger.info("Using token client for roster data")
+                    return roster_data
+                elif endpoint == "getMatchups":
+                    period_id = params.get('periodId', 1)
+                    try:
+                        # Get live scoring for the period
+                        data = self.token_client.get_live_scoring(period_id)
+                        matchups = []
+                        for m in data.get("liveScoringMatchups", []):
+                            matchup_data = {
+                                'periodId': period_id,
+                                'homeTeamId': m["home"]["team"]["id"],
+                                'awayTeamId': m["away"]["team"]["id"],
+                                'homeTeamName': m["home"]["team"]["name"],
+                                'awayTeamName': m["away"]["team"]["name"],
+                                'homeScore': m["home"]["score"],
+                                'awayScore': m["away"]["score"]
+                            }
+                            matchups.append(matchup_data)
+                        return matchups
+                    except Exception as e:
+                        logger.error(f"Error getting matchups from token client: {e}")
+                        # Continue to try the cookie client if available
+            except Exception as e:
+                logger.error(f"Token client error for {endpoint}: {e}")
+                # If token client fails, fall back to cookie client if available
+        
+        # Use cookie-based client if available
         if self.client is None:
             # Try to initialize client again
             self.init_fantrax_client()
@@ -66,6 +131,8 @@ class FantraxAPI:
                 return self._get_mock_data(endpoint)
         
         try:
+            logger.info(f"Using cookie-based client for endpoint: {endpoint}")
+            
             # Map our endpoint names to actual FantraxAPI methods
             if endpoint == "getLeagueInfo":
                 # We don't have a direct method for league info, so use standings data
