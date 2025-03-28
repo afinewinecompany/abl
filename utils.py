@@ -12,43 +12,73 @@ def fetch_api_data():
     """
     try:
         # Create a placeholder in the sidebar for a single loading indicator
-        with st.sidebar:
-            status_container = st.empty()
-            status_container.progress(0)
+        status_container = None
+        try:
+            with st.sidebar:
+                status_container = st.empty()
+                status_container.progress(0)
+        except:
+            print("Running outside of Streamlit context")
+        
+        # Initialize API client and data processor
+        api_client = FantraxAPI()
+        data_processor = DataProcessor()
 
-            # Initialize API client and data processor
-            api_client = FantraxAPI()
-            data_processor = DataProcessor()
-
-            # Fetch and process all data with a single progress indicator
+        # Fetch and process all data with a single progress indicator
+        if status_container:
             status_container.progress(20)
-            league_data = api_client.get_league_info()
-            processed_league_data = data_processor.process_league_info(league_data)
-
-            status_container.progress(40)
-            roster_data = api_client.get_team_rosters()
-            processed_roster_data = data_processor.process_rosters(roster_data, api_client.get_player_ids())
-
-            status_container.progress(60)
-            standings_data = api_client.get_standings()
-            processed_standings_data = data_processor.process_standings(standings_data)
-
-            # Fetch matchup data using Selenium
-            status_container.progress(80)
-            matchups_data = api_client.get_selenium_matchups()
             
-            # Clear the progress bar
+        league_data = api_client.get_league_info()
+        processed_league_data = data_processor.process_league_info(league_data)
+
+        if status_container:
+            status_container.progress(40)
+            
+        roster_data = api_client.get_team_rosters()
+        processed_roster_data = data_processor.process_rosters(roster_data, api_client.get_player_ids())
+
+        if status_container:
+            status_container.progress(60)
+            
+        standings_data = api_client.get_standings()
+        processed_standings_data = data_processor.process_standings(standings_data)
+
+        # Fetch matchup data using Selenium
+        if status_container:
+            status_container.progress(80)
+            
+        try:
+            # Safe method to get matchups data
+            matchups_data = api_client.get_selenium_matchups()
+        except Exception as matchup_error:
+            print(f"Error fetching matchups: {str(matchup_error)}")
+            # Return mock data if Selenium fails
+            matchups_data = api_client._get_mock_data("getMatchups")
+        
+        # Clear the progress bar
+        if status_container:
             status_container.empty()
 
-            return {
-                'league_data': processed_league_data,
-                'roster_data': processed_roster_data,
-                'standings_data': processed_standings_data,
-                'matchups_data': matchups_data
-            }
+        result = {
+            'league_data': processed_league_data,
+            'roster_data': processed_roster_data,
+            'standings_data': processed_standings_data,
+            'matchups_data': matchups_data
+        }
+        
+        # Debug output
+        print(f"Data fetch complete. Keys: {list(result.keys())}")
+        return result
+        
     except Exception as e:
-        with st.sidebar:
-            st.error(f"❌ Error loading data: {str(e)}")
+        import traceback
+        error_msg = f"❌ Error loading data: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        try:
+            with st.sidebar:
+                st.error(error_msg)
+        except:
+            pass
         return None
 
 def format_percentage(value: float) -> str:

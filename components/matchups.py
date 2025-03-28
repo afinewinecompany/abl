@@ -11,11 +11,11 @@ def format_score(score: float) -> str:
 def create_matchup_card(matchup: Dict[str, Any]) -> None:
     """Create a styled card for a single matchup"""
     
-    # Extract matchup data
-    away_team = matchup.get('away_team', 'Away Team')
-    home_team = matchup.get('home_team', 'Home Team')
-    away_score = matchup.get('away_score', 0.0)
-    home_score = matchup.get('home_score', 0.0)
+    # Extract matchup data - handle both API field formats
+    away_team = matchup.get('away_team', matchup.get('awayTeam', {}).get('name', 'Away Team'))
+    home_team = matchup.get('home_team', matchup.get('homeTeam', {}).get('name', 'Home Team'))
+    away_score = matchup.get('away_score', matchup.get('awayScore', 0.0))
+    home_score = matchup.get('home_score', matchup.get('homeScore', 0.0))
     winner = matchup.get('winner', '')
     is_complete = matchup.get('is_complete', False)
     
@@ -100,13 +100,15 @@ def create_matchup_card(matchup: Dict[str, Any]) -> None:
 def create_standings_grid(matchups: List[Dict[str, Any]]) -> None:
     """Create a standings grid showing wins/losses between teams"""
     
-    # Extract all unique team names
+    # Extract all unique team names, handling both field name formats
     all_teams = set()
     for matchup in matchups:
-        all_teams.add(matchup.get('away_team', ''))
-        all_teams.add(matchup.get('home_team', ''))
+        away_team = matchup.get('away_team', matchup.get('awayTeam', {}).get('name', ''))
+        home_team = matchup.get('home_team', matchup.get('homeTeam', {}).get('name', ''))
+        all_teams.add(away_team)
+        all_teams.add(home_team)
     
-    all_teams = sorted(list(all_teams))
+    all_teams = sorted(list(filter(None, all_teams)))  # Remove empty strings
     
     # Create a matrix of matchup results
     matrix = {}
@@ -116,10 +118,10 @@ def create_standings_grid(matchups: List[Dict[str, Any]]) -> None:
     
     # Fill in the matrix with matchup results
     for matchup in matchups:
-        away_team = matchup.get('away_team', '')
-        home_team = matchup.get('home_team', '')
-        away_score = matchup.get('away_score', 0.0)
-        home_score = matchup.get('home_score', 0.0)
+        away_team = matchup.get('away_team', matchup.get('awayTeam', {}).get('name', ''))
+        home_team = matchup.get('home_team', matchup.get('homeTeam', {}).get('name', ''))
+        away_score = matchup.get('away_score', matchup.get('awayScore', 0.0))
+        home_score = matchup.get('home_score', matchup.get('homeScore', 0.0))
         
         # Skip if teams not found
         if away_team not in all_teams or home_team not in all_teams:
@@ -179,8 +181,10 @@ def create_score_distribution_chart(matchups: List[Dict[str, Any]]) -> None:
     
     all_scores = []
     for matchup in matchups:
-        all_scores.append(matchup.get('away_score', 0.0))
-        all_scores.append(matchup.get('home_score', 0.0))
+        away_score = matchup.get('away_score', matchup.get('awayScore', 0.0))
+        home_score = matchup.get('home_score', matchup.get('homeScore', 0.0))
+        all_scores.append(away_score)
+        all_scores.append(home_score)
     
     # Create the histogram
     fig = go.Figure()
@@ -234,10 +238,10 @@ def create_margin_of_victory_chart(matchups: List[Dict[str, Any]]) -> None:
     colors = []
     
     for matchup in matchups:
-        away_team = matchup.get('away_team', '')
-        home_team = matchup.get('home_team', '')
-        away_score = matchup.get('away_score', 0.0)
-        home_score = matchup.get('home_score', 0.0)
+        away_team = matchup.get('away_team', matchup.get('awayTeam', {}).get('name', ''))
+        home_team = matchup.get('home_team', matchup.get('homeTeam', {}).get('name', ''))
+        away_score = matchup.get('away_score', matchup.get('awayScore', 0.0))
+        home_score = matchup.get('home_score', matchup.get('homeScore', 0.0))
         
         margin = away_score - home_score
         winner = away_team if margin > 0 else home_team if margin < 0 else "Tie"
@@ -299,17 +303,52 @@ def render(matchups_data: List[Dict[str, Any]]):
     View current and past matchups, including scores and visualizations.
     """)
     
+    # Debug info about the matchup data
+    st.write(f"Number of matchups: {len(matchups_data)}")
+    if matchups_data and len(matchups_data) > 0:
+        # Show example of a matchup entry for debugging
+        with st.expander("Debug: Sample Matchup Data"):
+            st.write(matchups_data[0])
+    
     # Show error if no data
     if not matchups_data:
         st.error("No matchup data available.")
         return
+        
+    # Clean up matchup data if received in camelCase format from API
+    # Convert all matchups to unified format with consistent keys
+    processed_matchups = []
+    for matchup in matchups_data:
+        processed_matchup = {
+            'away_team': matchup.get('away_team', matchup.get('awayTeam', {}).get('name', 'Unknown')),
+            'home_team': matchup.get('home_team', matchup.get('homeTeam', {}).get('name', 'Unknown')),
+            'away_score': matchup.get('away_score', matchup.get('awayScore', 0.0)),
+            'home_score': matchup.get('home_score', matchup.get('homeScore', 0.0)),
+            'week': matchup.get('week', matchup.get('periodId', 'current')),
+            'is_complete': matchup.get('is_complete', False)
+        }
+        # Add winner and score difference keys
+        if processed_matchup['away_score'] > processed_matchup['home_score']:
+            processed_matchup['winner'] = processed_matchup['away_team']
+            processed_matchup['score_difference'] = processed_matchup['away_score'] - processed_matchup['home_score']
+        elif processed_matchup['home_score'] > processed_matchup['away_score']:
+            processed_matchup['winner'] = processed_matchup['home_team']
+            processed_matchup['score_difference'] = processed_matchup['home_score'] - processed_matchup['away_score']
+        else:
+            processed_matchup['winner'] = 'Tie'
+            processed_matchup['score_difference'] = 0.0
+            
+        processed_matchups.append(processed_matchup)
     
-    # Week selector
+    # Replace original data with processed data
+    matchups_data = processed_matchups
+    
+    # Week selector - only use if there are multiple weeks
     available_weeks = sorted(list(set(
         [m.get('week', 'current') for m in matchups_data if 'week' in m]
     )))
     
-    if available_weeks:
+    if available_weeks and len(available_weeks) > 1:
         if all(isinstance(w, int) or (isinstance(w, str) and w.isdigit()) for w in available_weeks):
             available_weeks = sorted([int(w) for w in available_weeks])
         

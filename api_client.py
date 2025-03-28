@@ -126,21 +126,29 @@ class FantraxAPI:
                 }
             ]
         elif endpoint == "getMatchups":
-            # Mock matchups data
+            # Mock matchups data with consistent snake_case keys
             return [
                 {
                     "id": "match1",
-                    "awayTeam": {"name": "Away Team"},
-                    "homeTeam": {"name": "Home Team"},
-                    "awayScore": 95.5,
-                    "homeScore": 87.2
+                    "away_team": "Away Team",
+                    "home_team": "Home Team",
+                    "away_score": 95.5,
+                    "home_score": 87.2,
+                    "winner": "Away Team",
+                    "score_difference": 8.3,
+                    "is_complete": False,
+                    "week": "current"
                 },
                 {
                     "id": "match2",
-                    "awayTeam": {"name": "Visitors"},
-                    "homeTeam": {"name": "Hosts"},
-                    "awayScore": 78.4,
-                    "homeScore": 102.6
+                    "away_team": "Visitors",
+                    "home_team": "Hosts",
+                    "away_score": 78.4,
+                    "home_score": 102.6,
+                    "winner": "Hosts",
+                    "score_difference": 24.2,
+                    "is_complete": False,
+                    "week": "current"
                 }
             ]
         elif endpoint == "getTransactions":
