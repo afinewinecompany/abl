@@ -368,23 +368,6 @@ class FantraxAPIWrapper:
             st.error(f"Failed to fetch scoring periods: {str(e)}")
             return []
 
-    @st.cache_data(ttl=600)  # Cache data for 10 minutes (shorter for live data)
-    def get_live_scoring(_self, period_id: int = 1, auth_token: str = None) -> Dict[str, Any]:
-        """Get live scoring data for a specific period."""
-        try:
-            # Get live scoring data from API
-            live_scoring_data = _self._api.get_live_scoring(period_id, auth_token)
-            
-            if not live_scoring_data or not isinstance(live_scoring_data, dict):
-                st.warning("No live scoring data available from the API.")
-                return {}
-            
-            return live_scoring_data
-            
-        except Exception as e:
-            st.error(f"Failed to fetch live scoring data: {str(e)}")
-            return {}
-    
     def get_matchups_for_period(_self, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get matchups for a specific scoring period."""
         try:

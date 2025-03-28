@@ -124,21 +124,12 @@ def fetch_fantrax_data():
                 scoring_periods = []
             
             # Fetch current matchups with error handling
-            status_container.progress(90)
+            status_container.progress(95)
             try:
                 current_matchups = fantrax_client.get_matchups_for_period()
             except Exception as e:
                 st.warning(f"Warning: Could not fetch matchups: {str(e)}")
                 current_matchups = []
-            
-            # Fetch live scoring data with error handling
-            status_container.progress(95)
-            try:
-                live_scoring = fantrax_client.get_live_scoring()
-                st.sidebar.success("Successfully fetched live scoring data.")
-            except Exception as e:
-                st.warning(f"Warning: Could not fetch live scoring data: {str(e)}")
-                live_scoring = {}
             
             # Clear the progress bar
             status_container.empty()
@@ -171,7 +162,6 @@ def fetch_fantrax_data():
                 'transactions': transactions,
                 'scoring_periods': scoring_periods,
                 'current_matchups': current_matchups,
-                'live_scoring': live_scoring,
                 'source': 'fantrax'
             }
     except Exception as e:

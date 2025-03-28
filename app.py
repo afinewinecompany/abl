@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
@@ -558,13 +558,12 @@ def main():
             
             if fantrax_data:
                 # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
-                    "📋 Transactions",
-                    "⚔️ Matchups"
+                    "📋 Transactions"
                 ])
 
                 with tab1:
@@ -729,19 +728,6 @@ def main():
                                 st.warning("No transactions found when fetching directly.")
                         except Exception as e:
                             st.error(f"Failed to fetch transactions directly: {str(e)}")
-                
-                with tab6:
-                    # Get data needed for matchups tab
-                    scoring_periods = fantrax_data.get('scoring_periods', [])
-                    current_matchups = fantrax_data.get('current_matchups', [])
-                    live_scoring = fantrax_data.get('live_scoring', {})
-                    
-                    # Pass all the data to the matchups component
-                    matchups.render({
-                        'scoring_periods': scoring_periods,
-                        'current_matchups': current_matchups,
-                        'live_scoring': live_scoring
-                    })
             else:
                 st.error("Failed to fetch data from Fantrax API. Please check your connection or try again later.")
 
