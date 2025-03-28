@@ -1107,9 +1107,14 @@ def render_team_card_native(team_row):
         # End of card container - more subtle divider
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-def render(roster_data: pd.DataFrame):
-    """Render Dynasty Dominance Index (DDI) page"""
-
+def render(roster_data: pd.DataFrame, power_rankings_df: pd.DataFrame = None):
+    """
+    Render Dynasty Dominance Index (DDI) page
+    
+    Args:
+        roster_data: DataFrame containing roster data
+        power_rankings_df: Optional DataFrame with precalculated power rankings
+    """
     st.title("Dynasty Dominance Index (DDI)")
 
     st.markdown("""
@@ -1139,21 +1144,40 @@ def render(roster_data: pd.DataFrame):
         # For this example, we'll create a simple power ranking based on available roster data
         teams = roster_data['team'].unique()
 
-        # Try to import the power_rankings logic first
-        try:
-            from components import power_rankings
-            power_rankings_df = calculate_power_rankings_from_component(roster_data)
-        except:
-            # If we can't import power_rankings, create a basic version
-            power_rankings_data = []
-            for team in teams:
-                team_df = roster_data[roster_data['team'] == team]
-                power_score = len(team_df) * 2  # Simple placeholder score
-                power_rankings_data.append({
-                    'Team': team,
-                    'Power Score': power_score
-                })
-            power_rankings_df = pd.DataFrame(power_rankings_data)
+        # Use provided power rankings if available
+        if power_rankings_df is not None:
+            # Use the provided power rankings data
+            # Ensure column names match expected format
+            if 'team_name' in power_rankings_df.columns and 'Team' not in power_rankings_df.columns:
+                power_rankings_df = power_rankings_df.rename(columns={'team_name': 'Team'})
+            if 'power_score' in power_rankings_df.columns and 'Power Score' not in power_rankings_df.columns:
+                power_rankings_df = power_rankings_df.rename(columns={'power_score': 'Power Score'})
+        # Use session state power rankings if available    
+        elif 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
+            # Use power rankings from session state
+            power_rankings_df = st.session_state.power_rankings_calculated.copy()
+            # Ensure column names match expected format
+            if 'team_name' in power_rankings_df.columns and 'Team' not in power_rankings_df.columns:
+                power_rankings_df = power_rankings_df.rename(columns={'team_name': 'Team'})
+            if 'power_score' in power_rankings_df.columns and 'Power Score' not in power_rankings_df.columns:
+                power_rankings_df = power_rankings_df.rename(columns={'power_score': 'Power Score'})
+        # Otherwise calculate power rankings as before
+        else:
+            # Try to import the power_rankings logic first
+            try:
+                from components import power_rankings
+                power_rankings_df = calculate_power_rankings_from_component(roster_data)
+            except:
+                # If we can't import power_rankings, create a basic version
+                power_rankings_data = []
+                for team in teams:
+                    team_df = roster_data[roster_data['team'] == team]
+                    power_score = len(team_df) * 2  # Simple placeholder score
+                    power_rankings_data.append({
+                        'Team': team,
+                        'Power Score': power_score
+                    })
+                power_rankings_df = pd.DataFrame(power_rankings_data)
 
         # Calculate DDI scores
         ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
@@ -1308,7 +1332,7 @@ def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.Dat
     try:
         # Import power_rankings module and get actual power rankings data
         from components import power_rankings
-        from utils import fetch_api_data, fetch_fantrax_data
+        from utils import fetch_api_data
 
         # First try to get real standings data from app.py's data flow
         try:

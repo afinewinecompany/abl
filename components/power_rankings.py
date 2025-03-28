@@ -85,8 +85,15 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
 
     return (weekly_avg * points_mod) * hot_cold_mod
 
-def render(standings_data: pd.DataFrame):
-    """Render power rankings section"""
+def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekly_results: list = None):
+    """
+    Render power rankings section
+    
+    Args:
+        standings_data: DataFrame containing standings data
+        power_rankings_data: Optional dict of custom power rankings data from user input
+        weekly_results: Optional list of weekly results data from user input
+    """
     st.header("⚾ Power Rankings")
     st.markdown("""
         <style>
@@ -135,10 +142,20 @@ def render(standings_data: pd.DataFrame):
     # Calculate power rankings
     rankings_df = standings_data.copy()
 
-    # Use custom input data if available in session state, otherwise calculate from standings
-    if 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
-        # We have custom data from user input
-        for team_name, team_data in st.session_state.power_rankings_data.items():
+    # Use provided custom data or fetch from session state, or calculate defaults
+    if power_rankings_data:
+        # Use the provided power rankings data
+        custom_data = power_rankings_data
+    elif 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
+        # Use data from session state
+        custom_data = st.session_state.power_rankings_data
+    else:
+        # No custom data available
+        custom_data = {}
+    
+    # Apply custom data if available
+    if custom_data:
+        for team_name, team_data in custom_data.items():
             # Only update teams that exist in the standings_data
             if team_name in rankings_df['team_name'].values:
                 # Find the index for this team
@@ -155,8 +172,19 @@ def render(standings_data: pd.DataFrame):
     rankings_df['total_points'] = rankings_df['total_points'].fillna(rankings_df['wins'] * 2)
     rankings_df['weeks_played'] = rankings_df['weeks_played'].fillna(rankings_df['wins'] + rankings_df['losses'])
     
-    # Recent wins/losses - use custom data if available
-    if 'weekly_results' in st.session_state and st.session_state.weekly_results:
+    # Use provided weekly results or fetch from session state
+    if weekly_results:
+        # Use the provided weekly results
+        weekly_data = weekly_results
+    elif 'weekly_results' in st.session_state and st.session_state.weekly_results:
+        # Use data from session state
+        weekly_data = st.session_state.weekly_results
+    else:
+        # No weekly results available
+        weekly_data = []
+    
+    # Process recent wins/losses
+    if weekly_data:
         # Process weekly results to get recent wins/losses for each team
         team_names = rankings_df['team_name'].unique()
         recent_weeks = 3  # How many weeks to consider for "recent" performance
@@ -167,7 +195,7 @@ def render(standings_data: pd.DataFrame):
         
         for team_name in team_names:
             # Get this team's results
-            team_results = [r for r in st.session_state.weekly_results if r['team'] == team_name]
+            team_results = [r for r in weekly_data if r['team'] == team_name]
             
             # Sort by week number and get the most recent X weeks
             team_results.sort(key=lambda x: x['week'], reverse=True)
@@ -191,6 +219,9 @@ def render(standings_data: pd.DataFrame):
     rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
+    
+    # Store the calculated rankings in session state for other components to use
+    st.session_state.power_rankings_calculated = rankings_df.copy()
 
     # Display top teams
     st.subheader("🏆 League Leaders")

@@ -658,6 +658,13 @@ def main():
             if 'standings_data' not in st.session_state:
                 st.session_state.standings_data = data['standings_data']
             
+            # Initialize session state variables if not already present
+            if 'power_rankings_data' not in st.session_state:
+                st.session_state.power_rankings_data = {}
+            
+            if 'weekly_results' not in st.session_state:
+                st.session_state.weekly_results = []
+            
             # Create tabs for different sections
             tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "🏠 League Info",
@@ -674,13 +681,29 @@ def main():
                 rosters.render(data['roster_data'])
 
             with tab3:
-                power_rankings.render(data['standings_data'])
+                # Pass session state data to power_rankings component
+                power_rankings_data = st.session_state.power_rankings_data if 'power_rankings_data' in st.session_state else {}
+                weekly_results = st.session_state.weekly_results if 'weekly_results' in st.session_state else []
+                
+                # Call modified render with custom data
+                power_rankings.render(
+                    data['standings_data'], 
+                    power_rankings_data=power_rankings_data,
+                    weekly_results=weekly_results
+                )
 
             with tab4:
                 prospects.render(data['roster_data'])
 
             with tab5:
-                ddi.render(data['roster_data'])
+                # Get the power rankings data from the power_rankings component
+                if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
+                    # Use the calculated power rankings
+                    power_rankings_df = st.session_state.power_rankings_calculated
+                    ddi.render(data['roster_data'], power_rankings_df)
+                else:
+                    # Just pass the roster data without power rankings
+                    ddi.render(data['roster_data'])
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 
