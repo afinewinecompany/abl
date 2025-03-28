@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, clear_power_rankings_data
+from utils import fetch_api_data
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -506,29 +506,12 @@ def main():
             st.markdown("---")
             st.markdown("### 📊 Power Rankings Data")
             
-            # Load saved data from disk if available
-            saved_data = load_power_rankings_data()
-            
             # Initialize session state for power rankings data if not exists
             if 'power_rankings_data' not in st.session_state:
-                # Use previously saved data or initialize empty
-                points_df = saved_data['points_data']
-                
-                if points_df is not None and not points_df.empty:
-                    # Convert from DataFrame to the dictionary format we use
-                    st.session_state.power_rankings_data = {
-                        row['Team']: {
-                            'total_points': row['FPtsF'], 
-                            'weeks_played': row['Weeks Played']
-                        } 
-                        for _, row in points_df.iterrows()
-                    }
-                else:
-                    st.session_state.power_rankings_data = {}
+                st.session_state.power_rankings_data = {}
             
             if 'weekly_results' not in st.session_state:
-                # Use previously saved data or initialize empty
-                st.session_state.weekly_results = saved_data['weekly_results'] if saved_data['weekly_results'] else []
+                st.session_state.weekly_results = []
             
             # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
@@ -573,17 +556,7 @@ def main():
                             errors.append(f"Error processing line: {line}. {str(e)}")
                     
                     if processed_count > 0:
-                        # Save to permanent storage
-                        points_df = pd.DataFrame([
-                            {
-                                'Team': team, 
-                                'FPtsF': data['total_points'], 
-                                'Weeks Played': data['weeks_played']
-                            } 
-                            for team, data in st.session_state.power_rankings_data.items()
-                        ])
-                        save_power_rankings_data(points_data=points_df)
-                        st.success(f"Successfully processed and saved {processed_count} team(s)")
+                        st.success(f"Successfully processed {processed_count} team(s)")
                     
                     if errors:
                         st.error("Errors encountered:")
@@ -640,9 +613,7 @@ def main():
                             errors.append(f"Error processing line: {line}. {str(e)}")
                     
                     if processed_count > 0:
-                        # Save to permanent storage
-                        save_power_rankings_data(weekly_results=st.session_state.weekly_results)
-                        st.success(f"Successfully processed and saved {processed_count} weekly result(s)")
+                        st.success(f"Successfully processed {processed_count} weekly result(s)")
                     
                     if errors:
                         st.error("Errors encountered:")
@@ -658,9 +629,7 @@ def main():
                 if st.button("Clear All Data", type="secondary"):
                     st.session_state.power_rankings_data = {}
                     st.session_state.weekly_results = []
-                    # Clear persistent storage as well
-                    clear_power_rankings_data()
-                    st.success("All power rankings data has been cleared from both session and permanent storage")
+                    st.success("All power rankings data has been cleared")
 
             st.markdown("---")
             st.markdown("""
