@@ -4,6 +4,7 @@ import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data
+from api_client import FantraxAPI
 
 # This must be the first Streamlit command
 st.set_page_config(
