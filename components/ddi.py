@@ -356,21 +356,63 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
 
         # Get power ranking score (normalized from 0-100, where 100 is best)
         # Try multiple possible column names for team and power score (handle different formats)
-        team_col = 'team_name' if 'team_name' in power_rankings.columns else 'Team'
-        score_col = 'power_score' if 'power_score' in power_rankings.columns else 'Power Score'
-
-        team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
-        if len(team_power) > 0:
-            # Normalize power score where highest is 100
-            max_score = power_rankings[score_col].max()
-            if max_score > 0:
-                power_score = (team_power[score_col].values[0] / max_score) * 100
-            else:
-                # Default to 100 if we have no valid power scores
-                power_score = 100
+        # Print the available columns for debugging
+        print(f"Power Rankings DataFrame columns: {power_rankings.columns.tolist()}")
+        
+        # Determine the correct column names by checking what's available
+        if 'team_name' in power_rankings.columns:
+            team_col = 'team_name'
+        elif 'Team' in power_rankings.columns:
+            team_col = 'Team'
+        elif 'team' in power_rankings.columns:
+            team_col = 'team'
         else:
-            # Default to 100 as requested
-            power_score = 100
+            # Default fallback - use the first column
+            team_col = power_rankings.columns[0]
+            print(f"Warning: Using {team_col} as team column")
+            
+        if 'power_score' in power_rankings.columns:
+            score_col = 'power_score'
+        elif 'Power Score' in power_rankings.columns:
+            score_col = 'Power Score'
+        elif 'score' in power_rankings.columns:
+            score_col = 'score'
+        else:
+            # Use last numeric column as score
+            numeric_cols = power_rankings.select_dtypes(include=['number']).columns.tolist()
+            score_col = numeric_cols[-1] if numeric_cols else power_rankings.columns[-1]
+            print(f"Warning: Using {score_col} as score column")
+        
+        # Print chosen columns for debugging
+        print(f"Using team_col={team_col}, score_col={score_col}")
+        
+        # Handle missing columns gracefully
+        try:
+            # For extra safety, check if team_col and score_col actually exist in the DataFrame
+            if team_col in power_rankings.columns and score_col in power_rankings.columns:
+                # Filter for the team
+                team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
+                
+                if len(team_power) > 0:
+                    # Normalize power score where highest is 100
+                    max_score = power_rankings[score_col].max()
+                    if max_score > 0:
+                        power_score = (team_power[score_col].values[0] / max_score) * 100
+                    else:
+                        # Default to average score if we have no valid power scores
+                        power_score = 50
+                else:
+                    # Team not found in power rankings, so default to average
+                    print(f"Team '{team}' not found in power rankings")
+                    power_score = 50
+            else:
+                # Missing columns, so we can't calculate accurately
+                print(f"Missing required columns in power rankings: team_col={team_col}, score_col={score_col}")
+                power_score = 50
+        except KeyError as e:
+            print(f"KeyError when filtering power rankings: {str(e)}")
+            st.warning(f"Power rankings data format issue: {str(e)}")
+            power_score = 50  # Use average score as fallback
 
         # Get prospect score from the handbook calculation (total_score from each team)
         team_prospects = team_prospect_scores[(team_prospect_scores['team'] == team) | (team_prospect_scores['team'] == team_search)]
