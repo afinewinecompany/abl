@@ -110,21 +110,28 @@ class FantraxAPI:
                 }
             ]
         elif endpoint == "getMatchups":
-            # Mock matchups data
+            # Mock matchups data using real teams
             return [
                 {
                     "id": "match1",
-                    "awayTeam": {"name": "Away Team"},
-                    "homeTeam": {"name": "Home Team"},
+                    "awayTeam": {"name": "Athletics"},
+                    "homeTeam": {"name": "Saint Louis Cardinals"},
                     "awayScore": 95.5,
                     "homeScore": 87.2
                 },
                 {
                     "id": "match2",
-                    "awayTeam": {"name": "Visitors"},
-                    "homeTeam": {"name": "Hosts"},
+                    "awayTeam": {"name": "Athletics"},
+                    "homeTeam": {"name": "New York Mets"},
                     "awayScore": 78.4,
                     "homeScore": 102.6
+                },
+                {
+                    "id": "match3",
+                    "awayTeam": {"name": "Athletics"},
+                    "homeTeam": {"name": "Chicago Cubs"},
+                    "awayScore": 110.3,
+                    "homeScore": 88.9
                 }
             ]
         elif endpoint == "getTransactions":
