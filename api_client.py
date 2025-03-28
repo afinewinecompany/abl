@@ -30,40 +30,14 @@ class FantraxAPI:
                 timeout=10
             )
             response.raise_for_status()
-            
-            # Parse the JSON response
-            data = response.json()
-            
-            # Check if the response contains an error message
-            if isinstance(data, dict) and "error" in data:
-                error_msg = data.get("error", "Unknown API error")
-                st.error(f"API returned an error: {error_msg}")
-                
-                # Log the full response for debugging
-                st.write(f"Full API response: {data}")
-                
-                # Return empty data
-                if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
-                    return []
-                else:
-                    return {}
-            
-            return data
-            
+            return response.json()
         except requests.exceptions.RequestException as e:
-            st.error(f"API request to {endpoint} failed: {str(e)}")
-            # Return empty data instead of mock data
-            if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
-                return []
-            else:
-                return {}
+            st.warning(f"API request to {endpoint} failed, using mock data")
+            # Return mock data based on the endpoint
+            return self._get_mock_data(endpoint)
         except ValueError as e:
             st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
-            # Return empty data instead of mock data
-            if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
-                return []
-            else:
-                return {}
+            return self._get_mock_data(endpoint)
 
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Return mock data for development when API is unavailable"""
@@ -237,135 +211,10 @@ class FantraxAPI:
         """Fetch scoring periods"""
         return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
         
-    def discover_api_methods(self) -> List[str]:
-        """
-        Attempt to discover available API methods by testing a predefined list.
-        This helps identify what methods are actually supported by the API.
-        """
-        common_methods = [
-            "getLeagueInfo", 
-            "getRosters", 
-            "getStandings", 
-            "getTransactions", 
-            "getLiveScoring",
-            "getMatchups",
-            "getScoreboard",
-            "getLeagueScoreboard",
-            "getScoringPeriods",
-            "getTeams",
-            "getPlayers",
-            "getPlayerStats"
-        ]
-        
-        available_methods = []
-        
-        for method in common_methods:
-            try:
-                result = self._make_request(method, {"leagueId": self.league_id})
-                # If we didn't get an error about method not found, add it to available methods
-                if isinstance(result, dict) and "error" in result:
-                    error = result.get("error", {})
-                    if isinstance(error, dict) and error.get("message") == f"Unable to find method '{method}'":
-                        # Method not available
-                        pass
-                    else:
-                        # Got a different error, so method might exist
-                        available_methods.append(method)
-                else:
-                    # Got a result without method error
-                    available_methods.append(method)
-            except Exception:
-                # If there's an exception, the method might exist but have other issues
-                available_methods.append(method)
-                
-        return available_methods
-    
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
-        """
-        Fetch matchups for a specific period - since the 'getMatchups' endpoint
-        doesn't exist directly, we'll try to extract matchup data from another endpoint
-        """
-        # First, discover what API methods are available
-        available_methods = self.discover_api_methods()
-        st.write(f"Available API methods: {available_methods}")
-        
-        # Try to get matchups data from any available method that might contain it
-        try:
-            # Try the league info endpoint to see what's in it - it often contains current matchup info
-            if "getLeagueInfo" in available_methods:
-                data = self._make_request("getLeagueInfo", {"leagueId": self.league_id})
-                
-                if isinstance(data, dict):
-                    # Log the keys in the response for debugging
-                    st.write(f"League info keys: {list(data.keys())}")
-                    
-                    # Check if there are any matchup-related keys
-                    matchup_keys = [k for k in data.keys() if 'match' in k.lower()]
-                    if matchup_keys:
-                        st.write(f"Potential matchup keys found: {matchup_keys}")
-                        
-                        # Try to extract data from these keys
-                        for key in matchup_keys:
-                            if isinstance(data[key], list) and len(data[key]) > 0:
-                                return data[key]
-                
-            # If we couldn't find matchups in league info, try to extract from standings
-            if "getStandings" in available_methods:
-                data = self._make_request("getStandings", {"leagueId": self.league_id})
-                
-                if isinstance(data, list) and len(data) > 0:
-                    # Check if standings contain opponent or matchup info
-                    st.write(f"Checking standings data for matchup info")
-                    if len(data) > 0 and isinstance(data[0], dict):
-                        # Log the keys in the first item
-                        st.write(f"Standings item keys: {list(data[0].keys())}")
-                        
-                        # Look for matchup-related keys in standings
-                        matchup_keys = [k for k in data[0].keys() if 'match' in k.lower() or 'opponent' in k.lower()]
-                        if matchup_keys:
-                            st.write(f"Potential matchup keys in standings: {matchup_keys}")
-                            
-                            # We might be able to construct matchups data from standings
-                            teams_with_matchups = {}
-                            for team in data:
-                                for key in matchup_keys:
-                                    opponent_id = team.get(key)
-                                    if opponent_id:
-                                        teams_with_matchups[team.get('id')] = {
-                                            'team': team,
-                                            'opponent_id': opponent_id
-                                        }
-                            
-                            # If we found matchup data, format it
-                            if teams_with_matchups:
-                                matchups = []
-                                processed_teams = set()
-                                
-                                for team_id, info in teams_with_matchups.items():
-                                    if team_id in processed_teams:
-                                        continue
-                                        
-                                    opponent_id = info['opponent_id']
-                                    if opponent_id in teams_with_matchups:
-                                        processed_teams.add(team_id)
-                                        processed_teams.add(opponent_id)
-                                        
-                                        matchups.append({
-                                            'homeTeam': info['team'],
-                                            'awayTeam': teams_with_matchups[opponent_id]['team'],
-                                            'homeScore': info['team'].get('score', 0),
-                                            'awayScore': teams_with_matchups[opponent_id]['team'].get('score', 0)
-                                        })
-                                
-                                return matchups
-            
-            # If all attempts fail, log what we tried and return empty list
-            st.warning("Couldn't find matchup data in any available endpoint")
-            return []
-            
-        except Exception as e:
-            st.error(f"Error trying to get matchups data: {str(e)}")
-            return []
+        """Fetch matchups for a specific period"""
+        return self._make_request("getMatchups", 
+                               {"leagueId": self.league_id, "scoringPeriod": period_id})
         
     def get_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Fetch recent transactions"""
@@ -387,91 +236,3 @@ class FantraxAPI:
                     })
         
         return teams
-        
-    def get_live_scoring(self, scoring_period: int = 1) -> Dict[str, Any]:
-        """
-        Fetch live scoring data for a specific period.
-        Makes a direct API request to get matchups data.
-        """
-        try:
-            # Get matchups data from the API for the specified period
-            matchups_data = self.get_matchups(period_id=scoring_period)
-            
-            # Log the raw response type for debugging
-            st.write(f"API Response Type: {type(matchups_data)}")
-            
-            # Process matchup data - could be a list or a dictionary
-            matchup_items = []
-            
-            # If we received a dictionary, extract the matchups
-            if isinstance(matchups_data, dict):
-                # Check for common dictionary structures that might contain matchups
-                if "matchups" in matchups_data:
-                    matchup_items = matchups_data.get("matchups", [])
-                    st.write("Found matchups key in response")
-                elif "data" in matchups_data:
-                    matchup_items = matchups_data.get("data", [])
-                    st.write("Found data key in response")
-                elif "items" in matchups_data:
-                    matchup_items = matchups_data.get("items", [])
-                    st.write("Found items key in response")
-                else:
-                    # If we can't find a known key, log all the keys for debugging
-                    st.write(f"Available keys in response: {list(matchups_data.keys())}")
-                    
-                    # Try to extract any list that might contain matchups
-                    for key, value in matchups_data.items():
-                        if isinstance(value, list) and len(value) > 0:
-                            matchup_items = value
-                            st.write(f"Using list from key: {key}")
-                            break
-            elif isinstance(matchups_data, list):
-                # If it's already a list, use it directly
-                matchup_items = matchups_data
-            else:
-                st.warning(f"Unexpected matchups data type: {type(matchups_data)}")
-                return {"liveScoringMatchups": []}
-            
-            # Transform the matchups data to the expected format
-            formatted_matchups = []
-            
-            if not isinstance(matchup_items, list):
-                st.warning(f"Expected list of matchups, got {type(matchup_items)}")
-                return {"liveScoringMatchups": []}
-                
-            for idx, matchup in enumerate(matchup_items):
-                # Check if the matchup is a dictionary
-                if not isinstance(matchup, dict):
-                    continue
-                
-                # Log the keys in the first matchup for debugging
-                if idx == 0:
-                    st.write(f"Matchup keys: {list(matchup.keys())}")
-                    
-                # Extract team data safely
-                home_team = matchup.get("homeTeam", {})
-                away_team = matchup.get("awayTeam", {})
-                
-                # Check if home_team and away_team are dictionaries
-                if not isinstance(home_team, dict) or not isinstance(away_team, dict):
-                    continue
-                
-                formatted_matchups.append({
-                    "id": matchup.get("id", f"m{idx+1}"),
-                    "home": {
-                        "team": {"name": home_team.get("name", f"Home Team {idx+1}")},
-                        "score": matchup.get("homeScore", 0)
-                    },
-                    "away": {
-                        "team": {"name": away_team.get("name", f"Away Team {idx+1}")},
-                        "score": matchup.get("awayScore", 0)
-                    }
-                })
-            
-            # Log that we're using real data
-            st.write(f"Using real data with {len(formatted_matchups)} matchups")
-            
-            return {"liveScoringMatchups": formatted_matchups}
-        except Exception as e:
-            st.warning(f"Error fetching live scoring: {str(e)}")
-            return {"liveScoringMatchups": []}
