@@ -237,59 +237,130 @@ class FantraxAPI:
         """Fetch scoring periods"""
         return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
         
+    def discover_api_methods(self) -> List[str]:
+        """
+        Attempt to discover available API methods by testing a predefined list.
+        This helps identify what methods are actually supported by the API.
+        """
+        common_methods = [
+            "getLeagueInfo", 
+            "getRosters", 
+            "getStandings", 
+            "getTransactions", 
+            "getLiveScoring",
+            "getMatchups",
+            "getScoreboard",
+            "getLeagueScoreboard",
+            "getScoringPeriods",
+            "getTeams",
+            "getPlayers",
+            "getPlayerStats"
+        ]
+        
+        available_methods = []
+        
+        for method in common_methods:
+            try:
+                result = self._make_request(method, {"leagueId": self.league_id})
+                # If we didn't get an error about method not found, add it to available methods
+                if isinstance(result, dict) and "error" in result:
+                    error = result.get("error", {})
+                    if isinstance(error, dict) and error.get("message") == f"Unable to find method '{method}'":
+                        # Method not available
+                        pass
+                    else:
+                        # Got a different error, so method might exist
+                        available_methods.append(method)
+                else:
+                    # Got a result without method error
+                    available_methods.append(method)
+            except Exception:
+                # If there's an exception, the method might exist but have other issues
+                available_methods.append(method)
+                
+        return available_methods
+    
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
         """
         Fetch matchups for a specific period - since the 'getMatchups' endpoint
         doesn't exist directly, we'll try to extract matchup data from another endpoint
         """
-        # Try to get matchups from the league scoreboard instead
+        # First, discover what API methods are available
+        available_methods = self.discover_api_methods()
+        st.write(f"Available API methods: {available_methods}")
+        
+        # Try to get matchups data from any available method that might contain it
         try:
-            # First, let's try "getLiveScoring" endpoint
-            data = self._make_request("getLiveScoring", 
-                                {"leagueId": self.league_id, "scoringPeriod": period_id})
-            
-            # Log the response keys for debugging
-            if isinstance(data, dict):
-                st.write(f"getLiveScoring response keys: {list(data.keys())}")
+            # Try the league info endpoint to see what's in it - it often contains current matchup info
+            if "getLeagueInfo" in available_methods:
+                data = self._make_request("getLeagueInfo", {"leagueId": self.league_id})
                 
-                # Look for matchups data in common locations
-                if "matchups" in data:
-                    return data.get("matchups", [])
-                elif "scoreboard" in data:
-                    return data.get("scoreboard", {}).get("matchups", [])
+                if isinstance(data, dict):
+                    # Log the keys in the response for debugging
+                    st.write(f"League info keys: {list(data.keys())}")
+                    
+                    # Check if there are any matchup-related keys
+                    matchup_keys = [k for k in data.keys() if 'match' in k.lower()]
+                    if matchup_keys:
+                        st.write(f"Potential matchup keys found: {matchup_keys}")
+                        
+                        # Try to extract data from these keys
+                        for key in matchup_keys:
+                            if isinstance(data[key], list) and len(data[key]) > 0:
+                                return data[key]
                 
-            # If we can't find matchups, try another endpoint
-            # "getScoreboard" is another common endpoint
-            data = self._make_request("getScoreboard", 
-                                {"leagueId": self.league_id, "scoringPeriod": period_id})
-            
-            if isinstance(data, dict):
-                st.write(f"getScoreboard response keys: {list(data.keys())}")
+            # If we couldn't find matchups in league info, try to extract from standings
+            if "getStandings" in available_methods:
+                data = self._make_request("getStandings", {"leagueId": self.league_id})
                 
-                # Look for matchups data in common locations
-                if "matchups" in data:
-                    return data.get("matchups", [])
-                elif "scoreboard" in data:
-                    return data.get("scoreboard", {}).get("matchups", [])
+                if isinstance(data, list) and len(data) > 0:
+                    # Check if standings contain opponent or matchup info
+                    st.write(f"Checking standings data for matchup info")
+                    if len(data) > 0 and isinstance(data[0], dict):
+                        # Log the keys in the first item
+                        st.write(f"Standings item keys: {list(data[0].keys())}")
+                        
+                        # Look for matchup-related keys in standings
+                        matchup_keys = [k for k in data[0].keys() if 'match' in k.lower() or 'opponent' in k.lower()]
+                        if matchup_keys:
+                            st.write(f"Potential matchup keys in standings: {matchup_keys}")
+                            
+                            # We might be able to construct matchups data from standings
+                            teams_with_matchups = {}
+                            for team in data:
+                                for key in matchup_keys:
+                                    opponent_id = team.get(key)
+                                    if opponent_id:
+                                        teams_with_matchups[team.get('id')] = {
+                                            'team': team,
+                                            'opponent_id': opponent_id
+                                        }
+                            
+                            # If we found matchup data, format it
+                            if teams_with_matchups:
+                                matchups = []
+                                processed_teams = set()
+                                
+                                for team_id, info in teams_with_matchups.items():
+                                    if team_id in processed_teams:
+                                        continue
+                                        
+                                    opponent_id = info['opponent_id']
+                                    if opponent_id in teams_with_matchups:
+                                        processed_teams.add(team_id)
+                                        processed_teams.add(opponent_id)
+                                        
+                                        matchups.append({
+                                            'homeTeam': info['team'],
+                                            'awayTeam': teams_with_matchups[opponent_id]['team'],
+                                            'homeScore': info['team'].get('score', 0),
+                                            'awayScore': teams_with_matchups[opponent_id]['team'].get('score', 0)
+                                        })
+                                
+                                return matchups
             
-            # If we still can't find matchups, try one more approach
-            # Some APIs just return an array of matchups directly from getLeagueScoreboard
-            data = self._make_request("getLeagueScoreboard", 
-                                {"leagueId": self.league_id, "scoringPeriod": period_id})
-            
-            if isinstance(data, list):
-                # This might be a direct list of matchups
-                return data
-            elif isinstance(data, dict):
-                st.write(f"getLeagueScoreboard response keys: {list(data.keys())}")
-                
-                # Look for matchups data in common locations
-                if "matchups" in data:
-                    return data.get("matchups", [])
-                elif "scoreboard" in data:
-                    return data.get("scoreboard", {}).get("matchups", [])
-            
-            # If all attempts fail, return an empty list
+            # If all attempts fail, log what we tried and return empty list
+            st.warning("Couldn't find matchup data in any available endpoint")
             return []
             
         except Exception as e:

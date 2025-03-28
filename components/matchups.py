@@ -198,16 +198,20 @@ def render():
     else:
         st.error("No matchups data available from the API.")
         st.info("""
-        This could be due to one of the following reasons:
-        1. The API requires authentication credentials or cookies from a logged-in session
-        2. The API endpoints we're trying don't exist or have been renamed
-        3. The league ID may be incorrect or no longer valid
-        4. There are no active matchups for the selected scoring period
+        We're attempting to automatically discover the available API endpoints to find matchup data.
+        The systems will check:
         
-        We've attempted to use several alternative endpoints:
-        - getLiveScoring
-        - getScoreboard
-        - getLeagueScoreboard
+        1. What API methods are actually available
+        2. If matchup data exists in the league info response
+        3. If matchup data can be constructed from the standings
         
-        To fix this issue, API authentication may be required, or the endpoints need to be updated.
+        Check the debug information below to see what we've found so far.
+        """)
+        
+        # Suggestion for potential solutions based on what we've found
+        st.subheader("Possible solutions")
+        st.markdown("""
+        - Check if API requires authentication tokens or cookies
+        - Verify if the current season/league has active matchups
+        - If you see available API methods above, one of them may contain matchup data in a custom format
         """)
