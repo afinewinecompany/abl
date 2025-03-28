@@ -236,3 +236,39 @@ class FantraxAPI:
                     })
         
         return teams
+        
+    def get_live_scoring(self, scoring_period: int = 1) -> Dict[str, Any]:
+        """
+        Fetch live scoring data for a specific period.
+        This serves as an adapter to the new Fantrax Client API format.
+        """
+        try:
+            # In a real implementation, this would make a request to the API
+            # Here we're providing mock data that matches the format expected by the matchups component
+            return {
+                "liveScoringMatchups": [
+                    {
+                        "id": "m1",
+                        "home": {"team": {"name": "Red Sox"}, "score": 125.5},
+                        "away": {"team": {"name": "Yankees"}, "score": 118.0}
+                    },
+                    {
+                        "id": "m2",
+                        "home": {"team": {"name": "Dodgers"}, "score": 95.0},
+                        "away": {"team": {"name": "Giants"}, "score": 103.5}
+                    },
+                    {
+                        "id": "m3",
+                        "home": {"team": {"name": "Blue Jays"}, "score": 110.5},
+                        "away": {"team": {"name": "Orioles"}, "score": 105.0}
+                    },
+                    {
+                        "id": "m4",
+                        "home": {"team": {"name": "Cardinals"}, "score": 90.5},
+                        "away": {"team": {"name": "Cubs"}, "score": 88.0}
+                    }
+                ]
+            }
+        except Exception as e:
+            st.warning(f"Error fetching live scoring: {str(e)}")
+            return {"liveScoringMatchups": []}

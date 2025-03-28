@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data
 
@@ -526,10 +526,11 @@ def main():
         
         if data:
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
+                "⚔️ Matchups", 
                 "📚 Handbook", 
                 "🏆 DDI Rankings"
             ])
@@ -544,9 +545,12 @@ def main():
                 power_rankings.render(data['standings_data'])
 
             with tab4:
-                prospects.render(data['roster_data'])
+                matchups.render()
 
             with tab5:
+                prospects.render(data['roster_data'])
+
+            with tab6:
                 ddi.render(data['roster_data'])
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
