@@ -684,7 +684,26 @@ def main():
                 with tab5:
                     # Use our matchups component to display detailed matchup data
                     if 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
-                        matchups.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                        try:
+                            # Ensure we have list data before attempting to render
+                            if isinstance(fantrax_data['current_matchups'], list) and isinstance(fantrax_data['scoring_periods'], list):
+                                matchups.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                            else:
+                                st.error("Matchups or scoring periods data is not in the expected format.")
+                                st.info("Attempting to reload matchups data directly...")
+                                
+                                # Try to fetch matchups data directly
+                                direct_matchups = fantrax_client.get_matchups_for_period()
+                                scoring_periods = fantrax_client.get_scoring_periods()
+                                
+                                if direct_matchups and scoring_periods:
+                                    matchups.render(direct_matchups, scoring_periods)
+                                else:
+                                    st.warning("Unable to fetch matchups data directly.")
+                        except Exception as e:
+                            st.error(f"Error rendering matchups: {str(e)}")
+                            st.code(f"Type of current_matchups: {type(fantrax_data['current_matchups'])}")
+                            st.code(f"Type of scoring_periods: {type(fantrax_data['scoring_periods'])}")
                     else:
                         st.error("Matchups data not available. Please check your connection or try refreshing.")
                         
