@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
-# Import matchups with a more distinct name to avoid confusion with parameter names
-from components import matchups as matchups_component
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
@@ -560,13 +558,11 @@ def main():
             
             if fantrax_data:
                 # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "🏠 League Info",
-                    "📊 Standings",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
-                    "⚔️ Matchups",
                     "📋 Transactions"
                 ])
 
@@ -640,26 +636,6 @@ def main():
                         st.info("No standings data available")
 
                 with tab2:
-                    # Use our enhanced standings component
-                    standings_data = fantrax_data['standings_data']
-                    
-                    if not standings_data.empty:
-                        # Pass the standings data to the enhanced standings component
-                        standings.render(standings_data)
-                    else:
-                        st.error("No standings data available. Please check the API connection.")
-                        
-                        # Debug information
-                        with st.expander("Debug Information"):
-                            st.write("API Response Data Keys:", list(fantrax_data.keys()))
-                            st.write("Is 'standings_data' in keys?", 'standings_data' in fantrax_data)
-                            if 'standings_data' in fantrax_data:
-                                st.write("Standings Data Type:", type(fantrax_data['standings_data']))
-                                if isinstance(fantrax_data['standings_data'], pd.DataFrame):
-                                    st.write("Standings DataFrame is empty:", fantrax_data['standings_data'].empty)
-                                    st.write("Standings Data Columns:", list(fantrax_data['standings_data'].columns) if not fantrax_data['standings_data'].empty else "N/A")
-                
-                with tab3:
                     # Display rosters from Fantrax
                     st.header("Team Rosters")
                     roster_data = fantrax_data['roster_data']
@@ -681,174 +657,30 @@ def main():
                     else:
                         st.info("No roster data available")
 
-                with tab4:
-                    # Power Rankings tab - we'll use a different approach than just standings
-                    power_rankings.render(fantrax_data['standings_data'])
+                with tab3:
+                    # Use the standings component for a better visualization
+                    standings_data = fantrax_data['standings_data']
+                    
+                    if not standings_data.empty:
+                        # Rename columns to match what the standings component expects
+                        if 'team' in standings_data.columns and 'team_name' not in standings_data.columns:
+                            standings_data = standings_data.rename(columns={'team': 'team_name'})
+                        if 'win_percentage' in standings_data.columns and 'winning_pct' not in standings_data.columns:
+                            standings_data = standings_data.rename(columns={'win_percentage': 'winning_pct'})
+                        
+                        # Add games_back if missing
+                        if 'games_back' not in standings_data.columns:
+                            standings_data['games_back'] = 0.0
+                            
+                        # Use the standings component for nice visualizations
+                        standings.render(standings_data)
+                    else:
+                        st.info("No standings data available")
 
-                with tab5:
-                    # Handbook tab with prospects information
+                with tab4:
                     prospects.render(fantrax_data['roster_data'])
 
-                with tab6:
-                    st.title("Matchups")
-                    
-                    # Add debug section for matchups
-                    with st.expander("Debug Information", expanded=True):
-                        st.subheader("API Response Analysis")
-                        
-                        # Display which keys are available in fantrax_data
-                        st.write("Available data keys:", list(fantrax_data.keys()) if isinstance(fantrax_data, dict) else "No data dictionary found")
-                        
-                        # Check if matchups data exists - using key 5 as suggested
-                        # Try to get data using index 5 first
-                        has_matchups_at_index5 = False
-                        matchups_data_from_index5 = None
-                        
-                        if isinstance(fantrax_data, dict) and '5' in fantrax_data:
-                            st.success("Found key '5' in fantrax_data!")
-                            matchups_data_from_index5 = fantrax_data['5']
-                            st.write(f"Data at key 5 type: {type(matchups_data_from_index5)}")
-                            
-                            if isinstance(matchups_data_from_index5, list):
-                                has_matchups_at_index5 = True
-                                st.write(f"Found {len(matchups_data_from_index5)} matchups at key 5")
-                                if len(matchups_data_from_index5) > 0:
-                                    st.write("First matchup from key 5:", matchups_data_from_index5[0])
-                                
-                        # Check if matchups data exists in the traditional location
-                        has_matchups = 'current_matchups' in fantrax_data
-                        has_periods = 'scoring_periods' in fantrax_data
-                        
-                        st.write(f"Has matchups data in standard location: {has_matchups}")
-                        st.write(f"Has matchups data at index 5: {has_matchups_at_index5}")
-                        st.write(f"Has scoring periods: {has_periods}")
-                        
-                        if has_matchups:
-                            matchups_data = fantrax_data['current_matchups']
-                            st.write(f"Standard matchups data type: {type(matchups_data)}")
-                            st.write(f"Standard matchups count: {len(matchups_data) if isinstance(matchups_data, list) else 'Not a list'}")
-                            
-                            # Sample of matchups data
-                            if isinstance(matchups_data, list) and len(matchups_data) > 0:
-                                st.write("First standard matchup sample:", matchups_data[0])
-                                
-                                # Check if we have the expected teams in the matchups
-                                teams_in_matchups = set()
-                                for m in matchups_data:
-                                    if isinstance(m, dict):
-                                        if 'away_team' in m:
-                                            teams_in_matchups.add(m['away_team'])
-                                        if 'home_team' in m:
-                                            teams_in_matchups.add(m['home_team'])
-                                            
-                                st.write("Teams found in standard matchups:", list(teams_in_matchups))
-                        
-                        if has_periods:
-                            periods_data = fantrax_data['scoring_periods']
-                            st.write(f"Periods data type: {type(periods_data)}")
-                            st.write(f"Periods count: {len(periods_data) if isinstance(periods_data, list) else 'Not a list'}")
-                            
-                            if isinstance(periods_data, list) and len(periods_data) > 0:
-                                st.write("First period sample:", periods_data[0])
-                    
-                    # Check if matchups data exists at key 5 first
-                    if has_matchups_at_index5 and 'scoring_periods' in fantrax_data:
-                        try:
-                            # Use the matchups data from key 5
-                            st.success(f"Using {len(matchups_data_from_index5)} matchups from key 5")
-                            matchups_component.render(matchups_data_from_index5, fantrax_data['scoring_periods'])
-                        except Exception as e:
-                            st.error(f"Error rendering matchups from key 5: {str(e)}")
-                            import traceback
-                            st.code(traceback.format_exc())
-                            
-                            # Fall back to standard location
-                            st.warning("Falling back to standard matchups location")
-                            if 'current_matchups' in fantrax_data:
-                                try:
-                                    matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
-                                except Exception as e2:
-                                    st.error(f"Fallback also failed: {str(e2)}")
-                    # Otherwise check standard location
-                    elif 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
-                        try:
-                            # Ensure we have list data before attempting to render
-                            if isinstance(fantrax_data['current_matchups'], list) and isinstance(fantrax_data['scoring_periods'], list):
-                                # Check if we actually have any matchups
-                                if len(fantrax_data['current_matchups']) > 0:
-                                    st.success(f"Found {len(fantrax_data['current_matchups'])} matchups from the API")
-                                    matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
-                                else:
-                                    st.warning("No matchups found in the API response, trying to fetch directly...")
-                                    
-                                    # Try to fetch matchups for specific period
-                                    # Use period 1 for Week 1
-                                    direct_matchups = fantrax_client.get_matchups_for_period(1)
-                                    scoring_periods = fantrax_client.get_scoring_periods()
-                                    
-                                    if direct_matchups and len(direct_matchups) > 0:
-                                        st.success(f"Successfully fetched {len(direct_matchups)} matchups directly")
-                                        st.write("Teams in direct matchups:", [
-                                            f"{m.get('away_team')} vs {m.get('home_team')}" 
-                                            for m in direct_matchups
-                                        ])
-                                        matchups_component.render(direct_matchups, scoring_periods)
-                                    else:
-                                        st.error("No matchups data could be found. Please check back later when the league has active matchups.")
-                                        
-                                        # Display a helpful message about matchups
-                                        st.info("""
-                                        ### About Matchups
-                                        
-                                        Matchups information will be available once the league has active matchups scheduled.
-                                        
-                                        Features available in the matchups section:
-                                        - Detailed head-to-head statistics
-                                        - Score distribution analysis
-                                        - Performance trends by week
-                                        - Margin of victory analysis
-                                        """)
-                            else:
-                                st.error("Matchups or scoring periods data is not in the expected format.")
-                                st.code(f"Current matchups: {fantrax_data['current_matchups']}")
-                                st.code(f"Scoring periods: {fantrax_data['scoring_periods']}")
-                                
-                                # Try to fetch matchups data directly
-                                st.info("Attempting to reload matchups data directly...")
-                                direct_matchups = fantrax_client.get_matchups_for_period(1)  # Using Week 1
-                                scoring_periods = fantrax_client.get_scoring_periods()
-                                
-                                if direct_matchups and scoring_periods:
-                                    st.success("Successfully retrieved matchups directly")
-                                    matchups_component.render(direct_matchups, scoring_periods)
-                                else:
-                                    st.warning("Unable to fetch matchups data directly.")
-                        except Exception as e:
-                            st.error(f"Error rendering matchups: {str(e)}")
-                            st.code(f"Type of current_matchups: {type(fantrax_data['current_matchups'])}")
-                            st.code(f"Type of scoring_periods: {type(fantrax_data['scoring_periods'])}")
-                            import traceback
-                            st.code(traceback.format_exc())
-                    else:
-                        st.error("Matchups data not available in the API response. Trying direct method...")
-                        
-                        # Try to fetch matchups directly as fallback
-                        try:
-                            st.info("Fetching matchups directly for Week 1...")
-                            direct_matchups = fantrax_client.get_matchups_for_period(1)  # Using Week 1
-                            scoring_periods = fantrax_client.get_scoring_periods()
-                            
-                            if direct_matchups and len(direct_matchups) > 0:
-                                st.success(f"Successfully fetched {len(direct_matchups)} matchups directly")
-                                matchups_component.render(direct_matchups, scoring_periods)
-                            else:
-                                st.warning("No matchups found when fetching directly")
-                        except Exception as e:
-                            st.error(f"Error fetching matchups directly: {str(e)}")
-                            import traceback
-                            st.code(traceback.format_exc())
-                        
-                with tab7:
+                with tab5:
                     st.title("Transactions")
                     
                     # Debug information for transactions tab

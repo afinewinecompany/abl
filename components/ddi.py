@@ -332,29 +332,11 @@ def get_team_prospect_scores(roster_data: pd.DataFrame) -> pd.DataFrame:
 def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame, history_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Calculate the Dynasty Dominance Index for all teams"""
 
-    # First, check the input data
-    if not isinstance(roster_data, pd.DataFrame) or 'team' not in roster_data.columns:
-        raise ValueError(f"Invalid roster_data: missing 'team' column. Columns: {roster_data.columns.tolist()}")
-        
-    if not isinstance(power_rankings, pd.DataFrame):
-        raise ValueError(f"Invalid power_rankings: not a DataFrame. Type: {type(power_rankings)}")
-        
-    # Print power_rankings columns for debugging
-    print(f"Power rankings DataFrame received in calculate_ddi_scores with columns: {power_rankings.columns.tolist()}")
-    if 'Team' not in power_rankings.columns and 'team' in power_rankings.columns:
-        power_rankings = power_rankings.rename(columns={'team': 'Team'})
-        print("Renamed 'team' column to 'Team' in power_rankings")
-        
-    if 'Power Score' not in power_rankings.columns and 'power_score' in power_rankings.columns:
-        power_rankings = power_rankings.rename(columns={'power_score': 'Power Score'})
-        print("Renamed 'power_score' column to 'Power Score' in power_rankings")
-    
     # Get team prospect scores directly from the handbook calculation
     team_prospect_scores = get_team_prospect_scores(roster_data)
 
     # Extract unique teams from roster data
     teams = roster_data['team'].unique()
-    print(f"Processing {len(teams)} teams for DDI scores")
 
     # Create a DataFrame to store DDI components and total scores
     ddi_data = []
@@ -374,63 +356,21 @@ def calculate_ddi_scores(roster_data: pd.DataFrame, power_rankings: pd.DataFrame
 
         # Get power ranking score (normalized from 0-100, where 100 is best)
         # Try multiple possible column names for team and power score (handle different formats)
-        # Print the available columns for debugging
-        print(f"Power Rankings DataFrame columns: {power_rankings.columns.tolist()}")
-        
-        # Determine the correct column names by checking what's available
-        if 'team_name' in power_rankings.columns:
-            team_col = 'team_name'
-        elif 'Team' in power_rankings.columns:
-            team_col = 'Team'
-        elif 'team' in power_rankings.columns:
-            team_col = 'team'
-        else:
-            # Default fallback - use the first column
-            team_col = power_rankings.columns[0]
-            print(f"Warning: Using {team_col} as team column")
-            
-        if 'power_score' in power_rankings.columns:
-            score_col = 'power_score'
-        elif 'Power Score' in power_rankings.columns:
-            score_col = 'Power Score'
-        elif 'score' in power_rankings.columns:
-            score_col = 'score'
-        else:
-            # Use last numeric column as score
-            numeric_cols = power_rankings.select_dtypes(include=['number']).columns.tolist()
-            score_col = numeric_cols[-1] if numeric_cols else power_rankings.columns[-1]
-            print(f"Warning: Using {score_col} as score column")
-        
-        # Print chosen columns for debugging
-        print(f"Using team_col={team_col}, score_col={score_col}")
-        
-        # Handle missing columns gracefully
-        try:
-            # For extra safety, check if team_col and score_col actually exist in the DataFrame
-            if team_col in power_rankings.columns and score_col in power_rankings.columns:
-                # Filter for the team
-                team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
-                
-                if len(team_power) > 0:
-                    # Normalize power score where highest is 100
-                    max_score = power_rankings[score_col].max()
-                    if max_score > 0:
-                        power_score = (team_power[score_col].values[0] / max_score) * 100
-                    else:
-                        # Default to average score if we have no valid power scores
-                        power_score = 50
-                else:
-                    # Team not found in power rankings, so default to average
-                    print(f"Team '{team}' not found in power rankings")
-                    power_score = 50
+        team_col = 'team_name' if 'team_name' in power_rankings.columns else 'Team'
+        score_col = 'power_score' if 'power_score' in power_rankings.columns else 'Power Score'
+
+        team_power = power_rankings[(power_rankings[team_col] == team) | (power_rankings[team_col] == team_search)]
+        if len(team_power) > 0:
+            # Normalize power score where highest is 100
+            max_score = power_rankings[score_col].max()
+            if max_score > 0:
+                power_score = (team_power[score_col].values[0] / max_score) * 100
             else:
-                # Missing columns, so we can't calculate accurately
-                print(f"Missing required columns in power rankings: team_col={team_col}, score_col={score_col}")
-                power_score = 50
-        except KeyError as e:
-            print(f"KeyError when filtering power rankings: {str(e)}")
-            st.warning(f"Power rankings data format issue: {str(e)}")
-            power_score = 50  # Use average score as fallback
+                # Default to 100 if we have no valid power scores
+                power_score = 100
+        else:
+            # Default to 100 as requested
+            power_score = 100
 
         # Get prospect score from the handbook calculation (total_score from each team)
         team_prospects = team_prospect_scores[(team_prospect_scores['team'] == team) | (team_prospect_scores['team'] == team_search)]
@@ -1172,19 +1112,6 @@ def render(roster_data: pd.DataFrame):
 
     st.title("Dynasty Dominance Index (DDI)")
 
-    # Check if roster_data has the required format
-    if not isinstance(roster_data, pd.DataFrame):
-        st.error(f"Invalid roster data format. Expected DataFrame, got {type(roster_data)}")
-        return
-        
-    # Verify roster_data has the required columns
-    required_columns = ['team', 'player']
-    missing_columns = [col for col in required_columns if col not in roster_data.columns]
-    if missing_columns:
-        st.error(f"Missing required columns in roster data: {missing_columns}")
-        st.write("Available columns:", roster_data.columns.tolist())
-        return
-
     st.markdown("""
     ### What is DDI?
     The Dynasty Dominance Index (DDI) combines a team's current power ranking, prospect system, historical performance, and playoff success to create a comprehensive evaluation of dynasty team health and trajectory.
@@ -1211,46 +1138,25 @@ def render(roster_data: pd.DataFrame):
         # Calculate power rankings (we'll need to use the existing power_rankings component logic)
         # For this example, we'll create a simple power ranking based on available roster data
         teams = roster_data['team'].unique()
-        
-        # Print team information for debugging
-        st.write(f"Found {len(teams)} teams in roster data")
-        
-        # Create power rankings
+
+        # Try to import the power_rankings logic first
         try:
-            st.write("Generating power rankings...")
-            # Try to import the power_rankings logic first
-            try:
-                from components import power_rankings
-                power_rankings_df = calculate_power_rankings_from_component(roster_data)
-                st.write("Power rankings generated using component")
-            except Exception as e:
-                st.warning(f"Error using component-based power rankings: {str(e)}")
-                # If we can't import power_rankings, create a basic version
-                power_rankings_data = []
-                for team in teams:
-                    team_df = roster_data[roster_data['team'] == team]
-                    power_score = len(team_df) * 2  # Simple placeholder score
-                    power_rankings_data.append({
-                        'Team': team,
-                        'Power Score': power_score
-                    })
-                power_rankings_df = pd.DataFrame(power_rankings_data)
-                st.write("Power rankings generated using fallback method")
-            
-            # Verify power_rankings_df has the required format
-            st.write("Power rankings columns:", power_rankings_df.columns.tolist())
-            
-            # Display first few rows for debugging
-            st.write("Power rankings sample:", power_rankings_df.head())
-            
-            # Calculate DDI scores
-            st.write("Calculating DDI scores...")
-            ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
-        except Exception as e:
-            st.error(f"Error calculating DDI scores: {str(e)}")
-            import traceback
-            st.code(traceback.format_exc())
-            return
+            from components import power_rankings
+            power_rankings_df = calculate_power_rankings_from_component(roster_data)
+        except:
+            # If we can't import power_rankings, create a basic version
+            power_rankings_data = []
+            for team in teams:
+                team_df = roster_data[roster_data['team'] == team]
+                power_score = len(team_df) * 2  # Simple placeholder score
+                power_rankings_data.append({
+                    'Team': team,
+                    'Power Score': power_score
+                })
+            power_rankings_df = pd.DataFrame(power_rankings_data)
+
+        # Calculate DDI scores
+        ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
 
         # Format DDI dataframe for display
         display_df = ddi_df.copy()
@@ -1475,8 +1381,7 @@ def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.Dat
 
         return pd.DataFrame(power_data)
 
-    except ImportError as e:
-        print(f"ImportError when using power_rankings component: {str(e)}")
+    except ImportError:
         # If we can't import power_rankings, create a basic version 
         # but with more realistic values that won't be zero
         teams = roster_data['team'].unique()
@@ -1488,36 +1393,9 @@ def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.Dat
             # Multiply by a factor to get scores in a reasonable range (50-150)
             power_score = len(team_df) * 4 + 30
 
-            # Make sure we use the right column name - 'Team' not 'team_name'
             power_rankings_data.append({
-                'Team': team,  # Use 'Team' as the column name for consistency
-                'Power Score': power_score  # Use 'Power Score' as the column name
+                'Team': team,
+                'Power Score': power_score
             })
 
-        # Convert to DataFrame and ensure we have the right column names
-        power_rankings_df = pd.DataFrame(power_rankings_data)
-        
-        # Print debugging info
-        print(f"Created fallback power rankings with columns: {power_rankings_df.columns.tolist()}")
-        print(f"First few rows: {power_rankings_df.head()}")
-        
-        # Make absolutely sure we have 'Team' and 'Power Score' columns
-        if 'team' in power_rankings_df.columns and 'Team' not in power_rankings_df.columns:
-            power_rankings_df = power_rankings_df.rename(columns={'team': 'Team'})
-            
-        if 'power_score' in power_rankings_df.columns and 'Power Score' not in power_rankings_df.columns:
-            power_rankings_df = power_rankings_df.rename(columns={'power_score': 'Power Score'})
-            
-        # Final safety check that we have the required columns
-        required_cols = ['Team', 'Power Score']
-        missing_cols = [col for col in required_cols if col not in power_rankings_df.columns]
-        if missing_cols:
-            print(f"ERROR: Missing required columns in power rankings: {missing_cols}")
-            # Add any missing columns with default values
-            for col in missing_cols:
-                if col == 'Team':
-                    power_rankings_df['Team'] = teams
-                elif col == 'Power Score':
-                    power_rankings_df['Power Score'] = [50] * len(teams)
-        
-        return power_rankings_df
+        return pd.DataFrame(power_rankings_data)

@@ -2,7 +2,6 @@ import pandas as pd
 from typing import Dict, List, Union
 import unicodedata
 import streamlit as st
-import os
 
 class DataProcessor:
     def normalize_name(self, name: str) -> str:
@@ -124,26 +123,12 @@ class DataProcessor:
                 'scoring_period': 'N/A'
             }
 
-    def load_division_data(self) -> pd.DataFrame:
-        """Load division data from CSV file"""
-        try:
-            divisions_path = os.path.join("attached_assets", "divisions.csv")
-            if os.path.exists(divisions_path):
-                divisions_df = pd.read_csv(divisions_path, header=None, names=["division", "team"])
-                return divisions_df
-            else:
-                st.warning(f"Divisions file not found at {divisions_path}")
-                return pd.DataFrame(columns=["division", "team"])
-        except Exception as e:
-            st.error(f"Error loading division data: {str(e)}")
-            return pd.DataFrame(columns=["division", "team"])
-
     def process_standings(self, standings_data: List) -> pd.DataFrame:
         """Process standings data into a DataFrame"""
         try:
             if not standings_data or not isinstance(standings_data, list):
                 return pd.DataFrame(
-                    columns=['team', 'team_id', 'rank', 'wins', 'losses', 'ties', 'win_percentage', 'points_for', 'points_against', 'games_back', 'division']
+                    columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
                 )
 
             standings_list = []
@@ -159,50 +144,30 @@ class DataProcessor:
                 except (ValueError, AttributeError):
                     wins, losses, ties = 0, 0, 0
 
-                # Get points for and against if available
-                points_for = team.get('pointsFor', 0)
-                points_against = team.get('pointsAgainst', 0)
-                
-                # Calculate win percentage
-                total_games = wins + losses + ties
-                win_percentage = round(((wins + (ties * 0.5)) / total_games), 3) if total_games > 0 else 0.0
-
                 team_stats = {
-                    'team': team.get('teamName', 'Unknown'),
+                    'team_name': team.get('teamName', 'Unknown'),
                     'team_id': team.get('teamId', 'N/A'),
                     'rank': team.get('rank', 0),
                     'wins': wins,
                     'losses': losses,
                     'ties': ties,
-                    'win_percentage': win_percentage,
-                    'points_for': points_for,
-                    'points_against': points_against,
+                    'winning_pct': team.get('winPercentage', 0.0),
                     'games_back': team.get('gamesBack', 0.0)
                 }
                 standings_list.append(team_stats)
 
             df = pd.DataFrame(standings_list) if standings_list else pd.DataFrame(
-                columns=['team', 'team_id', 'rank', 'wins', 'losses', 'ties', 'win_percentage', 'points_for', 'points_against', 'games_back']
+                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
             )
 
             # Ensure rank is numeric and sort by it
             df['rank'] = pd.to_numeric(df['rank'], errors='coerce').fillna(0).astype(int)
             df = df.sort_values('rank', ascending=True).reset_index(drop=True)
-            
-            # Add division information
-            try:
-                division_df = self.load_division_data()
-                if not division_df.empty:
-                    df = df.merge(division_df, on='team', how='left')
-                    df['division'] = df['division'].fillna('Unknown')
-            except Exception as e:
-                st.error(f"Error adding division info: {str(e)}")
-                df['division'] = 'Unknown'
 
             return df
 
         except Exception as e:
             st.error(f"Error processing standings: {str(e)}")
             return pd.DataFrame(
-                columns=['team', 'team_id', 'rank', 'wins', 'losses', 'ties', 'win_percentage', 'points_for', 'points_against', 'games_back', 'division']
+                columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 'games_back']
             )
