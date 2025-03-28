@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results, save_player_points, load_player_points
+from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -498,106 +498,7 @@ def main():
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
-            
-            st.markdown("---")
-            st.markdown("### 🔐 Fantrax API Connection")
-            
-            # Authentication tab in the main interface
-            if 'show_auth_interface' not in st.session_state:
-                st.session_state.show_auth_interface = False
-            
-            # Check if we have either authentication method
-            has_token = os.getenv("FANTRAX_TOKEN") is not None
-            has_cookie = os.path.exists("fantraxloggedin.cookie")
                 
-            if has_token or has_cookie:
-                auth_method = "token" if has_token else "cookie"
-                st.success(f"✅ Fantrax authenticated using {auth_method}")
-                if st.button("Manage Fantrax Authentication", use_container_width=True):
-                    st.session_state.show_auth_interface = not st.session_state.show_auth_interface
-            else:
-                st.warning("⚠️ Fantrax authentication not configured")
-                if st.button("Configure Fantrax Authentication", use_container_width=True):
-                    st.session_state.show_auth_interface = not st.session_state.show_auth_interface
-                    
-            if st.session_state.show_auth_interface:
-                st.markdown("---")
-                
-                # Create tabs for different authentication methods
-                auth_tabs = st.tabs(["Token Authentication (Recommended)", "Cookie Authentication (Legacy)"])
-                
-                # Tab 1: Token Authentication (New Method)
-                with auth_tabs[0]:
-                    st.markdown("### 🔑 Token Authentication")
-                    st.write("""
-                    This is the recommended authentication method. It's simpler and more reliable than the cookie method.
-                    """)
-                    
-                    # Import login form from selenium_login.py
-                    from selenium_login import streamlit_login_form
-                    
-                    # Display login form
-                    streamlit_login_form()
-                
-                # Tab 2: Cookie Authentication (Old Method)
-                with auth_tabs[1]:
-                    st.markdown("### 🍪 Cookie Authentication")
-                    st.write("""
-                    This is the legacy authentication method. It's more complex and less reliable.
-                    Use only if token authentication doesn't work for you.
-                    
-                    ### Instructions:
-                    
-                    1. Install required packages on your local computer:
-                       ```
-                       pip install selenium webdriver-manager
-                       ```
-                       
-                    2. Run the code below on your local computer:
-                       ```python
-                       import pickle
-                       import time
-                       from selenium import webdriver
-                       from selenium.webdriver.chrome.service import Service
-                       from selenium.webdriver.chrome.options import Options
-                       from webdriver_manager.chrome import ChromeDriverManager
-
-                       service = Service(ChromeDriverManager().install())
-
-                       options = Options()
-                       options.add_argument("--window-size=1920,1600")
-                       options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")
-
-                       with webdriver.Chrome(service=service, options=options) as driver:
-                           driver.get("https://www.fantrax.com/login")
-                           time.sleep(30)  # Give yourself time to log in manually
-                           pickle.dump(driver.get_cookies(), open("fantraxloggedin.cookie", "wb"))
-                       ```
-                       
-                    3. When the Chrome browser opens, log in to your Fantrax account
-                    4. Wait 30 seconds for the cookie file to be created
-                    5. Upload the created 'fantraxloggedin.cookie' file here:
-                    """)
-                    
-                    # Add file uploader for cookie file
-                    uploaded_file = st.file_uploader("Upload fantraxloggedin.cookie file", type=["cookie"])
-                    
-                    if uploaded_file is not None:
-                        try:
-                            # Save the uploaded cookie file
-                            with open("fantraxloggedin.cookie", "wb") as f:
-                                f.write(uploaded_file.getvalue())
-                            
-                            st.success("Cookie file uploaded successfully! You can now use the Fantrax API.")
-                            st.info("Please refresh the page to apply the changes.")
-                            
-                        except Exception as e:
-                            st.error(f"Error saving cookie file: {str(e)}")
-                
-                if st.button("Close Authentication Interface", use_container_width=True):
-                    st.session_state.show_auth_interface = False
-                    st.experimental_rerun()
-                    
             # Only showing Current API as data source now
             data_source = "Current API"
             
@@ -621,14 +522,6 @@ def main():
                     st.session_state.weekly_results = saved_results
                 else:
                     st.session_state.weekly_results = []
-            
-            if 'player_points' not in st.session_state:
-                # Try to load saved player points
-                saved_player_points = load_player_points()
-                if saved_player_points:
-                    st.session_state.player_points = saved_player_points
-                else:
-                    st.session_state.player_points = {}
             
             # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
@@ -745,68 +638,15 @@ def main():
                         for error in errors:
                             st.write(f"- {error}")
             
-            # Section 3: Bulk data entry for player points
-            st.markdown("---")
-            st.subheader("Player Points")
-            st.markdown("""
-            Paste player points data in the format: `Player Name, Actual Points`  
-            Example:
-            ```
-            Aaron Judge, 250.5
-            Shohei Ohtani, 285.3
-            Juan Soto, 210.8
-            ```
-            *This will overwrite previous data for players included in the paste.*
-            """)
-            
-            # Text area for bulk player points data
-            player_points_data = st.text_area("Paste Player Points Data", height=200)
-            
-            if st.button("Process Player Points", use_container_width=True):
-                if player_points_data:
-                    # Process the pasted data
-                    lines = player_points_data.strip().split('\n')
-                    processed_count = 0
-                    errors = []
-                    
-                    for line in lines:
-                        try:
-                            parts = [part.strip() for part in line.split(',')]
-                            if len(parts) >= 2:
-                                player_name = parts[0]
-                                points = float(parts[1])
-                                
-                                # Update the session state
-                                st.session_state.player_points[player_name] = points
-                                processed_count += 1
-                            else:
-                                errors.append(f"Invalid format: {line}")
-                        except Exception as e:
-                            errors.append(f"Error processing line: {line}. {str(e)}")
-                    
-                    if processed_count > 0:
-                        # Save to persistent storage
-                        if save_player_points(st.session_state.player_points):
-                            st.success(f"Successfully processed and saved {processed_count} player(s)")
-                        else:
-                            st.warning(f"Processed {processed_count} player(s), but couldn't save to file")
-                    
-                    if errors:
-                        st.error("Errors encountered:")
-                        for error in errors:
-                            st.write(f"- {error}")
-            
             # Display current data
             if st.checkbox("Show Current Data"):
                 st.write("Season Stats:", st.session_state.power_rankings_data)
                 st.write("Weekly Results:", st.session_state.weekly_results)
-                st.write("Player Points:", st.session_state.player_points)
                 
                 # Add option to clear data
                 if st.button("Clear All Data", type="secondary"):
                     st.session_state.power_rankings_data = {}
                     st.session_state.weekly_results = []
-                    st.session_state.player_points = {}
                     
                     # Remove the data files
                     try:
@@ -814,9 +654,7 @@ def main():
                             os.remove('data/team_season_stats.csv')
                         if os.path.exists('data/weekly_results.csv'):
                             os.remove('data/weekly_results.csv')
-                        if os.path.exists('data/player_points.csv'):
-                            os.remove('data/player_points.csv')
-                        st.success("All data has been cleared from memory and storage")
+                        st.success("All power rankings data has been cleared from memory and storage")
                     except Exception as e:
                         st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
 
@@ -854,9 +692,6 @@ def main():
             
             if 'weekly_results' not in st.session_state:
                 st.session_state.weekly_results = []
-                
-            if 'player_points' not in st.session_state:
-                st.session_state.player_points = {}
             
             # Create tabs for different sections
             tab1, tab2, tab3, tab4, tab5 = st.tabs([
