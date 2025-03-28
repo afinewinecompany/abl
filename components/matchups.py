@@ -74,11 +74,33 @@ def render(matchups_data: List[Dict[str, Any]], scoring_periods: List[Dict[str, 
     
     selected_period_id = period_options[selected_period_name]
     
-    # Filter matchups to the selected period
+    # Filter matchups to the selected period with improved error handling
+    if not matchups_data:
+        st.warning("No matchup data is available")
+        
+        # Display information about what matchups will show
+        st.info("""
+        ### When Matchups Are Available
+        
+        This section will display detailed matchup information including:
+        - Matchup score cards with team records
+        - Win probability calculations
+        - League-wide scoring distributions
+        - Team performance trends across weeks
+        """)
+        return
+        
     filtered_matchups = [matchup for matchup in matchups_data if matchup.get('period_id') == selected_period_id]
     
     if not filtered_matchups:
         st.warning(f"No matchups available for {selected_period_name}")
+        
+        # Suggest checking other periods
+        available_periods = set([m.get('period_id') for m in matchups_data if m.get('period_id') is not None])
+        if available_periods:
+            available_period_names = [next((p["name"] for p in periods if p["id"] == period_id), f"Week {period_id}") 
+                                     for period_id in available_periods]
+            st.info(f"Matchups are available for: {', '.join(available_period_names)}")
         return
     
     # Display matchups in visually appealing cards
@@ -111,49 +133,97 @@ def render(matchups_data: List[Dict[str, Any]], scoring_periods: List[Dict[str, 
         st.info("No matchup data available for statistical analysis")
 
 def render_matchup_card(matchup: Dict[str, Any], column):
-    """Render a single matchup card in the specified column"""
+    """Render a single matchup card in the specified column with improved styling and error handling"""
     with column:
-        # Determine winner/loser styling
-        away_team = matchup.get('away_team', 'Unknown')
-        home_team = matchup.get('home_team', 'Unknown')
-        away_score = matchup.get('away_score', 0)
-        home_score = matchup.get('home_score', 0)
-        
-        # Bold the winner
-        away_style = "font-weight: bold;" if away_score > home_score else ""
-        home_style = "font-weight: bold;" if home_score > away_score else ""
-        
-        # Draw a tie
-        if away_score == home_score:
-            away_style = home_style = "font-style: italic;"
-        
-        # Create matchup card with clean styling
-        st.markdown(f"""
-        <div style="
-            border: 1px solid rgba(230, 230, 230, 0.2);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: rgba(35, 38, 45, 0.8);
-        ">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <div style="text-align: left; {away_style}">
-                    <div style="font-size: 18px;">{away_team}</div>
-                    <div style="font-size: 24px;">{away_score:.1f}</div>
+        # Validate and extract required fields with fallbacks
+        try:
+            away_team = matchup.get('away_team', 'Unknown')
+            home_team = matchup.get('home_team', 'Unknown')
+            
+            # Convert scores to float with error handling
+            try:
+                away_score = float(matchup.get('away_score', 0))
+            except (ValueError, TypeError):
+                away_score = 0
+                
+            try:
+                home_score = float(matchup.get('home_score', 0))
+            except (ValueError, TypeError):
+                home_score = 0
+            
+            # Calculate score difference if not provided
+            score_difference = matchup.get('score_difference')
+            if score_difference is None:
+                score_difference = abs(away_score - home_score)
+            
+            # Determine winner for styling
+            if away_score > home_score:
+                away_style = "font-weight: bold; color: #2ea043;"  # Green for winner
+                home_style = ""
+                away_indicator = "▲"  # Up triangle for winner
+                home_indicator = ""
+            elif home_score > away_score:
+                home_style = "font-weight: bold; color: #2ea043;"  # Green for winner
+                away_style = ""
+                home_indicator = "▲"  # Up triangle for winner
+                away_indicator = ""
+            else:
+                away_style = home_style = "font-style: italic;"
+                away_indicator = home_indicator = "="  # Equal sign for tie
+            
+            # Create enhanced matchup card with clean styling and win indicators
+            st.markdown(f"""
+            <div style="
+                border: 1px solid rgba(230, 230, 230, 0.2);
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 15px;
+                background-color: rgba(35, 38, 45, 0.8);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="text-align: left; {away_style}">
+                        <div style="font-size: 18px; display: flex; align-items: center;">
+                            <span>{away_team}</span>
+                            <span style="margin-left: 5px; font-size: 14px; color: #2ea043;">{away_indicator}</span>
+                        </div>
+                        <div style="font-size: 24px;">{away_score:.1f}</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <span style="opacity: 0.6;">@</span>
+                    </div>
+                    <div style="text-align: right; {home_style}">
+                        <div style="font-size: 18px; display: flex; align-items: center; justify-content: flex-end;">
+                            <span>{home_team}</span>
+                            <span style="margin-left: 5px; font-size: 14px; color: #2ea043;">{home_indicator}</span>
+                        </div>
+                        <div style="font-size: 24px;">{home_score:.1f}</div>
+                    </div>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <span style="opacity: 0.6;">@</span>
-                </div>
-                <div style="text-align: right; {home_style}">
-                    <div style="font-size: 18px;">{home_team}</div>
-                    <div style="font-size: 24px;">{home_score:.1f}</div>
+                <div style="text-align: center; opacity: 0.8; font-size: 14px; margin-top: 10px;">
+                    <span style="background-color: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 10px; font-family: monospace;">
+                        Diff: {score_difference:.1f}
+                    </span>
                 </div>
             </div>
-            <div style="text-align: center; opacity: 0.7; font-size: 14px; margin-top: 5px;">
-                Score Difference: {matchup.get('score_difference', 0):.1f}
+            """, unsafe_allow_html=True)
+            
+        except Exception as e:
+            # Fallback rendering if there's an error with the matchup data
+            st.warning(f"Error rendering matchup: {str(e)}")
+            st.markdown("""
+            <div style="
+                border: 1px solid rgba(255, 0, 0, 0.3);
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 15px;
+                background-color: rgba(35, 38, 45, 0.8);
+            ">
+                <div style="text-align: center;">
+                    <p>Unable to display matchup information</p>
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 def calculate_matchup_stats(matchups: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Calculate statistics about the matchups for display"""

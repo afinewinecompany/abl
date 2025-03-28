@@ -123,13 +123,76 @@ def fetch_fantrax_data():
                 st.warning(f"Warning: Could not fetch scoring periods: {str(e)}")
                 scoring_periods = []
             
-            # Fetch current matchups with error handling
+            # Fetch current matchups with error handling and multiple fallbacks
             status_container.progress(95)
             try:
+                # First attempt: Try to fetch current period matchups
                 current_matchups = fantrax_client.get_matchups_for_period()
+                
+                # Validate the matchups format
+                if not current_matchups or not isinstance(current_matchups, list) or len(current_matchups) == 0:
+                    # Second attempt: Try to fetch period 1 matchups (Week 1)
+                    st.warning("No matchups found for current period, trying Week 1...")
+                    current_matchups = fantrax_client.get_matchups_for_period(1)
+                    
+                # Final validation with detailed warning
+                if not current_matchups or not isinstance(current_matchups, list) or len(current_matchups) == 0:
+                    st.warning("No matchups found in any period. The matchups tab may not display correctly.")
             except Exception as e:
                 st.warning(f"Warning: Could not fetch matchups: {str(e)}")
                 current_matchups = []
+                
+            # Ensure matchups are in the correct format regardless of source
+            formatted_matchups = []
+            if current_matchups and isinstance(current_matchups, list):
+                for matchup in current_matchups:
+                    if isinstance(matchup, dict):
+                        # Check if matchup has the minimum required fields
+                        has_away_team = 'away_team' in matchup or 'awayTeam' in matchup
+                        has_home_team = 'home_team' in matchup or 'homeTeam' in matchup
+                        
+                        if has_away_team and has_home_team:
+                            # Extract basic fields, using fallbacks if needed
+                            away_team = matchup.get('away_team', matchup.get('awayTeam', {}).get('name', 'Unknown Team'))
+                            home_team = matchup.get('home_team', matchup.get('homeTeam', {}).get('name', 'Unknown Team'))
+                            
+                            # Handle scores with fallbacks
+                            try:
+                                away_score = float(matchup.get('away_score', matchup.get('awayScore', 0)))
+                            except (TypeError, ValueError):
+                                away_score = 0
+                                
+                            try:
+                                home_score = float(matchup.get('home_score', matchup.get('homeScore', 0)))
+                            except (TypeError, ValueError):
+                                home_score = 0
+                            
+                            # Determine winner/loser
+                            if away_score > home_score:
+                                winner = away_team
+                                loser = home_team
+                            elif home_score > away_score:
+                                winner = home_team
+                                loser = away_team
+                            else:
+                                winner = "Tie"
+                                loser = "Tie"
+                            
+                            # Create properly formatted matchup
+                            formatted_matchup = {
+                                'away_team': away_team,
+                                'away_score': away_score,
+                                'home_team': home_team,
+                                'home_score': home_score,
+                                'winner': winner,
+                                'loser': loser,
+                                'score_difference': abs(away_score - home_score),
+                                'period_id': matchup.get('period_id', 1),
+                                'matchup_id': matchup.get('id', str(len(formatted_matchups)))
+                            }
+                            formatted_matchups.append(formatted_matchup)
+                
+                current_matchups = formatted_matchups  # Replace with properly formatted matchups
             
             # Clear the progress bar
             status_container.empty()

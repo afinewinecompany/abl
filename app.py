@@ -794,46 +794,20 @@ def main():
                                         ])
                                         matchups_component.render(direct_matchups, scoring_periods)
                                     else:
-                                        st.error("No matchups found when fetching directly")
+                                        st.error("No matchups data could be found. Please check back later when the league has active matchups.")
                                         
-                                        # Add expected matchups for demonstration
-                                        st.info("Adding known matchups for demonstration purposes")
-                                        demo_matchups = [
-                                            {
-                                                "id": "match1",
-                                                "away_team": "Athletics", 
-                                                "home_team": "Saint Louis Cardinals",
-                                                "away_score": 95.5,
-                                                "home_score": 87.2,
-                                                "winner": "Athletics",
-                                                "loser": "Saint Louis Cardinals",
-                                                "score_difference": 8.3,
-                                                "period_id": 1
-                                            },
-                                            {
-                                                "id": "match2",
-                                                "away_team": "Athletics", 
-                                                "home_team": "New York Mets",
-                                                "away_score": 78.4,
-                                                "home_score": 102.6,
-                                                "winner": "New York Mets",
-                                                "loser": "Athletics",
-                                                "score_difference": 24.2,
-                                                "period_id": 1
-                                            },
-                                            {
-                                                "id": "match3",
-                                                "away_team": "Athletics", 
-                                                "home_team": "Chicago Cubs",
-                                                "away_score": 110.3,
-                                                "home_score": 88.9,
-                                                "winner": "Athletics",
-                                                "loser": "Chicago Cubs",
-                                                "score_difference": 21.4,
-                                                "period_id": 1
-                                            }
-                                        ]
-                                        matchups_component.render(demo_matchups, scoring_periods)
+                                        # Display a helpful message about matchups
+                                        st.info("""
+                                        ### About Matchups
+                                        
+                                        Matchups information will be available once the league has active matchups scheduled.
+                                        
+                                        Features available in the matchups section:
+                                        - Detailed head-to-head statistics
+                                        - Score distribution analysis
+                                        - Performance trends by week
+                                        - Margin of victory analysis
+                                        """)
                             else:
                                 st.error("Matchups or scoring periods data is not in the expected format.")
                                 st.code(f"Current matchups: {fantrax_data['current_matchups']}")
