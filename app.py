@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data
+from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -508,10 +508,20 @@ def main():
             
             # Initialize session state for power rankings data if not exists
             if 'power_rankings_data' not in st.session_state:
-                st.session_state.power_rankings_data = {}
+                # Try to load saved data first
+                saved_data = load_power_rankings_data()
+                if saved_data:
+                    st.session_state.power_rankings_data = saved_data
+                else:
+                    st.session_state.power_rankings_data = {}
             
             if 'weekly_results' not in st.session_state:
-                st.session_state.weekly_results = []
+                # Try to load saved weekly results
+                saved_results = load_weekly_results()
+                if saved_results:
+                    st.session_state.weekly_results = saved_results
+                else:
+                    st.session_state.weekly_results = []
             
             # Section 1: Bulk data entry for team stats
             st.subheader("Team Season Stats")
@@ -556,7 +566,11 @@ def main():
                             errors.append(f"Error processing line: {line}. {str(e)}")
                     
                     if processed_count > 0:
-                        st.success(f"Successfully processed {processed_count} team(s)")
+                        # Save to persistent storage
+                        if save_power_rankings_data(st.session_state.power_rankings_data):
+                            st.success(f"Successfully processed and saved {processed_count} team(s)")
+                        else:
+                            st.warning(f"Processed {processed_count} team(s), but couldn't save to file")
                     
                     if errors:
                         st.error("Errors encountered:")
@@ -613,7 +627,11 @@ def main():
                             errors.append(f"Error processing line: {line}. {str(e)}")
                     
                     if processed_count > 0:
-                        st.success(f"Successfully processed {processed_count} weekly result(s)")
+                        # Save to persistent storage
+                        if save_weekly_results(st.session_state.weekly_results):
+                            st.success(f"Successfully processed and saved {processed_count} weekly result(s)")
+                        else:
+                            st.warning(f"Processed {processed_count} weekly result(s), but couldn't save to file")
                     
                     if errors:
                         st.error("Errors encountered:")
@@ -629,7 +647,16 @@ def main():
                 if st.button("Clear All Data", type="secondary"):
                     st.session_state.power_rankings_data = {}
                     st.session_state.weekly_results = []
-                    st.success("All power rankings data has been cleared")
+                    
+                    # Remove the data files
+                    try:
+                        if os.path.exists('data/team_season_stats.csv'):
+                            os.remove('data/team_season_stats.csv')
+                        if os.path.exists('data/weekly_results.csv'):
+                            os.remove('data/weekly_results.csv')
+                        st.success("All power rankings data has been cleared from memory and storage")
+                    except Exception as e:
+                        st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
 
             st.markdown("---")
             st.markdown("""
@@ -658,7 +685,8 @@ def main():
             if 'standings_data' not in st.session_state:
                 st.session_state.standings_data = data['standings_data']
             
-            # Initialize session state variables if not already present
+            # Session state for power rankings data should be already initialized in the sidebar section
+            # but just in case there was an error, let's check again
             if 'power_rankings_data' not in st.session_state:
                 st.session_state.power_rankings_data = {}
             
