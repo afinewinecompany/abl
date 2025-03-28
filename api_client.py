@@ -244,31 +244,34 @@ class FantraxAPI:
         """
         try:
             # In a real implementation, this would make a request to the API
-            # Here we're providing mock data that matches the format expected by the matchups component
-            return {
-                "liveScoringMatchups": [
-                    {
-                        "id": "m1",
-                        "home": {"team": {"name": "Red Sox"}, "score": 125.5},
-                        "away": {"team": {"name": "Yankees"}, "score": 118.0}
-                    },
-                    {
-                        "id": "m2",
-                        "home": {"team": {"name": "Dodgers"}, "score": 95.0},
-                        "away": {"team": {"name": "Giants"}, "score": 103.5}
-                    },
-                    {
-                        "id": "m3",
-                        "home": {"team": {"name": "Blue Jays"}, "score": 110.5},
-                        "away": {"team": {"name": "Orioles"}, "score": 105.0}
-                    },
-                    {
-                        "id": "m4",
-                        "home": {"team": {"name": "Cardinals"}, "score": 90.5},
-                        "away": {"team": {"name": "Cubs"}, "score": 88.0}
-                    }
-                ]
-            }
+            # Here we're providing mock data with all 30 MLB teams (15 matchups)
+            teams = [
+                "Angels", "Astros", "Athletics", "Blue Jays", "Braves",
+                "Brewers", "Cardinals", "Cubs", "Diamondbacks", "Dodgers",
+                "Giants", "Guardians", "Mariners", "Marlins", "Mets",
+                "Nationals", "Orioles", "Padres", "Phillies", "Pirates",
+                "Rangers", "Rays", "Red Sox", "Reds", "Rockies",
+                "Royals", "Tigers", "Twins", "White Sox", "Yankees"
+            ]
+            
+            # Create 15 matchups with all 30 teams
+            matchups = []
+            
+            # Generate random but realistic scores
+            import random
+            random.seed(scoring_period)  # Use scoring period as seed for consistent results
+            
+            for i in range(0, 30, 2):
+                home_score = round(random.uniform(75, 125), 1)
+                away_score = round(random.uniform(75, 125), 1)
+                
+                matchups.append({
+                    "id": f"m{i//2 + 1}",
+                    "home": {"team": {"name": teams[i]}, "score": home_score},
+                    "away": {"team": {"name": teams[i+1]}, "score": away_score}
+                })
+            
+            return {"liveScoringMatchups": matchups}
         except Exception as e:
             st.warning(f"Error fetching live scoring: {str(e)}")
             return {"liveScoringMatchups": []}

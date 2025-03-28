@@ -34,60 +34,30 @@ def create_matchup_card(matchup: Dict[str, Any]):
     winning_team = team1 if is_team1_winning else team2
     win_probability = calculate_winning_probability(team1_score, team2_score)
     
-    # Create a visually appealing card
+    # Create a visually appealing card using native Streamlit components
     with st.container():
-        team1_color = "#ff3030" if is_team1_winning else "#ffffff"
-        team2_color = "#ff3030" if not is_team1_winning else "#ffffff"
+        col1, col2, col3 = st.columns([2, 1, 2])
         
-        html = f"""
-        <div style="
-            background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(30, 100, 255, 0.1);
-            margin-bottom: 1rem;
-            box-shadow: 0 0 20px rgba(30, 100, 255, 0.15);
-        ">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0; color: #ffffff;">{team1} vs {team2}</h3>
-                <span style="font-size: 0.9rem; color: #aaaaaa;">Matchup #{matchup["matchupId"]}</span>
-            </div>
+        with col1:
+            st.markdown(f"<h3 style='text-align: center; color: {'red' if is_team1_winning else 'white'};'>{format_score(team1_score)}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; color: white;'>{team1}</p>", unsafe_allow_html=True)
             
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: {team1_color}">
-                        {format_score(team1_score)}
-                    </div>
-                    <div style="font-size: 1.1rem; color: #dddddd;">{team1}</div>
-                </div>
-                
-                <div style="text-align: center; padding: 0 1rem;">
-                    <div style="font-size: 1.2rem; font-weight: 700; color: #3080ff;">VS</div>
-                </div>
-                
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: {team2_color}">
-                        {format_score(team2_score)}
-                    </div>
-                    <div style="font-size: 1.1rem; color: #dddddd;">{team2}</div>
-                </div>
-            </div>
+        with col2:
+            st.markdown("<p style='text-align: center; font-weight: bold; color: #3080ff;'>VS</p>", unsafe_allow_html=True)
             
-            <div style="margin-top: 1.5rem;">
-                <div style="height: 8px; background: #333333; border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; width: {win_probability * 100}%; background: linear-gradient(90deg, #3080ff, #ff3030); border-radius: 4px;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 0.3rem;">
-                    <div style="font-size: 0.8rem; color: #888888;">{team1}</div>
-                    <div style="font-size: 0.8rem; color: #ff3030; font-weight: 600;">
-                        {winning_team} leading by {format_score(abs(team1_score - team2_score))}
-                    </div>
-                    <div style="font-size: 0.8rem; color: #888888;">{team2}</div>
-                </div>
-            </div>
-        </div>
-        """
-        st.markdown(html, unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"<h3 style='text-align: center; color: {'red' if not is_team1_winning else 'white'};'>{format_score(team2_score)}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; color: white;'>{team2}</p>", unsafe_allow_html=True)
+        
+        # Add a progress bar to show win probability
+        st.progress(win_probability)
+        
+        # Show who's leading
+        score_diff = abs(team1_score - team2_score)
+        st.markdown(f"<p style='text-align: center; color: red; font-weight: bold;'>{winning_team} leading by {format_score(score_diff)}</p>", unsafe_allow_html=True)
+        
+        # Add a divider
+        st.markdown("---")
 
 def create_matchups_summary_chart(matchups_df):
     """Create a summary chart of all matchups."""
@@ -110,7 +80,10 @@ def create_matchups_summary_chart(matchups_df):
     scores_df = pd.DataFrame(team_scores)
     scores_df = scores_df.sort_values("score", ascending=False)
     
-    # Create horizontal bar chart
+    # Create horizontal bar chart with adjustable height based on number of teams
+    team_count = len(scores_df)
+    chart_height = max(400, team_count * 25)  # 25px per team, minimum 400px
+    
     fig = px.bar(
         scores_df,
         x="score",
@@ -134,10 +107,11 @@ def create_matchups_summary_chart(matchups_df):
             title_font=dict(size=14, color="#dddddd"),
         ),
         yaxis=dict(
-            gridcolor="#333333"
+            gridcolor="#333333",
+            automargin=True,  # Ensure team names are fully visible
         ),
         coloraxis_showscale=False,
-        height=400
+        height=chart_height
     )
     
     fig.update_traces(
@@ -205,7 +179,21 @@ def render():
         
         st.subheader("🏆 Individual Matchups")
         
-        for _, matchup in matchups_df.iterrows():
-            create_matchup_card(matchup)
+        # Add pagination for matchups
+        matchups_per_page = 5
+        total_matchups = len(matchups_df)
+        total_pages = (total_matchups + matchups_per_page - 1) // matchups_per_page  # Ceiling division
+        
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:
+            current_page = st.slider("Select Page", 1, max(1, total_pages), 1)
+        
+        # Calculate start and end indices for current page
+        start_idx = (current_page - 1) * matchups_per_page
+        end_idx = min(start_idx + matchups_per_page, total_matchups)
+        
+        # Display matchups for current page
+        for idx in range(start_idx, end_idx):
+            create_matchup_card(matchups_df.iloc[idx])
     else:
         st.error("No matchups data available. Please try refreshing or check your API connection.")
