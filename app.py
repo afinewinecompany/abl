@@ -693,21 +693,38 @@ def main():
                         # Display which keys are available in fantrax_data
                         st.write("Available data keys:", list(fantrax_data.keys()) if isinstance(fantrax_data, dict) else "No data dictionary found")
                         
-                        # Check if matchups data exists
+                        # Check if matchups data exists - using key 5 as suggested
+                        # Try to get data using index 5 first
+                        has_matchups_at_index5 = False
+                        matchups_data_from_index5 = None
+                        
+                        if isinstance(fantrax_data, dict) and '5' in fantrax_data:
+                            st.success("Found key '5' in fantrax_data!")
+                            matchups_data_from_index5 = fantrax_data['5']
+                            st.write(f"Data at key 5 type: {type(matchups_data_from_index5)}")
+                            
+                            if isinstance(matchups_data_from_index5, list):
+                                has_matchups_at_index5 = True
+                                st.write(f"Found {len(matchups_data_from_index5)} matchups at key 5")
+                                if len(matchups_data_from_index5) > 0:
+                                    st.write("First matchup from key 5:", matchups_data_from_index5[0])
+                                
+                        # Check if matchups data exists in the traditional location
                         has_matchups = 'current_matchups' in fantrax_data
                         has_periods = 'scoring_periods' in fantrax_data
                         
-                        st.write(f"Has matchups data: {has_matchups}")
+                        st.write(f"Has matchups data in standard location: {has_matchups}")
+                        st.write(f"Has matchups data at index 5: {has_matchups_at_index5}")
                         st.write(f"Has scoring periods: {has_periods}")
                         
                         if has_matchups:
                             matchups_data = fantrax_data['current_matchups']
-                            st.write(f"Matchups data type: {type(matchups_data)}")
-                            st.write(f"Matchups count: {len(matchups_data) if isinstance(matchups_data, list) else 'Not a list'}")
+                            st.write(f"Standard matchups data type: {type(matchups_data)}")
+                            st.write(f"Standard matchups count: {len(matchups_data) if isinstance(matchups_data, list) else 'Not a list'}")
                             
                             # Sample of matchups data
                             if isinstance(matchups_data, list) and len(matchups_data) > 0:
-                                st.write("First matchup sample:", matchups_data[0])
+                                st.write("First standard matchup sample:", matchups_data[0])
                                 
                                 # Check if we have the expected teams in the matchups
                                 teams_in_matchups = set()
@@ -718,7 +735,7 @@ def main():
                                         if 'home_team' in m:
                                             teams_in_matchups.add(m['home_team'])
                                             
-                                st.write("Teams found in matchups:", list(teams_in_matchups))
+                                st.write("Teams found in standard matchups:", list(teams_in_matchups))
                         
                         if has_periods:
                             periods_data = fantrax_data['scoring_periods']
@@ -728,8 +745,26 @@ def main():
                             if isinstance(periods_data, list) and len(periods_data) > 0:
                                 st.write("First period sample:", periods_data[0])
                     
-                    # Check if matchups data exists and is valid
-                    if 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
+                    # Check if matchups data exists at key 5 first
+                    if has_matchups_at_index5 and 'scoring_periods' in fantrax_data:
+                        try:
+                            # Use the matchups data from key 5
+                            st.success(f"Using {len(matchups_data_from_index5)} matchups from key 5")
+                            matchups_component.render(matchups_data_from_index5, fantrax_data['scoring_periods'])
+                        except Exception as e:
+                            st.error(f"Error rendering matchups from key 5: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
+                            
+                            # Fall back to standard location
+                            st.warning("Falling back to standard matchups location")
+                            if 'current_matchups' in fantrax_data:
+                                try:
+                                    matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                                except Exception as e2:
+                                    st.error(f"Fallback also failed: {str(e2)}")
+                    # Otherwise check standard location
+                    elif 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
                         try:
                             # Ensure we have list data before attempting to render
                             if isinstance(fantrax_data['current_matchups'], list) and isinstance(fantrax_data['scoring_periods'], list):
