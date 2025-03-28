@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
+import base64
+from PIL import Image
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
@@ -488,26 +490,55 @@ st.markdown("""
 
 def main():
     try:
-        # Display stylized header text instead of an image
+        # Display header image
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
-            st.markdown(
-                """
-                <div style="width: 100%;">
-                    <div style="border-radius: 10px; padding: 20px; 
-                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
-                         box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);">
-                        <h1 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 2.5rem; 
-                                   color: #00ccff; text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff; 
-                                   display: flex; justify-content: center; align-items: center;">
-                            ABL <span style="color: #ff3030; text-shadow: 0 0 10px #ff3030, 0 0 20px #ff3030; 
-                                           margin: 0 10px;">⚾</span> ANALYTICS
-                        </h1>
+            try:
+                # Load the image from attached_assets folder
+                header_img = Image.open('attached_assets/331073D2-5049-4D62-B0E8-56A215C5C224.jpeg')
+                
+                # Display the image with some styling
+                st.markdown(
+                    """
+                    <div style="width: 100%;">
+                        <div style="border-radius: 10px; padding: 20px; 
+                             background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
+                             box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);">
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                # Display the image with Streamlit's image function
+                st.image(header_img, use_column_width=True)
+                
+                # Close the container div
+                st.markdown(
+                    """
+                        </div>
                     </div>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
+                    """, 
+                    unsafe_allow_html=True
+                )
+            except Exception as e:
+                st.error(f"Could not load header image: {str(e)}")
+                # Fallback to text header
+                st.markdown(
+                    """
+                    <div style="width: 100%;">
+                        <div style="border-radius: 10px; padding: 20px; 
+                             background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
+                             box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);">
+                            <h1 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 2.5rem; 
+                                       color: #00ccff; text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff; 
+                                       display: flex; justify-content: center; align-items: center;">
+                                ABL <span style="color: #ff3030; text-shadow: 0 0 10px #ff3030, 0 0 20px #ff3030; 
+                                               margin: 0 10px;">⚾</span> ANALYTICS
+                            </h1>
+                        </div>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
 
         # Add error notification box
         err_placeholder = st.empty()
@@ -679,22 +710,30 @@ def main():
 
             st.markdown("---")
             st.markdown("### About")
-            st.markdown(
-                """
-                <div style="width: 100%;">
-                    <div style="border-radius: 10px; padding: 8px; 
-                         background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
-                         box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);">
-                        <h3 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 1.2rem; 
-                                  color: #00ccff; text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff;
-                                  display: flex; justify-content: center; align-items: center;">
-                            ABL <span style="color: #ff3030; text-shadow: 0 0 5px #ff3030, 0 0 10px #ff3030; margin: 0 5px;">⚾</span>
-                        </h3>
+            try:
+                # Use a smaller version of the same image for the sidebar
+                sidebar_img = Image.open('attached_assets/331073D2-5049-4D62-B0E8-56A215C5C224.jpeg')
+                
+                # Display the image with Streamlit's image function
+                st.image(sidebar_img, width=150)
+            except Exception as e:
+                # Fallback to text if image can't be loaded
+                st.markdown(
+                    """
+                    <div style="width: 100%;">
+                        <div style="border-radius: 10px; padding: 8px; 
+                             background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
+                             box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);">
+                            <h3 style="margin: 0; font-family: 'Arial Black', sans-serif; font-size: 1.2rem; 
+                                      color: #00ccff; text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff;
+                                      display: flex; justify-content: center; align-items: center;">
+                                ABL <span style="color: #ff3030; text-shadow: 0 0 5px #ff3030, 0 0 10px #ff3030; margin: 0 5px;">⚾</span>
+                            </h3>
+                        </div>
                     </div>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
+                    """, 
+                    unsafe_allow_html=True
+                )
             st.markdown("Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.")
             
             # Add debugging information
