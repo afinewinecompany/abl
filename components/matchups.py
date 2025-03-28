@@ -273,12 +273,26 @@ def display_matchup_stats(stats: Dict[str, Any]):
         st.markdown("#### Biggest Blowout")
         if stats.get('biggest_blowout'):
             blowout = stats['biggest_blowout']
-            st.markdown(f"""
-            <div style="background-color: rgba(255, 152, 0, 0.2); padding: 10px; border-radius: 5px;">
-                <span style="font-size: 18px;">{blowout['winner']} ({blowout['winner_score']:.1f}) vs {blowout['loser']} ({blowout['loser_score']:.1f})</span>
-                <br/><span>Margin: {blowout['score_difference']:.1f}</span>
-            </div>
-            """, unsafe_allow_html=True)
+            # Make sure we have all required fields
+            if all(k in blowout for k in ['away_team', 'away_score', 'home_team', 'home_score', 'winner', 'score_difference']):
+                winner = blowout['winner']
+                loser = blowout['away_team'] if winner == blowout['home_team'] else blowout['home_team']
+                winner_score = blowout['away_score'] if winner == blowout['away_team'] else blowout['home_score']
+                loser_score = blowout['home_score'] if winner == blowout['away_team'] else blowout['away_score']
+                
+                st.markdown(f"""
+                <div style="background-color: rgba(255, 152, 0, 0.2); padding: 10px; border-radius: 5px;">
+                    <span style="font-size: 18px;">{winner} ({winner_score:.1f}) vs {loser} ({loser_score:.1f})</span>
+                    <br/><span>Margin: {blowout['score_difference']:.1f}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background-color: rgba(255, 152, 0, 0.2); padding: 10px; border-radius: 5px;">
+                    <span style="font-size: 18px;">{blowout.get('away_team', 'Team A')} ({blowout.get('away_score', 0):.1f}) @ {blowout.get('home_team', 'Team B')} ({blowout.get('home_score', 0):.1f})</span>
+                    <br/><span>Margin: {blowout.get('score_difference', 0):.1f}</span>
+                </div>
+                """, unsafe_allow_html=True)
     
     # Average scores
     st.markdown("#### League Averages")
