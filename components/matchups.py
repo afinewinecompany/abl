@@ -136,7 +136,7 @@ def render():
                 st.cache_data.clear()
                 st.rerun()
         
-        st.info("Using integrated FantraxAPI for matchup data.")
+        st.info("Using real matchup data from the Fantrax API.")
     
     # Show a loading spinner while fetching data
     with st.spinner("Fetching matchup data..."):
