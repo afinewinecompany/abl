@@ -1,0 +1,97 @@
+### fantrax_scraper.py
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+def scrape_fantrax_standings(league_url: str) -> pd.DataFrame:
+    """
+    Scrape standings data from a Fantrax league page.
+
+    Args:
+        league_url (str): URL of the Fantrax league standings page
+
+    Returns:
+        pd.DataFrame: A DataFrame containing team standings data
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    response = requests.get(league_url, headers=headers)
+
+    if response.status_code != 200:
+        raise Exception(f"Failed to load page. Status code: {response.status_code}")
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    table = soup.find("table")
+
+    if not table:
+        raise Exception("Could not find standings table on the page.")
+
+    headers = [th.text.strip() for th in table.find("thead").find_all("th")]
+
+    rows = []
+    for tr in table.find("tbody").find_all("tr"):
+        cells = [td.text.strip() for td in tr.find_all("td")]
+        rows.append(cells)
+
+    df = pd.DataFrame(rows, columns=headers)
+
+    return df
+
+### streamlit_app.py
+
+import streamlit as st
+from fantrax_scraper import scrape_fantrax_standings
+
+league_url = "https://www.fantrax.com/fantasy/league/grx2lginm1v4p5jd/standings"
+
+st.title("Fantrax League Standings")
+
+try:
+    standings_df = scrape_fantrax_standings(league_url)
+    st.dataframe(standings_df)
+except Exception as e:
+    st.error(f"Error fetching standings: {e}")
+
+### requirements.txt
+
+requests
+beautifulsoup4
+pandas
+streamlit
+
+### README.md
+
+# Fantrax League Standings Scraper - Streamlit App
+
+## Description
+This project scrapes public Fantrax league standings data using Python's `requests` and `BeautifulSoup` libraries, and displays the data in an interactive `Streamlit` web app.
+
+## Features
+- Direct HTML scraping (no API required)
+- Data formatted in a pandas DataFrame
+- Live display of standings in a Streamlit app
+- Simple, modular, and reusable structure
+
+## How to Run
+
+1. Install Dependencies:
+```
+pip install -r requirements.txt
+```
+
+2. Start Streamlit App:
+```
+streamlit run streamlit_app.py
+```
+
+3. View in Browser:
+Visit `http://localhost:8501` to view the app.
+
+## Example League
+```
+https://www.fantrax.com/fantasy/league/grx2lginm1v4p5jd/standings

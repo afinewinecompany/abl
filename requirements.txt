@@ -18,3 +18,4 @@ twilio
 fantraxapi
 numpy
 plotly
+beautifulsoup4

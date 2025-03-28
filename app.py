@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, fantrax_standings
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
 
@@ -722,12 +722,13 @@ def main():
                 st.session_state.weekly_results = []
             
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "📚 Handbook", 
-                "🏆 DDI Rankings"
+                "🏆 DDI Rankings",
+                "📊 Fantrax Standings"
             ])
 
             with tab1:
@@ -760,6 +761,10 @@ def main():
                 else:
                     # Just pass the roster data without power rankings
                     ddi.render(data['roster_data'])
+                    
+            with tab6:
+                # Render the Fantrax standings component
+                fantrax_standings.render()
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 
