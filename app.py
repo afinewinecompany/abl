@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data, fetch_fantrax_data
 from fantrax_integration import fantrax_client
@@ -558,11 +558,12 @@ def main():
             
             if fantrax_data:
                 # Create tabs for different sections with Fantrax data
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                     "🏠 League Info",
                     "👥 Team Rosters",
                     "🏆 Power Rankings",
                     "📚 Handbook",
+                    "⚔️ Matchups",
                     "📋 Transactions"
                 ])
 
@@ -681,6 +682,13 @@ def main():
                     prospects.render(fantrax_data['roster_data'])
 
                 with tab5:
+                    # Use our matchups component to display detailed matchup data
+                    if 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
+                        matchups.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                    else:
+                        st.error("Matchups data not available. Please check your connection or try refreshing.")
+                        
+                with tab6:
                     st.title("Transactions")
                     
                     # Debug information for transactions tab
