@@ -13,135 +13,163 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Add baseball particles animation
+# Load background image from base64 file
+with open('bg_image_base64.txt', 'r') as f:
+    background_image = f.read()
+
+# Create CSS with background image
+css_with_bg = f"""
+<style>
+.stApp {{
+    background-image: url('data:image/png;base64,{background_image}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    position: relative;
+}}
+
+.stApp::before {{
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 12, 18, 0.85); /* Dark overlay for better text contrast */
+    backdrop-filter: blur(3px);
+    z-index: -1;
+}}
+
+#tsparticles {{
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}}
+</style>
+"""
+
+# Add the background image CSS
+st.markdown(css_with_bg, unsafe_allow_html=True)
+
+# Now add the particles animation JavaScript separately
 st.markdown("""
-    <style>
-    .stApp {
-        background: rgba(26, 28, 35, 0.95);
-        backdrop-filter: blur(5px);
-    }
-    #tsparticles {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        z-index: -1;
-    }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
-    <div id="tsparticles"></div>
-    <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
-        tsParticles.load("tsparticles", {
-            fpsLimit: 60,
-            particles: {
-                number: {
-                    value: 40,
-                    density: {
-                        enable: true,
-                        value_area: 800
-                    }
-                },
-                color: {
-                    value: ["#ffffff"]
-                },
-                shape: {
-                    type: "circle"
-                },
-                opacity: {
-                    value: 0.25,
-                    random: true,
-                    anim: {
-                        enable: true,
-                        speed: 1,
-                        opacity_min: 0.1,
-                        sync: false
-                    }
-                },
-                size: {
-                    value: 5,
-                    random: true,
-                    anim: {
-                        enable: true,
-                        speed: 2,
-                        size_min: 1,
-                        sync: false
-                    }
-                },
-                line_linked: {
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.9.3/tsparticles.bundle.min.js"></script>
+<div id="tsparticles"></div>
+<script>
+window.addEventListener('DOMContentLoaded', (event) => {
+    tsParticles.load("tsparticles", {
+        fpsLimit: 60,
+        particles: {
+            number: {
+                value: 40,
+                density: {
                     enable: true,
-                    distance: 150,
-                    color: "#ffffff",
-                    opacity: 0.1,
-                    width: 1
-                },
-                move: {
+                    value_area: 800
+                }
+            },
+            color: {
+                value: ["#ffffff"]
+            },
+            shape: {
+                type: "circle"
+            },
+            opacity: {
+                value: 0.25,
+                random: true,
+                anim: {
+                    enable: true,
+                    speed: 1,
+                    opacity_min: 0.1,
+                    sync: false
+                }
+            },
+            size: {
+                value: 5,
+                random: true,
+                anim: {
                     enable: true,
                     speed: 2,
-                    direction: "none",
-                    random: true,
-                    straight: false,
-                    out_mode: "bounce",
-                    bounce: true,
-                    attract: {
-                        enable: true,
-                        rotateX: 600,
-                        rotateY: 1200
-                    }
+                    size_min: 1,
+                    sync: false
                 }
             },
-            interactivity: {
-                detect_on: "window",
-                events: {
-                    onhover: {
-                        enable: true,
-                        mode: ["grab", "bubble", "repulse"]
-                    },
-                    onclick: {
-                        enable: true,
-                        mode: "push"
-                    },
-                    resize: true
-                },
-                modes: {
-                    grab: {
-                        distance: 200,
-                        line_linked: {
-                            opacity: 0.3
-                        }
-                    },
-                    bubble: {
-                        distance: 300,
-                        size: 12,
-                        duration: 2,
-                        opacity: 0.2,
-                        speed: 2
-                    },
-                    repulse: {
-                        distance: 150,
-                        duration: 0.4
-                    },
-                    push: {
-                        particles_nb: 4
-                    },
-                    attract: {
-                        distance: 200,
-                        duration: 0.4,
-                        factor: 5
-                    }
-                }
+            line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.1,
+                width: 1
             },
-            retina_detect: true,
-            background: {
-                color: "transparent",
-                position: "50% 50%",
-                repeat: "no-repeat",
-                size: "cover"
+            move: {
+                enable: true,
+                speed: 2,
+                direction: "none",
+                random: true,
+                straight: false,
+                out_mode: "bounce",
+                bounce: true,
+                attract: {
+                    enable: true,
+                    rotateX: 600,
+                    rotateY: 1200
+                }
             }
-        });
+        },
+        interactivity: {
+            detect_on: "window",
+            events: {
+                onhover: {
+                    enable: true,
+                    mode: ["grab", "bubble", "repulse"]
+                },
+                onclick: {
+                    enable: true,
+                    mode: "push"
+                },
+                resize: true
+            },
+            modes: {
+                grab: {
+                    distance: 200,
+                    line_linked: {
+                        opacity: 0.3
+                    }
+                },
+                bubble: {
+                    distance: 300,
+                    size: 12,
+                    duration: 2,
+                    opacity: 0.2,
+                    speed: 2
+                },
+                repulse: {
+                    distance: 150,
+                    duration: 0.4
+                },
+                push: {
+                    particles_nb: 4
+                },
+                attract: {
+                    distance: 200,
+                    duration: 0.4,
+                    factor: 5
+                }
+            }
+        },
+        retina_detect: true,
+        background: {
+            color: "transparent",
+            position: "50% 50%",
+            repeat: "no-repeat",
+            size: "cover"
+        }
     });
-    </script>
+});
+</script>
 """, unsafe_allow_html=True)
 
 st.markdown("""
@@ -542,140 +570,137 @@ def main():
                 else:
                     st.session_state.weekly_results = []
             
-            # Section 1: Bulk data entry for team stats
-            st.subheader("Team Season Stats")
-            st.markdown("""
-            Paste team data in the format: `Team, FPtsF, Weeks Played`  
-            Example:
-            ```
-            Baltimore Orioles, 450.5, 10
-            Boston Red Sox, 380.2, 10
-            New York Yankees, 410.8, 10
-            ```
-            *This will overwrite previous data for all teams included in the paste.*
-            """)
+            # Option to manually input power rankings data
+            show_data_input = st.checkbox("Manually Update Power Rankings Data", value=False)
             
-            # Text area for bulk data entry
-            bulk_data = st.text_area("Paste Team Data", height=200)
-            
-            if st.button("Process Team Data", use_container_width=True):
-                if bulk_data:
-                    # Process the pasted data
-                    lines = bulk_data.strip().split('\n')
-                    processed_count = 0
-                    errors = []
-                    
-                    for line in lines:
-                        try:
-                            parts = [part.strip() for part in line.split(',')]
-                            if len(parts) >= 3:
-                                team_name = parts[0]
-                                total_points = float(parts[1])
-                                weeks_played = int(parts[2])
-                                
-                                # Update the session state
-                                st.session_state.power_rankings_data[team_name] = {
-                                    'total_points': total_points,
-                                    'weeks_played': weeks_played
-                                }
-                                processed_count += 1
-                            else:
-                                errors.append(f"Invalid format: {line}")
-                        except Exception as e:
-                            errors.append(f"Error processing line: {line}. {str(e)}")
-                    
-                    if processed_count > 0:
-                        # Save to persistent storage
-                        if save_power_rankings_data(st.session_state.power_rankings_data):
-                            st.success(f"Successfully processed and saved {processed_count} team(s)")
-                        else:
-                            st.warning(f"Processed {processed_count} team(s), but couldn't save to file")
-                    
-                    if errors:
-                        st.error("Errors encountered:")
-                        for error in errors:
-                            st.write(f"- {error}")
-            
-            # Section 2: Bulk data entry for weekly results
-            st.markdown("---")
-            st.subheader("Weekly Results")
-            st.markdown("""
-            Paste weekly results in the format: `Team, Week Number, Result(Win/Loss)`  
-            Example:
-            ```
-            Baltimore Orioles, 5, Win
-            Boston Red Sox, 5, Loss
-            New York Yankees, 5, Win
-            ```
-            *This will add to previous weekly data.*
-            """)
-            
-            # Text area for bulk weekly results
-            weekly_results_data = st.text_area("Paste Weekly Results", height=200)
-            
-            if st.button("Process Weekly Results", use_container_width=True):
-                if weekly_results_data:
-                    # Process the pasted data
-                    lines = weekly_results_data.strip().split('\n')
-                    processed_count = 0
-                    errors = []
-                    
-                    for line in lines:
-                        try:
-                            parts = [part.strip() for part in line.split(',')]
-                            if len(parts) >= 3:
-                                team_name = parts[0]
-                                week_number = int(parts[1])
-                                result = parts[2]
-                                
-                                # Validate result value
-                                if result.lower() not in ['win', 'loss']:
-                                    errors.append(f"Invalid result '{result}'. Use 'Win' or 'Loss': {line}")
-                                    continue
-                                
-                                # Add to the session state
-                                st.session_state.weekly_results.append({
-                                    'team': team_name,
-                                    'week': week_number,
-                                    'result': result.capitalize()
-                                })
-                                processed_count += 1
-                            else:
-                                errors.append(f"Invalid format: {line}")
-                        except Exception as e:
-                            errors.append(f"Error processing line: {line}. {str(e)}")
-                    
-                    if processed_count > 0:
-                        # Save to persistent storage
-                        if save_weekly_results(st.session_state.weekly_results):
-                            st.success(f"Successfully processed and saved {processed_count} weekly result(s)")
-                        else:
-                            st.warning(f"Processed {processed_count} weekly result(s), but couldn't save to file")
-                    
-                    if errors:
-                        st.error("Errors encountered:")
-                        for error in errors:
-                            st.write(f"- {error}")
-            
-            # Display current data
-            if st.checkbox("Show Current Data"):
-                st.write("Season Stats:", st.session_state.power_rankings_data)
-                st.write("Weekly Results:", st.session_state.weekly_results)
+            if show_data_input:
+                st.info("Enter team data in the format: `Team, FPtsF, Weeks Played` (one per line)")
                 
-                # Add option to clear data
-                if st.button("Clear All Data", type="secondary"):
-                    st.session_state.power_rankings_data = {}
-                    st.session_state.weekly_results = []
+                # Current data
+                current_data = st.session_state.power_rankings_data
+                
+                # Convert current data to string if it exists
+                current_data_str = ""
+                if current_data:
+                    for team, data in current_data.items():
+                        total_points = data.get('total_points', 0)
+                        weeks_played = data.get('weeks_played', 1)
+                        current_data_str += f"{team}, {total_points}, {weeks_played}\n"
+                
+                # Text area for bulk input
+                team_data_input = st.text_area(
+                    "Team Stats",
+                    value=current_data_str,
+                    height=200
+                )
+                
+                # Process the input when the user confirms
+                if st.button("Process Team Stats", use_container_width=True):
+                    if team_data_input.strip():
+                        try:
+                            # Parse the input
+                            new_data = {}
+                            for line in team_data_input.strip().split("\n"):
+                                if not line.strip():
+                                    continue
+                                parts = line.split(",")
+                                if len(parts) >= 3:
+                                    team = parts[0].strip()
+                                    total_points = float(parts[1].strip())
+                                    weeks_played = float(parts[2].strip())
+                                    new_data[team] = {
+                                        'total_points': total_points,
+                                        'weeks_played': weeks_played
+                                    }
+                            
+                            # Update session state
+                            st.session_state.power_rankings_data = new_data
+                            
+                            # Save to file for persistence
+                            save_power_rankings_data(new_data)
+                            
+                            st.success("✅ Team stats processed and saved!")
+                            
+                        except Exception as e:
+                            st.error(f"Error processing team stats: {str(e)}")
+                            st.info("Please make sure your data is in the correct format.")
+                
+                # Weekly results input
+                st.markdown("---")
+                st.info("Enter weekly results in the format: `Team, Week Number, Result` (one per line)")
+                
+                # Current weekly results
+                current_results = st.session_state.weekly_results
+                
+                # Convert current results to string if they exist
+                current_results_str = ""
+                if current_results:
+                    for result in current_results:
+                        team = result.get('team', '')
+                        week = result.get('week', 0)
+                        result_type = result.get('result', '')
+                        current_results_str += f"{team}, {week}, {result_type}\n"
+                
+                # Text area for bulk weekly results input
+                weekly_results_input = st.text_area(
+                    "Weekly Results",
+                    value=current_results_str,
+                    height=200,
+                    help="Enter results as: Win, Loss, or whatever position they finished in"
+                )
+                
+                # Process the weekly results input
+                if st.button("Process Weekly Results", use_container_width=True):
+                    if weekly_results_input.strip():
+                        try:
+                            # Parse the input
+                            new_results = []
+                            for line in weekly_results_input.strip().split("\n"):
+                                if not line.strip():
+                                    continue
+                                parts = line.split(",")
+                                if len(parts) >= 3:
+                                    team = parts[0].strip()
+                                    week = int(parts[1].strip())
+                                    result = parts[2].strip()
+                                    new_results.append({
+                                        'team': team,
+                                        'week': week,
+                                        'result': result
+                                    })
+                            
+                            # Update session state
+                            st.session_state.weekly_results = new_results
+                            
+                            # Save to file for persistence
+                            save_weekly_results(new_results)
+                            
+                            st.success("✅ Weekly results processed and saved!")
+                            
+                        except Exception as e:
+                            st.error(f"Error processing weekly results: {str(e)}")
+                            st.info("Please make sure your data is in the correct format.")
+
+            # Clear data button
+            st.markdown("---")
+            if st.button("❌ Clear All Data", use_container_width=True):
+                try:
+                    # Clear session state
+                    if 'power_rankings_data' in st.session_state:
+                        st.session_state.power_rankings_data = {}
+                    if 'weekly_results' in st.session_state:
+                        st.session_state.weekly_results = []
                     
-                    # Remove the data files
-                    try:
-                        if os.path.exists('data/team_season_stats.csv'):
-                            os.remove('data/team_season_stats.csv')
-                        if os.path.exists('data/weekly_results.csv'):
-                            os.remove('data/weekly_results.csv')
-                        st.success("All power rankings data has been cleared from memory and storage")
-                    except Exception as e:
-                        st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
+                    # Remove data files
+                    import os
+                    if os.path.exists('data/team_season_stats.csv'):
+                        os.remove('data/team_season_stats.csv')
+                    if os.path.exists('data/weekly_results.csv'):
+                        os.remove('data/weekly_results.csv')
+                    
+                    st.success("Data cleared successfully!")
+                except Exception as e:
+                    st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
 
             st.markdown("---")
             st.markdown("### About")
