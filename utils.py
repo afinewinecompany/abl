@@ -4,7 +4,7 @@ from data_processor import DataProcessor
 from typing import Any, Dict
 import pandas as pd
 
-@st.cache_data
+@st.cache_data(ttl=3600)  # Cache data for 1 hour
 def fetch_api_data():
     """
     Fetch all required data from API and process it.
@@ -21,25 +21,30 @@ def fetch_api_data():
             data_processor = DataProcessor()
 
             # Fetch and process all data with a single progress indicator
-            status_container.progress(25)
+            status_container.progress(20)
             league_data = api_client.get_league_info()
             processed_league_data = data_processor.process_league_info(league_data)
 
-            status_container.progress(50)
+            status_container.progress(40)
             roster_data = api_client.get_team_rosters()
             processed_roster_data = data_processor.process_rosters(roster_data, api_client.get_player_ids())
 
-            status_container.progress(75)
+            status_container.progress(60)
             standings_data = api_client.get_standings()
             processed_standings_data = data_processor.process_standings(standings_data)
 
+            # Fetch matchup data using Selenium
+            status_container.progress(80)
+            matchups_data = api_client.get_selenium_matchups()
+            
             # Clear the progress bar
             status_container.empty()
 
             return {
                 'league_data': processed_league_data,
                 'roster_data': processed_roster_data,
-                'standings_data': processed_standings_data
+                'standings_data': processed_standings_data,
+                'matchups_data': matchups_data
             }
     except Exception as e:
         with st.sidebar:

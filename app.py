@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, matchups
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import fetch_api_data
 
@@ -526,12 +526,13 @@ def main():
         
         if data:
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "📚 Handbook", 
-                "🏆 DDI Rankings"
+                "🏆 DDI Rankings",
+                "🎮 Matchups"
             ])
 
             with tab1:
@@ -548,6 +549,25 @@ def main():
 
             with tab5:
                 ddi.render(data['roster_data'])
+                
+            with tab6:
+                # Check if matchups data exists
+                if 'matchups_data' in data and data['matchups_data']:
+                    matchups.render(data['matchups_data'])
+                else:
+                    st.info("No matchup data available. Please try refreshing the page.")
+                    # Add a button to fetch matchup data
+                    if st.button("Fetch Matchup Data", key="fetch_matchups"):
+                        try:
+                            api_client = FantraxAPI()
+                            matchup_data = api_client.get_selenium_matchups()
+                            if matchup_data:
+                                st.success("Successfully fetched matchup data!")
+                                matchups.render(matchup_data)
+                            else:
+                                st.error("Failed to fetch matchup data.")
+                        except Exception as e:
+                            st.error(f"Error fetching matchup data: {str(e)}")
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 

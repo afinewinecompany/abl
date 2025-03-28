@@ -18,3 +18,8 @@ twilio
 fantraxapi
 numpy
 plotly
+selenium
+webdriver-manager
+python-dotenv
+selenium
+webdriver-manager
