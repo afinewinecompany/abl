@@ -684,21 +684,127 @@ def main():
                     prospects.render(fantrax_data['roster_data'])
 
                 with tab5:
-                    # Use our matchups component to display detailed matchup data
+                    st.title("Matchups")
+                    
+                    # Add debug section for matchups
+                    with st.expander("Debug Information", expanded=True):
+                        st.subheader("API Response Analysis")
+                        
+                        # Display which keys are available in fantrax_data
+                        st.write("Available data keys:", list(fantrax_data.keys()) if isinstance(fantrax_data, dict) else "No data dictionary found")
+                        
+                        # Check if matchups data exists
+                        has_matchups = 'current_matchups' in fantrax_data
+                        has_periods = 'scoring_periods' in fantrax_data
+                        
+                        st.write(f"Has matchups data: {has_matchups}")
+                        st.write(f"Has scoring periods: {has_periods}")
+                        
+                        if has_matchups:
+                            matchups_data = fantrax_data['current_matchups']
+                            st.write(f"Matchups data type: {type(matchups_data)}")
+                            st.write(f"Matchups count: {len(matchups_data) if isinstance(matchups_data, list) else 'Not a list'}")
+                            
+                            # Sample of matchups data
+                            if isinstance(matchups_data, list) and len(matchups_data) > 0:
+                                st.write("First matchup sample:", matchups_data[0])
+                                
+                                # Check if we have the expected teams in the matchups
+                                teams_in_matchups = set()
+                                for m in matchups_data:
+                                    if isinstance(m, dict):
+                                        if 'away_team' in m:
+                                            teams_in_matchups.add(m['away_team'])
+                                        if 'home_team' in m:
+                                            teams_in_matchups.add(m['home_team'])
+                                            
+                                st.write("Teams found in matchups:", list(teams_in_matchups))
+                        
+                        if has_periods:
+                            periods_data = fantrax_data['scoring_periods']
+                            st.write(f"Periods data type: {type(periods_data)}")
+                            st.write(f"Periods count: {len(periods_data) if isinstance(periods_data, list) else 'Not a list'}")
+                            
+                            if isinstance(periods_data, list) and len(periods_data) > 0:
+                                st.write("First period sample:", periods_data[0])
+                    
+                    # Check if matchups data exists and is valid
                     if 'current_matchups' in fantrax_data and 'scoring_periods' in fantrax_data:
                         try:
                             # Ensure we have list data before attempting to render
                             if isinstance(fantrax_data['current_matchups'], list) and isinstance(fantrax_data['scoring_periods'], list):
-                                matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                                # Check if we actually have any matchups
+                                if len(fantrax_data['current_matchups']) > 0:
+                                    st.success(f"Found {len(fantrax_data['current_matchups'])} matchups from the API")
+                                    matchups_component.render(fantrax_data['current_matchups'], fantrax_data['scoring_periods'])
+                                else:
+                                    st.warning("No matchups found in the API response, trying to fetch directly...")
+                                    
+                                    # Try to fetch matchups for specific period
+                                    # Use period 1 for Week 1
+                                    direct_matchups = fantrax_client.get_matchups_for_period(1)
+                                    scoring_periods = fantrax_client.get_scoring_periods()
+                                    
+                                    if direct_matchups and len(direct_matchups) > 0:
+                                        st.success(f"Successfully fetched {len(direct_matchups)} matchups directly")
+                                        st.write("Teams in direct matchups:", [
+                                            f"{m.get('away_team')} vs {m.get('home_team')}" 
+                                            for m in direct_matchups
+                                        ])
+                                        matchups_component.render(direct_matchups, scoring_periods)
+                                    else:
+                                        st.error("No matchups found when fetching directly")
+                                        
+                                        # Add expected matchups for demonstration
+                                        st.info("Adding known matchups for demonstration purposes")
+                                        demo_matchups = [
+                                            {
+                                                "id": "match1",
+                                                "away_team": "Athletics", 
+                                                "home_team": "Saint Louis Cardinals",
+                                                "away_score": 95.5,
+                                                "home_score": 87.2,
+                                                "winner": "Athletics",
+                                                "loser": "Saint Louis Cardinals",
+                                                "score_difference": 8.3,
+                                                "period_id": 1
+                                            },
+                                            {
+                                                "id": "match2",
+                                                "away_team": "Athletics", 
+                                                "home_team": "New York Mets",
+                                                "away_score": 78.4,
+                                                "home_score": 102.6,
+                                                "winner": "New York Mets",
+                                                "loser": "Athletics",
+                                                "score_difference": 24.2,
+                                                "period_id": 1
+                                            },
+                                            {
+                                                "id": "match3",
+                                                "away_team": "Athletics", 
+                                                "home_team": "Chicago Cubs",
+                                                "away_score": 110.3,
+                                                "home_score": 88.9,
+                                                "winner": "Athletics",
+                                                "loser": "Chicago Cubs",
+                                                "score_difference": 21.4,
+                                                "period_id": 1
+                                            }
+                                        ]
+                                        matchups_component.render(demo_matchups, scoring_periods)
                             else:
                                 st.error("Matchups or scoring periods data is not in the expected format.")
-                                st.info("Attempting to reload matchups data directly...")
+                                st.code(f"Current matchups: {fantrax_data['current_matchups']}")
+                                st.code(f"Scoring periods: {fantrax_data['scoring_periods']}")
                                 
                                 # Try to fetch matchups data directly
-                                direct_matchups = fantrax_client.get_matchups_for_period()
+                                st.info("Attempting to reload matchups data directly...")
+                                direct_matchups = fantrax_client.get_matchups_for_period(1)  # Using Week 1
                                 scoring_periods = fantrax_client.get_scoring_periods()
                                 
                                 if direct_matchups and scoring_periods:
+                                    st.success("Successfully retrieved matchups directly")
                                     matchups_component.render(direct_matchups, scoring_periods)
                                 else:
                                     st.warning("Unable to fetch matchups data directly.")
@@ -706,8 +812,26 @@ def main():
                             st.error(f"Error rendering matchups: {str(e)}")
                             st.code(f"Type of current_matchups: {type(fantrax_data['current_matchups'])}")
                             st.code(f"Type of scoring_periods: {type(fantrax_data['scoring_periods'])}")
+                            import traceback
+                            st.code(traceback.format_exc())
                     else:
-                        st.error("Matchups data not available. Please check your connection or try refreshing.")
+                        st.error("Matchups data not available in the API response. Trying direct method...")
+                        
+                        # Try to fetch matchups directly as fallback
+                        try:
+                            st.info("Fetching matchups directly for Week 1...")
+                            direct_matchups = fantrax_client.get_matchups_for_period(1)  # Using Week 1
+                            scoring_periods = fantrax_client.get_scoring_periods()
+                            
+                            if direct_matchups and len(direct_matchups) > 0:
+                                st.success(f"Successfully fetched {len(direct_matchups)} matchups directly")
+                                matchups_component.render(direct_matchups, scoring_periods)
+                            else:
+                                st.warning("No matchups found when fetching directly")
+                        except Exception as e:
+                            st.error(f"Error fetching matchups directly: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
                         
                 with tab6:
                     st.title("Transactions")
