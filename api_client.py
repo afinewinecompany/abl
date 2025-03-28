@@ -32,12 +32,19 @@ class FantraxAPI:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            st.warning(f"API request to {endpoint} failed, using mock data")
-            # Return mock data based on the endpoint
-            return self._get_mock_data(endpoint)
+            st.error(f"API request to {endpoint} failed: {str(e)}")
+            # Return empty data instead of mock data
+            if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
+                return []
+            else:
+                return {}
         except ValueError as e:
             st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
-            return self._get_mock_data(endpoint)
+            # Return empty data instead of mock data
+            if endpoint in ["getMatchups", "getTransactions", "getStandings", "getScoringPeriods"]:
+                return []
+            else:
+                return {}
 
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Return mock data for development when API is unavailable"""
@@ -246,21 +253,41 @@ class FantraxAPI:
             # Get matchups data from the API for the specified period
             matchups_data = self.get_matchups(period_id=scoring_period)
             
+            # Check if we got a valid response (should be a list)
+            if not isinstance(matchups_data, list):
+                st.warning(f"Invalid matchups data type: {type(matchups_data)}. Using empty dataset.")
+                return {"liveScoringMatchups": []}
+            
             # Transform the matchups data to the expected format
             formatted_matchups = []
             
             for idx, matchup in enumerate(matchups_data):
+                # Check if the matchup is a dictionary
+                if not isinstance(matchup, dict):
+                    continue
+                    
+                # Extract team data safely
+                home_team = matchup.get("homeTeam", {})
+                away_team = matchup.get("awayTeam", {})
+                
+                # Check if home_team and away_team are dictionaries
+                if not isinstance(home_team, dict) or not isinstance(away_team, dict):
+                    continue
+                
                 formatted_matchups.append({
                     "id": matchup.get("id", f"m{idx+1}"),
                     "home": {
-                        "team": {"name": matchup.get("homeTeam", {}).get("name", f"Home Team {idx+1}")},
+                        "team": {"name": home_team.get("name", f"Home Team {idx+1}")},
                         "score": matchup.get("homeScore", 0)
                     },
                     "away": {
-                        "team": {"name": matchup.get("awayTeam", {}).get("name", f"Away Team {idx+1}")},
+                        "team": {"name": away_team.get("name", f"Away Team {idx+1}")},
                         "score": matchup.get("awayScore", 0)
                     }
                 })
+            
+            # Log that we're using real data
+            st.write(f"Using real data with {len(formatted_matchups)} matchups")
             
             return {"liveScoringMatchups": formatted_matchups}
         except Exception as e:
