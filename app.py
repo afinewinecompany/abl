@@ -13,23 +13,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Load background image from base64 file
-with open('bg_image_base64.txt', 'r') as f:
-    background_image = f.read()
-
-# Create CSS with background image
-css_with_bg = f"""
+# Create CSS with background style
+css_with_bg = """
 <style>
-.stApp {{
-    background-image: url('data:image/png;base64,{background_image}');
+.stApp {
+    background: rgba(10, 12, 20, 0.95);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
     position: relative;
-}}
+}
 
-.stApp::before {{
+.stApp::before {
     content: "";
     position: fixed;
     top: 0;
@@ -39,16 +35,16 @@ css_with_bg = f"""
     background: rgba(10, 12, 18, 0.85); /* Dark overlay for better text contrast */
     backdrop-filter: blur(3px);
     z-index: -1;
-}}
+}
 
-#tsparticles {{
+#tsparticles {
     position: fixed;
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
     z-index: -1;
-}}
+}
 </style>
 """
 
