@@ -36,7 +36,10 @@ def create_matchup_card(matchup: Dict[str, Any]):
     
     # Create a visually appealing card
     with st.container():
-        st.markdown(f"""
+        team1_color = "#ff3030" if is_team1_winning else "#ffffff"
+        team2_color = "#ff3030" if not is_team1_winning else "#ffffff"
+        
+        html = f"""
         <div style="
             background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
             padding: 1.5rem;
@@ -52,7 +55,7 @@ def create_matchup_card(matchup: Dict[str, Any]):
             
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: {'#ff3030' if is_team1_winning else '#ffffff'};">
+                    <div style="font-size: 1.8rem; font-weight: 700; color: {team1_color}">
                         {format_score(team1_score)}
                     </div>
                     <div style="font-size: 1.1rem; color: #dddddd;">{team1}</div>
@@ -63,7 +66,7 @@ def create_matchup_card(matchup: Dict[str, Any]):
                 </div>
                 
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: {'#ff3030' if not is_team1_winning else '#ffffff'};">
+                    <div style="font-size: 1.8rem; font-weight: 700; color: {team2_color}">
                         {format_score(team2_score)}
                     </div>
                     <div style="font-size: 1.1rem; color: #dddddd;">{team2}</div>
@@ -72,12 +75,7 @@ def create_matchup_card(matchup: Dict[str, Any]):
             
             <div style="margin-top: 1.5rem;">
                 <div style="height: 8px; background: #333333; border-radius: 4px; overflow: hidden;">
-                    <div style="
-                        height: 100%; 
-                        width: {win_probability * 100}%; 
-                        background: linear-gradient(90deg, #3080ff, #ff3030); 
-                        border-radius: 4px;"
-                    ></div>
+                    <div style="height: 100%; width: {win_probability * 100}%; background: linear-gradient(90deg, #3080ff, #ff3030); border-radius: 4px;"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 0.3rem;">
                     <div style="font-size: 0.8rem; color: #888888;">{team1}</div>
@@ -88,7 +86,8 @@ def create_matchup_card(matchup: Dict[str, Any]):
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(html, unsafe_allow_html=True)
 
 def create_matchups_summary_chart(matchups_df):
     """Create a summary chart of all matchups."""
