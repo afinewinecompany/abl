@@ -8,12 +8,10 @@ from datetime import datetime
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from webdriver_manager.chrome import ChromeDriverManager
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -298,7 +296,12 @@ class FantraxAPI:
             
         # Initialize WebDriver
         try:
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+            # Use direct path for Chrome driver in Replit environment
+            try:
+                driver = webdriver.Chrome(options=chrome_options)
+            except Exception as driver_error:
+                st.warning(f"Error initializing Chrome driver: {str(driver_error)}")
+                return self._get_mock_data("getMatchups")
             
             # Set up the cache file path
             cache_dir = os.path.join(os.getcwd(), "cache")
