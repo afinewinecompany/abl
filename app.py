@@ -494,7 +494,7 @@ def main():
             st.markdown(
                 """
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <img src="static/images/logo.png" style="width: 100%; max-width: 300px; margin: 0 auto;">
+                    <img src="static/images/header.png" style="width: 100%; max-width: 300px; margin: 0 auto;">
                 </div>
                 """, 
                 unsafe_allow_html=True
@@ -673,7 +673,7 @@ def main():
             st.markdown(
                 """
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <img src="static/images/logo.png" style="width: 100%; max-width: 180px; margin: 0 auto;">
+                    <img src="static/images/header.png" style="width: 100%; max-width: 180px; margin: 0 auto;">
                 </div>
                 """, 
                 unsafe_allow_html=True
