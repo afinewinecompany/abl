@@ -7,7 +7,7 @@ from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_
 
 # This must be the first Streamlit command
 st.set_page_config(
-    page_title="ABL Analytics",
+    page_title="ABL Analytics Dashboard",
     page_icon="⚾",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -488,7 +488,10 @@ st.markdown("""
 
 def main():
     try:
-        st.title("⚾ ABL Analytics")
+        # Display logo image instead of text title
+        st.image("static/images/abl_logo.png", width=300)
+        # Add some space after the logo
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # Add error notification box
         err_placeholder = st.empty()
@@ -659,10 +662,9 @@ def main():
                         st.warning(f"Data cleared from memory but error deleting files: {str(e)}")
 
             st.markdown("---")
-            st.markdown("""
-            ### About ABL Analytics
-            Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.
-            """)
+            st.markdown("### About")
+            st.image("static/images/abl_logo.png", width=200)
+            st.markdown("Advanced Baseball League (ABL) analytics platform providing comprehensive insights and analysis.")
             
             # Add debugging information
             st.markdown("---")
