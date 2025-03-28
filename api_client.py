@@ -296,12 +296,18 @@ class FantraxAPI:
             
         # Initialize WebDriver
         try:
-            # Use direct path for Chrome driver in Replit environment
+            # Use system Chrome in Replit environment
             try:
+                # Add additional options for Replit's Chrome installation
+                chrome_options.binary_location = "/nix/store/d7ipwzsra7g9ssbavj0jg6znccyifpn5-chromium-120.0.6099.199/bin/chromium"
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-dev-shm-usage")
+                
                 driver = webdriver.Chrome(options=chrome_options)
             except Exception as driver_error:
-                st.warning(f"Error initializing Chrome driver: {str(driver_error)}")
-                return self._get_mock_data("getMatchups")
+                st.error(f"Error initializing Chrome driver: {str(driver_error)}")
+                # We don't want to use mock data as instructed by the user
+                raise
             
             # Set up the cache file path
             cache_dir = os.path.join(os.getcwd(), "cache")
@@ -427,7 +433,8 @@ class FantraxAPI:
                 
         except Exception as e:
             st.error(f"Error fetching matchups from Fantrax: {str(e)}")
-            return self._get_mock_data("getMatchups")
+            # Raise the error instead of returning mock data
+            raise Exception(f"Failed to fetch matchups data: {str(e)}")
         finally:
             if 'driver' in locals():
                 driver.quit()

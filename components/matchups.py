@@ -27,51 +27,51 @@ def create_matchup_card(matchup: Dict[str, Any]) -> None:
     with st.container():
         st.markdown("""
         <style>
-        .matchup-card {
+        .matchup-card {{
             background: linear-gradient(145deg, #1a1c23 0%, rgba(26, 28, 35, 0.9) 100%);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
             border: 1px solid rgba(30, 100, 255, 0.1);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-        .team-row {
+        }}
+        .team-row {{
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .team-row:last-child {
+        }}
+        .team-row:last-child {{
             border-bottom: none;
-        }
-        .team-name {
+        }}
+        .team-name {{
             font-size: 18px;
             font-weight: 600;
             flex-grow: 1;
-        }
-        .team-score {
+        }}
+        .team-score {{
             font-size: 22px;
             font-weight: 700;
             min-width: 60px;
             text-align: right;
-        }
-        .winning {
+        }}
+        .winning {{
             color: #3080ff;
-        }
-        .losing {
+        }}
+        .losing {{
             color: #ff3030;
-        }
-        .tied {
+        }}
+        .tied {{
             color: #ffcc00;
-        }
-        .matchup-status {
+        }}
+        .matchup-status {{
             text-align: center;
             font-size: 14px;
             color: #999;
             margin-top: 12px;
             font-style: italic;
-        }
+        }}
         </style>
         
         <div class="matchup-card">
