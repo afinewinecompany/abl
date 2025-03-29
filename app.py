@@ -497,28 +497,28 @@ def main():
                 # Load the image from attached_assets folder
                 header_img = Image.open('attached_assets/331073D2-5049-4D62-B0E8-56A215C5C224.jpeg')
                 
-                # Display the image with some styling
-                st.markdown(
-                    """
-                    <div style="width: 100%;">
-                        <div style="border-radius: 10px; padding: 20px; 
-                             background: rgba(26, 28, 35, 0.7); text-align: center; margin: 0 auto; 
-                             box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);">
-                    """, 
-                    unsafe_allow_html=True
-                )
-                
-                # Display the image with Streamlit's image function
-                st.image(header_img, use_container_width=True)
-                
-                # Close the container div
-                st.markdown(
-                    """
-                        </div>
-                    </div>
-                    """, 
-                    unsafe_allow_html=True
-                )
+                # Create a stylized container for the image
+                container = st.container()
+                with container:
+                    # Apply styling to the container
+                    st.markdown(
+                        """
+                        <style>
+                        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+                            border-radius: 10px;
+                            padding: 20px;
+                            background: rgba(26, 28, 35, 0.7);
+                            text-align: center;
+                            margin: 0 auto;
+                            box-shadow: 0 0 30px rgba(0, 204, 255, 0.2);
+                        }
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Display the image with Streamlit's image function inside the container
+                    st.image(header_img, use_container_width=True)
             except Exception as e:
                 st.error(f"Could not load header image: {str(e)}")
                 # Fallback to text header
