@@ -509,7 +509,7 @@ def main():
                 )
                 
                 # Display the image with Streamlit's image function
-                st.image(header_img, use_column_width=True)
+                st.image(header_img, use_container_width=True)
                 
                 # Close the container div
                 st.markdown(
