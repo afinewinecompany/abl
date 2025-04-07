@@ -54,8 +54,25 @@ def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) 
     group = rank // group_size
     return 1 + (0.1 * (9 - group))  # 1.9x for top group, 1.0x for bottom group
 
-def calculate_hot_cold_modifier(recent_record: float) -> float:
-    """Calculate hot/cold modifier based on recent performance"""
+def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, recent_losses: float = 0, recent_draws: float = 0) -> float:
+    """
+    Calculate hot/cold modifier based on recent performance
+    
+    Args:
+        recent_record: Win percentage (if directly provided)
+        recent_wins: Number of recent weekly wins from the 3-game weekly record
+        recent_losses: Number of recent weekly losses from the 3-game weekly record
+        recent_draws: Number of recent weekly draws from the 3-game weekly record
+    """
+    # If record components are provided, calculate record from them
+    if recent_wins > 0 or recent_losses > 0 or recent_draws > 0:
+        total_games = recent_wins + recent_losses + recent_draws
+        if total_games > 0:
+            # Count draws as half wins
+            recent_record = (recent_wins + (recent_draws * 0.5)) / total_games
+        else:
+            recent_record = 0.5  # Default if no games played
+    
     # Split into 6 groups, with modifiers from 1.5x to 1.0x
     if recent_record >= 0.800:  # Group 1
         return 1.5
@@ -121,20 +138,21 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
         points_mod = calculate_points_modifier(points, wins_series)
     
-    # Calculate hot/cold modifier based on recent wins
+    # Calculate hot/cold modifier based on recent weekly record
     # Set defaults for missing values
     recent_wins = float(row.get('recent_wins', 0))
     recent_losses = float(row.get('recent_losses', 0))
+    recent_draws = float(row.get('recent_draws', 0))
     
-    total_recent_games = recent_wins + recent_losses
+    total_recent_games = recent_wins + recent_losses + recent_draws
     
     # If no recent games data, use overall win percentage
     if total_recent_games == 0:
         recent_win_pct = winning_pct if winning_pct > 0 else 0.5
+        hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
     else:
-        recent_win_pct = recent_wins / total_recent_games
-    
-    hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
+        # Pass the actual game counts to the modifier function to handle draws properly
+        hot_cold_mod = calculate_hot_cold_modifier(0, recent_wins, recent_losses, recent_draws)
     
     # Only show detailed debugging for teams with no points
     if total_points == 0:
@@ -274,9 +292,10 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         team_names = rankings_df['team_name'].unique()
         recent_weeks = 3  # How many weeks to consider for "recent" performance
         
-        # Initialize recent wins/losses columns
+        # Initialize recent wins/losses/draws columns
         rankings_df['recent_wins'] = 0
         rankings_df['recent_losses'] = 0
+        rankings_df['recent_draws'] = 0
         
         for team_name in team_names:
             # Get this team's results
@@ -286,19 +305,29 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
             team_results.sort(key=lambda x: x['week'], reverse=True)
             recent_results = team_results[:recent_weeks]
             
-            # Count wins and losses
+            # Sum weekly wins and losses across all matchups
+            recent_weekly_wins = sum(r.get('weekly_wins', 0) for r in recent_results)
+            recent_weekly_losses = sum(r.get('weekly_losses', 0) for r in recent_results)
+            recent_weekly_draws = sum(r.get('weekly_draws', 0) for r in recent_results)
+            
+            # For backward compatibility, also calculate traditional wins/losses
             recent_wins = sum(1 for r in recent_results if r['result'] == 'Win')
             recent_losses = sum(1 for r in recent_results if r['result'] == 'Loss')
             
             # Update the dataframe
             if team_name in rankings_df['team_name'].values:
                 idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
-                rankings_df.at[idx, 'recent_wins'] = recent_wins
-                rankings_df.at[idx, 'recent_losses'] = recent_losses
+                rankings_df.at[idx, 'recent_wins'] = recent_weekly_wins
+                rankings_df.at[idx, 'recent_losses'] = recent_weekly_losses
+                rankings_df.at[idx, 'recent_draws'] = recent_weekly_draws
+                # Store traditional W-L too for backward compatibility
+                rankings_df.at[idx, 'recent_match_wins'] = recent_wins
+                rankings_df.at[idx, 'recent_match_losses'] = recent_losses
     else:
         # Calculate recent wins/losses using rolling mean as default
         rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
         rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
+        rankings_df['recent_draws'] = 0  # No draws in the default case
 
     # Calculate power scores
     rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)

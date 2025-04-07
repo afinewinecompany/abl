@@ -212,23 +212,40 @@ def load_weekly_results(file_path: str = 'data/weekly_results.csv') -> list:
                 week_col = 'week number' if 'week number' in df.columns else 'week'
                 week = int(row[week_col])
                 
-                # Process record format (e.g. "3-0-0") into Win/Loss
+                # Process record format (e.g. "3-0-0") into actual record components
                 if 'record' in df.columns:
-                    record = row['record'].split('-')
-                    wins = int(record[0]) if len(record) > 0 else 0
-                    losses = int(record[1]) if len(record) > 1 else 0
+                    record_parts = row['record'].split('-')
+                    wins = int(record_parts[0]) if len(record_parts) > 0 else 0
+                    losses = int(record_parts[1]) if len(record_parts) > 1 else 0
+                    draws = int(record_parts[2]) if len(record_parts) > 2 else 0
                     
-                    # Determine Win/Loss status
-                    result = 'Win' if wins > losses else 'Loss' if losses > wins else 'Tie'
+                    # Store the actual record components
+                    result = {
+                        'wins': wins,
+                        'losses': losses,
+                        'draws': draws,
+                        'status': 'Win' if wins > losses else 'Loss' if losses > wins else 'Tie'
+                    }
                 else:
                     # If we have the old format with 'result' directly
-                    result = row.get('result', 'Unknown')
+                    old_result = row.get('result', 'Unknown')
+                    # Create a record structure for compatibility
+                    result = {
+                        'wins': 1 if old_result == 'Win' else 0,
+                        'losses': 1 if old_result == 'Loss' else 0,
+                        'draws': 1 if old_result == 'Tie' else 0,
+                        'status': old_result
+                    }
                 
+                # Add the proper structured data to the results
                 results.append({
                     'team': team,
                     'week': week,
-                    'result': result,
-                    'record': row.get('record', f"{1 if result == 'Win' else 0}-{1 if result == 'Loss' else 0}-{1 if result == 'Tie' else 0}")
+                    'result': result['status'],  # For backward compatibility
+                    'record': row.get('record', f"{result['wins']}-{result['losses']}-{result['draws']}"),
+                    'weekly_wins': result['wins'],
+                    'weekly_losses': result['losses'],
+                    'weekly_draws': result['draws']
                 })
             
             return results
