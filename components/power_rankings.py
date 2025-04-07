@@ -176,6 +176,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add explanation of the power score
     st.markdown("""
     Power Rankings combine weekly scoring average, points comparison against other teams, and recent performance (hot/cold streak).
+    This is a measure of *current season performance only* and does not include historical data.
     
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average

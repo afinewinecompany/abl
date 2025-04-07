@@ -1197,6 +1197,18 @@ def render(roster_data: pd.DataFrame, power_rankings_df: pd.DataFrame = None):
         # Tab 1: Team Cards (now first tab as default view)
         with vis_tab1:
             st.markdown("### Dynasty Dominance Rankings")
+            
+            # Add explanation of the DDI components
+            st.markdown("""
+            The Dynasty Dominance Index (DDI) combines four key factors:
+            
+            - **Power Score (30%)**: Current season performance only
+            - **Prospect Score (20%)**: Value of team's minor league prospects  
+            - **Historical Score (25%)**: Performance in past seasons (2021-2024)
+            - **Playoff Score (25%)**: Championship history and playoff success
+            
+            This metric measures long-term dynasty strength across multiple seasons.
+            """)
 
             # Show team cards using native Streamlit components
             for _, team_row in display_df.iterrows():
@@ -1308,15 +1320,22 @@ def render(roster_data: pd.DataFrame, power_rankings_df: pd.DataFrame = None):
 
         # Tab 3: Component Breakdown
         with vis_tab3:
+            st.markdown("""
+            ### Component Breakdown
+            This visualization shows how each component contributes to a team's overall Dynasty Dominance Index.
+            """)
+            
             st.plotly_chart(create_ddi_visualization(ddi_df), use_container_width=True)
 
-            # Add explanation of component weighting
+            # Add explanation of component weighting with clear data sources
             st.info(f"""
             **DDI Component Weighting:**
-            - Power Rankings: {POWER_RANK_WEIGHT*100}%
-            - Prospect System: {PROSPECT_WEIGHT*100}%
-            - Historical Performance: {HISTORY_WEIGHT*100}%
-            - Playoff Success: {PLAYOFF_WEIGHT*100}%
+            - **Power Rankings ({POWER_RANK_WEIGHT*100}%)**: Current season performance only (from Power Rankings tab)
+            - **Prospect System ({PROSPECT_WEIGHT*100}%)**: Value of minor league prospects (based on top prospect rankings)
+            - **Historical Performance ({HISTORY_WEIGHT*100}%)**: Team success in past seasons 2021-2024
+            - **Playoff Success ({PLAYOFF_WEIGHT*100}%)**: Championship history and playoff appearances
+            
+            The DDI blends current performance with historical data to provide a comprehensive view of long-term team strength.
             """)
 
     except Exception as e:
