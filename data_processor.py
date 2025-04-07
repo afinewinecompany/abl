@@ -128,7 +128,12 @@ class DataProcessor:
         Process standings data into a DataFrame with enhanced fields for power rankings
         """
         try:
+            # Debug raw standings data
+            st.sidebar.write("Raw Standings Data Format:", type(standings_data))
+            st.sidebar.write("Data Length:", len(standings_data) if isinstance(standings_data, list) else "Not a list")
+            
             if not standings_data or not isinstance(standings_data, list):
+                st.sidebar.error("Standings data is not in the expected format (list)")
                 return pd.DataFrame(
                     columns=['team_name', 'team_id', 'rank', 'wins', 'losses', 'ties', 'winning_pct', 
                              'games_back', 'points_for', 'points_against', 'streak', 'last_10']
@@ -136,15 +141,22 @@ class DataProcessor:
 
             standings_list = []
 
-            for team in standings_data:
+            for i, team in enumerate(standings_data):
                 if not isinstance(team, dict):
+                    st.sidebar.warning(f"Team data at index {i} is not a dictionary. Skipping.")
                     continue
+
+                # Debug first few team objects
+                if i < 2:
+                    st.sidebar.write(f"Team {i+1} Data Keys:", team.keys())
+                    st.sidebar.write(f"Team {i+1} Points Format:", team.get('points', 'Not found'))
 
                 # Parse record from points string (format: "W-L-T")
                 points_str = team.get('points', '0-0-0')
                 try:
                     wins, losses, ties = map(int, points_str.split('-'))
                 except (ValueError, AttributeError):
+                    st.sidebar.warning(f"Could not parse points string '{points_str}' for team {team.get('teamName', 'Unknown')}")
                     wins, losses, ties = 0, 0, 0
                 
                 # Extract the direction (W/L) and number from streak
@@ -155,6 +167,18 @@ class DataProcessor:
                 # Calculate points for and against if available
                 points_for = team.get('pointsFor', 0.0)
                 points_against = team.get('pointsAgainst', 0.0)
+                
+                # Debug points data
+                if i < 2:
+                    st.sidebar.write(f"Team {i+1} Points Data:", {
+                        "name": team.get('teamName', 'Unknown'),
+                        "points_str": points_str,
+                        "wins": wins,
+                        "losses": losses,
+                        "ties": ties,
+                        "points_for": points_for,
+                        "points_against": points_against
+                    })
                 
                 # Create enhanced team stats dictionary
                 team_stats = {

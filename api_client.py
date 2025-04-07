@@ -212,7 +212,12 @@ class FantraxAPI:
                 timeout=10
             )
             response.raise_for_status()
-            return response.json()
+            
+            # Debug the raw API response
+            response_data = response.json()
+            st.sidebar.write("API Response Data (Sample):", response_data[:2] if isinstance(response_data, list) and len(response_data) > 0 else response_data)
+            
+            return response_data
         except requests.exceptions.RequestException as e:
             st.warning(f"Standings API request failed: {str(e)}")
             return self._get_mock_data("getStandings")
