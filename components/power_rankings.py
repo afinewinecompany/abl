@@ -219,48 +219,56 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Start with the enhanced standings data from the API
     rankings_df = standings_data.copy()
     
-    st.sidebar.success("⚡ Using live standings data from Fantrax API")
+    st.sidebar.success("⚡ Using live standings data from Fantrax API with manual data overrides")
     
-    # Check if we already have these fields from API data processing
-    api_data_available = all(col in rankings_df.columns for col in ['total_points', 'weeks_played'])
+    # Get custom data from parameters or session state
+    if power_rankings_data:
+        # Use the provided power rankings data
+        custom_data = power_rankings_data
+    elif 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
+        # Use data from session state
+        custom_data = st.session_state.power_rankings_data
+    else:
+        # No custom data available
+        custom_data = {}
     
-    # Use provided custom data or fetch from session state if API data is insufficient
-    if not api_data_available:
-        if power_rankings_data:
-            # Use the provided power rankings data
-            custom_data = power_rankings_data
-        elif 'power_rankings_data' in st.session_state and st.session_state.power_rankings_data:
-            # Use data from session state
-            custom_data = st.session_state.power_rankings_data
-        else:
-            # No custom data available
-            custom_data = {}
-        
-        # Apply custom data if available
-        if custom_data:
-            for team_name, team_data in custom_data.items():
-                # Only update teams that exist in the standings_data
-                if team_name in rankings_df['team_name'].values:
-                    # Find the index for this team
-                    idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
-                    # Update the data
-                    # Support both fptsf and total_points in the custom data
-                    if 'fptsf' in team_data:
-                        rankings_df.at[idx, 'fptsf'] = team_data['fptsf']
-                        rankings_df.at[idx, 'total_points'] = team_data['fptsf']  # for compatibility
-                    elif 'total_points' in team_data:
-                        rankings_df.at[idx, 'total_points'] = team_data['total_points']
-                        rankings_df.at[idx, 'fptsf'] = team_data['total_points']  # use both fields
-                    
+    # Always apply manual data overrides if available
+    has_manual_overrides = False
+    if custom_data:
+        for team_name, team_data in custom_data.items():
+            # Only update teams that exist in the standings_data
+            if team_name in rankings_df['team_name'].values:
+                # Find the index for this team
+                idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
+                # Update the data
+                # Support both fptsf and total_points in the custom data
+                if 'fptsf' in team_data:
+                    rankings_df.at[idx, 'fptsf'] = team_data['fptsf']
+                    rankings_df.at[idx, 'total_points'] = team_data['fptsf']  # for compatibility
+                    has_manual_overrides = True
+                elif 'total_points' in team_data:
+                    rankings_df.at[idx, 'total_points'] = team_data['total_points']
+                    rankings_df.at[idx, 'fptsf'] = team_data['total_points']  # use both fields
+                    has_manual_overrides = True
+                
+                if 'weeks_played' in team_data:
                     rankings_df.at[idx, 'weeks_played'] = team_data['weeks_played']
-        else:
-            # Calculate default values if no custom data
-            rankings_df['fptsf'] = rankings_df['wins'] * 20  # 20 points per win as default
-            rankings_df['total_points'] = rankings_df['fptsf']  # Keep both for compatibility
-            rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+                    has_manual_overrides = True
     
-    # Display a info message about data source
-    st.info("Power rankings are calculated using live standings data from Fantrax API combined with your manual data entries for recent performance.")
+    # Ensure we have these fields from either API or defaults
+    if 'fptsf' not in rankings_df.columns or 'total_points' not in rankings_df.columns:
+        # Calculate default values if needed
+        rankings_df['fptsf'] = rankings_df['wins'] * 20  # 20 points per win as default
+        rankings_df['total_points'] = rankings_df['fptsf']  # Keep both for compatibility
+    
+    if 'weeks_played' not in rankings_df.columns:
+        rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
+    
+    # Display appropriate info message about data source
+    if has_manual_overrides:
+        st.info("Power rankings are calculated using a combination of Fantrax API data and your manual FPtsF entries from the sidebar.")
+    else:
+        st.info("Power rankings are calculated using live standings data from Fantrax API. Add manual FPtsF entries in the sidebar for more accurate power scores.")
     
     # Fill any missing values with defaults
     if 'fptsf' not in rankings_df.columns:

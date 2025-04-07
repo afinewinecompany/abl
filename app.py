@@ -604,9 +604,9 @@ def main():
                                 total_points = float(parts[1])
                                 weeks_played = int(parts[2])
                                 
-                                # Update the session state
+                                # Update the session state - store as fptsf to match Fantrax API format
                                 st.session_state.power_rankings_data[team_name] = {
-                                    'total_points': total_points,
+                                    'fptsf': total_points,  # Store as fptsf to match the API format
                                     'weeks_played': weeks_played
                                 }
                                 processed_count += 1
@@ -631,14 +631,14 @@ def main():
             st.markdown("---")
             st.subheader("Weekly Results")
             st.markdown("""
-            Paste weekly results in the format: `Team, Week Number, Result(Win/Loss)`  
+            Paste weekly results in the format: `Team, Week Number, Record(W-L-D)`  
             Example:
             ```
-            Baltimore Orioles, 5, Win
-            Boston Red Sox, 5, Loss
-            New York Yankees, 5, Win
+            Baltimore Orioles, 5, 2-1-0
+            Boston Red Sox, 5, 1-2-0
+            New York Yankees, 5, 3-0-0
             ```
-            *This will add to previous weekly data.*
+            *This will add to previous weekly data. The record should represent the Win-Loss-Draw counts from 3 weekly matchups.*
             """)
             
             # Text area for bulk weekly results
@@ -659,16 +659,45 @@ def main():
                                 week_number = int(parts[1])
                                 result = parts[2]
                                 
-                                # Validate result value
-                                if result.lower() not in ['win', 'loss']:
-                                    errors.append(f"Invalid result '{result}'. Use 'Win' or 'Loss': {line}")
+                                # Validate record format (W-L-D)
+                                try:
+                                    # Check if it's in the old format (Win/Loss)
+                                    if result.lower() in ['win', 'loss']:
+                                        # For backward compatibility
+                                        record = "1-0-0" if result.lower() == 'win' else "0-1-0"
+                                        weekly_status = result.capitalize()
+                                    else:
+                                        # Parse as W-L-D record
+                                        record = result
+                                        record_parts = record.split('-')
+                                        if len(record_parts) != 3:
+                                            errors.append(f"Invalid record format '{result}'. Use 'W-L-D' format (e.g., '2-1-0'): {line}")
+                                            continue
+                                        
+                                        wins = int(record_parts[0])
+                                        losses = int(record_parts[1])
+                                        draws = int(record_parts[2])
+                                        
+                                        # Determine overall status based on record
+                                        if wins > losses:
+                                            weekly_status = "Win"
+                                        elif losses > wins:
+                                            weekly_status = "Loss"
+                                        else:
+                                            weekly_status = "Tie"
+                                except ValueError:
+                                    errors.append(f"Invalid record values in '{result}'. Use numbers in W-L-D format: {line}")
                                     continue
                                 
-                                # Add to the session state
+                                # Add to the session state with the full record
                                 st.session_state.weekly_results.append({
                                     'team': team_name,
                                     'week': week_number,
-                                    'result': result.capitalize()
+                                    'result': weekly_status,  # For backward compatibility
+                                    'record': record,  # Store the full record
+                                    'weekly_wins': wins if 'wins' in locals() else (1 if weekly_status == 'Win' else 0),
+                                    'weekly_losses': losses if 'losses' in locals() else (1 if weekly_status == 'Loss' else 0),
+                                    'weekly_draws': draws if 'draws' in locals() else (1 if weekly_status == 'Tie' else 0)
                                 })
                                 processed_count += 1
                             else:
