@@ -158,9 +158,9 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     if total_points == 0:
         st.sidebar.info(f"Team: {row.get('team_name', 'Unknown')}, Weekly Avg: {weekly_avg:.2f}, Points Mod: {points_mod:.2f}, Hot/Cold: {hot_cold_mod:.2f}")
     
-    # Calculate final power score
-    power_score = (weekly_avg * points_mod) * hot_cold_mod
-    return power_score
+    # Calculate the raw power score
+    raw_power_score = (weekly_avg * points_mod) * hot_cold_mod
+    return raw_power_score
 
 def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekly_results: list = None):
     """
@@ -172,6 +172,16 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         weekly_results: Optional list of weekly results data from user input
     """
     st.header("⚾ Power Rankings")
+    
+    # Add explanation of the power score
+    st.markdown("""
+    Power Rankings combine weekly scoring average, points comparison against other teams, and recent performance (hot/cold streak).
+    
+    - **Power Score Scale**: 100 = League Average
+    - **Above 100**: Team is performing better than league average
+    - **Below 100**: Team is performing below league average
+    
+    """)
     st.markdown("""
         <style>
         @keyframes slideInUp {
@@ -266,9 +276,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     
     # Display appropriate info message about data source
     if has_manual_overrides:
-        st.info("Power rankings are calculated using a combination of Fantrax API data and your manual FPtsF entries from the sidebar.")
+        st.info("Power rankings are calculated using a combination of Fantrax API data and your manual FPtsF entries from the sidebar. Power scores are normalized to 100 = league average.")
     else:
-        st.info("Power rankings are calculated using live standings data from Fantrax API. Add manual FPtsF entries in the sidebar for more accurate power scores.")
+        st.info("Power rankings are calculated using live standings data from Fantrax API. Add manual FPtsF entries in the sidebar for more accurate power scores. Power scores are normalized to 100 = league average.")
     
     # Fill any missing values with defaults
     if 'fptsf' not in rankings_df.columns:
@@ -337,8 +347,14 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
         rankings_df['recent_draws'] = 0  # No draws in the default case
 
-    # Calculate power scores
-    rankings_df['power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
+    # Calculate raw power scores
+    rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
+    
+    # Normalize power scores where 100 is the league average
+    average_power = rankings_df['raw_power_score'].mean()
+    rankings_df['power_score'] = (rankings_df['raw_power_score'] / average_power) * 100
+    
+    # Sort by normalized power score
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
     
@@ -462,6 +478,31 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         labels={'team_name': 'Team', 'power_score': 'Power Score'}
     )
 
+    # Add a reference line for league average (100)
+    fig.add_shape(
+        type="line",
+        x0=-0.5,
+        x1=len(rankings_df) - 0.5,
+        y0=100,
+        y1=100,
+        line=dict(
+            color="red",
+            width=2,
+            dash="dash",
+        )
+    )
+    
+    # Add annotation for the reference line
+    fig.add_annotation(
+        x=len(rankings_df) - 0.5,
+        y=100,
+        text="League Average (100)",
+        showarrow=False,
+        font=dict(color="red"),
+        xanchor="right",
+        yanchor="bottom"
+    )
+    
     fig.update_layout(
         xaxis_tickangle=-45,
         showlegend=False,
