@@ -75,42 +75,51 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     # Define constants for calculations
     POINTS_PER_WIN = 20.0  # Points assigned per win
     
-    # Calculate weekly average score - use points_for from API data if available
+    # Calculate weekly average score - use various point sources in order of preference
     # Ensure we're working with numeric data
+    fptsf = float(row.get('fptsf', 0))
     total_points = float(row.get('total_points', 0))
     points_for = float(row.get('points_for', 0))
     wins = float(row.get('wins', 0))
     winning_pct = float(row.get('winning_pct', 0))
     weeks_played = max(float(row.get('weeks_played', 1)), 1)  # Prevent division by zero
     
-    # If total_points is 0 but points_for is available, use it instead
-    if total_points == 0 and points_for > 0:
-        total_points = points_for
+    # Determine which points source to use, in order of preference
+    if fptsf > 0:
+        points = fptsf
+    elif total_points > 0:
+        points = total_points
+    elif points_for > 0:
+        points = points_for
+    else:
+        points = 0
     
-    # Get weekly average (total points divided by weeks played)
-    weekly_avg = total_points / weeks_played
+    # Get weekly average (points divided by weeks played)
+    weekly_avg = points / weeks_played
     
     # If no points data is available, calculate based on wins consistently (not temporary)
-    if total_points == 0:
-        # Base total points on wins and win percentage
+    if points == 0:
+        # Base points on wins and win percentage
         win_quality_bonus = winning_pct * 10.0  # Bonus based on win percentage
         
         # Create a meaningful score based on wins
-        total_points = (wins * POINTS_PER_WIN) + win_quality_bonus
-        weekly_avg = total_points / max(weeks_played, 1)
+        points = (wins * POINTS_PER_WIN) + win_quality_bonus
+        weekly_avg = points / max(weeks_played, 1)
         
-        st.sidebar.info(f"Using win-based calculation for {row.get('team_name', 'Unknown team')}: wins={wins}, win%={winning_pct}, calculated points={total_points:.1f}")
+        st.sidebar.info(f"Using win-based calculation for {row.get('team_name', 'Unknown team')}: wins={wins}, win%={winning_pct}, calculated points={points:.1f}")
     
     # Calculate points modifier based on all teams
     # Prefer actual points, but fall back to our calculated points when needed
-    if all_teams_data['total_points'].sum() > 0:
-        points_mod = calculate_points_modifier(total_points, all_teams_data['total_points'])
+    if 'fptsf' in all_teams_data.columns and all_teams_data['fptsf'].sum() > 0:
+        points_mod = calculate_points_modifier(points, all_teams_data['fptsf'])
+    elif all_teams_data['total_points'].sum() > 0:
+        points_mod = calculate_points_modifier(points, all_teams_data['total_points'])
     elif 'points_for' in all_teams_data.columns and all_teams_data['points_for'].sum() > 0:
-        points_mod = calculate_points_modifier(total_points, all_teams_data['points_for'])
+        points_mod = calculate_points_modifier(points, all_teams_data['points_for'])
     else:
         # If no team has any points, use wins as the basis for ranking
         wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
-        points_mod = calculate_points_modifier(total_points, wins_series)
+        points_mod = calculate_points_modifier(points, wins_series)
     
     # Calculate hot/cold modifier based on recent wins
     # Set defaults for missing values
@@ -217,23 +226,34 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     # Find the index for this team
                     idx = rankings_df[rankings_df['team_name'] == team_name].index[0]
                     # Update the data
-                    rankings_df.at[idx, 'total_points'] = team_data['total_points']
+                    # Support both fptsf and total_points in the custom data
+                    if 'fptsf' in team_data:
+                        rankings_df.at[idx, 'fptsf'] = team_data['fptsf']
+                        rankings_df.at[idx, 'total_points'] = team_data['fptsf']  # for compatibility
+                    elif 'total_points' in team_data:
+                        rankings_df.at[idx, 'total_points'] = team_data['total_points']
+                        rankings_df.at[idx, 'fptsf'] = team_data['total_points']  # use both fields
+                    
                     rankings_df.at[idx, 'weeks_played'] = team_data['weeks_played']
         else:
             # Calculate default values if no custom data
-            rankings_df['total_points'] = rankings_df['wins'] * 2  # Assuming 2 points per win
+            rankings_df['fptsf'] = rankings_df['wins'] * 20  # 20 points per win as default
+            rankings_df['total_points'] = rankings_df['fptsf']  # Keep both for compatibility
             rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
     
     # Display a info message about data source
     st.info("Power rankings are calculated using live standings data from Fantrax API combined with your manual data entries for recent performance.")
     
     # Fill any missing values with defaults
+    if 'fptsf' not in rankings_df.columns:
+        rankings_df['fptsf'] = rankings_df['wins'] * 20  # 20 points per win
     if 'total_points' not in rankings_df.columns:
-        rankings_df['total_points'] = rankings_df['wins'] * 2
+        rankings_df['total_points'] = rankings_df['fptsf']  # Use fptsf if available
     if 'weeks_played' not in rankings_df.columns:
         rankings_df['weeks_played'] = rankings_df['wins'] + rankings_df['losses']
         
     # Ensure we have numeric values for calculations
+    rankings_df['fptsf'] = pd.to_numeric(rankings_df['fptsf'], errors='coerce').fillna(0)
     rankings_df['total_points'] = pd.to_numeric(rankings_df['total_points'], errors='coerce').fillna(0)
     rankings_df['weeks_played'] = pd.to_numeric(rankings_df['weeks_played'], errors='coerce').fillna(1)  # Avoid div by zero
     
