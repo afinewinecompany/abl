@@ -72,34 +72,45 @@ def calculate_hot_cold_modifier(recent_record: float) -> float:
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
     """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
+    # Define constants for calculations
+    POINTS_PER_WIN = 20.0  # Points assigned per win
+    
     # Calculate weekly average score - use points_for from API data if available
     # Ensure we're working with numeric data
     total_points = float(row.get('total_points', 0))
     points_for = float(row.get('points_for', 0))
+    wins = float(row.get('wins', 0))
+    winning_pct = float(row.get('winning_pct', 0))
     weeks_played = max(float(row.get('weeks_played', 1)), 1)  # Prevent division by zero
     
     # If total_points is 0 but points_for is available, use it instead
     if total_points == 0 and points_for > 0:
         total_points = points_for
     
-    # For debugging
-    if total_points == 0:
-        st.sidebar.warning(f"No points data for {row.get('team_name', 'Unknown team')}: total_points={total_points}, points_for={points_for}")
-    
     # Get weekly average (total points divided by weeks played)
     weekly_avg = total_points / weeks_played
     
-    # Temporarily add dummy points if data is missing (will be removed in production)
+    # If no points data is available, calculate based on wins consistently (not temporary)
     if total_points == 0:
-        # Generate some simulated points based on wins to show calculation examples
-        total_points = float(row.get('wins', 0)) * 20.0  # 20 points per win as a sample
-        weekly_avg = total_points / weeks_played
+        # Base total points on wins and win percentage
+        win_quality_bonus = winning_pct * 10.0  # Bonus based on win percentage
+        
+        # Create a meaningful score based on wins
+        total_points = (wins * POINTS_PER_WIN) + win_quality_bonus
+        weekly_avg = total_points / max(weeks_played, 1)
+        
+        st.sidebar.info(f"Using win-based calculation for {row.get('team_name', 'Unknown team')}: wins={wins}, win%={winning_pct}, calculated points={total_points:.1f}")
     
-    # Calculate points modifier based on all teams - need to check if any teams have points
-    if all_teams_data['total_points'].sum() == 0 and 'points_for' in all_teams_data.columns:
+    # Calculate points modifier based on all teams
+    # Prefer actual points, but fall back to our calculated points when needed
+    if all_teams_data['total_points'].sum() > 0:
+        points_mod = calculate_points_modifier(total_points, all_teams_data['total_points'])
+    elif 'points_for' in all_teams_data.columns and all_teams_data['points_for'].sum() > 0:
         points_mod = calculate_points_modifier(total_points, all_teams_data['points_for'])
     else:
-        points_mod = calculate_points_modifier(total_points, all_teams_data['total_points'])
+        # If no team has any points, use wins as the basis for ranking
+        wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
+        points_mod = calculate_points_modifier(total_points, wins_series)
     
     # Calculate hot/cold modifier based on recent wins
     # Set defaults for missing values
@@ -107,11 +118,18 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     recent_losses = float(row.get('recent_losses', 0))
     
     total_recent_games = recent_wins + recent_losses
-    recent_win_pct = recent_wins / total_recent_games if total_recent_games > 0 else 0.5
+    
+    # If no recent games data, use overall win percentage
+    if total_recent_games == 0:
+        recent_win_pct = winning_pct if winning_pct > 0 else 0.5
+    else:
+        recent_win_pct = recent_wins / total_recent_games
+    
     hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
     
-    # For debugging
-    st.sidebar.info(f"Team: {row.get('team_name', 'Unknown')}, Weekly Avg: {weekly_avg:.2f}, Points Mod: {points_mod:.2f}, Hot/Cold: {hot_cold_mod:.2f}")
+    # Only show detailed debugging for teams with no points
+    if total_points == 0:
+        st.sidebar.info(f"Team: {row.get('team_name', 'Unknown')}, Weekly Avg: {weekly_avg:.2f}, Points Mod: {points_mod:.2f}, Hot/Cold: {hot_cold_mod:.2f}")
     
     # Calculate final power score
     power_score = (weekly_avg * points_mod) * hot_cold_mod
