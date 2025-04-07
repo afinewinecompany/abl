@@ -54,16 +54,24 @@ def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) 
     group = rank // group_size
     return 1 + (0.1 * (9 - group))  # 1.9x for top group, 1.0x for bottom group
 
-def calculate_hot_cold_modifier(winning_pct: float) -> float:
+def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, recent_losses: float = 0, recent_draws: float = 0) -> float:
     """
-    Calculate hot/cold modifier based on recent win percentage
+    Calculate hot/cold modifier based on recent performance
     
     Args:
-        winning_pct: Team's winning percentage over last 3 weeks
+        recent_record: Win percentage (if directly provided)
+        recent_wins: Number of recent weekly wins from the 3-game weekly record
+        recent_losses: Number of recent weekly losses from the 3-game weekly record
+        recent_draws: Number of recent weekly draws from the 3-game weekly record
     """
-    # Convert percentage to decimal if needed (e.g., 66.7% -> 0.667)
-    if winning_pct > 1:
-        winning_pct = winning_pct / 100
+    # If record components are provided, calculate record from them
+    if recent_wins > 0 or recent_losses > 0 or recent_draws > 0:
+        total_games = recent_wins + recent_losses + recent_draws
+        if total_games > 0:
+            # Count draws as half wins
+            recent_record = (recent_wins + (recent_draws * 0.5)) / total_games
+        else:
+            recent_record = 0.5  # Default if no games played
     
     # Split into 6 groups, with modifiers from 1.5x to 1.0x
     if recent_record >= 0.800:  # Group 1
@@ -130,9 +138,21 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
         points_mod = calculate_points_modifier(points, wins_series)
     
-    # Calculate hot/cold modifier based on win percentage
-    winning_pct = float(row.get('winning_pct', 0.5))
-    hot_cold_mod = calculate_hot_cold_modifier(winning_pct)
+    # Calculate hot/cold modifier based on recent weekly record
+    # Set defaults for missing values
+    recent_wins = float(row.get('recent_wins', 0))
+    recent_losses = float(row.get('recent_losses', 0))
+    recent_draws = float(row.get('recent_draws', 0))
+    
+    total_recent_games = recent_wins + recent_losses + recent_draws
+    
+    # If no recent games data, use overall win percentage
+    if total_recent_games == 0:
+        recent_win_pct = winning_pct if winning_pct > 0 else 0.5
+        hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
+    else:
+        # Pass the actual game counts to the modifier function to handle draws properly
+        hot_cold_mod = calculate_hot_cold_modifier(0, recent_wins, recent_losses, recent_draws)
     
     # Only show detailed debugging for teams with no points
     if total_points == 0:
