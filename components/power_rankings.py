@@ -87,19 +87,37 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         - Negative values mean the team performed poorly against weak opponents
         - 0 means neutral performance or insufficient data
     """
+    # Get debug flag from session state
+    debug_modifiers = st.session_state.get('debug_modifiers', False)
+    
     try:
         # Check if team_name is empty or None
         if not team_name:
             return 0.0
             
-        # Load schedule data
-        schedule_df = pd.read_csv("attached_assets/fantasy_baseball_schedule.csv")
-        
-        # Only consider completed periods - make sure column name matches exactly
-        schedule_df = schedule_df[schedule_df['Scoring Period'] < current_period]
-        
-        if len(schedule_df) == 0:
-            return 0.0  # No completed games yet
+        # Load schedule data with debug output
+        try:
+            schedule_df = pd.read_csv("attached_assets/fantasy_baseball_schedule.csv")
+            st.sidebar.info(f"Loaded schedule data with {len(schedule_df)} rows")
+            
+            # Show a sample of the data for debugging
+            st.sidebar.write("Schedule sample:", schedule_df.head(3))
+            
+            # Debug the column names to ensure they match
+            st.sidebar.write("Schedule columns:", schedule_df.columns.tolist())
+            
+            # Only consider completed periods - make sure column name matches exactly
+            schedule_df = schedule_df[schedule_df['Scoring Period'] < current_period]
+            
+            st.sidebar.info(f"After filtering by period < {current_period}: {len(schedule_df)} rows remain")
+            
+            if len(schedule_df) == 0:
+                st.sidebar.warning(f"No schedule data for periods < {current_period}")
+                return 0.0  # No completed games yet
+                
+        except Exception as e:
+            st.sidebar.error(f"Error loading schedule data: {str(e)}")
+            return 0.0  # Error loading schedule data
         
         # Get team stats for FPtsF to determine team strength
         team_stats = None
@@ -222,6 +240,8 @@ def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, re
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
     """Calculate power score based on weekly average, points modifier, hot/cold modifier, and strength of schedule"""
+    # Get debug flag from session state
+    debug_modifiers = st.session_state.get('debug_modifiers', False)
     # Define constants for calculations
     POINTS_PER_WIN = 20.0  # Points assigned per win
     
@@ -294,6 +314,10 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     if 'current_period' in st.session_state:
         current_period = st.session_state.current_period
     
+    # Debug message
+    if debug_modifiers:
+        st.sidebar.info(f"Current Period for SoS calculation: {current_period}")
+    
     # Calculate schedule strength modifier (-1.0 to 1.0)
     schedule_mod = calculate_schedule_strength_modifier(team_name, current_period)
     
@@ -306,7 +330,6 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     raw_power_score = (weekly_avg * points_mod * hot_cold_mod) * schedule_factor
     
     # Show detailed info for each team if enabled
-    debug_modifiers = st.session_state.get('debug_modifiers', False)
     if debug_modifiers:
         st.sidebar.info(
             f"Team: {team_name}\n"
