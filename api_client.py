@@ -24,19 +24,50 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""
         try:
+            st.sidebar.info(f"Making API request to {endpoint}...")
             response = self.session.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
-                timeout=10
+                timeout=15  # Extended timeout
             )
             response.raise_for_status()
-            return response.json()
+            
+            # Get the response content
+            response_text = response.text
+            
+            # Check if response is likely HTML instead of JSON (common error)
+            if response_text.strip().startswith(('<html', '<!DOCTYPE html')):
+                st.warning(f"Received HTML response from {endpoint} instead of JSON")
+                return self._get_mock_data(endpoint)
+                
+            # Try to parse as JSON
+            try:
+                data = response.json()
+                
+                # Success!
+                if isinstance(data, (dict, list)):
+                    return data
+                else:
+                    st.warning(f"Unexpected data type from {endpoint}: {type(data)}")
+                    # If we got a string or other non-dict/list, return mock data
+                    return self._get_mock_data(endpoint)
+                    
+            except ValueError as json_error:
+                st.error(f"Failed to parse JSON from {endpoint}: {str(json_error)}")
+                # Show a sample of the response for debugging
+                if len(response_text) > 100:
+                    st.sidebar.info(f"Response preview: {response_text[:100]}...")
+                else:
+                    st.sidebar.info(f"Response: {response_text}")
+                return self._get_mock_data(endpoint)
+                
         except requests.exceptions.RequestException as e:
-            st.warning(f"API request to {endpoint} failed, using mock data")
-            # Return mock data based on the endpoint
+            st.warning(f"API request to {endpoint} failed: {str(e)}")
             return self._get_mock_data(endpoint)
-        except ValueError as e:
-            st.error(f"Failed to parse JSON response from {endpoint}: {str(e)}")
+        except Exception as e:
+            st.error(f"Unexpected error in API request to {endpoint}: {str(e)}")
+            import traceback
+            st.sidebar.error(f"API request error traceback: {traceback.format_exc()}")
             return self._get_mock_data(endpoint)
 
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:

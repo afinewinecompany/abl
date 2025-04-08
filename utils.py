@@ -37,15 +37,27 @@ def fetch_api_data():
             processed_standings_data = data_processor.process_standings(standings_data)
             
             # Fetch scoring periods to determine current period
-            scoring_periods = api_client.get_scoring_periods()
-            current_period = 1  # Default to period 1
-            
-            # Try to find the current period (period that's active but not completed)
-            if scoring_periods:
-                for period in scoring_periods:
-                    if period.get('isActive', False) and not period.get('isCompleted', False):
-                        current_period = period.get('id', 1)
-                        break
+            try:
+                scoring_periods = api_client.get_scoring_periods()
+                current_period = 1  # Default to period 1
+                
+                # Check if scoring_periods is properly formatted (should be a list of dicts)
+                if isinstance(scoring_periods, list):
+                    for period in scoring_periods:
+                        # Make sure each period is a dictionary
+                        if isinstance(period, dict):
+                            if period.get('isActive', False) and not period.get('isCompleted', False):
+                                current_period = period.get('id', 1)
+                                break
+                        else:
+                            st.sidebar.warning(f"Unexpected period format: {type(period)}")
+                elif isinstance(scoring_periods, str):
+                    st.sidebar.warning(f"Received string instead of scoring periods data: {scoring_periods[:50]}...")
+                else:
+                    st.sidebar.warning(f"Unexpected scoring_periods format: {type(scoring_periods)}")
+            except Exception as period_error:
+                st.sidebar.warning(f"Error processing scoring periods: {str(period_error)}")
+                current_period = 1  # Fallback to period 1
 
             # Clear the progress bar
             status_container.empty()
