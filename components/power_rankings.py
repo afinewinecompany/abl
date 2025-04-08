@@ -73,6 +73,93 @@ def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) 
     
     return modifier  # Returns a value between 1.0 and 1.9 on a linear scale
 
+def calculate_schedule_strength_modifier(team_name: str, current_period: int) -> float:
+    """
+    Calculate strength of schedule modifier based on how a team performed against good/bad teams.
+    
+    Args:
+        team_name: The team name to calculate the modifier for
+        current_period: The current scoring period (to only include completed games)
+    
+    Returns:
+        float: A modifier between -1.0 and 1.0 where:
+        - Positive values mean the team performed well against strong opponents
+        - Negative values mean the team performed poorly against weak opponents
+        - 0 means neutral performance or insufficient data
+    """
+    try:
+        # Load schedule data
+        schedule_df = pd.read_csv("attached_assets/fantasy_baseball_schedule.csv")
+        
+        # Only consider completed periods
+        schedule_df = schedule_df[schedule_df['Scoring Period'] < current_period]
+        
+        if len(schedule_df) == 0:
+            return 0.0  # No completed games yet
+        
+        # Get team stats for FPtsF to determine team strength
+        team_stats = None
+        if 'standings_data' in st.session_state and st.session_state.standings_data is not None:
+            team_stats = st.session_state.standings_data
+        
+        if team_stats is None or 'fptsf' not in team_stats.columns:
+            return 0.0  # Can't calculate strength without team stats
+        
+        # Map teams to their strength (FPtsF)
+        team_strength = dict(zip(team_stats['team_name'], team_stats['fptsf']))
+        
+        # Get average team strength
+        avg_strength = sum(team_strength.values()) / len(team_strength)
+        
+        # Filter games where this team played
+        team_home_games = schedule_df[schedule_df['Home'] == team_name]
+        team_away_games = schedule_df[schedule_df['Away'] == team_name]
+        
+        # Combine home and away games into a list of opponents
+        opponents = []
+        for _, row in team_home_games.iterrows():
+            opponents.append({"opponent": row['Away'], "home": True})
+            
+        for _, row in team_away_games.iterrows():
+            opponents.append({"opponent": row['Home'], "home": False})
+        
+        if not opponents:
+            return 0.0  # No games played
+        
+        # Calculate the average strength of opponents
+        opponent_strengths = []
+        for game in opponents:
+            opponent = game["opponent"]
+            if opponent in team_strength:
+                opponent_strengths.append(team_strength[opponent])
+        
+        if not opponent_strengths:
+            return 0.0  # No valid opponent data
+            
+        avg_opponent_strength = sum(opponent_strengths) / len(opponent_strengths)
+        
+        # Calculate a normalized score between -1 and 1 based on opponent strength
+        # compared to average, and team's performance against them
+        
+        # Get team's performance (FPtsF) and normalize it
+        team_performance = team_strength.get(team_name, avg_strength)
+        performance_percentile = (team_performance - min(team_strength.values())) / (max(team_strength.values()) - min(team_strength.values()))
+        
+        # Calculate opponent strength percentile
+        opponent_strength_percentile = (avg_opponent_strength - min(team_strength.values())) / (max(team_strength.values()) - min(team_strength.values()))
+        
+        # Final modifier:
+        # - If team performed well (high percentile) against strong opponents (high percentile): positive modifier
+        # - If team performed poorly (low percentile) against weak opponents (low percentile): negative modifier
+        modifier = (performance_percentile - 0.5) * 2 * opponent_strength_percentile
+        
+        # Scale modifier between -1 and 1
+        return max(min(modifier, 1.0), -1.0)
+        
+    except Exception as e:
+        print(f"Error calculating schedule strength modifier: {str(e)}")
+        return 0.0  # Default to no modification on error
+
 def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, recent_losses: float = 0, recent_draws: float = 0) -> float:
     """
     Calculate hot/cold modifier based on recent performance
@@ -106,7 +193,7 @@ def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, re
     return modifier
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
-    """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
+    """Calculate power score based on weekly average, points modifier, hot/cold modifier, and strength of schedule"""
     # Define constants for calculations
     POINTS_PER_WIN = 20.0  # Points assigned per win
     
@@ -118,6 +205,7 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     wins = float(row.get('wins', 0))
     winning_pct = float(row.get('winning_pct', 0))
     weeks_played = max(float(row.get('weeks_played', 1)), 1)  # Prevent division by zero
+    team_name = row.get('team_name', '')
     
     # Determine which points source to use, in order of preference
     if fptsf > 0:
@@ -141,7 +229,7 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         points = (wins * POINTS_PER_WIN) + win_quality_bonus
         weekly_avg = points / max(weeks_played, 1)
         
-        st.sidebar.info(f"Using win-based calculation for {row.get('team_name', 'Unknown team')}: wins={wins}, win%={winning_pct}, calculated points={points:.1f}")
+        st.sidebar.info(f"Using win-based calculation for {team_name}: wins={wins}, win%={winning_pct}, calculated points={points:.1f}")
     
     # Calculate points modifier based on all teams
     # Prefer actual points, but fall back to our calculated points when needed
@@ -172,12 +260,38 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         # Pass the actual game counts to the modifier function to handle draws properly
         hot_cold_mod = calculate_hot_cold_modifier(0, recent_wins, recent_losses, recent_draws)
     
-    # Only show detailed debugging for teams with no points
-    if total_points == 0:
-        st.sidebar.info(f"Team: {row.get('team_name', 'Unknown')}, Weekly Avg: {weekly_avg:.2f}, Points Mod: {points_mod:.2f}, Hot/Cold: {hot_cold_mod:.2f}")
+    # Calculate strength of schedule modifier
+    # Get current scoring period from session state if available
+    current_period = 1  # Default to period 1
+    if 'current_period' in st.session_state:
+        current_period = st.session_state.current_period
     
-    # Calculate the raw power score
-    raw_power_score = (weekly_avg * points_mod) * hot_cold_mod
+    # Calculate schedule strength modifier (-1.0 to 1.0)
+    schedule_mod = calculate_schedule_strength_modifier(team_name, current_period)
+    
+    # Apply strength of schedule to the score (using a factor of 0.15 to adjust the impact)
+    # A score of 1.0 would be 100% bonus, -1.0 would be a 100% penalty, 
+    # we'll scale to a more reasonable 15% max impact
+    schedule_factor = 1.0 + (schedule_mod * 0.15)
+    
+    # Calculate the raw power score with all factors
+    raw_power_score = (weekly_avg * points_mod * hot_cold_mod) * schedule_factor
+    
+    # Show detailed info for each team if enabled
+    debug_modifiers = st.session_state.get('debug_modifiers', False)
+    if debug_modifiers:
+        st.sidebar.info(
+            f"Team: {team_name}\n"
+            f"Weekly Avg: {weekly_avg:.2f}\n"
+            f"Points Mod: {points_mod:.2f}\n"
+            f"Hot/Cold Mod: {hot_cold_mod:.2f}\n"
+            f"SoS Mod: {schedule_mod:.2f} ({schedule_factor:.2f}×)\n"
+            f"Raw Score: {raw_power_score:.2f}"
+        )
+    elif total_points == 0:
+        # Only show basic debugging for teams with no points
+        st.sidebar.info(f"Team: {team_name}, Weekly Avg: {weekly_avg:.2f}, Points Mod: {points_mod:.2f}, Hot/Cold: {hot_cold_mod:.2f}")
+    
     return raw_power_score
 
 def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekly_results: list = None):
@@ -193,14 +307,14 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     
     # Add explanation of the power score
     st.markdown("""
-    Power Rankings combine weekly scoring average, points comparison against other teams, and recent performance (hot/cold streak).
-    This is a measure of *current season performance only* and does not include historical data.
+    Power Rankings combine weekly scoring average, points comparison against other teams, recent performance (hot/cold streak),
+    and strength of schedule. This is a measure of *current season performance only* and does not include historical data.
     
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
     
-    Modifiers for team strength and recent performance now use a straight line distribution method, 
+    Modifiers for team strength, recent performance, and strength of schedule use a straight line distribution method, 
     creating a smoother spread of scores rather than bucketed groups.
     """)
     st.markdown("""
@@ -251,6 +365,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     rankings_df = standings_data.copy()
     
     st.sidebar.success("⚡ Using live standings data from Fantrax API with manual data overrides")
+    
+    # Add a debug option in sidebar to show detailed modifiers
+    st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
     
     # Get custom data from parameters or session state
     if power_rankings_data:
@@ -306,15 +423,16 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         st.markdown("""
         ### Power Score Calculation Details
         
-        Power scores are calculated using three main components:
+        Power scores are calculated using four main components:
         
         1. **Weekly Average** - Average fantasy points per week
         2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
         3. **Hot/Cold Modifier** - Based on recent win percentage (1.0× to 1.5×)
+        4. **Strength of Schedule** - Based on opponent quality (-15% to +15% adjustment)
         
         #### Linear Distribution Method
         
-        Both modifiers now use a straight line (linear) distribution rather than bucketed groups:
+        All modifiers now use a straight line (linear) distribution rather than bucketed groups:
         
         - **Points Modifier**: Teams with the highest total points receive a 1.9× bonus, while teams with
           the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
@@ -324,8 +442,12 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
           win rate receive a 1.0× modifier. All teams receive a proportional value based on their exact
           win percentage.
           
-        This creates a smoother distribution of power scores that better reflects the actual performance
-        differences between teams.
+        - **Strength of Schedule**: Teams that perform well against strong opponents receive up to a 15% bonus,
+          while teams that perform poorly against weak opponents receive up to a 15% penalty. This modifier
+          analyzes a team's fantasy points against the quality of their opponents from completed scoring periods.
+          
+        This creates a more accurate and fair distribution of power scores that better reflects actual performance
+        differences between teams, accounting for schedule difficulty.
         """)
     
     # Fill any missing values with defaults

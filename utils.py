@@ -4,6 +4,8 @@ from data_processor import DataProcessor
 from typing import Any, Dict, List
 import pandas as pd
 import os
+import datetime
+from pathlib import Path
 
 @st.cache_data
 def fetch_api_data():
@@ -33,6 +35,17 @@ def fetch_api_data():
             status_container.progress(75)
             standings_data = api_client.get_standings()
             processed_standings_data = data_processor.process_standings(standings_data)
+            
+            # Fetch scoring periods to determine current period
+            scoring_periods = api_client.get_scoring_periods()
+            current_period = 1  # Default to period 1
+            
+            # Try to find the current period (period that's active but not completed)
+            if scoring_periods:
+                for period in scoring_periods:
+                    if period.get('isActive', False) and not period.get('isCompleted', False):
+                        current_period = period.get('id', 1)
+                        break
 
             # Clear the progress bar
             status_container.empty()
@@ -40,7 +53,8 @@ def fetch_api_data():
             return {
                 'league_data': processed_league_data,
                 'roster_data': processed_roster_data,
-                'standings_data': processed_standings_data
+                'standings_data': processed_standings_data,
+                'current_period': current_period
             }
     except Exception as e:
         with st.sidebar:
