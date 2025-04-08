@@ -206,23 +206,48 @@ class FantraxAPI:
     def get_standings(self) -> List[Dict[str, Any]]:
         """Fetch standings data directly from the API for power rankings calculation"""
         try:
+            st.sidebar.info("Fetching standings data from Fantrax API...")
             response = self.session.get(
                 "https://www.fantrax.com/fxea/general/getStandings",
                 params={"leagueId": self.league_id},
-                timeout=10
+                timeout=20  # Extended timeout
             )
             response.raise_for_status()
             
-            # Debug the raw API response
-            response_data = response.json()
-            st.sidebar.write("API Response Data (Sample):", response_data[:2] if isinstance(response_data, list) and len(response_data) > 0 else response_data)
-            
-            return response_data
+            # Try to parse the JSON response
+            try:
+                response_data = response.json()
+                
+                # Check the response structure and extract standings if needed
+                if isinstance(response_data, dict) and 'standings' in response_data:
+                    # API returned a dictionary with a 'standings' key containing the actual data
+                    standings_data = response_data['standings']
+                    st.sidebar.success(f"Received standings data: {len(standings_data)} teams found")
+                    return standings_data
+                elif isinstance(response_data, list):
+                    # API returned a list directly (expected format)
+                    st.sidebar.success(f"Received standings data: {len(response_data)} teams found")
+                    return response_data
+                else:
+                    # Unknown format - log it for debugging
+                    st.sidebar.warning(f"Unexpected API response format: {type(response_data)}")
+                    if isinstance(response_data, dict):
+                        st.sidebar.info(f"Response keys: {list(response_data.keys())}")
+                    
+                    # Return what we got, let the processor handle it
+                    return response_data
+            except ValueError as e:
+                st.error(f"Failed to parse JSON response from standings API: {str(e)}")
+                st.warning("Response was not valid JSON - using mock data instead")
+                return self._get_mock_data("getStandings")
         except requests.exceptions.RequestException as e:
             st.warning(f"Standings API request failed: {str(e)}")
+            st.info("Using mock data for development purposes")
             return self._get_mock_data("getStandings")
-        except ValueError as e:
-            st.error(f"Failed to parse JSON response from standings API: {str(e)}")
+        except Exception as e:
+            st.error(f"Unexpected error fetching standings: {str(e)}")
+            import traceback
+            st.sidebar.error(f"Traceback: {traceback.format_exc()}")
             return self._get_mock_data("getStandings")
         
     def get_scoring_periods(self) -> List[Dict[str, Any]]:
