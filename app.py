@@ -5,7 +5,17 @@ import base64
 from PIL import Image
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
-from utils import fetch_api_data, save_power_rankings_data, load_power_rankings_data, save_weekly_results, load_weekly_results
+from utils import (
+    fetch_api_data, 
+    save_power_rankings_data, 
+    load_power_rankings_data, 
+    save_weekly_results, 
+    load_weekly_results,
+    save_rankings_history,
+    load_rankings_history,
+    create_ranking_trend_chart,
+    should_take_weekly_snapshot
+)
 
 # This must be the first Streamlit command
 st.set_page_config(
@@ -829,10 +839,34 @@ def main():
                 if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
                     # Use the calculated power rankings
                     power_rankings_df = st.session_state.power_rankings_calculated
-                    ddi.render(data['roster_data'], power_rankings_df)
+                    ddi_df = ddi.render(data['roster_data'], power_rankings_df)
+                    
+                    # Store DDI data in session state for other components to use
+                    st.session_state.ddi_data_calculated = ddi_df
+                    
+                    # Check if we should take a weekly snapshot (Sunday or first run)
+                    if should_take_weekly_snapshot():
+                        with st.sidebar:
+                            snapshot_container = st.empty()
+                            # Save Power Rankings history
+                            if save_rankings_history(power_rankings_df, ranking_type="power"):
+                                snapshot_container.success("✅ Power Rankings snapshot saved!")
+                            else:
+                                snapshot_container.error("❌ Failed to save Power Rankings snapshot")
+                            
+                            # Save DDI Rankings history if available
+                            if 'ddi_calculated' in st.session_state and st.session_state.ddi_calculated is not None:
+                                ddi_rankings_df = st.session_state.ddi_calculated
+                                if save_rankings_history(ddi_rankings_df, ranking_type="ddi"):
+                                    snapshot_container.success("✅ DDI Rankings snapshot saved!")
+                                else:
+                                    snapshot_container.error("❌ Failed to save DDI Rankings snapshot")
                 else:
                     # Just pass the roster data without power rankings
-                    ddi.render(data['roster_data'])
+                    ddi_df = ddi.render(data['roster_data'])
+                    
+                    # Store DDI data in session state for other components to use
+                    st.session_state.ddi_data_calculated = ddi_df
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 

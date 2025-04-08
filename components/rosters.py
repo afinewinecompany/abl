@@ -81,10 +81,31 @@ def calculate_dynascore(power_rank: float, total_prospect_score: float) -> float
 
     return round(dynascore, 1)
 
-def get_team_ddi_rank(team: str, roster_data: pd.DataFrame, power_rank: float, prospect_score: float) -> int:
-    """Get team's DDI rank from the full DDI calculations"""
+def get_team_ddi_data(team: str, roster_data: pd.DataFrame, power_rank: float, prospect_score: float) -> Dict:
+    """Get team's DDI data from the full DDI calculations"""
+    import streamlit as st
+    
+    # First check if DDI data is already calculated and in session state
+    if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
+        # Use the DDI data from session state
+        ddi_df = st.session_state.ddi_data_calculated
+        
+        # Find the data for our team
+        team_ddi_row = ddi_df[ddi_df['Team'] == team]
+        if len(team_ddi_row) > 0:
+            # Return values from the pre-calculated dataframe
+            return {
+                'rank': int(team_ddi_row['Rank'].values[0]),
+                'ddi_score': float(team_ddi_row['DDI Score'].values[0]),
+                'power_score': float(team_ddi_row['Power Score'].values[0]),
+                'prospect_score': float(team_ddi_row['Prospect Score'].values[0]),
+                'historical_score': float(team_ddi_row['Historical Score'].values[0]),
+                'playoff_score': float(team_ddi_row['Playoff Score'].values[0])
+            }
+    
+    # If we don't have pre-calculated data, calculate it now
     # Import the necessary components for DDI calculation
-    from components.ddi import calculate_ddi_scores, load_historical_data, calculate_power_rankings_from_component
+    from components.ddi import render, load_historical_data, calculate_power_rankings_from_component
     
     try:
         # Load historical data for DDI calculation
@@ -94,21 +115,34 @@ def get_team_ddi_rank(team: str, roster_data: pd.DataFrame, power_rank: float, p
         power_rankings_df = calculate_power_rankings_from_component(roster_data)
         
         # Calculate full DDI scores for all teams
-        ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
+        ddi_df = render(roster_data, power_rankings_df)
         
-        # Find the rank for our team
-        team_rank_row = ddi_df[ddi_df['Team'] == team]
+        # Find the data for our team
+        team_ddi_row = ddi_df[ddi_df['Team'] == team]
         
-        if len(team_rank_row) > 0:
-            # Return the rank (it's already a 1-based index)
-            return int(team_rank_row['Rank'].values[0])
-        else:
-            # Return a default value if team not found
-            return 30
+        if len(team_ddi_row) > 0:
+            # Return a dictionary with all the DDI data
+            return {
+                'rank': int(team_ddi_row['Rank'].values[0]),
+                'ddi_score': float(team_ddi_row['DDI Score'].values[0]),
+                'power_score': float(team_ddi_row['Power Score'].values[0]),
+                'prospect_score': float(team_ddi_row['Prospect Score'].values[0]),
+                'historical_score': float(team_ddi_row['Historical Score'].values[0]),
+                'playoff_score': float(team_ddi_row['Playoff Score'].values[0])
+            }
     except Exception as e:
         # If anything fails, return a default value
-        print(f"Error getting DDI rank: {str(e)}")
-        return 30
+        print(f"Error getting DDI data: {str(e)}")
+    
+    # Default values if we can't calculate
+    return {
+        'rank': 15,
+        'ddi_score': 50.0,
+        'power_score': power_rank,
+        'prospect_score': prospect_score,
+        'historical_score': 0.0,
+        'playoff_score': 0.0
+    }
 
 def render_team_header(
     team: str,
@@ -121,8 +155,9 @@ def render_team_header(
     roster_data: pd.DataFrame
 ):
     """Render the team dashboard header"""
-    # Get the team's DDI rank instead of calculating Dynascore
-    ddi_rank = get_team_ddi_rank(team, roster_data, power_rank, prospect_stats.get('total_score', 0))
+    # Get the team's DDI data instead of calculating Dynascore
+    ddi_data = get_team_ddi_data(team, roster_data, power_rank, prospect_stats.get('total_score', 0))
+    ddi_rank = ddi_data['rank']
 
     st.markdown(f"""
         <style>
@@ -211,8 +246,16 @@ def render_team_header(
                     <div class="stat-value">#{ddi_rank}</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-label">DDI Score</div>
+                    <div class="stat-value">{ddi_data['ddi_score']:.1f}</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-label">Power Rank</div>
                     <div class="stat-value">#{power_rank:.0f}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Historical Score</div>
+                    <div class="stat-value">{ddi_data['historical_score']:.1f}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Total Players</div>

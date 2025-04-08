@@ -255,3 +255,164 @@ def load_weekly_results(file_path: str = 'data/weekly_results.csv') -> list:
         st.error(f"Error loading weekly results data: {str(e)}")
         return []
 
+def save_rankings_history(rankings_df: pd.DataFrame, ranking_type: str = "power") -> bool:
+    """
+    Save a snapshot of team rankings to a historical record CSV file
+    
+    Args:
+        rankings_df: DataFrame containing the rankings data
+        ranking_type: Type of ranking ('power' or 'ddi')
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Create directory structure if it doesn't exist
+        history_dir = Path('data/history')
+        history_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Determine file path based on ranking type
+        if ranking_type.lower() == 'power':
+            file_path = history_dir / 'power_rankings_history.csv'
+            required_columns = ['team_name', 'power_score', 'raw_power_score']
+        else:  # DDI rankings
+            file_path = history_dir / 'ddi_rankings_history.csv'
+            required_columns = ['Team', 'DDI Score', 'Power Score', 'Prospect Score', 
+                               'Historical Score', 'Playoff Score']
+        
+        # Verify required columns exist in the DataFrame
+        missing_columns = [col for col in required_columns if col not in rankings_df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns in rankings data: {missing_columns}")
+            return False
+        
+        # Add date column to the data
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        rankings_df = rankings_df.copy()
+        rankings_df['date'] = current_date
+        
+        # Add a rank column if not already present
+        if 'rank' not in rankings_df.columns:
+            # Add ordinal ranking (1, 2, 3, etc.)
+            rankings_df['rank'] = range(1, len(rankings_df) + 1)
+        
+        # If file exists, append; otherwise create new
+        if file_path.exists():
+            # Load existing data
+            existing_df = pd.read_csv(file_path)
+            
+            # Check if we already have data for today
+            today_data = existing_df[existing_df['date'] == current_date]
+            if not today_data.empty:
+                # Remove today's data and append new data
+                existing_df = existing_df[existing_df['date'] != current_date]
+            
+            # Append new data
+            combined_df = pd.concat([existing_df, rankings_df])
+            combined_df.to_csv(file_path, index=False)
+        else:
+            # Create new file
+            rankings_df.to_csv(file_path, index=False)
+        
+        return True
+    except Exception as e:
+        st.error(f"Error saving rankings history: {str(e)}")
+        return False
+
+def load_rankings_history(team_name: str = None, ranking_type: str = "power") -> pd.DataFrame:
+    """
+    Load historical rankings data, optionally filtered by team
+    
+    Args:
+        team_name: Optional team name to filter results
+        ranking_type: Type of ranking ('power' or 'ddi')
+    
+    Returns:
+        DataFrame: Historical rankings data
+    """
+    try:
+        # Determine file path based on ranking type
+        history_dir = Path('data/history')
+        if ranking_type.lower() == 'power':
+            file_path = history_dir / 'power_rankings_history.csv'
+            team_col = 'team_name'
+        else:  # DDI rankings
+            file_path = history_dir / 'ddi_rankings_history.csv'
+            team_col = 'Team'
+        
+        # Check if file exists
+        if not file_path.exists():
+            return pd.DataFrame()  # Return empty DataFrame if no history exists
+        
+        # Load data
+        df = pd.read_csv(file_path)
+        
+        # Convert date column to datetime for easier manipulation
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # Sort by date, then by rank
+        df = df.sort_values(['date', 'rank'])
+        
+        # Filter by team if specified
+        if team_name is not None:
+            df = df[df[team_col] == team_name]
+        
+        return df
+    except Exception as e:
+        st.error(f"Error loading rankings history: {str(e)}")
+        return pd.DataFrame()  # Return empty DataFrame on error
+
+def create_ranking_trend_chart(team_name: str, ranking_type: str = "power") -> pd.DataFrame:
+    """
+    Create a chart showing a team's ranking trend over time
+    
+    Args:
+        team_name: Name of the team to show trend for
+        ranking_type: Type of ranking ('power' or 'ddi')
+    
+    Returns:
+        DataFrame: Processed data ready for plotting
+    """
+    try:
+        # Load team's historical data
+        df = load_rankings_history(team_name, ranking_type)
+        
+        if df.empty:
+            return df  # Return empty DataFrame if no history exists
+        
+        # Determine score column based on ranking type
+        if ranking_type.lower() == 'power':
+            score_col = 'power_score'
+        else:  # DDI rankings
+            score_col = 'DDI Score'
+        
+        # Process data for plotting - keep date and score columns
+        plot_df = df[['date', score_col, 'rank']].copy()
+        
+        # Ensure dates are sorted
+        plot_df = plot_df.sort_values('date')
+        
+        return plot_df
+    except Exception as e:
+        st.error(f"Error creating ranking trend chart: {str(e)}")
+        return pd.DataFrame()
+
+def should_take_weekly_snapshot() -> bool:
+    """
+    Determine if we should take a weekly snapshot of rankings
+    Returns True if today is Sunday or if no snapshot exists yet
+    """
+    try:
+        # Check if today is Sunday (weekday 6 is Sunday)
+        is_sunday = datetime.datetime.now().weekday() == 6
+        
+        # Check if history directories/files exist
+        power_history = Path('data/history/power_rankings_history.csv')
+        ddi_history = Path('data/history/ddi_rankings_history.csv')
+        
+        # Return True if it's Sunday or if no history exists yet
+        return is_sunday or not (power_history.exists() and ddi_history.exists())
+    except Exception:
+        # If there's an error, default to False to be safe
+        return False
+

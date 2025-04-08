@@ -1342,6 +1342,9 @@ def render(roster_data: pd.DataFrame, power_rankings_df: pd.DataFrame = None):
         st.error(f"Error calculating DDI rankings: {str(e)}")
         import traceback
         st.write(traceback.format_exc())
+        
+    # Return the DDI dataframe so it can be used by other components
+    return ddi_df
 
 def calculate_power_rankings_from_component(roster_data: pd.DataFrame) -> pd.DataFrame:
     """
