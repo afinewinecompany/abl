@@ -281,8 +281,16 @@ class FantraxAPI:
             st.sidebar.error(f"Traceback: {traceback.format_exc()}")
             return self._get_mock_data("getStandings")
         
-    def get_scoring_periods(self) -> List[Dict[str, Any]]:
-        """Fetch scoring periods"""
+    def get_scoring_periods(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """
+        Fetch scoring periods
+        
+        Returns:
+            Either a dictionary containing scoring periods data or a list of scoring period dictionaries,
+            depending on the API response format.
+        """
+        # We've updated the return type annotation to accept either Dict or List,
+        # and utils.py now handles both formats appropriately
         return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
         
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:

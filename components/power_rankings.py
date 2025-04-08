@@ -106,8 +106,27 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
             # Debug the column names to ensure they match
             st.sidebar.write("Schedule columns:", schedule_df.columns.tolist())
             
+            # Fix column name if needed - the actual CSV file has "Scoring Period" with a space
+            if 'Scoring Period' in schedule_df.columns:
+                scoring_period_col = 'Scoring Period'
+            else:
+                # Try other common variations of the column name
+                potential_columns = ['ScoringPeriod', 'Period', 'Week', 'WeekNum']
+                found_col = False
+                for col in potential_columns:
+                    if col in schedule_df.columns:
+                        scoring_period_col = col
+                        found_col = True
+                        break
+                
+                if not found_col:
+                    st.sidebar.error(f"Could not find scoring period column in schedule data.")
+                    return 0.0
+            
+            st.sidebar.info(f"Using scoring period column: {scoring_period_col}")
+            
             # Only consider completed periods - make sure column name matches exactly
-            schedule_df = schedule_df[schedule_df['Scoring Period'] < current_period]
+            schedule_df = schedule_df[schedule_df[scoring_period_col] < current_period]
             
             st.sidebar.info(f"After filtering by period < {current_period}: {len(schedule_df)} rows remain")
             

@@ -41,8 +41,9 @@ def fetch_api_data():
                 scoring_periods = api_client.get_scoring_periods()
                 current_period = 1  # Default to period 1
                 
-                # Check if scoring_periods is properly formatted (should be a list of dicts)
+                # Check if scoring_periods is properly formatted
                 if isinstance(scoring_periods, list):
+                    # Handle list of period dictionaries (expected format)
                     for period in scoring_periods:
                         # Make sure each period is a dictionary
                         if isinstance(period, dict):
@@ -51,6 +52,43 @@ def fetch_api_data():
                                 break
                         else:
                             st.sidebar.warning(f"Unexpected period format: {type(period)}")
+                elif isinstance(scoring_periods, dict):
+                    # Handle dictionary response format
+                    st.sidebar.info("Processing dictionary-formatted scoring periods data")
+                    
+                    # The API might return scoring periods in a dictionary structure
+                    # Try to extract periods data from common fields
+                    if 'items' in scoring_periods and isinstance(scoring_periods['items'], list):
+                        periods_list = scoring_periods['items']
+                        st.sidebar.info(f"Found {len(periods_list)} periods in 'items' field")
+                        
+                        for period in periods_list:
+                            if isinstance(period, dict):
+                                # Look for active period
+                                if period.get('isActive', False) and not period.get('isCompleted', False):
+                                    current_period = period.get('id', 1)
+                                    break
+                    elif 'periods' in scoring_periods and isinstance(scoring_periods['periods'], list):
+                        periods_list = scoring_periods['periods']
+                        st.sidebar.info(f"Found {len(periods_list)} periods in 'periods' field")
+                        
+                        for period in periods_list:
+                            if isinstance(period, dict):
+                                # Look for active period
+                                if period.get('isActive', False) and not period.get('isCompleted', False):
+                                    current_period = period.get('id', 1)
+                                    break
+                    else:
+                        # If we can't find a list of periods, try direct key
+                        st.sidebar.info(f"Dictionary keys: {list(scoring_periods.keys())}")
+                        
+                        # Directly look for the current period if present
+                        if 'currentPeriod' in scoring_periods and isinstance(scoring_periods['currentPeriod'], dict):
+                            current_period = scoring_periods['currentPeriod'].get('id', 1)
+                        elif 'currentPeriodId' in scoring_periods:
+                            current_period = scoring_periods['currentPeriodId']
+                            
+                        st.sidebar.info(f"Using current period: {current_period}")
                 elif isinstance(scoring_periods, str):
                     st.sidebar.warning(f"Received string instead of scoring periods data: {scoring_periods[:50]}...")
                 else:
