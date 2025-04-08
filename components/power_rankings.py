@@ -88,10 +88,14 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         - 0 means neutral performance or insufficient data
     """
     try:
+        # Check if team_name is empty or None
+        if not team_name:
+            return 0.0
+            
         # Load schedule data
         schedule_df = pd.read_csv("attached_assets/fantasy_baseball_schedule.csv")
         
-        # Only consider completed periods
+        # Only consider completed periods - make sure column name matches exactly
         schedule_df = schedule_df[schedule_df['Scoring Period'] < current_period]
         
         if len(schedule_df) == 0:
@@ -99,17 +103,32 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         
         # Get team stats for FPtsF to determine team strength
         team_stats = None
-        if 'standings_data' in st.session_state and st.session_state.standings_data is not None:
+        if 'standings_data' in st.session_state and isinstance(st.session_state.standings_data, pd.DataFrame):
             team_stats = st.session_state.standings_data
         
         if team_stats is None or 'fptsf' not in team_stats.columns:
             return 0.0  # Can't calculate strength without team stats
         
-        # Map teams to their strength (FPtsF)
-        team_strength = dict(zip(team_stats['team_name'], team_stats['fptsf']))
+        # Map teams to their strength (FPtsF) - make sure team_name exists in dataframe
+        if 'team_name' not in team_stats.columns:
+            return 0.0
+            
+        # Create team strength dictionary with safety checks
+        team_strength = {}
+        for _, row in team_stats.iterrows():
+            if 'team_name' in row and 'fptsf' in row:
+                name = row['team_name']
+                if name and isinstance(name, str):  # Make sure it's a valid string
+                    team_strength[name] = float(row['fptsf'])
+        
+        if not team_strength:
+            return 0.0  # No valid team strength data
         
         # Get average team strength
-        avg_strength = sum(team_strength.values()) / len(team_strength)
+        if team_strength:
+            avg_strength = sum(team_strength.values()) / len(team_strength)
+        else:
+            return 0.0
         
         # Filter games where this team played
         team_home_games = schedule_df[schedule_df['Home'] == team_name]
@@ -118,10 +137,12 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         # Combine home and away games into a list of opponents
         opponents = []
         for _, row in team_home_games.iterrows():
-            opponents.append({"opponent": row['Away'], "home": True})
+            if 'Away' in row and isinstance(row['Away'], str):
+                opponents.append({"opponent": row['Away'], "home": True})
             
         for _, row in team_away_games.iterrows():
-            opponents.append({"opponent": row['Home'], "home": False})
+            if 'Home' in row and isinstance(row['Home'], str):
+                opponents.append({"opponent": row['Home'], "home": False})
         
         if not opponents:
             return 0.0  # No games played
@@ -135,18 +156,25 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         
         if not opponent_strengths:
             return 0.0  # No valid opponent data
+        
+        # Safely calculate average opponent strength
+        avg_opponent_strength = sum(opponent_strengths) / max(len(opponent_strengths), 1)
+        
+        # Safely get min and max values
+        min_strength = min(team_strength.values())
+        max_strength = max(team_strength.values())
+        strength_range = max_strength - min_strength
+        
+        # Avoid division by zero
+        if strength_range == 0:
+            return 0.0
             
-        avg_opponent_strength = sum(opponent_strengths) / len(opponent_strengths)
-        
-        # Calculate a normalized score between -1 and 1 based on opponent strength
-        # compared to average, and team's performance against them
-        
         # Get team's performance (FPtsF) and normalize it
         team_performance = team_strength.get(team_name, avg_strength)
-        performance_percentile = (team_performance - min(team_strength.values())) / (max(team_strength.values()) - min(team_strength.values()))
+        performance_percentile = (team_performance - min_strength) / strength_range
         
         # Calculate opponent strength percentile
-        opponent_strength_percentile = (avg_opponent_strength - min(team_strength.values())) / (max(team_strength.values()) - min(team_strength.values()))
+        opponent_strength_percentile = (avg_opponent_strength - min_strength) / strength_range
         
         # Final modifier:
         # - If team performed well (high percentile) against strong opponents (high percentile): positive modifier
