@@ -46,13 +46,32 @@ TEAM_ABBREVIATIONS = {
 }
 
 def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) -> float:
-    """Calculate points modifier based on total points ranking"""
-    # Sort all teams by points and split into 10 groups of 3
-    sorted_points = all_teams_points.sort_values(ascending=False)
-    group_size = len(sorted_points) // 10
-    rank = sorted_points[sorted_points >= total_points].index.min()
-    group = rank // group_size
-    return 1 + (0.1 * (9 - group))  # 1.9x for top group, 1.0x for bottom group
+    """Calculate points modifier based on total points ranking using a straight line distribution"""
+    if all_teams_points.empty or all_teams_points.max() == all_teams_points.min():
+        return 1.0  # Default value if no valid comparison can be made
+    
+    # Get min and max points
+    min_points = all_teams_points.min()
+    max_points = all_teams_points.max()
+    
+    # Linear scaling from 1.0 to 1.9 based on where this team's points fall in the range
+    # Linear formula: y = m*x + b where:
+    # m = (max_modifier - min_modifier) / (max_points - min_points)
+    # b = min_modifier - m * min_points
+    min_modifier = 1.0
+    max_modifier = 1.9
+    range_width = max_points - min_points
+    
+    if range_width == 0:  # Avoid division by zero
+        return (min_modifier + max_modifier) / 2
+    
+    # Calculate scale factor (how far along the line this team's points fall)
+    scale_factor = (total_points - min_points) / range_width
+    
+    # Linear interpolation between min_modifier and max_modifier
+    modifier = min_modifier + (scale_factor * (max_modifier - min_modifier))
+    
+    return modifier  # Returns a value between 1.0 and 1.9 on a linear scale
 
 def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, recent_losses: float = 0, recent_draws: float = 0) -> float:
     """
@@ -73,19 +92,18 @@ def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, re
         else:
             recent_record = 0.5  # Default if no games played
     
-    # Split into 6 groups, with modifiers from 1.5x to 1.0x
-    if recent_record >= 0.800:  # Group 1
-        return 1.5
-    elif recent_record >= 0.650:  # Group 2
-        return 1.4
-    elif recent_record >= 0.500:  # Group 3
-        return 1.3
-    elif recent_record >= 0.350:  # Group 4
-        return 1.2
-    elif recent_record >= 0.200:  # Group 5
-        return 1.1
-    else:  # Group 6
-        return 1.0
+    # Use linear scaling from 1.0 to 1.5 based on win percentage
+    # This creates a smooth distribution rather than discrete buckets
+    
+    # Define range for the modifier
+    min_modifier = 1.0   # Modifier for 0% win rate
+    max_modifier = 1.5   # Modifier for 100% win rate
+    
+    # Linear interpolation: y = min_modifier + (x * (max_modifier - min_modifier))
+    # where x is the win percentage from 0.0 to 1.0
+    modifier = min_modifier + (recent_record * (max_modifier - min_modifier))
+    
+    return modifier
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
     """Calculate power score based on weekly average, points modifier, and hot/cold modifier"""
@@ -182,6 +200,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
     
+    Modifiers for team strength and recent performance now use a straight line distribution method, 
+    creating a smoother spread of scores rather than bucketed groups.
     """)
     st.markdown("""
         <style>
@@ -280,6 +300,33 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         st.info("Power rankings are calculated using a combination of Fantrax API data and your manual FPtsF entries from the sidebar. Power scores are normalized to 100 = league average.")
     else:
         st.info("Power rankings are calculated using live standings data from Fantrax API. Add manual FPtsF entries in the sidebar for more accurate power scores. Power scores are normalized to 100 = league average.")
+        
+    # Add an expander with detailed explanation of the new calculation method
+    with st.expander("📊 How Power Scores Are Calculated"):
+        st.markdown("""
+        ### Power Score Calculation Details
+        
+        Power scores are calculated using three main components:
+        
+        1. **Weekly Average** - Average fantasy points per week
+        2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
+        3. **Hot/Cold Modifier** - Based on recent win percentage (1.0× to 1.5×)
+        
+        #### Linear Distribution Method
+        
+        Both modifiers now use a straight line (linear) distribution rather than bucketed groups:
+        
+        - **Points Modifier**: Teams with the highest total points receive a 1.9× bonus, while teams with
+          the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
+          between these extremes based on where their points total falls in the league range.
+        
+        - **Hot/Cold Modifier**: Teams with a 100% recent win rate receive a 1.5× bonus, teams with a 0%
+          win rate receive a 1.0× modifier. All teams receive a proportional value based on their exact
+          win percentage.
+          
+        This creates a smoother distribution of power scores that better reflects the actual performance
+        differences between teams.
+        """)
     
     # Fill any missing values with defaults
     if 'fptsf' not in rankings_df.columns:
