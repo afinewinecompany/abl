@@ -246,36 +246,31 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         print(f"Error calculating schedule strength modifier: {str(e)}")
         return 0.0  # Default to no modification on error
 
-def calculate_hot_cold_modifier(recent_record: float, recent_wins: float = 0, recent_losses: float = 0, recent_draws: float = 0) -> float:
+def calculate_hot_cold_modifier(win_percentage: float) -> float:
     """
-    Calculate hot/cold modifier based on recent performance
-
+    Calculate hot/cold modifier based on win percentage.
+    
+    The formula uses linear scaling to give teams with better records a higher modifier.
+    Teams with a 100% win rate get a 1.5x bonus, teams with a 0% win rate get 1.0x (no bonus).
+    
     Args:
-        recent_record: Win percentage (if directly provided)
-        recent_wins: Number of recent weekly wins from the 3-game weekly record
-        recent_losses: Number of recent weekly losses from the 3-game weekly record
-        recent_draws: Number of recent weekly draws from the 3-game weekly record
+        win_percentage: Team's win percentage (0.0 to 1.0)
+        
+    Returns:
+        float: Hot/cold modifier between 1.0 and 1.5
     """
-    # If record components are provided, calculate record from them
-    if recent_wins > 0 or recent_losses > 0 or recent_draws > 0:
-        total_games = recent_wins + recent_losses + recent_draws
-        if total_games > 0:
-            # Count draws as half wins
-            recent_record = (recent_wins + (recent_draws * 0.5)) / total_games
-        else:
-            recent_record = 0.5  # Default if no games played
-
-    # Use linear scaling from 1.0 to 1.5 based on win percentage
-    # This creates a smooth distribution rather than discrete buckets
-
+    # Ensure win_percentage is between 0 and 1
+    win_percentage = max(0.0, min(1.0, win_percentage))
+    
     # Define range for the modifier
     min_modifier = 1.0   # Modifier for 0% win rate
     max_modifier = 1.5   # Modifier for 100% win rate
 
     # Linear interpolation: y = min_modifier + (x * (max_modifier - min_modifier))
     # where x is the win percentage from 0.0 to 1.0
-    modifier = min_modifier + (recent_record * (max_modifier - min_modifier))
-
+    modifier = min_modifier + (win_percentage * (max_modifier - min_modifier))
+    
+    # Return the calculated modifier
     return modifier
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
@@ -340,13 +335,25 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
 
     total_recent_games = recent_wins + recent_losses + recent_draws
 
-    # If no recent games data, use overall win percentage
-    if total_recent_games == 0:
-        recent_win_pct = winning_pct if winning_pct > 0 else 0.5
-        hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
+    # For consistent hot/cold calculation, always use the win percentage,
+    # not a mix of direct percentage and calculated percentages.
+    # This will make the hot/cold modifier consistent for all teams.
+    
+    # First log team info for debugging
+    st.sidebar.info(f"Hot/Cold Calc for {team_name}: win_pct={winning_pct}, recent games: {recent_wins}-{recent_losses}-{recent_draws}")
+    
+    # Calculate recent win percentage 
+    if total_recent_games > 0:
+        # If we have recent games data, calculate the win percentage from that
+        recent_win_pct = (recent_wins + (recent_draws * 0.5)) / total_recent_games
+        st.sidebar.info(f"Using recent games for {team_name}: {recent_win_pct:.3f}")
     else:
-        # Pass the actual game counts to the modifier function to handle draws properly
-        hot_cold_mod = calculate_hot_cold_modifier(0, recent_wins, recent_losses, recent_draws)
+        # If no recent games data, use overall win percentage
+        recent_win_pct = winning_pct if winning_pct > 0 else 0.5
+        st.sidebar.info(f"Using overall win% for {team_name}: {recent_win_pct:.3f}")
+    
+    # Now always pass the win percentage directly, not the individual game counts
+    hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
 
     # Calculate strength of schedule modifier
     # Get current scoring period from session state if available
