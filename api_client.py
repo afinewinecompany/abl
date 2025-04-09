@@ -298,9 +298,31 @@ class FantraxAPI:
             Either a dictionary containing scoring periods data or a list of scoring period dictionaries,
             depending on the API response format.
         """
-        # We've updated the return type annotation to accept either Dict or List,
-        # and utils.py now handles both formats appropriately
-        return self._make_request("getScoringPeriods", {"leagueId": self.league_id})
+        # Updated: API endpoint may have changed - trying alternative endpoints 
+        try:
+            # First, try the original endpoint name
+            result = self._make_request("getScoringPeriods", {"leagueId": self.league_id})
+            
+            # If we get an error response, try the alternative endpoint name
+            if isinstance(result, dict) and 'error' in result:
+                st.sidebar.info("Trying alternative scoring periods endpoint...")
+                # Try alternate endpoint names that Fantrax might be using
+                alt_result = self._make_request("getSchedulePeriods", {"leagueId": self.league_id})
+                if isinstance(alt_result, dict) and 'error' not in alt_result:
+                    return alt_result
+                
+                alt_result2 = self._make_request("getPeriods", {"leagueId": self.league_id})
+                if isinstance(alt_result2, dict) and 'error' not in alt_result2:
+                    return alt_result2
+                    
+                # If all API attempts fail, use mock data as a fallback
+                st.sidebar.warning("Unable to retrieve scoring periods data from any endpoint. Using mock data.")
+                return self._get_mock_data("getScoringPeriods")
+            
+            return result
+        except Exception as e:
+            st.sidebar.error(f"Error fetching scoring periods: {str(e)}")
+            return self._get_mock_data("getScoringPeriods")
         
     def get_matchups(self, period_id: int = 1) -> List[Dict[str, Any]]:
         """Fetch matchups for a specific period"""

@@ -41,8 +41,12 @@ def fetch_api_data():
                 scoring_periods = api_client.get_scoring_periods()
                 current_period = 1  # Default to period 1
                 
+                # Check if there was an API error response
+                if isinstance(scoring_periods, dict) and 'error' in scoring_periods:
+                    error_msg = scoring_periods.get('error', {}).get('message', 'Unknown API error')
+                    st.sidebar.warning(f"Could not get scoring periods: {error_msg}. Using default period 1.")
                 # Check if scoring_periods is properly formatted
-                if isinstance(scoring_periods, list):
+                elif isinstance(scoring_periods, list):
                     # Handle list of period dictionaries (expected format)
                     for period in scoring_periods:
                         # Make sure each period is a dictionary
