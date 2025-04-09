@@ -572,6 +572,154 @@ def render(roster_data: pd.DataFrame):
         st.subheader("Position Distribution")
         position_counts = team_roster['position'].value_counts()
         st.bar_chart(position_counts)
+        
+        # Team Ranking Trends
+        st.subheader(f"{selected_team} Ranking Trends")
+        
+        # Import necessary functions for ranking history
+        from utils import load_rankings_history, create_ranking_trend_chart, save_rankings_history
+        import plotly.express as px
+        import datetime
+        
+        # Create tabs for Power Ranking and DDI Ranking trends
+        trend_tab1, trend_tab2 = st.tabs(["Power Ranking Trend", "DDI Ranking Trend"])
+        
+        # Tab 1: Power Ranking Trend
+        with trend_tab1:
+            # Get power ranking history for the selected team
+            power_history_df = load_rankings_history(selected_team, ranking_type="power")
+            
+            if power_history_df.empty:
+                st.info(f"No power ranking history available for {selected_team}. Rankings are captured daily and on Sundays.")
+            else:
+                # Create a line chart for power ranking trend
+                power_fig = px.line(
+                    power_history_df,
+                    x="date",
+                    y="power_score",
+                    title=f"{selected_team} Power Ranking History",
+                    markers=True,
+                    labels={"date": "Date", "power_score": "Power Score"}
+                )
+                
+                # Add rank as a secondary y-axis
+                power_fig.add_scatter(
+                    x=power_history_df["date"],
+                    y=power_history_df["rank"],
+                    name="Rank",
+                    yaxis="y2",
+                    mode="lines+markers",
+                    line=dict(color="red", dash="dot"),
+                    marker=dict(symbol="diamond")
+                )
+                
+                # Configure the layout with dual y-axes
+                power_fig.update_layout(
+                    yaxis=dict(title="Power Score"),
+                    yaxis2=dict(
+                        title="Rank",
+                        overlaying="y",
+                        side="right",
+                        autorange="reversed",  # Higher rank = lower number
+                        tickmode="linear",
+                        dtick=1,
+                        range=[0.5, 15.5]  # Assuming max 15 teams
+                    ),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+                    hovermode="x unified"
+                )
+                
+                st.plotly_chart(power_fig, use_container_width=True)
+        
+        # Tab 2: DDI Ranking Trend
+        with trend_tab2:
+            # Get DDI ranking history for the selected team
+            ddi_history_df = load_rankings_history(selected_team, ranking_type="ddi")
+            
+            if ddi_history_df.empty:
+                st.info(f"No DDI ranking history available for {selected_team}. Rankings are captured daily and on Sundays.")
+            else:
+                # Create a line chart for DDI score trend
+                ddi_fig = px.line(
+                    ddi_history_df,
+                    x="date",
+                    y="DDI Score",
+                    title=f"{selected_team} DDI Ranking History",
+                    markers=True,
+                    labels={"date": "Date", "DDI Score": "DDI Score"}
+                )
+                
+                # Add rank as a secondary y-axis
+                ddi_fig.add_scatter(
+                    x=ddi_history_df["date"],
+                    y=ddi_history_df["rank"],
+                    name="Rank",
+                    yaxis="y2",
+                    mode="lines+markers",
+                    line=dict(color="red", dash="dot"),
+                    marker=dict(symbol="diamond")
+                )
+                
+                # Add other metrics for comparison
+                if "Power Score" in ddi_history_df.columns:
+                    ddi_fig.add_scatter(
+                        x=ddi_history_df["date"],
+                        y=ddi_history_df["Power Score"],
+                        name="Power Score",
+                        mode="lines+markers",
+                        line=dict(color="blue", dash="dash"),
+                        marker=dict(symbol="circle")
+                    )
+                
+                if "Prospect Score" in ddi_history_df.columns:
+                    ddi_fig.add_scatter(
+                        x=ddi_history_df["date"],
+                        y=ddi_history_df["Prospect Score"],
+                        name="Prospect Score",
+                        mode="lines+markers",
+                        line=dict(color="green", dash="dash"),
+                        marker=dict(symbol="circle")
+                    )
+                
+                # Configure the layout with dual y-axes
+                ddi_fig.update_layout(
+                    yaxis=dict(title="Score"),
+                    yaxis2=dict(
+                        title="Rank",
+                        overlaying="y",
+                        side="right",
+                        autorange="reversed",  # Higher rank = lower number
+                        tickmode="linear",
+                        dtick=1,
+                        range=[0.5, 15.5]  # Assuming max 15 teams
+                    ),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+                    hovermode="x unified"
+                )
+                
+                st.plotly_chart(ddi_fig, use_container_width=True)
+        
+        # Create a button to manually snapshot current rankings (for testing purposes)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("Take New Rankings Snapshot"):
+                # Get the current calculated power rankings
+                if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
+                    # Save Power Rankings history
+                    if save_rankings_history(st.session_state.power_rankings_calculated, ranking_type="power"):
+                        st.success("✅ Power Rankings snapshot saved!")
+                    else:
+                        st.error("❌ Failed to save Power Rankings snapshot")
+                        
+                # Get the current calculated DDI rankings
+                if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
+                    # Save DDI Rankings history
+                    if save_rankings_history(st.session_state.ddi_data_calculated, ranking_type="ddi"):
+                        st.success("✅ DDI Rankings snapshot saved!")
+                    else:
+                        st.error("❌ Failed to save DDI Rankings snapshot")
+                else:
+                    st.warning("No ranking data available to snapshot. Please visit the Power Rankings and DDI Rankings tabs first.")
 
     except Exception as e:
         st.error(f"An error occurred while displaying roster data: {str(e)}")
