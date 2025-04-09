@@ -217,12 +217,28 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         expected_performance = 0.5  # Base expectation
         relative_performance = performance_percentile - expected_performance
 
-        # Final modifier:
-        # - Positive when performing well against strong opponents
-        # - Negative when performing poorly against strong opponents
-        # - Scaled by opponent strength
-        modifier = relative_performance * (opponent_strength_percentile * 2)
+        # Determine how much stronger the opponents are than average
+        opponent_relative_strength = opponent_strength_percentile - 0.5
+        
+        # IMPROVED FORMULA: Include a scaling factor that doesn't unfairly penalize teams facing tough opponents
+        # 1. If team is performing well (relative_performance > 0):
+        #    - Against strong opponents (opponent_relative_strength > 0): big positive boost
+        #    - Against weak opponents (opponent_relative_strength < 0): smaller positive boost
+        # 2. If team is performing poorly (relative_performance < 0):
+        #    - Against strong opponents (opponent_relative_strength > 0): small negative effect (reduced penalty)
+        #    - Against weak opponents (opponent_relative_strength < 0): bigger negative effect
+        
+        if relative_performance >= 0:
+            # Performing well - multiply by opponent strength for bigger boost against tough opponents
+            modifier = relative_performance * (1.0 + opponent_relative_strength)
+        else:
+            # Performing poorly - reduce penalty against strong opponents
+            penalty_factor = 1.0 - (opponent_relative_strength * 0.5)  # Reduce penalty up to 50% for strong opponents
+            modifier = relative_performance * max(0.2, penalty_factor)  # Ensure some penalty remains
 
+        # Log values for debugging
+        st.sidebar.info(f"SoS Debug - {team_name}: perf={performance_percentile:.3f}, opp={opponent_strength_percentile:.3f}, rel={relative_performance:.3f}, mod={modifier:.3f}")
+        
         # Scale modifier between -1 and 1
         return max(min(modifier, 1.0), -1.0)
 
