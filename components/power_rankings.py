@@ -3,8 +3,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict
-import json
-from utils import create_ranking_trend_chart, load_rankings_history
 
 # Import team colors and IDs from prospects.py
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
@@ -74,74 +72,6 @@ def calculate_points_modifier(total_points: float, all_teams_points: pd.Series) 
     modifier = min_modifier + (scale_factor * (max_modifier - min_modifier))
     
     return modifier  # Returns a value between 1.0 and 1.9 on a linear scale
-
-def generate_team_trend_chart(team_name: str) -> str:
-    """
-    Generate a trend chart for a team's power ranking history and return it as a HTML string for tooltip display
-    
-    Args:
-        team_name: Name of the team to generate trend for
-        
-    Returns:
-        str: HTML content with the trend chart
-    """
-    # Get team's historical data using the utility function
-    trend_df = create_ranking_trend_chart(team_name, ranking_type="power")
-    
-    if trend_df.empty:
-        return f"<div>No historical data available for {team_name}</div>"
-    
-    # Create a line chart with plotly
-    fig = go.Figure()
-    
-    # Get team colors for styling
-    team_colors = MLB_TEAM_COLORS.get(team_name, {'primary': '#1e64ff', 'secondary': '#ff3030'})
-    
-    # Add score line
-    fig.add_trace(go.Scatter(
-        x=trend_df['date'],
-        y=trend_df['power_score'],
-        mode='lines+markers',
-        name='Power Score',
-        line=dict(color=team_colors['primary'], width=3),
-        marker=dict(size=8)
-    ))
-    
-    # Add rank line on secondary y-axis (inverted so lower is better)
-    fig.add_trace(go.Scatter(
-        x=trend_df['date'],
-        y=trend_df['rank'],
-        mode='lines+markers',
-        name='Rank',
-        line=dict(color=team_colors['secondary'], width=2, dash='dot'),
-        marker=dict(size=6),
-        yaxis='y2'
-    ))
-    
-    # Update layout with dual y-axes
-    fig.update_layout(
-        title=f"{team_name} Power Ranking Trend",
-        xaxis=dict(title='Date'),
-        yaxis=dict(title='Power Score'),
-        yaxis2=dict(
-            title='Rank',
-            overlaying='y',
-            side='right',
-            autorange='reversed'  # Invert rank axis so 1 is at the top
-        ),
-        legend=dict(orientation='h', yanchor='bottom', y=1.02),
-        margin=dict(l=10, r=10, t=40, b=10),
-        height=300,
-        width=400,
-        template='plotly_dark',
-        showlegend=True,
-        hovermode='x unified'
-    )
-    
-    # Convert to HTML
-    html = fig.to_html(include_plotlyjs='cdn')
-    
-    return html
 
 def calculate_schedule_strength_modifier(team_name: str, current_period: int) -> float:
     """
@@ -443,61 +373,6 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         power_rankings_data: Optional dict of custom power rankings data from user input
         weekly_results: Optional list of weekly results data from user input
     """
-    # Add the Tippy.js library for tooltips and custom CSS for tooltips
-    st.markdown("""
-    <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script src="https://unpkg.com/tippy.js@6"></script>
-    <style>
-        /* Tooltip styling */
-        .tippy-box {
-            background-color: rgba(30, 30, 45, 0.98) !important;
-            border: 1px solid rgba(255, 48, 48, 0.2) !important;
-            border-radius: 8px !important;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3) !important;
-            max-width: 450px !important;
-            padding: 0 !important;
-        }
-        
-        .tippy-content {
-            padding: 0 !important;
-        }
-        
-        .team-name-hover {
-            display: inline-block;
-            position: relative;
-            transition: all 0.2s ease;
-        }
-        
-        .team-name-hover:hover {
-            color: #ff3030 !important;
-            text-shadow: 0 0 8px rgba(255, 48, 48, 0.4) !important;
-        }
-    </style>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize tooltips using Tippy.js
-        tippy('.team-name-hover', {
-            allowHTML: true,
-            interactive: true,
-            placement: 'right',
-            theme: 'dark',
-            maxWidth: 450,
-            animation: 'shift-away',
-            duration: [200, 150],
-            content(reference) {
-                return reference.getAttribute('data-tooltip-content');
-            },
-            onShow(instance) {
-                // This ensures Plotly charts render correctly when the tooltip is shown
-                setTimeout(() => {
-                    if (window.Plotly) window.Plotly.relayout(instance.popper, {})
-                }, 10);
-            }
-        });
-    });
-    </script>
-    """, unsafe_allow_html=True)
-    
     st.header("⚾ Power Rankings")
     
     # Add explanation of the power score
@@ -759,12 +634,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         #{idx + 1}
                     </div>
                     <div style="position: relative; z-index: 1;">
-                        <div style="position: relative; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
-                            <span class="team-name-hover" 
-                                data-tooltip-content="{generate_team_trend_chart(row['team_name'])}"
-                                style="cursor: pointer; text-decoration: none; border-bottom: 2px dotted rgba(255,255,255,0.3);">
-                                {row['team_name']}
-                            </span>
+                        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
+                            {row['team_name']}
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
@@ -815,13 +686,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         #{i + 4}
                     </div>
                     <div style="flex-grow: 1;">
-                        <div style="font-weight: 600; color: white;">
-                            <span class="team-name-hover" 
-                                data-tooltip-content="{generate_team_trend_chart(row['team_name'])}"
-                                style="cursor: pointer; text-decoration: none; border-bottom: 2px dotted rgba(255,255,255,0.3);">
-                                {row['team_name']}
-                            </span>
-                        </div>
+                        <div style="font-weight: 600; color: white;">{row['team_name']}</div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
                                 <span style="color: rgba(255,255,255,0.7);">W:</span>
