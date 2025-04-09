@@ -558,6 +558,30 @@ def main():
             st.markdown("### 🔄 League Controls")
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
+            
+            # Add "Take New Rankings Snapshot" button
+            st.markdown("### 📸 Rankings History")
+            if st.button("Take New Rankings Snapshot", use_container_width=True):
+                # Create a placeholder for status messages
+                status_msg = st.empty()
+                
+                # Get the current calculated power rankings
+                if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
+                    # Save Power Rankings history
+                    if save_rankings_history(st.session_state.power_rankings_calculated, ranking_type="power"):
+                        status_msg.success("✅ Power Rankings snapshot saved!")
+                    else:
+                        status_msg.error("❌ Failed to save Power Rankings snapshot")
+                        
+                # Get the current calculated DDI rankings
+                if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
+                    # Save DDI Rankings history
+                    if save_rankings_history(st.session_state.ddi_data_calculated, ranking_type="ddi"):
+                        status_msg.success("✅ DDI Rankings snapshot saved!")
+                    else:
+                        status_msg.error("❌ Failed to save DDI Rankings snapshot")
+                else:
+                    status_msg.warning("No ranking data available to snapshot. Please visit the Power Rankings and DDI Rankings tabs first.")
                 
             # Only showing Current API as data source now
             data_source = "Current API"

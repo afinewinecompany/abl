@@ -660,30 +660,9 @@ def render(roster_data: pd.DataFrame):
                     marker=dict(symbol="diamond")
                 )
                 
-                # Add other metrics for comparison
-                if "Power Score" in ddi_history_df.columns:
-                    ddi_fig.add_scatter(
-                        x=ddi_history_df["date"],
-                        y=ddi_history_df["Power Score"],
-                        name="Power Score",
-                        mode="lines+markers",
-                        line=dict(color="blue", dash="dash"),
-                        marker=dict(symbol="circle")
-                    )
-                
-                if "Prospect Score" in ddi_history_df.columns:
-                    ddi_fig.add_scatter(
-                        x=ddi_history_df["date"],
-                        y=ddi_history_df["Prospect Score"],
-                        name="Prospect Score",
-                        mode="lines+markers",
-                        line=dict(color="green", dash="dash"),
-                        marker=dict(symbol="circle")
-                    )
-                
-                # Configure the layout with dual y-axes
+                # Configure the layout with dual y-axes (DDI Score is primary)
                 ddi_fig.update_layout(
-                    yaxis=dict(title="Score"),
+                    yaxis=dict(title="DDI Score"),
                     yaxis2=dict(
                         title="Rank",
                         overlaying="y",
@@ -698,28 +677,6 @@ def render(roster_data: pd.DataFrame):
                 )
                 
                 st.plotly_chart(ddi_fig, use_container_width=True)
-        
-        # Create a button to manually snapshot current rankings (for testing purposes)
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("Take New Rankings Snapshot"):
-                # Get the current calculated power rankings
-                if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
-                    # Save Power Rankings history
-                    if save_rankings_history(st.session_state.power_rankings_calculated, ranking_type="power"):
-                        st.success("✅ Power Rankings snapshot saved!")
-                    else:
-                        st.error("❌ Failed to save Power Rankings snapshot")
-                        
-                # Get the current calculated DDI rankings
-                if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
-                    # Save DDI Rankings history
-                    if save_rankings_history(st.session_state.ddi_data_calculated, ranking_type="ddi"):
-                        st.success("✅ DDI Rankings snapshot saved!")
-                    else:
-                        st.error("❌ Failed to save DDI Rankings snapshot")
-                else:
-                    st.warning("No ranking data available to snapshot. Please visit the Power Rankings and DDI Rankings tabs first.")
 
     except Exception as e:
         st.error(f"An error occurred while displaying roster data: {str(e)}")
