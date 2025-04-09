@@ -44,6 +44,15 @@ class FantraxAPI:
             try:
                 data = response.json()
                 
+                # Check if the response contains an 'error' key, which indicates API error
+                if isinstance(data, dict) and 'error' in data:
+                    error_msg = data.get('error', 'Unknown API error')
+                    st.sidebar.error(f"API Error in {endpoint}: {error_msg}")
+                    st.sidebar.warning(f"Dictionary keys: {list(data.keys())}")
+                    # Log detailed information for debugging
+                    st.sidebar.info(f"Full response: {data}")
+                    return self._get_mock_data(endpoint)
+                
                 # Success!
                 if isinstance(data, (dict, list)):
                     return data
