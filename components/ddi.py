@@ -5,6 +5,76 @@ import plotly.graph_objects as go
 from typing import Dict, List, Any, Optional, Union, Tuple
 import os
 import numpy as np
+from utils import create_ranking_trend_chart, load_rankings_history
+
+def generate_team_trend_chart(team_name: str) -> str:
+    """
+    Generate a trend chart for a team's DDI ranking history and return it as a HTML string for tooltip display
+    
+    Args:
+        team_name: Name of the team to generate trend for
+        
+    Returns:
+        str: HTML content with the trend chart
+    """
+    # Get team's historical data using the utility function
+    trend_df = create_ranking_trend_chart(team_name, ranking_type="ddi")
+    
+    if trend_df.empty:
+        return f"<div>No historical data available for {team_name}</div>"
+    
+    # Create a line chart with plotly
+    fig = go.Figure()
+    
+    # Get team colors for styling (we don't have specific team colors in DDI, use standard blue/red)
+    primary_color = '#1e64ff'
+    secondary_color = '#ff3030'
+    
+    # Add score line
+    fig.add_trace(go.Scatter(
+        x=trend_df['date'],
+        y=trend_df['DDI Score'], 
+        mode='lines+markers',
+        name='DDI Score',
+        line=dict(color=primary_color, width=3),
+        marker=dict(size=8)
+    ))
+    
+    # Add rank line on secondary y-axis (inverted so lower is better)
+    fig.add_trace(go.Scatter(
+        x=trend_df['date'],
+        y=trend_df['rank'],
+        mode='lines+markers',
+        name='Rank',
+        line=dict(color=secondary_color, width=2, dash='dot'),
+        marker=dict(size=6),
+        yaxis='y2'
+    ))
+    
+    # Update layout with dual y-axes
+    fig.update_layout(
+        title=f"{team_name} DDI Ranking Trend",
+        xaxis=dict(title='Date'),
+        yaxis=dict(title='DDI Score'),
+        yaxis2=dict(
+            title='Rank',
+            overlaying='y',
+            side='right',
+            autorange='reversed'  # Invert rank axis so 1 is at the top
+        ),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02),
+        margin=dict(l=10, r=10, t=40, b=10),
+        height=300,
+        width=400,
+        template='plotly_dark',
+        showlegend=True,
+        hovermode='x unified'
+    )
+    
+    # Convert to HTML
+    html = fig.to_html(include_plotlyjs='cdn')
+    
+    return html
 
 # Define weighting factors
 POWER_RANK_WEIGHT = 0.30  # 30% of the score based on current power ranking
@@ -948,7 +1018,11 @@ def render_team_card_native(team_row):
         with row1_cols[2]:
             st.markdown(f"""
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 16px; font-weight: bold;">{team_name}</span>
+                <span class="team-name-hover" 
+                    data-tooltip-content="{generate_team_trend_chart(team_name)}" 
+                    style="font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 2px dotted rgba(255,255,255,0.3);">
+                    {team_name}
+                </span>
                 <div style="
                     background: linear-gradient(135deg, {team_colors['primary']} 0%, {team_colors['secondary']} 100%);
                     border-radius: 6px;
@@ -1115,6 +1189,61 @@ def render(roster_data: pd.DataFrame, power_rankings_df: pd.DataFrame = None):
         roster_data: DataFrame containing roster data
         power_rankings_df: Optional DataFrame with precalculated power rankings
     """
+    # Add the Tippy.js library for tooltips and custom CSS
+    st.markdown("""
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <style>
+        /* Tooltip styling */
+        .tippy-box {
+            background-color: rgba(30, 30, 45, 0.98) !important;
+            border: 1px solid rgba(255, 48, 48, 0.2) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3) !important;
+            max-width: 450px !important;
+            padding: 0 !important;
+        }
+        
+        .tippy-content {
+            padding: 0 !important;
+        }
+        
+        .team-name-hover {
+            display: inline-block;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .team-name-hover:hover {
+            color: #ff3030 !important;
+            text-shadow: 0 0 8px rgba(255, 48, 48, 0.4) !important;
+        }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips using Tippy.js
+        tippy('.team-name-hover', {
+            allowHTML: true,
+            interactive: true,
+            placement: 'right',
+            theme: 'dark',
+            maxWidth: 450,
+            animation: 'shift-away',
+            duration: [200, 150],
+            content(reference) {
+                return reference.getAttribute('data-tooltip-content');
+            },
+            onShow(instance) {
+                // This ensures Plotly charts render correctly when the tooltip is shown
+                setTimeout(() => {
+                    if (window.Plotly) window.Plotly.relayout(instance.popper, {})
+                }, 10);
+            }
+        });
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
     st.title("Dynasty Dominance Index (DDI)")
 
     st.markdown("""

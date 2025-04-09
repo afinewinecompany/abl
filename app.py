@@ -843,6 +843,8 @@ def main():
                     
                     # Store DDI data in session state for other components to use
                     st.session_state.ddi_data_calculated = ddi_df
+                    # Also store as ddi_calculated for historical tracking
+                    st.session_state.ddi_calculated = ddi_df
                     
                     # Check if we should take a weekly snapshot (Sunday or first run)
                     if should_take_weekly_snapshot():
@@ -867,6 +869,8 @@ def main():
                     
                     # Store DDI data in session state for other components to use
                     st.session_state.ddi_data_calculated = ddi_df
+                    # Also store as ddi_calculated for historical tracking
+                    st.session_state.ddi_calculated = ddi_df
         else:
             st.error("Unable to fetch data from the API. Please check your connection and try again.")
 
