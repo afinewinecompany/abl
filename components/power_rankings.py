@@ -436,6 +436,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     
     st.sidebar.success("⚡ Using live standings data from Fantrax API with manual data overrides")
     
+    # Add version info
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Version Info")
+    st.sidebar.info("Power Rankings v2.1.0\n- Linear modifier distribution\n- Enhanced SoS calculation\n- Improved playoff tracking")
+    
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
     
