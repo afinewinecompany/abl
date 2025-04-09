@@ -104,8 +104,8 @@ def get_team_ddi_data(team: str, roster_data: pd.DataFrame, power_rank: float, p
             }
     
     # If we don't have pre-calculated data, calculate it now
-    # Import the necessary components for DDI calculation
-    from components.ddi import render, load_historical_data, calculate_power_rankings_from_component
+    # Import the necessary components for DDI calculation, but only the calculation functions
+    from components.ddi import load_historical_data, calculate_power_rankings_from_component, calculate_ddi_scores, get_team_prospect_scores
     
     try:
         # Load historical data for DDI calculation
@@ -114,8 +114,8 @@ def get_team_ddi_data(team: str, roster_data: pd.DataFrame, power_rank: float, p
         # Get power rankings
         power_rankings_df = calculate_power_rankings_from_component(roster_data)
         
-        # Calculate full DDI scores for all teams
-        ddi_df = render(roster_data, power_rankings_df)
+        # Calculate full DDI scores for all teams but without rendering the UI
+        ddi_df = calculate_ddi_scores(roster_data, power_rankings_df, history_data)
         
         # Find the data for our team
         team_ddi_row = ddi_df[ddi_df['Team'] == team]
