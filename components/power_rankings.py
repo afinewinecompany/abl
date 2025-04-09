@@ -570,12 +570,22 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     if weekly_results:
         # Use the provided weekly results
         weekly_data = weekly_results
+        st.sidebar.success("Using provided weekly results parameter")
     elif 'weekly_results' in st.session_state and st.session_state.weekly_results:
         # Use data from session state
         weekly_data = st.session_state.weekly_results
+        st.sidebar.success("Using weekly results from session state")
     else:
         # No weekly results available
         weekly_data = []
+        st.sidebar.warning("No weekly results data available - using overall win/loss records")
+        
+    # Debug weekly data
+    if weekly_data:
+        st.sidebar.info(f"Weekly data available: {len(weekly_data)} entries")
+        # Show the first entry as an example
+        if len(weekly_data) > 0:
+            st.sidebar.write("Example weekly result:", weekly_data[0])
 
     # Process recent wins/losses
     if weekly_data:
@@ -615,10 +625,16 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                 rankings_df.at[idx, 'recent_match_wins'] = recent_wins
                 rankings_df.at[idx, 'recent_match_losses'] = recent_losses
     else:
-        # Calculate recent wins/losses using rolling mean as default
-        rankings_df['recent_wins'] = rankings_df['wins'].rolling(window=3, min_periods=1).mean()
-        rankings_df['recent_losses'] = rankings_df['losses'].rolling(window=3, min_periods=1).mean()
-        rankings_df['recent_draws'] = 0  # No draws in the default case
+        # Don't use rolling mean as it creates fractional win/loss values
+        # Instead, just use the overall win/loss record for each team
+        st.sidebar.info("No weekly results data found - using overall win/loss record for hot/cold calculation")
+        
+        # Initialize columns with zeros
+        rankings_df['recent_wins'] = 0
+        rankings_df['recent_losses'] = 0 
+        rankings_df['recent_draws'] = 0
+        
+        # We won't set these values since we'll use the winning_pct directly in the hot/cold calculation
 
     # Calculate raw power scores
     rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
