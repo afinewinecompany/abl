@@ -879,8 +879,8 @@ def main():
                                 snapshot_container.error("❌ Failed to save Power Rankings snapshot")
                             
                             # Save DDI Rankings history if available
-                            if 'ddi_calculated' in st.session_state and st.session_state.ddi_calculated is not None:
-                                ddi_rankings_df = st.session_state.ddi_calculated
+                            if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
+                                ddi_rankings_df = st.session_state.ddi_data_calculated
                                 if save_rankings_history(ddi_rankings_df, ranking_type="ddi"):
                                     snapshot_container.success("✅ DDI Rankings snapshot saved!")
                                 else:
