@@ -501,97 +501,91 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video that auto-dismisses after the specified time"""
-    try:
-        # Define the video path
-        video_path = 'attached_assets/intro.mp4'
+    """Show a loading video using Streamlit's native functionality"""
+    
+    # Create session state values for intro video if they don't exist
+    if 'show_intro' not in st.session_state:
+        st.session_state.show_intro = True
+        st.session_state.intro_start_time = time.time()
+    
+    # Only show if state is True
+    if st.session_state.show_intro:
+        # Create a container for the intro
+        intro_container = st.container()
         
-        # Get base64 encoded video data
-        video_data = get_base64_video(video_path)
-        
-        # Create a basic overlay with guaranteed auto-close function
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <style>
-        .overlay {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            z-index: 99999;
-        }}
-        .intro-video {{
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }}
-        .enter-btn {{
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 40px;
-            background-color: rgba(0, 204, 255, 0.4);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 24px;
-            cursor: pointer;
-            font-weight: bold;
-            display: none;
-        }}
-        </style>
-        </head>
-        <body>
-        
-        <div id="video-overlay" class="overlay" onclick="closeOverlay()">
-            <video class="intro-video" autoplay muted playsinline>
-                <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
-            </video>
-            <button class="enter-btn" id="enter-button" onclick="closeOverlay()">ENTER</button>
-        </div>
-        
-        <script>
-        // Function to close the overlay
-        function closeOverlay() {{
-            document.getElementById('video-overlay').style.display = 'none';
-        }}
-        
-        // Show button after 5 seconds
-        setTimeout(function() {{
-            document.getElementById('enter-button').style.display = 'block';
-        }}, 5000);
-        
-        // Auto close after 8 seconds
-        setTimeout(closeOverlay, 8000);
-        
-        // Fallback close in case the above doesn't work - using window.onload
-        window.onload = function() {{
-            setTimeout(closeOverlay, 10000); 
-        }};
-        
-        // Immediately apply event listener for the overlay
-        document.addEventListener('DOMContentLoaded', function() {{
-            var overlay = document.getElementById('video-overlay');
-            if (overlay) {{
-                overlay.addEventListener('click', closeOverlay);
-            }}
-        }});
-        </script>
-        </body>
-        </html>
-        """
-        
-        # Display the loading overlay
-        st.markdown(html, unsafe_allow_html=True)
-    except Exception as e:
-        # If anything fails, just continue without the loading animation
-        st.error(f"Error in video overlay: {str(e)}")
-        pass
+        with intro_container:
+            # Add custom CSS to overlay the video 
+            st.markdown("""
+            <style>
+            .stApp {
+                overflow: hidden;
+            }
+            
+            div[data-testid="stVerticalBlock"] > div:has(video) {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: black;
+                z-index: 999999;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            video {
+                width: 100%;
+                height: 100vh;
+                object-fit: cover;
+                z-index: 9999;
+            }
+            
+            .enter-button {
+                position: fixed;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 15px 40px;
+                background-color: rgba(0, 204, 255, 0.4);
+                color: white;
+                border: 2px solid rgba(0, 204, 255, 0.8);
+                border-radius: 8px;
+                font-size: 24px;
+                cursor: pointer;
+                font-weight: bold;
+                z-index: 999999;
+                text-align: center;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Calculate time since intro started
+            time_elapsed = time.time() - st.session_state.intro_start_time
+            
+            # The actual video player
+            video_file = open('attached_assets/intro.mp4', 'rb')
+            video_bytes = video_file.read()
+            st.video(video_bytes, start_time=0)
+            
+            # Add enter button after 5 seconds
+            if time_elapsed >= 5:
+                # Create a button at the bottom
+                st.markdown(
+                    '<div class="enter-button" onclick="document.querySelector(\'div[data-testid=\\"stVerticalBlock\\"] > div:has(video)\').style.display=\'none\'">ENTER</div>',
+                    unsafe_allow_html=True
+                )
+            
+            # Auto close after 8 seconds
+            if time_elapsed >= 8:
+                st.session_state.show_intro = False
+                st.experimental_rerun()
+            
+            # Add button to skip
+            if st.button("Skip intro", key="skip_intro"):
+                st.session_state.show_intro = False
+                st.experimental_rerun()
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
