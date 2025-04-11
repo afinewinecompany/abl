@@ -355,26 +355,13 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     # Now always pass the win percentage directly, not the individual game counts
     hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
 
-    # Calculate strength of schedule modifier
-    # Get current scoring period from session state if available
-    current_period = 1  # Default to period 1
-    if 'current_period' in st.session_state:
-        current_period = st.session_state.current_period
+    # REMOVED: Strength of schedule calculation per user request
+    # We'll set schedule_mod to 0 for debugging purposes but won't use it in calculation
+    schedule_mod = 0.0
+    schedule_factor = 1.0  # No impact
 
-    # Debug message
-    if debug_modifiers:
-        st.sidebar.info(f"Current Period for SoS calculation: {current_period}")
-
-    # Calculate schedule strength modifier (-1.0 to 1.0)
-    schedule_mod = calculate_schedule_strength_modifier(team_name, current_period)
-
-    # Apply strength of schedule to the score (using a factor of 0.15 to adjust the impact)
-    # A score of 1.0 would be 100% bonus, -1.0 would be a 100% penalty, 
-    # we'll scale to a more reasonable 15% max impact
-    schedule_factor = 1.0 + (schedule_mod * 0.15)
-
-    # Calculate the raw power score with all factors
-    raw_power_score = (weekly_avg * points_mod * hot_cold_mod) * schedule_factor
+    # Calculate the raw power score without strength of schedule
+    raw_power_score = weekly_avg * points_mod * hot_cold_mod  # Removed schedule_factor
 
     # Show detailed info for each team if enabled
     if debug_modifiers:
@@ -405,14 +392,14 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Add explanation of the power score
     st.markdown("""
-    Power Rankings combine weekly scoring average, points comparison against other teams, recent performance (hot/cold streak),
-    and strength of schedule. This is a measure of *current season performance only* and does not include historical data.
+    Power Rankings combine weekly scoring average, points comparison against other teams, and recent performance (hot/cold streak).
+    This is a measure of *current season performance only* and does not include historical data or playoff history.
 
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
 
-    Modifiers for team strength, recent performance, and strength of schedule use a straight line distribution method, 
+    Modifiers for team strength and recent performance use a straight line distribution method, 
     creating a smoother spread of scores rather than bucketed groups.
     """)
     st.markdown("""
@@ -467,7 +454,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.1.0\n- Linear modifier distribution\n- Enhanced SoS calculation\n- Improved playoff tracking")
+    st.sidebar.info("Power Rankings v2.2.0\n- Linear modifier distribution\n- SoS modifier removed\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -526,16 +513,15 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         st.markdown("""
         ### Power Score Calculation Details
 
-        Power scores are calculated using four main components:
+        Power scores are calculated using three main components:
 
         1. **Weekly Average** - Average fantasy points per week
         2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
         3. **Hot/Cold Modifier** - Based on recent win percentage (1.0× to 1.5×)
-        4. **Strength of Schedule** - Based on opponent quality (-15% to +15% adjustment)
 
         #### Linear Distribution Method
 
-        All modifiers now use a straight line (linear) distribution rather than bucketed groups:
+        All modifiers use a straight line (linear) distribution rather than bucketed groups:
 
         - **Points Modifier**: Teams with the highest total points receive a 1.9× bonus, while teams with
           the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
@@ -545,12 +531,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
           win rate receive a 1.0× modifier. All teams receive a proportional value based on their exact
           win percentage.
 
-        - **Strength of Schedule**: Teams that perform well against strong opponents receive up to a 15% bonus,
-          while teams that perform poorly against weak opponents receive up to a 15% penalty. This modifier
-          analyzes a team's fantasy points against the quality of their opponents from completed scoring periods.
-
-        This creates a more accurate and fair distribution of power scores that better reflects actual performance
-        differences between teams, accounting for schedule difficulty.
+        This creates a more accurate and fair distribution of power scores that better reflects actual
+        regular season performance differences between teams, without any consideration of playoff history.
         """)
 
     # Fill any missing values with defaults
