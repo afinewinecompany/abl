@@ -508,7 +508,7 @@ def show_loading_video():
     # Use mp4 as the format
     video_format = "mp4"
     
-    # Create the loading overlay HTML
+    # Create the loading overlay HTML with a simpler auto-close mechanism
     loading_html = f"""
     <style>
     #loading-overlay {{
@@ -554,7 +554,7 @@ def show_loading_video():
     </style>
     
     <div id="loading-overlay">
-        <video id="loading-video" autoplay muted playsinline>
+        <video id="loading-video" autoplay muted playsinline loop="false">
             <source src="data:video/{video_format};base64,{get_base64_video(video_path)}" type="video/{video_format}">
             Your browser does not support the video tag.
         </video>
@@ -562,32 +562,16 @@ def show_loading_video():
     </div>
     
     <script>
-        // Get the video element
-        const video = document.getElementById('loading-video');
-        
-        // Listen for the 'ended' event on the video
-        video.addEventListener('ended', function() {{
-            // When video ends, fade out the overlay
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {{
-                overlay.style.opacity = '0';
-                setTimeout(function() {{
-                    overlay.style.display = 'none';
-                }}, 1000); // Wait for fade animation to complete
-            }}
-        }});
-        
-        // Fallback: if video doesn't trigger 'ended' event, use timeout
-        // This ensures the overlay will be removed even if video playback fails
+        // Simple timeout to close the overlay after 8 seconds
         setTimeout(function() {{
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay && overlay.style.opacity !== '0') {{
+            var overlay = document.getElementById('loading-overlay');
+            if (overlay) {{
                 overlay.style.opacity = '0';
                 setTimeout(function() {{
                     overlay.style.display = 'none';
                 }}, 1000);
             }}
-        }}, 12000); // Longer timeout (12 seconds) as fallback
+        }}, 8000);
     </script>
     """
     
