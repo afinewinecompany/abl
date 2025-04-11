@@ -501,7 +501,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a super simplified loading video that users can click to dismiss"""
+    """Show a loading video that auto-dismisses after the specified time"""
     try:
         # Define the video path
         video_path = 'attached_assets/intro.mp4'
@@ -509,10 +509,13 @@ def show_loading_video():
         # Get base64 encoded video data
         video_data = get_base64_video(video_path)
         
-        # Create a basic overlay with inline JavaScript
+        # Create a basic overlay with guaranteed auto-close function
         html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
         <style>
-        #intro-wrapper {{
+        .overlay {{
             position: fixed;
             top: 0;
             left: 0;
@@ -521,12 +524,12 @@ def show_loading_video():
             background-color: black;
             z-index: 99999;
         }}
-        #intro-video {{
+        .intro-video {{
             width: 100%;
             height: 100%;
             object-fit: cover;
         }}
-        #enter-btn {{
+        .enter-btn {{
             position: absolute;
             bottom: 50px;
             left: 50%;
@@ -542,33 +545,52 @@ def show_loading_video():
             display: none;
         }}
         </style>
+        </head>
+        <body>
         
-        <div id="intro-wrapper">
-            <video id="intro-video" autoplay muted playsinline>
+        <div id="video-overlay" class="overlay" onclick="closeOverlay()">
+            <video class="intro-video" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
-            <button id="enter-btn" onclick="hideIntro()">ENTER</button>
+            <button class="enter-btn" id="enter-button" onclick="closeOverlay()">ENTER</button>
         </div>
         
         <script>
-        function hideIntro() {{
-            document.getElementById('intro-wrapper').style.display = 'none';
+        // Function to close the overlay
+        function closeOverlay() {{
+            document.getElementById('video-overlay').style.display = 'none';
         }}
         
-        document.getElementById('intro-wrapper').addEventListener('click', hideIntro);
-        
+        // Show button after 5 seconds
         setTimeout(function() {{
-            document.getElementById('enter-btn').style.display = 'block';
+            document.getElementById('enter-button').style.display = 'block';
         }}, 5000);
         
-        setTimeout(hideIntro, 12000);
+        // Auto close after 8 seconds
+        setTimeout(closeOverlay, 8000);
+        
+        // Fallback close in case the above doesn't work - using window.onload
+        window.onload = function() {{
+            setTimeout(closeOverlay, 10000); 
+        }};
+        
+        // Immediately apply event listener for the overlay
+        document.addEventListener('DOMContentLoaded', function() {{
+            var overlay = document.getElementById('video-overlay');
+            if (overlay) {{
+                overlay.addEventListener('click', closeOverlay);
+            }}
+        }});
         </script>
+        </body>
+        </html>
         """
         
         # Display the loading overlay
         st.markdown(html, unsafe_allow_html=True)
     except Exception as e:
         # If anything fails, just continue without the loading animation
+        st.error(f"Error in video overlay: {str(e)}")
         pass
 
 def get_base64_video(video_path):
