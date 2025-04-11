@@ -501,16 +501,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video overlay while the app is initializing"""
-    try:
-        # Define the video path
-        video_path = 'attached_assets/intro.mp4'
+    """
+    Show a loading screen and automatically hide it after 8 seconds.
+    This version uses Streamlit's own session state and provides a guaranteed timeout
+    rather than relying solely on JavaScript.
+    """
+    # Define a key to track if we've shown the loading screen
+    if 'loading_shown' not in st.session_state:
+        st.session_state.loading_shown = False
+        st.session_state.loading_start_time = time.time()
+    
+    # Calculate elapsed time since loading started
+    elapsed_time = time.time() - st.session_state.loading_start_time
+    
+    # If we're still within the loading window (8 seconds) and haven't shown it yet
+    if elapsed_time < 8 and not st.session_state.loading_shown:
+        # Create a static overlay with a simpler countdown
+        remaining_time = max(0, int(8 - elapsed_time))
         
-        # Get base64 encoded video data
-        video_data = get_base64_video(video_path)
-        
-        # Create a more reliable HTML for loading overlay with very aggressive auto-close
-        # Using inline JavaScript immediately executed when page loads
         html = f"""
         <style>
         #loading-overlay {{
@@ -521,80 +529,55 @@ def show_loading_video():
             height: 100%;
             background-color: #000;
             z-index: 9999;
-            transition: opacity 1s ease-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeOut 1s ease {remaining_time}s forwards;
         }}
-        #loading-video {{
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
+        
+        @keyframes fadeOut {{
+            0% {{ opacity: 1; }}
+            100% {{ opacity: 0; display: none; }}
         }}
+        
+        #loading-content {{
+            text-align: center;
+        }}
+        
         #loading-message {{
-            position: absolute;
-            bottom: 40px;
-            width: 100%;
+            margin-top: 20px;
             color: white;
             font-family: sans-serif;
-            font-size: 18px;
-            text-align: center;
+            font-size: 24px;
             text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
+        }}
+        
+        #countdown {{
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
         }}
         </style>
         
         <div id="loading-overlay">
-            <video id="loading-video" autoplay muted playsinline>
-                <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
-            </video>
-            <div id="loading-message">Loading ABL Analytics Dashboard...</div>
+            <div id="loading-content">
+                <img src="https://i.imgur.com/uKbXXnF.png" width="300" alt="ABL Analytics">
+                <div id="loading-message">ABL Analytics Dashboard</div>
+                <div id="countdown">Loading... Auto-redirect in {remaining_time}s</div>
+            </div>
         </div>
-        
-        <script>
-        (function() {{
-            // Force close on document load, after timeout, on media error, 
-            // and attach event listeners all in one go
-            
-            // Method to force hide the overlay
-            function hideOverlay() {{
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) {{
-                    overlay.style.opacity = '0';
-                    // Force display none after transition
-                    setTimeout(function() {{ 
-                        overlay.style.display = 'none'; 
-                    }}, 1000);
-                }}
-            }}
-            
-            // Very short timer - only 5 seconds
-            setTimeout(hideOverlay, 5000);
-            
-            // Also add backup for when doc is fully loaded
-            document.addEventListener('DOMContentLoaded', function() {{
-                setTimeout(hideOverlay, 500);
-            }});
-            
-            // Extra backup - hide on any click
-            document.addEventListener('click', hideOverlay);
-            
-            // Try to attach to video too just in case
-            const video = document.getElementById('loading-video');
-            if (video) {{
-                video.addEventListener('ended', hideOverlay);
-                video.addEventListener('error', hideOverlay);
-                // Extra aggressive - make sure video can't loop and is short
-                video.loop = false;
-            }}
-        }})();
-        </script>
         """
         
         # Display the loading overlay
         st.markdown(html, unsafe_allow_html=True)
-    except Exception as e:
-        # If anything fails, just continue without the loading animation
-        pass
+        
+        # Rerun after a delay to update the countdown or remove the overlay completely
+        time.sleep(1)
+        st.experimental_rerun()
+    else:
+        # Mark that we've shown the loading screen
+        st.session_state.loading_shown = True
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
