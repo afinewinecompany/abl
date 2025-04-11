@@ -501,7 +501,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video overlay while the app is initializing that displays ENTER button after 8 seconds"""
+    """Show a super simplified loading video that users can click to dismiss"""
     try:
         # Define the video path
         video_path = 'attached_assets/intro.mp4'
@@ -509,121 +509,59 @@ def show_loading_video():
         # Get base64 encoded video data
         video_data = get_base64_video(video_path)
         
-        # Create HTML for a loading overlay with the video and ENTER button that appears after 8 seconds
+        # Create a basic overlay with inline JavaScript
         html = f"""
         <style>
-        #loading-overlay {{
+        #intro-wrapper {{
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #000;
-            z-index: 9999;
-            transition: opacity 1s ease-out;
+            background-color: black;
+            z-index: 99999;
         }}
-        #loading-video {{
+        #intro-video {{
             width: 100%;
             height: 100%;
             object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 9999; /* Make sure this is less than the button's z-index */
         }}
-        #enter-button {{
+        #enter-btn {{
             position: absolute;
-            bottom: 40px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 204, 255, 0.3);
+            padding: 15px 40px;
+            background-color: rgba(0, 204, 255, 0.4);
             color: white;
-            border: 2px solid rgba(0, 204, 255, 0.8);
-            border-radius: 8px;
-            padding: 12px 40px;
-            font-family: 'Inter', sans-serif;
+            border: none;
+            border-radius: 5px;
             font-size: 24px;
-            font-weight: bold;
             cursor: pointer;
-            text-align: center;
-            text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-            box-shadow: 0 0 20px rgba(0, 204, 255, 0.6), 0 0 40px rgba(0, 204, 255, 0.4);
-            transition: all 0.3s ease;
-            opacity: 0;
+            font-weight: bold;
             display: none;
-            z-index: 10000; /* Ensure button is above video */
-        }}
-        #enter-button:hover {{
-            background-color: rgba(0, 204, 255, 0.5);
-            box-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 50px rgba(0, 204, 255, 0.6);
-            transform: translateX(-50%) scale(1.05);
-        }}
-        #click-instructions {{
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: white;
-            font-family: 'Inter', sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 204, 255, 0.8), 0 0 20px rgba(0, 204, 255, 0.6);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: 10000;
-            cursor: pointer;
         }}
         </style>
         
-        <div id="loading-overlay" onclick="hideOverlay()">
-            <video id="loading-video" autoplay muted playsinline>
+        <div id="intro-wrapper">
+            <video id="intro-video" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
-            <div id="click-instructions">Click anywhere to enter</div>
+            <button id="enter-btn" onclick="hideIntro()">ENTER</button>
         </div>
         
         <script>
-        // Define function to hide the overlay
-        function hideOverlay() {{
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {{
-                overlay.style.opacity = '0';
-                // Force display none after transition
-                setTimeout(function() {{ 
-                    overlay.style.display = 'none'; 
-                }}, 1000);
-            }}
+        function hideIntro() {{
+            document.getElementById('intro-wrapper').style.display = 'none';
         }}
         
-        // Add a message after 5 seconds indicating users can click anywhere
+        document.getElementById('intro-wrapper').addEventListener('click', hideIntro);
+        
         setTimeout(function() {{
-            const instructions = document.getElementById('click-instructions');
-            if (instructions) {{
-                instructions.style.opacity = '1';
-            }}
+            document.getElementById('enter-btn').style.display = 'block';
         }}, 5000);
         
-        // Auto-close after 15 seconds as a fallback
-        setTimeout(hideOverlay, 15000);
-        
-        // Handle video errors
-        const video = document.getElementById('loading-video');
-        if (video) {{
-            // Make sure video doesn't loop
-            video.loop = false;
-            
-            // Add click event for mobile devices which may not bubble up correctly
-            video.addEventListener('click', hideOverlay);
-            
-            // Show instructions immediately if video fails to load
-            video.addEventListener('error', function() {{
-                const instructions = document.getElementById('click-instructions');
-                if (instructions) {{
-                    instructions.style.opacity = '1';
-                }}
-            }});
-        }}
+        setTimeout(hideIntro, 12000);
         </script>
         """
         
