@@ -529,31 +529,34 @@ def show_loading_video():
             position: absolute;
             top: 0;
             left: 0;
+            z-index: 9999; /* Make sure this is less than the button's z-index */
         }}
         #enter-button {{
             position: absolute;
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 204, 255, 0.2);
+            background-color: rgba(0, 204, 255, 0.3);
             color: white;
             border: 2px solid rgba(0, 204, 255, 0.8);
             border-radius: 8px;
             padding: 12px 40px;
             font-family: 'Inter', sans-serif;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
             text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-            box-shadow: 0 0 20px rgba(0, 204, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.6), 0 0 40px rgba(0, 204, 255, 0.4);
             transition: all 0.3s ease;
             opacity: 0;
             display: none;
+            z-index: 10000; /* Ensure button is above video */
         }}
         #enter-button:hover {{
-            background-color: rgba(0, 204, 255, 0.4);
-            box-shadow: 0 0 30px rgba(0, 204, 255, 0.6);
+            background-color: rgba(0, 204, 255, 0.5);
+            box-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 50px rgba(0, 204, 255, 0.6);
+            transform: translateX(-50%) scale(1.05);
         }}
         </style>
         
