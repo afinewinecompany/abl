@@ -501,7 +501,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video overlay while the app is initializing"""
+    """Show a loading video overlay while the app is initializing that displays ENTER button after 8 seconds"""
     try:
         # Define the video path
         video_path = 'attached_assets/intro.mp4'
@@ -509,8 +509,7 @@ def show_loading_video():
         # Get base64 encoded video data
         video_data = get_base64_video(video_path)
         
-        # Create a more reliable HTML for loading overlay with very aggressive auto-close
-        # Using inline JavaScript immediately executed when page loads
+        # Create HTML for a loading overlay with the video and ENTER button that appears after 8 seconds
         html = f"""
         <style>
         #loading-overlay {{
@@ -531,15 +530,30 @@ def show_loading_video():
             top: 0;
             left: 0;
         }}
-        #loading-message {{
+        #enter-button {{
             position: absolute;
             bottom: 40px;
-            width: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 204, 255, 0.2);
             color: white;
-            font-family: sans-serif;
-            font-size: 18px;
+            border: 2px solid rgba(0, 204, 255, 0.8);
+            border-radius: 8px;
+            padding: 12px 40px;
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
             text-align: center;
             text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            display: none;
+        }}
+        #enter-button:hover {{
+            background-color: rgba(0, 204, 255, 0.4);
+            box-shadow: 0 0 30px rgba(0, 204, 255, 0.6);
         }}
         </style>
         
@@ -547,46 +561,48 @@ def show_loading_video():
             <video id="loading-video" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
-            <div id="loading-message">Loading ABL Analytics Dashboard...</div>
+            <button id="enter-button" onclick="hideOverlay()">ENTER</button>
         </div>
         
         <script>
-        (function() {{
-            // Force close on document load, after timeout, on media error, 
-            // and attach event listeners all in one go
-            
-            // Method to force hide the overlay
-            function hideOverlay() {{
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) {{
-                    overlay.style.opacity = '0';
-                    // Force display none after transition
-                    setTimeout(function() {{ 
-                        overlay.style.display = 'none'; 
-                    }}, 1000);
-                }}
+        // Define function to hide the overlay
+        function hideOverlay() {{
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {{
+                overlay.style.opacity = '0';
+                // Force display none after transition
+                setTimeout(function() {{ 
+                    overlay.style.display = 'none'; 
+                }}, 1000);
             }}
-            
-            // Very short timer - only 5 seconds
-            setTimeout(hideOverlay, 5000);
-            
-            // Also add backup for when doc is fully loaded
-            document.addEventListener('DOMContentLoaded', function() {{
-                setTimeout(hideOverlay, 500);
+        }}
+        
+        // Show ENTER button after 8 seconds
+        setTimeout(function() {{
+            const enterButton = document.getElementById('enter-button');
+            if (enterButton) {{
+                enterButton.style.display = 'block';
+                // Fade in the button
+                setTimeout(function() {{
+                    enterButton.style.opacity = '1';
+                }}, 100);
+            }}
+        }}, 8000);
+        
+        // Handle video errors - show enter button immediately if video fails
+        const video = document.getElementById('loading-video');
+        if (video) {{
+            video.addEventListener('error', function() {{
+                const enterButton = document.getElementById('enter-button');
+                if (enterButton) {{
+                    enterButton.style.display = 'block';
+                    enterButton.style.opacity = '1';
+                }}
             }});
             
-            // Extra backup - hide on any click
-            document.addEventListener('click', hideOverlay);
-            
-            // Try to attach to video too just in case
-            const video = document.getElementById('loading-video');
-            if (video) {{
-                video.addEventListener('ended', hideOverlay);
-                video.addEventListener('error', hideOverlay);
-                // Extra aggressive - make sure video can't loop and is short
-                video.loop = false;
-            }}
-        }})();
+            // Make sure video doesn't loop
+            video.loop = false;
+        }}
         </script>
         """
         
