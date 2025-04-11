@@ -566,6 +566,16 @@ def show_loading_video():
             margin-bottom: 15px;
             text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
         }}
+        
+        @keyframes pulse {{
+            0% {{ transform: scale(1); box-shadow: 0 0 15px rgba(0, 204, 255, 0.6); }}
+            50% {{ transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 204, 255, 0.9); }}
+            100% {{ transform: scale(1); box-shadow: 0 0 15px rgba(0, 204, 255, 0.6); }}
+        }}
+        
+        #enter-button {{
+            animation: pulse 1.5s infinite;
+        }}
         </style>
         
         <div id="loading-overlay">
