@@ -509,7 +509,8 @@ def show_loading_video():
         # Get base64 encoded video data
         video_data = get_base64_video(video_path)
         
-        # Create HTML for a loading overlay with the video and auto-close feature
+        # Create a more reliable HTML for loading overlay with very aggressive auto-close
+        # Using inline JavaScript immediately executed when page loads
         html = f"""
         <style>
         #loading-overlay {{
@@ -550,13 +551,42 @@ def show_loading_video():
         </div>
         
         <script>
-        // Force close after 8 seconds regardless of video state
-        setTimeout(function() {{
-            document.getElementById('loading-overlay').style.opacity = '0';
-            setTimeout(function() {{
-                document.getElementById('loading-overlay').style.display = 'none';
-            }}, 1000);
-        }}, 8000);
+        (function() {{
+            // Force close on document load, after timeout, on media error, 
+            // and attach event listeners all in one go
+            
+            // Method to force hide the overlay
+            function hideOverlay() {{
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {{
+                    overlay.style.opacity = '0';
+                    // Force display none after transition
+                    setTimeout(function() {{ 
+                        overlay.style.display = 'none'; 
+                    }}, 1000);
+                }}
+            }}
+            
+            // Very short timer - only 5 seconds
+            setTimeout(hideOverlay, 5000);
+            
+            // Also add backup for when doc is fully loaded
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(hideOverlay, 500);
+            }});
+            
+            // Extra backup - hide on any click
+            document.addEventListener('click', hideOverlay);
+            
+            // Try to attach to video too just in case
+            const video = document.getElementById('loading-video');
+            if (video) {{
+                video.addEventListener('ended', hideOverlay);
+                video.addEventListener('error', hideOverlay);
+                // Extra aggressive - make sure video can't loop and is short
+                video.loop = false;
+            }}
+        }})();
         </script>
         """
         
@@ -564,7 +594,7 @@ def show_loading_video():
         st.markdown(html, unsafe_allow_html=True)
     except Exception as e:
         # If anything fails, just continue without the loading animation
-        st.warning(f"Loading animation skipped: {str(e)}")
+        pass
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
