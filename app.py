@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import base64
 from PIL import Image
+import time
+from pathlib import Path
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import (
@@ -498,8 +500,99 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def show_loading_video():
+    """Show a loading video overlay while the app is initializing"""
+    # Define the video path
+    video_path = 'attached_assets/2025-04-11T14-41-54_zoom_in__passing_the.mp4'
+    
+    # Use mp4 as the format
+    video_format = "mp4"
+    
+    # Create the loading overlay HTML
+    loading_html = f"""
+    <style>
+    #loading-overlay {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(10, 12, 16, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 1.5s ease-out;
+    }}
+    
+    #loading-video {{
+        width: 100%;
+        max-width: 800px;
+        border-radius: 12px;
+        box-shadow: 0 0 40px rgba(0, 204, 255, 0.4);
+        opacity: 0.95;
+    }}
+    
+    #loading-message {{
+        color: white;
+        font-family: 'Inter', sans-serif;
+        font-size: 20px;
+        margin-top: 20px;
+        text-align: center;
+        text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
+        animation: pulse 2s infinite;
+    }}
+    
+    @keyframes pulse {{
+        0% {{ opacity: 0.6; }}
+        50% {{ opacity: 1; }}
+        100% {{ opacity: 0.6; }}
+    }}
+    </style>
+    
+    <div id="loading-overlay">
+        <video id="loading-video" autoplay muted playsinline>
+            <source src="data:video/{video_format};base64,{get_base64_video(video_path)}" type="video/{video_format}">
+            Your browser does not support the video tag.
+        </video>
+        <div id="loading-message">Loading ABL Analytics Dashboard...</div>
+    </div>
+    
+    <script>
+        // Fade out the loading overlay after the video has played and data is loaded
+        document.addEventListener("DOMContentLoaded", function() {{
+            setTimeout(function() {{
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {{
+                    overlay.style.opacity = '0';
+                    setTimeout(function() {{
+                        overlay.style.display = 'none';
+                    }}, 1500); // Wait for fade animation to complete
+                }}
+            }}, 4000); // Adjust time as needed (4 seconds in this case)
+        }});
+    </script>
+    """
+    
+    # Display the loading overlay
+    st.markdown(loading_html, unsafe_allow_html=True)
+
+def get_base64_video(video_path):
+    """Convert a video file to base64 encoding"""
+    try:
+        with open(video_path, 'rb') as video_file:
+            video_bytes = video_file.read()
+            return base64.b64encode(video_bytes).decode('utf-8')
+    except Exception as e:
+        st.error(f"Error loading video: {str(e)}")
+        return ""
+
 def main():
     try:
+        # Show loading video first
+        show_loading_video()
+        
         # Display header image
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
