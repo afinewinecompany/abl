@@ -558,13 +558,29 @@ def show_loading_video():
             box-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 50px rgba(0, 204, 255, 0.6);
             transform: translateX(-50%) scale(1.05);
         }}
+        #click-instructions {{
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.8), 0 0 20px rgba(0, 204, 255, 0.6);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10000;
+            cursor: pointer;
+        }}
         </style>
         
-        <div id="loading-overlay">
+        <div id="loading-overlay" onclick="hideOverlay()">
             <video id="loading-video" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
-            <button id="enter-button" onclick="hideOverlay()">ENTER</button>
+            <div id="click-instructions">Click anywhere to enter</div>
         </div>
         
         <script>
@@ -580,31 +596,33 @@ def show_loading_video():
             }}
         }}
         
-        // Show ENTER button after 8 seconds
+        // Add a message after 5 seconds indicating users can click anywhere
         setTimeout(function() {{
-            const enterButton = document.getElementById('enter-button');
-            if (enterButton) {{
-                enterButton.style.display = 'block';
-                // Fade in the button
-                setTimeout(function() {{
-                    enterButton.style.opacity = '1';
-                }}, 100);
+            const instructions = document.getElementById('click-instructions');
+            if (instructions) {{
+                instructions.style.opacity = '1';
             }}
-        }}, 8000);
+        }}, 5000);
         
-        // Handle video errors - show enter button immediately if video fails
+        // Auto-close after 15 seconds as a fallback
+        setTimeout(hideOverlay, 15000);
+        
+        // Handle video errors
         const video = document.getElementById('loading-video');
         if (video) {{
-            video.addEventListener('error', function() {{
-                const enterButton = document.getElementById('enter-button');
-                if (enterButton) {{
-                    enterButton.style.display = 'block';
-                    enterButton.style.opacity = '1';
-                }}
-            }});
-            
             // Make sure video doesn't loop
             video.loop = false;
+            
+            // Add click event for mobile devices which may not bubble up correctly
+            video.addEventListener('click', hideOverlay);
+            
+            // Show instructions immediately if video fails to load
+            video.addEventListener('error', function() {{
+                const instructions = document.getElementById('click-instructions');
+                if (instructions) {{
+                    instructions.style.opacity = '1';
+                }}
+            }});
         }}
         </script>
         """
