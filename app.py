@@ -503,7 +503,7 @@ st.markdown("""
 def show_loading_video():
     """Show a loading video overlay while the app is initializing"""
     # Define the video path
-    video_path = 'attached_assets/2025-04-11T14-41-54_zoom_in__passing_the.mp4'
+    video_path = 'attached_assets/intro.mp4'
     
     # Use mp4 as the format
     video_format = "mp4"
@@ -517,28 +517,30 @@ def show_loading_video():
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(10, 12, 16, 0.95);
+        background-color: rgba(0, 0, 0, 1);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        transition: opacity 1.5s ease-out;
+        transition: opacity 1s ease-out;
     }}
     
     #loading-video {{
         width: 100%;
-        max-width: 800px;
-        border-radius: 12px;
-        box-shadow: 0 0 40px rgba(0, 204, 255, 0.4);
-        opacity: 0.95;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
     }}
     
     #loading-message {{
+        position: absolute;
+        bottom: 40px;
         color: white;
         font-family: 'Inter', sans-serif;
-        font-size: 20px;
-        margin-top: 20px;
+        font-size: 18px;
         text-align: center;
         text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
         animation: pulse 2s infinite;
@@ -560,18 +562,32 @@ def show_loading_video():
     </div>
     
     <script>
-        // Fade out the loading overlay after the video has played and data is loaded
-        document.addEventListener("DOMContentLoaded", function() {{
-            setTimeout(function() {{
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) {{
-                    overlay.style.opacity = '0';
-                    setTimeout(function() {{
-                        overlay.style.display = 'none';
-                    }}, 1500); // Wait for fade animation to complete
-                }}
-            }}, 4000); // Adjust time as needed (4 seconds in this case)
+        // Get the video element
+        const video = document.getElementById('loading-video');
+        
+        // Listen for the 'ended' event on the video
+        video.addEventListener('ended', function() {{
+            // When video ends, fade out the overlay
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {{
+                overlay.style.opacity = '0';
+                setTimeout(function() {{
+                    overlay.style.display = 'none';
+                }}, 1000); // Wait for fade animation to complete
+            }}
         }});
+        
+        // Fallback: if video doesn't trigger 'ended' event, use timeout
+        // This ensures the overlay will be removed even if video playback fails
+        setTimeout(function() {{
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay && overlay.style.opacity !== '0') {{
+                overlay.style.opacity = '0';
+                setTimeout(function() {{
+                    overlay.style.display = 'none';
+                }}, 1000);
+            }}
+        }}, 12000); // Longer timeout (12 seconds) as fallback
     </script>
     """
     
