@@ -509,7 +509,8 @@ def show_loading_video():
         # Get base64 encoded video data
         video_data = get_base64_video(video_path)
         
-        # Create HTML for loading overlay with Enter button
+        # Create a more reliable HTML for loading overlay with very aggressive auto-close
+        # Using inline JavaScript immediately executed when page loads
         html = f"""
         <style>
         #loading-overlay {{
@@ -532,49 +533,13 @@ def show_loading_video():
         }}
         #loading-message {{
             position: absolute;
-            bottom: 60px;
+            bottom: 40px;
             width: 100%;
-            text-align: center;
-        }}
-        
-        #enter-button {{
-            display: inline-block;
-            background: linear-gradient(45deg, #0066cc, #00ccff);
-            color: white;
-            font-family: 'Arial', sans-serif;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 12px 30px;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.6);
-            transition: all 0.3s ease;
-            text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-        }}
-        
-        #enter-button:hover {{
-            background: linear-gradient(45deg, #00ccff, #0066cc);
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0, 204, 255, 0.8);
-        }}
-        
-        .loading-text {{
             color: white;
             font-family: sans-serif;
             font-size: 18px;
-            margin-bottom: 15px;
+            text-align: center;
             text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-        }}
-        
-        @keyframes pulse {{
-            0% {{ transform: scale(1); box-shadow: 0 0 15px rgba(0, 204, 255, 0.6); }}
-            50% {{ transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 204, 255, 0.9); }}
-            100% {{ transform: scale(1); box-shadow: 0 0 15px rgba(0, 204, 255, 0.6); }}
-        }}
-        
-        #enter-button {{
-            animation: pulse 1.5s infinite;
         }}
         </style>
         
@@ -582,14 +547,14 @@ def show_loading_video():
             <video id="loading-video" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
-            <div id="loading-message">
-                <div class="loading-text">Loading ABL Analytics Dashboard...</div>
-                <button id="enter-button" onclick="hideOverlay()" style="display: inline-block;">ENTER APP</button>
-            </div>
+            <div id="loading-message">Loading ABL Analytics Dashboard...</div>
         </div>
         
         <script>
         (function() {{
+            // Force close on document load, after timeout, on media error, 
+            // and attach event listeners all in one go
+            
             // Method to force hide the overlay
             function hideOverlay() {{
                 const overlay = document.getElementById('loading-overlay');
@@ -602,28 +567,24 @@ def show_loading_video():
                 }}
             }}
             
-            // Make the function global so the button can access it
-            window.hideOverlay = hideOverlay;
+            // Very short timer - only 5 seconds
+            setTimeout(hideOverlay, 5000);
             
-            // Configure the video player
+            // Also add backup for when doc is fully loaded
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(hideOverlay, 500);
+            }});
+            
+            // Extra backup - hide on any click
+            document.addEventListener('click', hideOverlay);
+            
+            // Try to attach to video too just in case
             const video = document.getElementById('loading-video');
             if (video) {{
-                // Ensure video doesn't loop
+                video.addEventListener('ended', hideOverlay);
+                video.addEventListener('error', hideOverlay);
+                // Extra aggressive - make sure video can't loop and is short
                 video.loop = false;
-                
-                // Add a pulse effect to the button when video ends
-                video.addEventListener('ended', function() {{
-                    const button = document.getElementById('enter-button');
-                    if (!button.hasAttribute('data-pulsing')) {{
-                        button.style.animation = 'pulse 1.5s infinite';
-                        button.setAttribute('data-pulsing', 'true');
-                    }}
-                }});
-                
-                // Handle video errors gracefully
-                video.addEventListener('error', function() {{
-                    console.log('Video playback error - continuing with button interaction');
-                }});
             }}
         }})();
         </script>
