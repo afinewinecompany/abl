@@ -502,81 +502,69 @@ st.markdown("""
 
 def show_loading_video():
     """Show a loading video overlay while the app is initializing"""
-    # Define the video path
-    video_path = 'attached_assets/intro.mp4'
-    
-    # Use mp4 as the format
-    video_format = "mp4"
-    
-    # Create the loading overlay HTML with a simpler auto-close mechanism
-    loading_html = f"""
-    <style>
-    #loading-overlay {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 1);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        transition: opacity 1s ease-out;
-    }}
-    
-    #loading-video {{
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }}
-    
-    #loading-message {{
-        position: absolute;
-        bottom: 40px;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        font-size: 18px;
-        text-align: center;
-        text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-        animation: pulse 2s infinite;
-    }}
-    
-    @keyframes pulse {{
-        0% {{ opacity: 0.6; }}
-        50% {{ opacity: 1; }}
-        100% {{ opacity: 0.6; }}
-    }}
-    </style>
-    
-    <div id="loading-overlay">
-        <video id="loading-video" autoplay muted playsinline loop="false">
-            <source src="data:video/{video_format};base64,{get_base64_video(video_path)}" type="video/{video_format}">
-            Your browser does not support the video tag.
-        </video>
-        <div id="loading-message">Loading ABL Analytics Dashboard...</div>
-    </div>
-    
-    <script>
-        // Simple timeout to close the overlay after 8 seconds
+    try:
+        # Define the video path
+        video_path = 'attached_assets/intro.mp4'
+        
+        # Get base64 encoded video data
+        video_data = get_base64_video(video_path)
+        
+        # Create HTML for a loading overlay with the video and auto-close feature
+        html = f"""
+        <style>
+        #loading-overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            transition: opacity 1s ease-out;
+        }}
+        #loading-video {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }}
+        #loading-message {{
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            color: white;
+            font-family: sans-serif;
+            font-size: 18px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
+        }}
+        </style>
+        
+        <div id="loading-overlay">
+            <video id="loading-video" autoplay muted playsinline>
+                <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
+            </video>
+            <div id="loading-message">Loading ABL Analytics Dashboard...</div>
+        </div>
+        
+        <script>
+        // Force close after 8 seconds regardless of video state
         setTimeout(function() {{
-            var overlay = document.getElementById('loading-overlay');
-            if (overlay) {{
-                overlay.style.opacity = '0';
-                setTimeout(function() {{
-                    overlay.style.display = 'none';
-                }}, 1000);
-            }}
+            document.getElementById('loading-overlay').style.opacity = '0';
+            setTimeout(function() {{
+                document.getElementById('loading-overlay').style.display = 'none';
+            }}, 1000);
         }}, 8000);
-    </script>
-    """
-    
-    # Display the loading overlay
-    st.markdown(loading_html, unsafe_allow_html=True)
+        </script>
+        """
+        
+        # Display the loading overlay
+        st.markdown(html, unsafe_allow_html=True)
+    except Exception as e:
+        # If anything fails, just continue without the loading animation
+        st.warning(f"Loading animation skipped: {str(e)}")
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
