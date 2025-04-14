@@ -327,33 +327,15 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
         points_mod = calculate_points_modifier(points, wins_series)
 
-    # Calculate hot/cold modifier based on recent weekly record
-    # Set defaults for missing values
-    recent_wins = float(row.get('recent_wins', 0))
-    recent_losses = float(row.get('recent_losses', 0))
-    recent_draws = float(row.get('recent_draws', 0))
-
-    total_recent_games = recent_wins + recent_losses + recent_draws
-
-    # For consistent hot/cold calculation, always use the win percentage,
-    # not a mix of direct percentage and calculated percentages.
-    # This will make the hot/cold modifier consistent for all teams.
+    # Calculate hot/cold modifier based on overall win percentage only
+    # Use the season win percentage for all teams for consistency
     
-    # First log team info for debugging
-    st.sidebar.info(f"Hot/Cold Calc for {team_name}: win_pct={winning_pct}, recent games: {recent_wins}-{recent_losses}-{recent_draws}")
+    # Only show debugging info in sidebar if debug is enabled
+    if st.session_state.get('debug_modifiers', False):
+        st.sidebar.info(f"Hot/Cold Calc for {team_name}: Using overall win%: {winning_pct:.3f}")
     
-    # Calculate recent win percentage 
-    if total_recent_games > 0:
-        # If we have recent games data, calculate the win percentage from that
-        recent_win_pct = (recent_wins + (recent_draws * 0.5)) / total_recent_games
-        st.sidebar.info(f"Using recent games for {team_name}: {recent_win_pct:.3f}")
-    else:
-        # If no recent games data, use overall win percentage
-        recent_win_pct = winning_pct if winning_pct > 0 else 0.5
-        st.sidebar.info(f"Using overall win% for {team_name}: {recent_win_pct:.3f}")
-    
-    # Now always pass the win percentage directly, not the individual game counts
-    hot_cold_mod = calculate_hot_cold_modifier(recent_win_pct)
+    # Use overall win percentage directly for the hot/cold modifier
+    hot_cold_mod = calculate_hot_cold_modifier(winning_pct)
 
     # REMOVED: Strength of schedule calculation per user request
     # We'll set schedule_mod to 0 for debugging purposes but won't use it in calculation
@@ -392,14 +374,14 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Add explanation of the power score
     st.markdown("""
-    Power Rankings combine weekly scoring average, points comparison against other teams, and recent performance (hot/cold streak).
+    Power Rankings combine weekly scoring average, points comparison against other teams, and overall win percentage.
     This is a measure of *current season performance only* and does not include historical data or playoff history.
 
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
 
-    Modifiers for team strength and recent performance use a straight line distribution method, 
+    Modifiers for team strength and overall performance use a straight line distribution method, 
     creating a smoother spread of scores rather than bucketed groups.
     """)
     st.markdown("""
@@ -454,7 +436,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.2.0\n- Linear modifier distribution\n- SoS modifier removed\n- No playoff data included")
+    st.sidebar.info("Power Rankings v2.3.0\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -517,7 +499,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
         1. **Weekly Average** - Average fantasy points per week
         2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
-        3. **Hot/Cold Modifier** - Based on recent win percentage (1.0× to 1.5×)
+        3. **Hot/Cold Modifier** - Based on overall season win percentage (1.0× to 1.5×)
 
         #### Linear Distribution Method
 
@@ -527,9 +509,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
           the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
           between these extremes based on where their points total falls in the league range.
 
-        - **Hot/Cold Modifier**: Teams with a 100% recent win rate receive a 1.5× bonus, teams with a 0%
+        - **Hot/Cold Modifier**: Teams with a 100% season win rate receive a 1.5× bonus, teams with a 0%
           win rate receive a 1.0× modifier. All teams receive a proportional value based on their exact
-          win percentage.
+          overall win percentage for the season.
 
         This creates a more accurate and fair distribution of power scores that better reflects actual
         regular season performance differences between teams, without any consideration of playoff history.
