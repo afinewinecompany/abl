@@ -278,39 +278,60 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
 def get_previous_rankings() -> Dict[str, int]:
     """
     Get the previous week's power rankings from history data
+    Specifically looks for the most recent Tuesday's rankings
     
     Returns:
         Dict mapping team names to their previous ranking positions
     """
-    # Get the current date and calculate one week ago
-    today = datetime.now()
-    one_week_ago = today - timedelta(days=7)
-    
-    # Format the date strings for comparison
-    one_week_ago_str = one_week_ago.strftime("%Y-%m-%d")
-    
-    # Load historical power rankings data
-    history_df = load_rankings_history(ranking_type="power")
-    
-    # If no history exists, return empty dict
-    if history_df.empty:
-        return {}
-    
-    # Convert date column to datetime for comparison
-    history_df['date'] = pd.to_datetime(history_df['date'])
-    
-    # Sort by date in descending order
-    history_df = history_df.sort_values('date', ascending=False)
-    
-    # Get the most recent rankings before today
     previous_rankings = {}
     
-    # Get the most recent date in the history
-    if not history_df.empty:
-        most_recent_date = history_df['date'].iloc[0]
+    try:
+        # Load historical power rankings data
+        history_df = load_rankings_history(ranking_type="power")
         
-        # Get all rankings from the most recent date
-        latest_rankings = history_df[history_df['date'] == most_recent_date]
+        # If no history exists, return empty dict
+        if history_df.empty:
+            return {}
+        
+        # Convert date column to datetime for comparison
+        history_df['date'] = pd.to_datetime(history_df['date'])
+        
+        # Get today's date
+        today = datetime.now().date()
+        
+        # Find the most recent Tuesday before today
+        days_since_tuesday = (today.weekday() - 1) % 7  # Tuesday is weekday 1
+        last_tuesday = today - timedelta(days=days_since_tuesday)
+        
+        # If today is Tuesday, use previous Tuesday
+        if today.weekday() == 1:  # If today is Tuesday
+            last_tuesday = today - timedelta(days=7)  # Go back 7 days to previous Tuesday
+        
+        # Convert the history_df dates to date objects for comparison
+        history_df['date_only'] = history_df['date'].dt.date
+        
+        # Find all available dates in the history data
+        available_dates = sorted(history_df['date_only'].unique())
+        
+        # Find the closest date to last Tuesday
+        closest_date = None
+        min_days_diff = float('inf')
+        
+        for date in available_dates:
+            days_diff = abs((date - last_tuesday).days)
+            if days_diff < min_days_diff:
+                min_days_diff = days_diff
+                closest_date = date
+        
+        # If we couldn't find any date, return empty dict
+        if closest_date is None:
+            return {}
+        
+        # Get all rankings from the chosen date
+        latest_rankings = history_df[history_df['date_only'] == closest_date]
+        
+        # Print information about which date we're using
+        print(f"Using rankings from {closest_date} for movement indicators (closest to last Tuesday: {last_tuesday})")
         
         # Create a dictionary mapping team names to their previous rankings
         for _, row in latest_rankings.iterrows():
@@ -322,6 +343,10 @@ def get_previous_rankings() -> Dict[str, int]:
             
             previous_rankings[row[team_column]] = row['rank']
     
+    except Exception as e:
+        # Log the error but return an empty dict to avoid crashing
+        print(f"Error getting previous rankings: {str(e)}")
+        
     return previous_rankings
 
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
@@ -431,10 +456,10 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from previous week
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from previous Tuesday
 
-    Modifiers for team strength and overall performance use a straight line distribution method, 
-    creating a smoother spread of scores rather than bucketed groups.
+    Movement indicators show how teams have moved since the most recent Tuesday snapshot, 
+    providing a weekly comparison point for tracking performance trends.
     """)
     st.markdown("""
         <style>
