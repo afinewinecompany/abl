@@ -501,94 +501,66 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Set up a video background for the entire application"""
+    """Apply a simple dark theme to the app without video background"""
+    # Apply a dark theme to the app with some styling
+    st.markdown("""
+    <style>
+    /* Add custom dark theme styling */
+    .stApp {
+        background-color: #111827 !important;
+    }
     
-    # Get base64 data for the video
-    try:
-        video_file = open('attached_assets/intro.mp4', 'rb')
-        video_bytes = video_file.read()
-        video_base64 = base64.b64encode(video_bytes).decode('utf-8')
-        
-        # Create the CSS/HTML for background video
-        background_video_html = f"""
-        <style>
-        /* Style for background video */
-        .stApp {{
-            background: rgba(0, 0, 0, 0.7);
-            position: relative;
-            z-index: 1;
-        }}
-        
-        .video-background {{
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            overflow: hidden;
-            z-index: -1;
-        }}
-        
-        .video-background video {{
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            transform: translateX(-50%) translateY(-50%);
-        }}
-        
-        /* Make content more readable against video background */
-        .block-container {{
-            background: rgba(13, 17, 23, 0.7) !important;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }}
-        
-        /* Customize sidebar against video */
-        [data-testid="stSidebar"] {{
-            background: rgba(13, 17, 23, 0.7) !important;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }}
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {{
-            width: 10px;
-        }}
-        
-        ::-webkit-scrollbar-track {{
-            background: rgba(0, 0, 0, 0.1);
-        }}
-        
-        ::-webkit-scrollbar-thumb {{
-            background: rgba(0, 204, 255, 0.5);
-            border-radius: 5px;
-        }}
-        
-        ::-webkit-scrollbar-thumb:hover {{
-            background: rgba(0, 204, 255, 0.7);
-        }}
-        </style>
-        
-        <div class="video-background">
-            <video autoplay loop muted playsinline>
-                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
-            </video>
-        </div>
-        """
-        
-        # Insert the background video into the page
-        st.markdown(background_video_html, unsafe_allow_html=True)
-        
-    except Exception as e:
-        # If the background video fails, just continue without it - no need to raise an error
-        pass
+    /* Customize content container */
+    .block-container {
+        background: rgba(13, 17, 23, 0.7);
+        border-radius: 10px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+    
+    /* Customize sidebar */
+    [data-testid="stSidebar"] {
+        background: rgba(17, 24, 39, 0.8) !important;
+        border-right: 1px solid rgba(0, 204, 255, 0.2);
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 204, 255, 0.5);
+        border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 204, 255, 0.7);
+    }
+    
+    /* Enhance headings */
+    h1, h2, h3 {
+        color: rgba(0, 204, 255, 0.9) !important;
+        text-shadow: 0 0 10px rgba(0, 204, 255, 0.2);
+    }
+    
+    /* Style buttons */
+    .stButton button {
+        border: 1px solid rgba(0, 204, 255, 0.4) !important;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton button:hover {
+        border: 1px solid rgba(0, 204, 255, 0.8) !important;
+        box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
