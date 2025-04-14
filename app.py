@@ -501,172 +501,89 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video overlay with reliable auto-close using session state"""
+    """Show a loading video splash screen with Streamlit native components"""
     
-    # Create session state to track if we should show intro and for how long
-    if 'intro_shown' not in st.session_state:
-        st.session_state.intro_shown = True
-        st.session_state.intro_start_time = time.time()
+    # Initialize the session state if needed
+    if 'show_splash' not in st.session_state:
+        st.session_state.show_splash = True
+        st.session_state.splash_start_time = time.time()
     
-    # If we should still show the intro (based on time or user action)
-    if st.session_state.intro_shown:
-        # Calculate how long the intro has been showing
+    # Only show splash screen if needed
+    if st.session_state.show_splash:
+        # Check if we should auto-close based on time
         current_time = time.time()
-        time_elapsed = current_time - st.session_state.intro_start_time
+        elapsed_time = current_time - st.session_state.splash_start_time
         
-        # Auto-hide after 8 seconds
-        if time_elapsed >= 8:
-            st.session_state.intro_shown = False
+        # Auto-close after 8 seconds
+        if elapsed_time >= 8:
+            st.session_state.show_splash = False
             st.experimental_rerun()
             return
         
-        # Get base64 data for the video
-        try:
-            video_data = get_base64_video('attached_assets/intro.mp4')
-            
-            # Create HTML/CSS/JS for a clean custom video overlay
-            html = f"""
-            <style>
-            #intro-overlay {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: black;
-                z-index: 999999;
-                transition: opacity 0.5s;
-            }}
-            #intro-video {{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }}
-            #enter-button {{
-                position: fixed;
-                bottom: 50px;
-                left: 50%;
-                transform: translateX(-50%);
-                padding: 15px 30px;
-                background-color: rgba(0, 204, 255, 0.3);
-                color: white;
-                border: 2px solid rgba(0, 204, 255, 0.8);
-                border-radius: 5px;
-                font-size: 22px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
-                opacity: {1 if time_elapsed >= 5 else 0};
-                transition: opacity 0.5s, background-color 0.3s;
-                z-index: 9999999;
-            }}
-            #enter-button:hover {{
-                background-color: rgba(0, 204, 255, 0.5);
-            }}
-            </style>
-            
-            <div id="intro-overlay">
-                <video id="intro-video" autoplay muted playsinline>
-                    <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
-                </video>
-                <button id="enter-button" onclick="skipIntro()">ENTER</button>
-            </div>
-            
-            <script>
-                // Function to skip intro and communicate with Streamlit
-                function skipIntro() {{
-                    console.log("Skip intro function called");
-                    // First hide the overlay to give immediate feedback
-                    var overlay = document.getElementById('intro-overlay');
-                    if (overlay) {{
-                        overlay.style.opacity = '0';
-                        // Also set display none after fade transition
-                        setTimeout(function() {{
-                            overlay.style.display = 'none';
-                        }}, 500);
-                    }}
-                    
-                    // Click the hidden Streamlit button to trigger state change
-                    try {{
-                        setTimeout(function() {{
-                            var skipButton = document.getElementById('skip-intro-button');
-                            if (skipButton) {{
-                                console.log("Clicking skip button");
-                                skipButton.click();
-                            }}
-                        }}, 100);
-                    }} catch(e) {{
-                        console.error("Error clicking skip button:", e);
-                    }}
-                }}
-                
-                // Set up the main click handlers once the page is loaded
-                document.addEventListener('DOMContentLoaded', function() {{
-                    console.log("DOM fully loaded");
-                    
-                    // Make the whole overlay clickable
-                    var overlay = document.getElementById('intro-overlay');
-                    if (overlay) {{
-                        overlay.addEventListener('click', function() {{
-                            console.log("Overlay clicked");
-                            skipIntro();
-                        }});
-                    }}
-                    
-                    // Auto close after 8 seconds
-                    setTimeout(function() {{
-                        console.log("Auto-close timer triggered");
-                        skipIntro();
-                    }}, 8000);
-                }});
-                
-                // Set up immediate handlers as well in case DOM is already loaded
-                (function() {{
-                    try {{
-                        var overlay = document.getElementById('intro-overlay');
-                        if (overlay) {{
-                            overlay.onclick = function() {{
-                                console.log("Immediate click handler triggered");
-                                skipIntro();
-                            }};
-                        }}
-                        
-                        // Set another auto-close timer
-                        setTimeout(skipIntro, 8000);
-                    }} catch(e) {{
-                        console.error("Error in immediate setup:", e);
-                    }}
-                }})();
-            </script>
-            """
-            
-            # Display the HTML
-            st.markdown(html, unsafe_allow_html=True)
-            
-            # Add a hidden button to allow JS to trigger Streamlit actions
-            # First let's style the button to be invisible
+        # Create a full-page container for the splash screen
+        splash_container = st.container()
+        
+        with splash_container:
+            # Add CSS to style the splash screen
             st.markdown("""
             <style>
-            [data-testid="baseButton-secondary"]:has(div:contains("Skip Intro")) {
-                visibility: hidden !important;
-                height: 0 !important;
+            /* Hide all default Streamlit elements */
+            header {display: none !important;}
+            footer {display: none !important;}
+            .block-container {padding-top: 0 !important; padding-bottom: 0 !important; max-width: 100% !important;}
+            section[data-testid="stSidebar"] {display: none !important;}
+            
+            /* Style the splash container */
+            div.element-container:has(img[alt="ABL Baseball Analytics"]) {
                 position: fixed !important;
-                top: -1000px !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 999999 !important;
+                background-color: black !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             </style>
             """, unsafe_allow_html=True)
             
-            # Now add the actual button
-            if st.button("Skip Intro", key="skip-intro-button", help="Skip intro video", 
-                      on_click=lambda: setattr(st.session_state, 'intro_shown', False),
-                      args=None, kwargs=None):
-                st.session_state.intro_shown = False
-                st.experimental_rerun()
+            # Create a full-screen column layout
+            col1, col2, col3 = st.columns([1, 3, 1])
+            
+            with col2:
+                # Display the intro video using Streamlit native functionality
+                video_file = open('attached_assets/intro.mp4', 'rb')
+                video_bytes = video_file.read()
+                st.video(video_bytes, start_time=0)
                 
-        except Exception as e:
-            # If video fails, skip intro
-            st.session_state.intro_shown = False
-            pass
+                # Only show ENTER button after 5 seconds
+                if elapsed_time >= 5:
+                    if st.button("ENTER", key="enter_button", use_container_width=True, 
+                            type="primary"):
+                        st.session_state.show_splash = False
+                        st.experimental_rerun()
+                
+                # Create a hidden "skip" button that's available immediately
+                skip_col1, skip_col2, skip_col3 = st.columns([3, 1, 3])
+                with skip_col2:
+                    if st.button("Skip", key="skip_button"):
+                        st.session_state.show_splash = False
+                        st.experimental_rerun()
+                        
+                # Hide the Skip button with CSS
+                st.markdown("""
+                <style>
+                [data-testid="baseButton-secondary"]:has(div:contains("Skip")) {
+                    opacity: 0.3;
+                    transform: scale(0.8);
+                }
+                </style>
+                """, unsafe_allow_html=True)
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
