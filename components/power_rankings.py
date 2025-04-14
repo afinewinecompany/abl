@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import Dict
+from typing import Dict, List, Optional, Tuple
+from utils import load_rankings_history
+from datetime import datetime, timedelta
 
 # Import team colors and IDs from prospects.py
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
@@ -273,6 +275,49 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
     # Return the calculated modifier
     return modifier
 
+def get_previous_rankings() -> Dict[str, int]:
+    """
+    Get the previous week's power rankings from history data
+    
+    Returns:
+        Dict mapping team names to their previous ranking positions
+    """
+    # Get the current date and calculate one week ago
+    today = datetime.now()
+    one_week_ago = today - timedelta(days=7)
+    
+    # Format the date strings for comparison
+    one_week_ago_str = one_week_ago.strftime("%Y-%m-%d")
+    
+    # Load historical power rankings data
+    history_df = load_rankings_history(ranking_type="power")
+    
+    # If no history exists, return empty dict
+    if history_df.empty:
+        return {}
+    
+    # Convert date column to datetime for comparison
+    history_df['date'] = pd.to_datetime(history_df['date'])
+    
+    # Sort by date in descending order
+    history_df = history_df.sort_values('date', ascending=False)
+    
+    # Get the most recent rankings before today
+    previous_rankings = {}
+    
+    # Get the most recent date in the history
+    if not history_df.empty:
+        most_recent_date = history_df['date'].iloc[0]
+        
+        # Get all rankings from the most recent date
+        latest_rankings = history_df[history_df['date'] == most_recent_date]
+        
+        # Create a dictionary mapping team names to their previous rankings
+        for _, row in latest_rankings.iterrows():
+            previous_rankings[row['team']] = row['rank']
+    
+    return previous_rankings
+
 def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float:
     """Calculate power score based on weekly average, points modifier, hot/cold modifier, and strength of schedule"""
     # Get debug flag from session state
@@ -380,6 +425,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from previous week
 
     Modifiers for team strength and overall performance use a straight line distribution method, 
     creating a smoother spread of scores rather than bucketed groups.
@@ -600,6 +646,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         
         # We won't set these values since we'll use the winning_pct directly in the hot/cold calculation
 
+    # Get previous rankings for movement indicators
+    previous_rankings = get_previous_rankings()
+    
     # Calculate raw power scores
     rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
 
@@ -610,6 +659,22 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Sort by normalized power score
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
+    
+    # Add movement compared to previous rankings
+    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_rankings.get(x, 0))
+    rankings_df['rank_change'] = rankings_df.apply(
+        lambda x: 0 if x['prev_rank'] == 0 else int(x['prev_rank'] - x.name), axis=1
+    )
+    
+    # Add movement indicators
+    rankings_df['movement'] = rankings_df['rank_change'].apply(
+        lambda x: "▲" if x > 0 else ("▼" if x < 0 else "–")
+    )
+    
+    # Add style classes for color coding
+    rankings_df['movement_class'] = rankings_df['rank_change'].apply(
+        lambda x: "trending-up" if x > 0 else ("trending-down" if x < 0 else "")
+    )
 
     # Store the calculated rankings in session state for other components to use
     st.session_state.power_rankings_calculated = rankings_df.copy()
@@ -647,8 +712,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         #{idx + 1}
                     </div>
                     <div style="position: relative; z-index: 1;">
-                        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">
+                        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
+                            <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                            </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
@@ -699,7 +767,12 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         #{i + 4}
                     </div>
                     <div style="flex-grow: 1;">
-                        <div style="font-weight: 600; color: white;">{row['team_name']}</div>
+                        <div style="font-weight: 600; color: white; display: flex; align-items: center;">
+                            {row['team_name']}
+                            <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                            </span>
+                        </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
                                 <span style="color: rgba(255,255,255,0.7);">W:</span>
