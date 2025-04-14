@@ -3,8 +3,6 @@ import pandas as pd
 import os
 import base64
 from PIL import Image
-import time
-from pathlib import Path
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import (
@@ -500,83 +498,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def show_loading_video():
-    """Apply a simple dark theme to the app without video background"""
-    # Apply a dark theme to the app with some styling
-    st.markdown("""
-    <style>
-    /* Add custom dark theme styling */
-    .stApp {
-        background-color: #111827 !important;
-    }
-    
-    /* Customize content container */
-    .block-container {
-        background: rgba(13, 17, 23, 0.7);
-        border-radius: 10px;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        padding: 20px;
-    }
-    
-    /* Customize sidebar */
-    [data-testid="stSidebar"] {
-        background: rgba(17, 24, 39, 0.8) !important;
-        border-right: 1px solid rgba(0, 204, 255, 0.2);
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 10px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.1);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: rgba(0, 204, 255, 0.5);
-        border-radius: 5px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 204, 255, 0.7);
-    }
-    
-    /* Enhance headings */
-    h1, h2, h3 {
-        color: rgba(0, 204, 255, 0.9) !important;
-        text-shadow: 0 0 10px rgba(0, 204, 255, 0.2);
-    }
-    
-    /* Style buttons */
-    .stButton button {
-        border: 1px solid rgba(0, 204, 255, 0.4) !important;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton button:hover {
-        border: 1px solid rgba(0, 204, 255, 0.8) !important;
-        box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-def get_base64_video(video_path):
-    """Convert a video file to base64 encoding"""
-    try:
-        with open(video_path, 'rb') as video_file:
-            video_bytes = video_file.read()
-            return base64.b64encode(video_bytes).decode('utf-8')
-    except Exception as e:
-        st.error(f"Error loading video: {str(e)}")
-        return ""
-
 def main():
     try:
-        # Show loading video first
-        show_loading_video()
-        
         # Display header image
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
