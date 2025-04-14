@@ -314,7 +314,13 @@ def get_previous_rankings() -> Dict[str, int]:
         
         # Create a dictionary mapping team names to their previous rankings
         for _, row in latest_rankings.iterrows():
-            previous_rankings[row['team']] = row['rank']
+            # Check which column name is present (either 'team_name' or 'team')
+            if 'team_name' in row:
+                team_column = 'team_name'
+            else:
+                team_column = 'team'
+            
+            previous_rankings[row[team_column]] = row['rank']
     
     return previous_rankings
 
