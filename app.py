@@ -501,89 +501,94 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def show_loading_video():
-    """Show a loading video splash screen with Streamlit native components"""
+    """Set up a video background for the entire application"""
     
-    # Initialize the session state if needed
-    if 'show_splash' not in st.session_state:
-        st.session_state.show_splash = True
-        st.session_state.splash_start_time = time.time()
-    
-    # Only show splash screen if needed
-    if st.session_state.show_splash:
-        # Check if we should auto-close based on time
-        current_time = time.time()
-        elapsed_time = current_time - st.session_state.splash_start_time
+    # Get base64 data for the video
+    try:
+        video_file = open('attached_assets/intro.mp4', 'rb')
+        video_bytes = video_file.read()
+        video_base64 = base64.b64encode(video_bytes).decode('utf-8')
         
-        # Auto-close after 8 seconds
-        if elapsed_time >= 8:
-            st.session_state.show_splash = False
-            st.experimental_rerun()
-            return
+        # Create the CSS/HTML for background video
+        background_video_html = f"""
+        <style>
+        /* Style for background video */
+        .stApp {{
+            background: rgba(0, 0, 0, 0.7);
+            position: relative;
+            z-index: 1;
+        }}
         
-        # Create a full-page container for the splash screen
-        splash_container = st.container()
+        .video-background {{
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: -1;
+        }}
         
-        with splash_container:
-            # Add CSS to style the splash screen
-            st.markdown("""
-            <style>
-            /* Hide all default Streamlit elements */
-            header {display: none !important;}
-            footer {display: none !important;}
-            .block-container {padding-top: 0 !important; padding-bottom: 0 !important; max-width: 100% !important;}
-            section[data-testid="stSidebar"] {display: none !important;}
-            
-            /* Style the splash container */
-            div.element-container:has(img[alt="ABL Baseball Analytics"]) {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                z-index: 999999 !important;
-                background-color: black !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
-                align-items: center !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Create a full-screen column layout
-            col1, col2, col3 = st.columns([1, 3, 1])
-            
-            with col2:
-                # Display the intro video using Streamlit native functionality
-                video_file = open('attached_assets/intro.mp4', 'rb')
-                video_bytes = video_file.read()
-                st.video(video_bytes, start_time=0)
-                
-                # Only show ENTER button after 5 seconds
-                if elapsed_time >= 5:
-                    if st.button("ENTER", key="enter_button", use_container_width=True, 
-                            type="primary"):
-                        st.session_state.show_splash = False
-                        st.experimental_rerun()
-                
-                # Create a hidden "skip" button that's available immediately
-                skip_col1, skip_col2, skip_col3 = st.columns([3, 1, 3])
-                with skip_col2:
-                    if st.button("Skip", key="skip_button"):
-                        st.session_state.show_splash = False
-                        st.experimental_rerun()
-                        
-                # Hide the Skip button with CSS
-                st.markdown("""
-                <style>
-                [data-testid="baseButton-secondary"]:has(div:contains("Skip")) {
-                    opacity: 0.3;
-                    transform: scale(0.8);
-                }
-                </style>
-                """, unsafe_allow_html=True)
+        .video-background video {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translateX(-50%) translateY(-50%);
+        }}
+        
+        /* Make content more readable against video background */
+        .block-container {{
+            background: rgba(13, 17, 23, 0.7) !important;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }}
+        
+        /* Customize sidebar against video */
+        [data-testid="stSidebar"] {{
+            background: rgba(13, 17, 23, 0.7) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }}
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {{
+            width: 10px;
+        }}
+        
+        ::-webkit-scrollbar-track {{
+            background: rgba(0, 0, 0, 0.1);
+        }}
+        
+        ::-webkit-scrollbar-thumb {{
+            background: rgba(0, 204, 255, 0.5);
+            border-radius: 5px;
+        }}
+        
+        ::-webkit-scrollbar-thumb:hover {{
+            background: rgba(0, 204, 255, 0.7);
+        }}
+        </style>
+        
+        <div class="video-background">
+            <video autoplay loop muted playsinline>
+                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+            </video>
+        </div>
+        """
+        
+        # Insert the background video into the page
+        st.markdown(background_video_html, unsafe_allow_html=True)
+        
+    except Exception as e:
+        # If the background video fails, just continue without it - no need to raise an error
+        pass
 
 def get_base64_video(video_path):
     """Convert a video file to base64 encoding"""
