@@ -278,7 +278,7 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
 def get_previous_rankings() -> Dict[str, int]:
     """
     Get the previous week's power rankings from history data
-    Specifically looks for the 6-day prior rankings or Tuesday's rankings if available
+    Specifically looks for April 14th data (last Tuesday) for rankings comparison
     
     Returns:
         Dict mapping team names to their previous ranking positions
@@ -297,17 +297,9 @@ def get_previous_rankings() -> Dict[str, int]:
         # Convert date column to datetime for comparison
         history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Get today's date and 6 days ago (for last week's comparison)
-        today = datetime.now().date()
-        six_days_ago = today - timedelta(days=6)
-        
-        # Find the most recent Tuesday before today (as an alternative)
-        days_since_tuesday = (today.weekday() - 1) % 7  # Tuesday is weekday 1
-        last_tuesday = today - timedelta(days=days_since_tuesday)
-        
-        # If today is Tuesday, use previous Tuesday
-        if today.weekday() == 1:  # If today is Tuesday
-            last_tuesday = today - timedelta(days=7)  # Go back 7 days to previous Tuesday
+        # Use a fixed date of April 14th for comparing
+        target_date_str = "2025-04-14"
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
         
         # Convert the history_df dates to date objects for comparison
         history_df['date_only'] = history_df['date'].dt.date
@@ -316,18 +308,22 @@ def get_previous_rankings() -> Dict[str, int]:
         available_dates = sorted(history_df['date_only'].unique())
         print(f"Available ranking dates: {available_dates}")
         
-        # First try to find a date exactly 6 days ago
-        target_date = six_days_ago
-        
-        # Find the closest date to our target
-        closest_date = None
-        min_days_diff = float('inf')
-        
-        for date in available_dates:
-            days_diff = abs((date - target_date).days)
-            if days_diff < min_days_diff:
-                min_days_diff = days_diff
-                closest_date = date
+        # Check if we have the exact date we want
+        if target_date in available_dates:
+            print(f"Found exact target date: {target_date}")
+            closest_date = target_date
+        else:
+            # Find the closest date to April 14th
+            closest_date = None
+            min_days_diff = float('inf')
+            
+            for date in available_dates:
+                days_diff = abs((date - target_date).days)
+                if days_diff < min_days_diff:
+                    min_days_diff = days_diff
+                    closest_date = date
+            
+            print(f"Using closest date to target: {closest_date} (difference: {min_days_diff} days)")
         
         # If we couldn't find any date, return empty dict
         if closest_date is None:
@@ -339,7 +335,6 @@ def get_previous_rankings() -> Dict[str, int]:
         
         # Print information about which date we're using
         print(f"Using rankings from {closest_date} for movement indicators")
-        print(f"This is {min_days_diff} days away from ideal target date {target_date}")
         
         # Check if we have the teams mentioned by the user
         has_washington = False
@@ -374,8 +369,9 @@ def get_previous_rankings() -> Dict[str, int]:
             
         # Debug info - print all previous rankings
         print("All previous rankings:")
-        for team, rank in previous_rankings.items():
-            print(f"  {team}: {rank}")
+        sorted_teams = sorted(previous_rankings.items(), key=lambda x: x[1])
+        for team, rank in sorted_teams:
+            print(f"  Rank {rank}: {team}")
     
     except Exception as e:
         # Log the error but return an empty dict to avoid crashing
