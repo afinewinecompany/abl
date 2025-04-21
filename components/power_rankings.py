@@ -454,11 +454,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Score Movement**: ▲ (up), ▼ (down), – (unchanged) with value showing points gained/lost
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) with value showing positions gained/lost
 
-    Movement indicators show how teams' scores have changed from Week 2 to Week 3, displaying the actual 
-    fantasy points gained or lost during Week 3. This provides a more accurate view of which teams are
-    trending up or down based on their most recent performance.
+    Movement indicators show how teams' rankings have changed from Week 2 to Week 3, displaying the number of 
+    positions a team has moved up or down in the rankings. This provides a clear view of which teams are
+    trending up or down in the power rankings.
     """)
     st.markdown("""
         <style>
@@ -512,7 +512,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.4.0\n- Movement indicators now show Week 3 points gained/lost\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
+    st.sidebar.info("Power Rankings v2.5.0\n- Movement indicators now show rank changes from Week 2 to 3\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -701,15 +701,15 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         lambda x: 0 if x['prev_rank'] == 0 else int(x['prev_rank'] - x.name), axis=1
     )
     
-    # Use score change to determine trend direction
-    # Teams with positive score changes (gained more points in week 3) show up arrow
-    # Teams with negative score changes (lost points or gained fewer) show down arrow
-    rankings_df['movement'] = rankings_df['score_change'].apply(
+    # Use rank change to determine trend direction (up means improved rank, down means worse rank)
+    # Teams with positive rank changes (moved up in rankings) show up arrow
+    # Teams with negative rank changes (moved down in rankings) show down arrow
+    rankings_df['movement'] = rankings_df['rank_change'].apply(
         lambda x: "▲" if x > 0 else ("▼" if x < 0 else "–")
     )
     
-    # Add style classes for color coding based on score change
-    rankings_df['movement_class'] = rankings_df['score_change'].apply(
+    # Add style classes for color coding based on rank change
+    rankings_df['movement_class'] = rankings_df['rank_change'].apply(
         lambda x: "trending-up" if x > 0 else ("trending-down" if x < 0 else "")
     )
 
@@ -752,7 +752,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {f"{abs(row['score_change']):.1f}" if row['score_change'] != 0 else ""}
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ""}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -807,7 +807,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {f"{abs(row['score_change']):.1f}" if row['score_change'] != 0 else ""}
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ""}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
