@@ -278,7 +278,7 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
 def get_previous_rankings() -> Dict[str, int]:
     """
     Get the previous week's power rankings from history data
-    Specifically looks for the most recent Tuesday's rankings
+    Specifically looks for the 6-day prior rankings or Tuesday's rankings if available
     
     Returns:
         Dict mapping team names to their previous ranking positions
@@ -291,15 +291,17 @@ def get_previous_rankings() -> Dict[str, int]:
         
         # If no history exists, return empty dict
         if history_df.empty:
+            print("No historical rankings data found.")
             return {}
         
         # Convert date column to datetime for comparison
         history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Get today's date
+        # Get today's date and 6 days ago (for last week's comparison)
         today = datetime.now().date()
+        six_days_ago = today - timedelta(days=6)
         
-        # Find the most recent Tuesday before today
+        # Find the most recent Tuesday before today (as an alternative)
         days_since_tuesday = (today.weekday() - 1) % 7  # Tuesday is weekday 1
         last_tuesday = today - timedelta(days=days_since_tuesday)
         
@@ -312,26 +314,36 @@ def get_previous_rankings() -> Dict[str, int]:
         
         # Find all available dates in the history data
         available_dates = sorted(history_df['date_only'].unique())
+        print(f"Available ranking dates: {available_dates}")
         
-        # Find the closest date to last Tuesday
+        # First try to find a date exactly 6 days ago
+        target_date = six_days_ago
+        
+        # Find the closest date to our target
         closest_date = None
         min_days_diff = float('inf')
         
         for date in available_dates:
-            days_diff = abs((date - last_tuesday).days)
+            days_diff = abs((date - target_date).days)
             if days_diff < min_days_diff:
                 min_days_diff = days_diff
                 closest_date = date
         
         # If we couldn't find any date, return empty dict
         if closest_date is None:
+            print("No suitable historical date found for rankings comparison.")
             return {}
         
         # Get all rankings from the chosen date
         latest_rankings = history_df[history_df['date_only'] == closest_date]
         
         # Print information about which date we're using
-        print(f"Using rankings from {closest_date} for movement indicators (closest to last Tuesday: {last_tuesday})")
+        print(f"Using rankings from {closest_date} for movement indicators")
+        print(f"This is {min_days_diff} days away from ideal target date {target_date}")
+        
+        # Check if we have the teams mentioned by the user
+        has_washington = False
+        has_pittsburgh = False
         
         # Create a dictionary mapping team names to their previous rankings
         for _, row in latest_rankings.iterrows():
@@ -341,11 +353,35 @@ def get_previous_rankings() -> Dict[str, int]:
             else:
                 team_column = 'team'
             
-            previous_rankings[row[team_column]] = row['rank']
+            team_name = row[team_column]
+            rank = row['rank']
+            
+            # Check if this is one of our target teams
+            if team_name == "Washington Nationals":
+                has_washington = True
+                print(f"Found Washington Nationals at rank {rank} in previous data")
+            elif team_name == "Pittsburgh Pirates":
+                has_pittsburgh = True
+                print(f"Found Pittsburgh Pirates at rank {rank} in previous data")
+            
+            previous_rankings[team_name] = rank
+        
+        # Report if we couldn't find the teams
+        if not has_washington:
+            print("WARNING: Washington Nationals not found in historical rankings!")
+        if not has_pittsburgh:
+            print("WARNING: Pittsburgh Pirates not found in historical rankings!")
+            
+        # Debug info - print all previous rankings
+        print("All previous rankings:")
+        for team, rank in previous_rankings.items():
+            print(f"  {team}: {rank}")
     
     except Exception as e:
         # Log the error but return an empty dict to avoid crashing
         print(f"Error getting previous rankings: {str(e)}")
+        import traceback
+        traceback.print_exc()
         
     return previous_rankings
 
