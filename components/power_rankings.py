@@ -752,7 +752,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['score_change']):.1f if row['score_change'] != 0 else ''}
+                                {row['movement']} {f"{abs(row['score_change']):.1f}" if row['score_change'] != 0 else ""}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -807,7 +807,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['score_change']):.1f if row['score_change'] != 0 else ''}
+                                {row['movement']} {f"{abs(row['score_change']):.1f}" if row['score_change'] != 0 else ""}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
