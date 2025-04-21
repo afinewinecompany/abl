@@ -297,8 +297,8 @@ def get_previous_rankings() -> Dict[str, int]:
         # Convert date column to datetime for comparison
         history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Use a fixed date of April 9th (Wednesday) for comparing
-        target_date_str = "2025-04-09"
+        # Use a fixed date of April 14th for comparing
+        target_date_str = "2025-04-14"
         target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
         
         # Convert the history_df dates to date objects for comparison
@@ -488,9 +488,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from previous Wednesday
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from April 14th
 
-    Movement indicators show how teams have moved since the last Wednesday snapshot (April 9), 
+    Movement indicators show how teams have moved since the April 14th rankings snapshot, 
     providing a weekly comparison point for tracking performance trends.
     """)
     st.markdown("""
