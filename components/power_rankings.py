@@ -454,10 +454,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from April 14th
+    - **Score Movement**: ▲ (up), ▼ (down), – (unchanged) with value showing points gained/lost
 
-    Movement indicators show how teams have moved since the April 14th rankings snapshot, 
-    providing a weekly comparison point for tracking performance trends.
+    Movement indicators show how teams' scores have changed from Week 2 to Week 3, displaying the actual 
+    fantasy points gained or lost during Week 3. This provides a more accurate view of which teams are
+    trending up or down based on their most recent performance.
     """)
     st.markdown("""
         <style>
@@ -511,7 +512,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.3.0\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
+    st.sidebar.info("Power Rankings v2.4.0\n- Movement indicators now show Week 3 points gained/lost\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -675,8 +676,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         
         # We won't set these values since we'll use the winning_pct directly in the hot/cold calculation
 
-    # Get previous rankings for movement indicators
-    previous_rankings = get_previous_rankings()
+    # Get previous rankings and score changes for movement indicators
+    previous_data = get_previous_rankings()
     
     # Calculate raw power scores
     rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
@@ -689,19 +690,26 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
     
-    # Add movement compared to previous rankings
-    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_rankings.get(x, 0))
+    # Add movement based on score change from week 2 to week 3 instead of rank change
+    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_data.get(x, {}).get('prev_rank', 0))
+    
+    # Add the score change from week 2 to week 3
+    rankings_df['score_change'] = rankings_df['team_name'].map(lambda x: previous_data.get(x, {}).get('score_change', 0))
+    
+    # The rank change is still calculated for backward compatibility
     rankings_df['rank_change'] = rankings_df.apply(
         lambda x: 0 if x['prev_rank'] == 0 else int(x['prev_rank'] - x.name), axis=1
     )
     
-    # Add movement indicators
-    rankings_df['movement'] = rankings_df['rank_change'].apply(
+    # Use score change to determine trend direction
+    # Teams with positive score changes (gained more points in week 3) show up arrow
+    # Teams with negative score changes (lost points or gained fewer) show down arrow
+    rankings_df['movement'] = rankings_df['score_change'].apply(
         lambda x: "▲" if x > 0 else ("▼" if x < 0 else "–")
     )
     
-    # Add style classes for color coding
-    rankings_df['movement_class'] = rankings_df['rank_change'].apply(
+    # Add style classes for color coding based on score change
+    rankings_df['movement_class'] = rankings_df['score_change'].apply(
         lambda x: "trending-up" if x > 0 else ("trending-down" if x < 0 else "")
     )
 
@@ -744,7 +752,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                                {row['movement']} {abs(row['score_change']):.1f if row['score_change'] != 0 else ''}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -799,7 +807,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                                {row['movement']} {abs(row['score_change']):.1f if row['score_change'] != 0 else ''}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
