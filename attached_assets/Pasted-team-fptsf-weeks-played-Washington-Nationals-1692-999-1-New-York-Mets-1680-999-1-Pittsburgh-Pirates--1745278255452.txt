@@ -1,0 +1,95 @@
+team,fptsf,weeks played
+Washington Nationals,1692.999,1
+New York Mets,1680.999,1
+Pittsburgh Pirates,1647.0,1
+Saint Louis Cardinals,1451.001,1
+Kansas City Royals,1307.499,1
+San Francisco Giants,1232.499,1
+Philadelphia Phillies,1645.5,1
+Detroit Tigers,1593.0,1
+New York Yankees,1497.999,1
+Houston Astros,1320.999,1
+Los Angeles Dodgers,1314.999,1
+San Diego Padres,1284.501,1
+Milwaukee Brewers,1218.999,1
+Seattle Mariners,1158.501,1
+Athletics,1356.501,1
+Chicago Cubs,1320.501,1
+Atlanta Braves,1248.0,1
+Chicago White Sox,1244.001,1
+Tampa Bay Rays,1203.999,1
+Los Angeles Angels,1194.0,1
+Miami Marlins,1093.5,1
+Minnesota Twins,1093.5,1
+Boston Red Sox,1083.501,1
+Baltimore Orioles,1040.499,1
+Arizona Diamondbacks,1005.999,1
+Cleveland Guardians,1162.5,1
+Toronto Blue Jays,1044.999,1
+Colorado Rockies,915.0,1
+Texas Rangers,863.001,1
+Cincinnati Reds,602.001,1
+
+team,fptsf,weeks played
+Pittsburgh Pirates,2603.499,2
+Kansas City Royals,2135.499,2
+Washington Nationals,2748.999,2
+Detroit Tigers,2478.501,2
+Philadelphia Phillies,2440.5,2
+Milwaukee Brewers,2370.999,2
+Los Angeles Dodgers,2101.998,2
+New York Mets,2404.998,2
+Saint Louis Cardinals,2238.501,2
+Chicago White Sox,2174.001,2
+San Diego Padres,1995.0,2
+Miami Marlins,1938.501,2
+Tampa Bay Rays,1903.5,2
+Houston Astros,2014.5,2
+San Francisco Giants,1905.999,2
+Seattle Mariners,1845.501,2
+Boston Red Sox,1823.502,2
+Baltimore Orioles,1803.999,2
+New York Yankees,2283.498,2
+Chicago Cubs,2136.0,2
+Toronto Blue Jays,1863.0,2
+Minnesota Twins,1743.501,2
+Colorado Rockies,1711.5,2
+Athletics,2099.001,2
+Los Angeles Angels,1934.499,2
+Atlanta Braves,1929.0,2
+Arizona Diamondbacks,1736.499,2
+Cleveland Guardians,1872.999,2
+Texas Rangers,1468.002,2
+Cincinnati Reds,1079.502,2
+
+team,fptsf,weeks played
+Washington Nationals,3667.5,3
+Philadelphia Phillies,3305.001,3
+Pittsburgh Pirates,3389.499,3
+Saint Louis Cardinals,3317.502,3
+Chicago White Sox,3191.502,3
+Kansas City Royals,2953.5,3
+Milwaukee Brewers,3198.999,3
+Seattle Mariners,2718.0,3
+Detroit Tigers,3380.001,3
+New York Mets,3284.997,3
+New York Yankees,3186.498,3
+Los Angeles Dodgers,2877.498,3
+Tampa Bay Rays,2747.001,3
+Miami Marlins,2741.001,3
+San Diego Padres,2725.5,3
+Athletics,3068.001,3
+Chicago Cubs,2983.5,3
+Atlanta Braves,2981.001,3
+Los Angeles Angels,2787.498,3
+Toronto Blue Jays,2666.499,3
+Baltimore Orioles,2610.999,3
+Houston Astros,2844.0,3
+Cleveland Guardians,2805.999,3
+Boston Red Sox,2537.001,3
+San Francisco Giants,2478.999,3
+Minnesota Twins,2388.0,3
+Colorado Rockies,2616.0,3
+Texas Rangers,2302.503,3
+Arizona Diamondbacks,2358.0,3
+Cincinnati Reds,1700.001,3
