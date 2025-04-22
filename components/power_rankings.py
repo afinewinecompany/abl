@@ -805,40 +805,102 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         
         with filter_col2:
             # Create a single row of buttons for all options
-            button_cols = st.columns(8)  # 8 columns for all possible options (All, AL, NL, 6 divisions)
+            button_cols = st.columns(9)  # 9 columns (All, AL, NL, 6 individual division buttons)
             
             # All Teams button
             with button_cols[0]:
-                if st.button("All", type="primary" if st.session_state.division_filter == 'All Teams' else "secondary", use_container_width=True):
+                if st.button(
+                    "All", 
+                    key="btn_all_teams",
+                    type="primary" if st.session_state.division_filter == 'All Teams' else "secondary", 
+                    use_container_width=True
+                ):
                     st.session_state.division_filter = 'All Teams'
             
             # AL button
             with button_cols[1]:
-                if st.button("AL", type="primary" if st.session_state.division_filter == 'AL Teams' else "secondary", use_container_width=True):
+                if st.button(
+                    "AL", 
+                    key="btn_al_teams",
+                    type="primary" if st.session_state.division_filter == 'AL Teams' else "secondary", 
+                    use_container_width=True
+                ):
                     st.session_state.division_filter = 'AL Teams'
             
             # NL button
             with button_cols[2]:
-                if st.button("NL", type="primary" if st.session_state.division_filter == 'NL Teams' else "secondary", use_container_width=True):
+                if st.button(
+                    "NL", 
+                    key="btn_nl_teams",
+                    type="primary" if st.session_state.division_filter == 'NL Teams' else "secondary", 
+                    use_container_width=True
+                ):
                     st.session_state.division_filter = 'NL Teams'
             
-            # Buttons for AL divisions
-            for i, division in enumerate(al_divisions):
-                short_name = division.replace("AL ", "")  # Just show "East", "West", etc.
-                with button_cols[3 + i]:
-                    if st.button(short_name, type="primary" if st.session_state.division_filter == division else "secondary", use_container_width=True):
-                        st.session_state.division_filter = division
+            # Individual buttons for each division
+            # AL East
+            with button_cols[3]:
+                if st.button(
+                    "AL East", 
+                    key="btn_al_east",
+                    type="primary" if st.session_state.division_filter == 'AL East' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'AL East'
             
-            # Buttons for NL divisions
-            for i, division in enumerate(nl_divisions):
-                short_name = division.replace("NL ", "")  # Just show "East", "West", etc.
-                with button_cols[6 + i]:
-                    if st.button(short_name, type="primary" if st.session_state.division_filter == division else "secondary", use_container_width=True):
-                        st.session_state.division_filter = division
+            # AL Central
+            with button_cols[4]:
+                if st.button(
+                    "AL Central", 
+                    key="btn_al_central",
+                    type="primary" if st.session_state.division_filter == 'AL Central' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'AL Central'
+            
+            # AL West
+            with button_cols[5]:
+                if st.button(
+                    "AL West", 
+                    key="btn_al_west",
+                    type="primary" if st.session_state.division_filter == 'AL West' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'AL West'
+            
+            # NL East
+            with button_cols[6]:
+                if st.button(
+                    "NL East", 
+                    key="btn_nl_east",
+                    type="primary" if st.session_state.division_filter == 'NL East' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'NL East'
+            
+            # NL Central
+            with button_cols[7]:
+                if st.button(
+                    "NL Central", 
+                    key="btn_nl_central",
+                    type="primary" if st.session_state.division_filter == 'NL Central' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'NL Central'
+            
+            # NL West
+            with button_cols[8]:
+                if st.button(
+                    "NL West", 
+                    key="btn_nl_west",
+                    type="primary" if st.session_state.division_filter == 'NL West' else "secondary", 
+                    use_container_width=True
+                ):
+                    st.session_state.division_filter = 'NL West'
         
         with filter_col3:
             # Clear filter button
-            if st.button("Clear", type="secondary", use_container_width=True):
+            if st.button("Clear", key="btn_clear_filter", type="secondary", use_container_width=True):
                 st.session_state.division_filter = 'All Teams'
         
         # Apply the division filter from session state
