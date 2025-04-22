@@ -5,9 +5,40 @@ import plotly.graph_objects as go
 from typing import Dict, List, Optional, Tuple
 from utils import load_rankings_history
 from datetime import datetime, timedelta
+import os.path
 
 # Import team colors and IDs from prospects.py
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
+
+# Load division data
+def load_division_data() -> Dict[str, str]:
+    """
+    Load division data from CSV file
+    Returns a dictionary mapping team names to their divisions
+    """
+    division_mapping = {}
+    try:
+        if os.path.exists('attached_assets/divisions.csv'):
+            division_df = pd.read_csv('attached_assets/divisions.csv', header=None)
+            for _, row in division_df.iterrows():
+                division = row[0]
+                team_name = row[1]
+                division_mapping[team_name] = division
+    except Exception as e:
+        print(f"Error loading division data: {str(e)}")
+    
+    return division_mapping
+
+# Function to get available divisions from the mapping
+def get_available_divisions(division_mapping: Dict[str, str]) -> List[str]:
+    """
+    Get list of available divisions from the mapping
+    Returns a list of unique divisions
+    """
+    if not division_mapping:
+        return []
+    
+    return sorted(list(set(division_mapping.values())))
 
 # Add team abbreviation mapping
 TEAM_ABBREVIATIONS = {
@@ -730,9 +761,50 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Store the calculated rankings in session state for other components to use
     st.session_state.power_rankings_calculated = rankings_df.copy()
-
+    
+    # Load division data and create mapping
+    division_mapping = load_division_data()
+    
+    # Add division information to rankings DataFrame if mapping is available
+    if division_mapping:
+        # Map team names to their divisions
+        rankings_df['division'] = rankings_df['team_name'].map(lambda x: division_mapping.get(x, "Unknown"))
+        
+        # Generate a list of divisions for the dropdown
+        all_divisions = get_available_divisions(division_mapping)
+        # Create options for AL and NL leagues
+        al_divisions = [div for div in all_divisions if div.startswith('AL')]
+        nl_divisions = [div for div in all_divisions if div.startswith('NL')]
+        
+        # Create filter options
+        filter_options = ['All Teams', 'AL Teams', 'NL Teams'] + all_divisions
+        
+        # Add filter dropdown
+        st.sidebar.markdown("### Division Filter")
+        division_filter = st.sidebar.selectbox(
+            "Filter Rankings by Division:",
+            options=filter_options,
+            index=0  # Default to "All Teams"
+        )
+        
+        # Apply division filter to the DataFrame
+        if division_filter != 'All Teams':
+            if division_filter == 'AL Teams':
+                # Filter to show only AL teams
+                rankings_df = rankings_df[rankings_df['division'].str.startswith('AL')]
+            elif division_filter == 'NL Teams':
+                # Filter to show only NL teams
+                rankings_df = rankings_df[rankings_df['division'].str.startswith('NL')]
+            else:
+                # Filter by specific division
+                rankings_df = rankings_df[rankings_df['division'] == division_filter]
+            
+            # Re-ranking teams after filtering
+            rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
+            rankings_df.index = rankings_df.index + 1  # Start ranking from 1
+    
     # Display top teams
-    st.subheader("🏆 League Leaders")
+    st.subheader(f"🏆 League Leaders {f'({division_filter})' if division_mapping and division_filter != 'All Teams' else ''}")
     col1, col2, col3 = st.columns(3)
 
     # Top 3 teams with enhanced styling
@@ -789,7 +861,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
             """, unsafe_allow_html=True)
 
     # Show remaining teams with similar styling
-    st.markdown("### Complete Power Rankings")
+    st.markdown(f"### Complete Power Rankings {f'({division_filter})' if division_mapping and division_filter != 'All Teams' else ''}")
 
     remaining_teams = rankings_df.iloc[3:]
     for i, (_, row) in enumerate(remaining_teams.iterrows()):
@@ -845,7 +917,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         """, unsafe_allow_html=True)
 
     # Visualization with enhanced styling
-    st.subheader("📈 Power Score Distribution")
+    st.subheader(f"📈 Power Score Distribution {f'({division_filter})' if division_mapping and division_filter != 'All Teams' else ''}")
     fig = px.bar(
         rankings_df,
         x='team_name',
@@ -893,7 +965,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     st.plotly_chart(fig, use_container_width=True)
 
     # Add prospect strength comparison
-    st.subheader("🌟 System Strength vs Team Power")
+    st.subheader(f"🌟 System Strength vs Team Power {f'({division_filter})' if division_mapping and division_filter != 'All Teams' else ''}")
 
     # Load prospect data
     try:
