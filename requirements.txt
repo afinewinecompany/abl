@@ -18,4 +18,3 @@ twilio
 fantraxapi
 numpy
 plotly
-trafilatura

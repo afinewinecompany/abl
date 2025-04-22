@@ -275,69 +275,103 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
     # Return the calculated modifier
     return modifier
 
-def get_previous_rankings() -> Dict[str, dict]:
+def get_previous_rankings() -> Dict[str, int]:
     """
-    Get the previous week's power rankings data and calculate week-to-week score changes
+    Get the previous week's power rankings from history data
+    Specifically looks for April 14th data (last Tuesday) for rankings comparison
     
     Returns:
-        Dict mapping team names to a dict with 'prev_rank' and 'score_change'
+        Dict mapping team names to their previous ranking positions
     """
     previous_rankings = {}
     
     try:
-        # Load historical team points data from our CSV file
-        history_df = pd.read_csv("data/team_fptsf_history.csv")
+        # Load historical power rankings data
+        history_df = load_rankings_history(ranking_type="power")
         
         # If no history exists, return empty dict
         if history_df.empty:
-            print("No historical team points data found.")
+            print("No historical rankings data found.")
             return {}
         
-        # Get week 2 data (previous week)
-        week2_data = history_df[history_df['week'] == 2]
+        # Convert date column to datetime for comparison
+        history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Get week 3 data (current week)
-        week3_data = history_df[history_df['week'] == 3]
+        # Use a fixed date of April 14th for comparing
+        target_date_str = "2025-04-14"
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
         
-        # Create dataframes with team and fptsf for each week
-        week2_df = week2_data[['team', 'fptsf']].copy()
-        week3_df = week3_data[['team', 'fptsf']].copy()
+        # Convert the history_df dates to date objects for comparison
+        history_df['date_only'] = history_df['date'].dt.date
         
-        # Rename columns to distinguish weeks
-        week2_df.columns = ['team', 'week2_fptsf']
-        week3_df.columns = ['team', 'week3_fptsf']
+        # Find all available dates in the history data
+        available_dates = sorted(history_df['date_only'].unique())
+        print(f"Available ranking dates: {available_dates}")
         
-        # Merge the dataframes to calculate week-to-week changes
-        combined_df = pd.merge(week2_df, week3_df, on='team', how='inner')
-        
-        # Calculate the points per week (what was earned in week 3 only)
-        combined_df['week3_only_points'] = combined_df['week3_fptsf'] - combined_df['week2_fptsf']
-        
-        # Sort by week 2 points for ranking
-        week2_ranked = week2_df.sort_values('week2_fptsf', ascending=False).reset_index(drop=True)
-        week2_ranked.index = week2_ranked.index + 1  # Start ranking from 1
-        week2_ranked['prev_rank'] = week2_ranked.index
-        
-        # Create rankings dictionary with previous rank and score change
-        for _, row in combined_df.iterrows():
-            team_name = row['team']
-            # Get the previous rank from week 2
-            prev_rank_row = week2_ranked[week2_ranked['team'] == team_name]
-            prev_rank = prev_rank_row['prev_rank'].iloc[0] if not prev_rank_row.empty else 0
+        # Check if we have the exact date we want
+        if target_date in available_dates:
+            print(f"Found exact target date: {target_date}")
+            closest_date = target_date
+        else:
+            # Find the closest date to April 14th
+            closest_date = None
+            min_days_diff = float('inf')
             
-            # Calculate score change
-            score_change = row['week3_only_points']
+            for date in available_dates:
+                days_diff = abs((date - target_date).days)
+                if days_diff < min_days_diff:
+                    min_days_diff = days_diff
+                    closest_date = date
             
-            # Store both previous rank and score change
-            previous_rankings[team_name] = {
-                'prev_rank': prev_rank,
-                'score_change': score_change
-            }
+            print(f"Using closest date to target: {closest_date} (difference: {min_days_diff} days)")
         
-        # Debug info - print all previous rankings and score changes
-        print("Score changes from week 2 to week 3:")
-        for team, data in previous_rankings.items():
-            print(f"  {team}: Rank {data['prev_rank']}, Week 3 Score Change: {data['score_change']:.2f}")
+        # If we couldn't find any date, return empty dict
+        if closest_date is None:
+            print("No suitable historical date found for rankings comparison.")
+            return {}
+        
+        # Get all rankings from the chosen date
+        latest_rankings = history_df[history_df['date_only'] == closest_date]
+        
+        # Print information about which date we're using
+        print(f"Using rankings from {closest_date} for movement indicators")
+        
+        # Check if we have the teams mentioned by the user
+        has_washington = False
+        has_pittsburgh = False
+        
+        # Create a dictionary mapping team names to their previous rankings
+        for _, row in latest_rankings.iterrows():
+            # Check which column name is present (either 'team_name' or 'team')
+            if 'team_name' in row:
+                team_column = 'team_name'
+            else:
+                team_column = 'team'
+            
+            team_name = row[team_column]
+            rank = row['rank']
+            
+            # Check if this is one of our target teams
+            if team_name == "Washington Nationals":
+                has_washington = True
+                print(f"Found Washington Nationals at rank {rank} in previous data")
+            elif team_name == "Pittsburgh Pirates":
+                has_pittsburgh = True
+                print(f"Found Pittsburgh Pirates at rank {rank} in previous data")
+            
+            previous_rankings[team_name] = rank
+        
+        # Report if we couldn't find the teams
+        if not has_washington:
+            print("WARNING: Washington Nationals not found in historical rankings!")
+        if not has_pittsburgh:
+            print("WARNING: Pittsburgh Pirates not found in historical rankings!")
+            
+        # Debug info - print all previous rankings
+        print("All previous rankings:")
+        sorted_teams = sorted(previous_rankings.items(), key=lambda x: x[1])
+        for team, rank in sorted_teams:
+            print(f"  Rank {rank}: {team}")
     
     except Exception as e:
         # Log the error but return an empty dict to avoid crashing
@@ -454,11 +488,10 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) with value showing positions gained/lost
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from April 14th
 
-    Movement indicators show how teams' rankings have changed from Week 2 to Week 3, displaying the number of 
-    positions a team has moved up or down in the rankings. This provides a clear view of which teams are
-    trending up or down in the power rankings.
+    Movement indicators show how teams have moved since the April 14th rankings snapshot, 
+    providing a weekly comparison point for tracking performance trends.
     """)
     st.markdown("""
         <style>
@@ -512,7 +545,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.5.0\n- Movement indicators now show rank changes from Week 2 to 3\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
+    st.sidebar.info("Power Rankings v2.3.0\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -676,8 +709,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         
         # We won't set these values since we'll use the winning_pct directly in the hot/cold calculation
 
-    # Get previous rankings and score changes for movement indicators
-    previous_data = get_previous_rankings()
+    # Get previous rankings for movement indicators
+    previous_rankings = get_previous_rankings()
     
     # Calculate raw power scores
     rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
@@ -690,25 +723,18 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
     
-    # Add movement based on score change from week 2 to week 3 instead of rank change
-    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_data.get(x, {}).get('prev_rank', 0))
-    
-    # Add the score change from week 2 to week 3
-    rankings_df['score_change'] = rankings_df['team_name'].map(lambda x: previous_data.get(x, {}).get('score_change', 0))
-    
-    # The rank change is still calculated for backward compatibility
+    # Add movement compared to previous rankings
+    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_rankings.get(x, 0))
     rankings_df['rank_change'] = rankings_df.apply(
         lambda x: 0 if x['prev_rank'] == 0 else int(x['prev_rank'] - x.name), axis=1
     )
     
-    # Use rank change to determine trend direction (up means improved rank, down means worse rank)
-    # Teams with positive rank changes (moved up in rankings) show up arrow
-    # Teams with negative rank changes (moved down in rankings) show down arrow
+    # Add movement indicators
     rankings_df['movement'] = rankings_df['rank_change'].apply(
         lambda x: "▲" if x > 0 else ("▼" if x < 0 else "–")
     )
     
-    # Add style classes for color coding based on rank change
+    # Add style classes for color coding
     rankings_df['movement_class'] = rankings_df['rank_change'].apply(
         lambda x: "trending-up" if x > 0 else ("trending-down" if x < 0 else "")
     )
@@ -752,7 +778,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ""}
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -807,7 +833,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
                             <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ""}
+                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
