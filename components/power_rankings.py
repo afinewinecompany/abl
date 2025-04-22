@@ -277,8 +277,8 @@ def calculate_hot_cold_modifier(win_percentage: float) -> float:
 
 def get_previous_rankings() -> Dict[str, int]:
     """
-    Get the previous week's power rankings from history data
-    Specifically looks for April 14th data (last Tuesday) for rankings comparison
+    Get the previous power rankings from history data
+    Uses the most recent snapshot available (excluding today)
     
     Returns:
         Dict mapping team names to their previous ranking positions
@@ -297,44 +297,33 @@ def get_previous_rankings() -> Dict[str, int]:
         # Convert date column to datetime for comparison
         history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Use a fixed date of April 14th for comparing
-        target_date_str = "2025-04-14"
-        target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+        # Get today's date to exclude it
+        today = datetime.now().date()
         
         # Convert the history_df dates to date objects for comparison
         history_df['date_only'] = history_df['date'].dt.date
         
-        # Find all available dates in the history data
-        available_dates = sorted(history_df['date_only'].unique())
-        print(f"Available ranking dates: {available_dates}")
+        # Exclude today's data (if exists) to get previous snapshots
+        previous_snapshots = history_df[history_df['date_only'] < today]
         
-        # Check if we have the exact date we want
-        if target_date in available_dates:
-            print(f"Found exact target date: {target_date}")
-            closest_date = target_date
-        else:
-            # Find the closest date to April 14th
-            closest_date = None
-            min_days_diff = float('inf')
-            
-            for date in available_dates:
-                days_diff = abs((date - target_date).days)
-                if days_diff < min_days_diff:
-                    min_days_diff = days_diff
-                    closest_date = date
-            
-            print(f"Using closest date to target: {closest_date} (difference: {min_days_diff} days)")
-        
-        # If we couldn't find any date, return empty dict
-        if closest_date is None:
-            print("No suitable historical date found for rankings comparison.")
+        # If we have no previous snapshots, return empty dict
+        if previous_snapshots.empty:
+            print("No previous snapshots found (excluding today).")
             return {}
         
-        # Get all rankings from the chosen date
-        latest_rankings = history_df[history_df['date_only'] == closest_date]
+        # Find all available dates in the history data
+        available_dates = sorted(previous_snapshots['date_only'].unique())
+        print(f"Available ranking dates: {available_dates}")
+        
+        # Use the most recent snapshot date
+        most_recent_date = available_dates[-1]
+        print(f"Using most recent snapshot date: {most_recent_date}")
+        
+        # Get all rankings from the most recent date
+        latest_rankings = previous_snapshots[previous_snapshots['date_only'] == most_recent_date]
         
         # Print information about which date we're using
-        print(f"Using rankings from {closest_date} for movement indicators")
+        print(f"Using rankings from {most_recent_date} for movement indicators")
         
         # Check if we have the teams mentioned by the user
         has_washington = False
@@ -488,10 +477,10 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     - **Power Score Scale**: 100 = League Average
     - **Above 100**: Team is performing better than league average
     - **Below 100**: Team is performing below league average
-    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from April 14th
+    - **Rank Movement**: ▲ (up), ▼ (down), – (unchanged) from previous snapshot
 
-    Movement indicators show how teams have moved since the April 14th rankings snapshot, 
-    providing a weekly comparison point for tracking performance trends.
+    Movement indicators show how teams have moved since the most recent rankings snapshot.
+    Use the "Take New Rankings Snapshot" button in the sidebar to capture current rankings for future comparison.
     """)
     st.markdown("""
         <style>

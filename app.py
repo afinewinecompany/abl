@@ -559,17 +559,30 @@ def main():
             if st.button("Refresh Data", use_container_width=True):
                 st.experimental_rerun()
             
-            # Add "Take New Rankings Snapshot" button
+            # Add "Take New Rankings Snapshot" button with improved styling and feedback
             st.markdown("### 📸 Rankings History")
-            if st.button("Take New Rankings Snapshot", use_container_width=True):
+            st.markdown("""
+            <div style="margin-bottom: 10px;">
+                Take a snapshot of current rankings to use as reference for movement indicators. 
+                This will store the current team rankings and be used to show which teams are 
+                moving up ▲ or down ▼ in future rankings.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("📊 Take New Rankings Snapshot", use_container_width=True):
                 # Create a placeholder for status messages
                 status_msg = st.empty()
+                status_msg.info("📸 Taking snapshot of current rankings...")
+                
+                # Track success for overall status message
+                power_success = False
+                ddi_success = False
                 
                 # Get the current calculated power rankings
                 if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
                     # Save Power Rankings history
                     if save_rankings_history(st.session_state.power_rankings_calculated, ranking_type="power"):
-                        status_msg.success("✅ Power Rankings snapshot saved!")
+                        power_success = True
                     else:
                         status_msg.error("❌ Failed to save Power Rankings snapshot")
                         
@@ -577,11 +590,17 @@ def main():
                 if 'ddi_data_calculated' in st.session_state and st.session_state.ddi_data_calculated is not None:
                     # Save DDI Rankings history
                     if save_rankings_history(st.session_state.ddi_data_calculated, ranking_type="ddi"):
-                        status_msg.success("✅ DDI Rankings snapshot saved!")
-                    else:
-                        status_msg.error("❌ Failed to save DDI Rankings snapshot")
+                        ddi_success = True
+                
+                # Show final success message
+                if power_success and ddi_success:
+                    status_msg.success("✅ Rankings snapshot saved successfully! Future ranking movement will be compared to this snapshot.")
+                elif power_success:
+                    status_msg.warning("⚠️ Power Rankings snapshot saved, but DDI snapshot failed.")
+                elif ddi_success:
+                    status_msg.warning("⚠️ DDI Rankings snapshot saved, but Power Rankings snapshot failed.")
                 else:
-                    status_msg.warning("No ranking data available to snapshot. Please visit the Power Rankings and DDI Rankings tabs first.")
+                    status_msg.error("❌ Failed to save rankings snapshots - no ranking data available.")
                 
             # Only showing Current API as data source now
             data_source = "Current API"
