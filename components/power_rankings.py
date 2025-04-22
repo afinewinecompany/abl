@@ -18,12 +18,28 @@ def load_division_data() -> Dict[str, str]:
     """
     division_mapping = {}
     try:
-        if os.path.exists('attached_assets/divisions.csv'):
-            division_df = pd.read_csv('attached_assets/divisions.csv', header=None)
+        # Print the current working directory
+        import os
+        print(f"Current working directory: {os.getcwd()}")
+        
+        # Check if the file exists and print its path
+        csv_path = 'attached_assets/divisions.csv'
+        file_exists = os.path.exists(csv_path)
+        print(f"Division CSV path: {csv_path}, exists: {file_exists}")
+        
+        if file_exists:
+            # Load the data from CSV
+            division_df = pd.read_csv(csv_path, header=None)
+            print(f"Loaded division data with {len(division_df)} rows")
+            
             for _, row in division_df.iterrows():
                 division = row[0]
                 team_name = row[1]
                 division_mapping[team_name] = division
+            
+            print(f"Created division mapping with {len(division_mapping)} teams")
+        else:
+            print("Division CSV file not found")
     except Exception as e:
         print(f"Error loading division data: {str(e)}")
     
