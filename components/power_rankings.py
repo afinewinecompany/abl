@@ -786,22 +786,60 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         # Map team names to their divisions
         rankings_df['division'] = rankings_df['team_name'].map(lambda x: division_mapping.get(x, "Unknown"))
         
-        # Generate a list of divisions for the dropdown
+        # Generate a list of divisions for the filter buttons
         all_divisions = get_available_divisions(division_mapping)
-        # Create options for AL and NL leagues
+        
+        # Separate divisions into AL and NL for better organization
         al_divisions = [div for div in all_divisions if div.startswith('AL')]
         nl_divisions = [div for div in all_divisions if div.startswith('NL')]
         
-        # Create filter options
-        filter_options = ['All Teams', 'AL Teams', 'NL Teams'] + all_divisions
+        # Create a session state variable for the division filter if it doesn't exist
+        if 'division_filter' not in st.session_state:
+            st.session_state.division_filter = 'All Teams'
         
-        # Add filter dropdown
-        st.sidebar.markdown("### Division Filter")
-        division_filter = st.sidebar.selectbox(
-            "Filter Rankings by Division:",
-            options=filter_options,
-            index=0  # Default to "All Teams"
-        )
+        # Add filter buttons directly on the power rankings page
+        st.markdown("### Filter by Division")
+        
+        # Create two columns for the buttons
+        col1, col2 = st.columns(2)
+        
+        # Create button for "All Teams"
+        with col1:
+            if st.button("All Teams", type="primary" if st.session_state.division_filter == 'All Teams' else "secondary"):
+                st.session_state.division_filter = 'All Teams'
+        
+        # Create button for all AL teams
+        with col2:
+            if st.button("All AL Teams", type="primary" if st.session_state.division_filter == 'AL Teams' else "secondary"):
+                st.session_state.division_filter = 'AL Teams'
+                
+        # Create button for all NL teams
+        with col1:
+            if st.button("All NL Teams", type="primary" if st.session_state.division_filter == 'NL Teams' else "secondary"):
+                st.session_state.division_filter = 'NL Teams'
+        
+        # Add a spacer
+        with col2:
+            st.write("")
+        
+        st.markdown("#### American League")
+        # Create buttons for each AL division
+        cols = st.columns(len(al_divisions))
+        for i, division in enumerate(al_divisions):
+            with cols[i]:
+                if st.button(division, type="primary" if st.session_state.division_filter == division else "secondary"):
+                    st.session_state.division_filter = division
+        
+        st.markdown("#### National League")
+        # Create buttons for each NL division
+        cols = st.columns(len(nl_divisions))
+        for i, division in enumerate(nl_divisions):
+            with cols[i]:
+                if st.button(division, type="primary" if st.session_state.division_filter == division else "secondary"):
+                    st.session_state.division_filter = division
+        
+        # Apply the division filter from session state
+        division_filter = st.session_state.division_filter
         
         # Apply division filter to the DataFrame
         if division_filter != 'All Teams':
