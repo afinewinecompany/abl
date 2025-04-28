@@ -1024,9 +1024,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     <div style="position: relative; z-index: 1;">
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
+                            {row['hot_cold_emoji'] and f'''
                             <span style="font-size: 1.4rem; font-weight: bold; margin-left: 0.5rem;">
                                 {row['hot_cold_emoji']}
                             </span>
+                            '''}
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
@@ -1079,9 +1081,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     <div style="flex-grow: 1;">
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
+                            {row['hot_cold_emoji'] and f'''
                             <span style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
                                 {row['hot_cold_emoji']}
                             </span>
+                            '''}
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
