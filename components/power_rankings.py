@@ -295,32 +295,72 @@ def calculate_schedule_strength_modifier(team_name: str, current_period: int) ->
         print(f"Error calculating schedule strength modifier: {str(e)}")
         return 0.0  # Default to no modification on error
 
-def calculate_hot_cold_modifier(win_percentage: float) -> float:
+def load_team_records() -> Dict[str, Dict[str, int]]:
     """
-    Calculate hot/cold modifier based on win percentage.
+    Load team records from CSV file for hot/cold calculation
     
-    The formula uses linear scaling to give teams with better records a higher modifier.
-    Teams with a 100% win rate get a 1.5x bonus, teams with a 0% win rate get 1.0x (no bonus).
+    Returns:
+        Dictionary mapping team names to a dictionary with 'W', 'L', and 'T' keys
+    """
+    try:
+        records_df = pd.read_csv('data/team_records.csv')
+        records = {}
+        
+        for _, row in records_df.iterrows():
+            team_name = row['Team']
+            records[team_name] = {
+                'W': int(row['W']),
+                'L': int(row['L']),
+                'T': int(row['T']) if 'T' in row else 0
+            }
+        
+        return records
+    except Exception as e:
+        print(f"Error loading team records: {e}")
+        return {}
+        
+def calculate_hot_cold_modifier(team_name: str) -> tuple:
+    """
+    Calculate hot/cold modifier based on recent team record from team_records.csv.
     
     Args:
-        win_percentage: Team's win percentage (0.0 to 1.0)
+        team_name: Name of the team
         
     Returns:
-        float: Hot/cold modifier between 1.0 and 1.5
+        tuple: (modifier value, emoji, win percentage)
     """
-    # Ensure win_percentage is between 0 and 1
-    win_percentage = max(0.0, min(1.0, win_percentage))
+    # Load team records
+    team_records = load_team_records()
     
-    # Define range for the modifier
-    min_modifier = 1.0   # Modifier for 0% win rate
-    max_modifier = 1.5   # Modifier for 100% win rate
-
-    # Linear interpolation: y = min_modifier + (x * (max_modifier - min_modifier))
-    # where x is the win percentage from 0.0 to 1.0
-    modifier = min_modifier + (win_percentage * (max_modifier - min_modifier))
+    # Default values if team not found
+    if team_name not in team_records:
+        return 1.0, "", 0.0
     
-    # Return the calculated modifier
-    return modifier
+    # Get team record
+    record = team_records[team_name]
+    wins = record['W']
+    losses = record['L']
+    total_games = wins + losses
+    
+    # Calculate win percentage
+    win_percentage = wins / total_games if total_games > 0 else 0.0
+    
+    # Assign modifier on a scale from 1.0 to 1.5
+    modifier = 1.0 + (0.5 * win_percentage)
+    
+    # Determine emoji based on win percentage
+    if win_percentage >= 0.8:
+        emoji = "🔥"  # Fire/hot for win percentage 80%+
+    elif win_percentage >= 0.6:
+        emoji = "🔆"  # Warm for win percentage 60-79%
+    elif win_percentage <= 0.2:
+        emoji = "❄️"  # Very cold for win percentage below 20%
+    elif win_percentage <= 0.4:
+        emoji = "🧊"  # Cold for win percentage 20-40%
+    else:
+        emoji = ""   # Neutral - no emoji for 41-59%
+    
+    return modifier, emoji, win_percentage
 
 def get_previous_rankings() -> Dict[str, int]:
     """
@@ -471,15 +511,25 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
         wins_series = all_teams_data['wins'].apply(lambda w: w * POINTS_PER_WIN)
         points_mod = calculate_points_modifier(points, wins_series)
 
-    # Calculate hot/cold modifier based on overall win percentage only
-    # Use the season win percentage for all teams for consistency
+    # Calculate hot/cold modifier based on recent team records from team_records.csv
+    # This uses a 3-week window of performance to determine if teams are hot or cold
     
     # Only show debugging info in sidebar if debug is enabled
     if st.session_state.get('debug_modifiers', False):
-        st.sidebar.info(f"Hot/Cold Calc for {team_name}: Using overall win%: {winning_pct:.3f}")
+        st.sidebar.info(f"Hot/Cold Calc for {team_name}: Using recent records from team_records.csv")
     
-    # Use overall win percentage directly for the hot/cold modifier
-    hot_cold_mod = calculate_hot_cold_modifier(winning_pct)
+    # Get hot/cold modifier, emoji, and win percentage from the new function
+    hot_cold_result = calculate_hot_cold_modifier(str(team_name))
+    hot_cold_mod = hot_cold_result[0]  # Get just the modifier value
+    hot_cold_emoji = hot_cold_result[1]  # Get the emoji
+    hot_cold_win_pct = hot_cold_result[2]  # Get the win percentage
+    
+    # Create temporary variables rather than modifying the row (which is a copy)
+    # We'll add these to the final DataFrame later
+    if isinstance(row, pd.Series):
+        row = row.copy()
+        row['hot_cold_emoji'] = hot_cold_emoji
+        row['hot_cold_win_pct'] = hot_cold_win_pct
 
     # REMOVED: Strength of schedule calculation per user request
     # We'll set schedule_mod to 0 for debugging purposes but won't use it in calculation
