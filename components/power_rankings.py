@@ -631,7 +631,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Add version info
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.3.0\n- Linear modifier distribution\n- SoS modifier removed\n- Using overall win% for hot/cold\n- No playoff data included")
+    st.sidebar.info("Power Rankings v2.3.1\n- Linear modifier distribution\n- SoS modifier removed\n- Using last 3 weeks win% for hot/cold\n- No playoff data included")
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
@@ -694,7 +694,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
         1. **Weekly Average** - Average fantasy points per week
         2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
-        3. **Hot/Cold Modifier** - Based on overall season win percentage (1.0× to 1.5×)
+        3. **Hot/Cold Modifier** - Based on team's last 3 weeks win/loss record (1.0× to 1.5×)
 
         #### Linear Distribution Method
 
@@ -704,9 +704,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
           the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
           between these extremes based on where their points total falls in the league range.
 
-        - **Hot/Cold Modifier**: Teams with a 100% season win rate receive a 1.5× bonus, teams with a 0%
-          win rate receive a 1.0× modifier. All teams receive a proportional value based on their exact
-          overall win percentage for the season.
+        - **Hot/Cold Modifier**: Teams with a 100% win rate in their last 3 weeks receive a 1.5× bonus, teams with a 0%
+          win rate in the last 3 weeks receive a 1.0× modifier. All teams receive a proportional value based on their 
+          win percentage over their most recent 3 weeks of play.
 
         This creates a more accurate and fair distribution of power scores that better reflects actual
         regular season performance differences between teams, without any consideration of playoff history.
