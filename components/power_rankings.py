@@ -795,8 +795,30 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
         
         # We won't set these values since we'll use the winning_pct directly in the hot/cold calculation
 
-    # Get previous rankings for movement indicators
-    previous_rankings = get_previous_rankings()
+    # Get previous rankings for movement indicators (not used per user request)
+    previous_rankings = {}  # Empty dict since we're not using movement indicators
+    
+    # Create a dictionary to store hot/cold data
+    hot_cold_data = {}
+    
+    # Loop through all teams to get their hot/cold data
+    for idx, row in rankings_df.iterrows():
+        team_name = row['team_name']
+        # Get hot/cold info for this team
+        hot_cold_result = calculate_hot_cold_modifier(str(team_name))
+        hot_cold_data[team_name] = {
+            'modifier': hot_cold_result[0],  # The modifier value (1.0-1.5)
+            'emoji': hot_cold_result[1],     # The emoji (🔥, 🔆, ❄️, 🧊, or empty)
+            'win_pct': hot_cold_result[2]    # Recent win percentage
+        }
+    
+    # Store the hot/cold data in the DataFrame
+    rankings_df['hot_cold_emoji'] = rankings_df['team_name'].apply(
+        lambda x: hot_cold_data.get(x, {}).get('emoji', '')
+    )
+    rankings_df['hot_cold_win_pct'] = rankings_df['team_name'].apply(
+        lambda x: hot_cold_data.get(x, {}).get('win_pct', 0.0)
+    )
     
     # Calculate raw power scores
     rankings_df['raw_power_score'] = rankings_df.apply(lambda x: calculate_power_score(x, rankings_df), axis=1)
@@ -808,22 +830,6 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Sort by normalized power score
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
-    
-    # Add movement compared to previous rankings
-    rankings_df['prev_rank'] = rankings_df['team_name'].map(lambda x: previous_rankings.get(x, 0))
-    rankings_df['rank_change'] = rankings_df.apply(
-        lambda x: 0 if x['prev_rank'] == 0 else int(x['prev_rank'] - x.name), axis=1
-    )
-    
-    # Add movement indicators
-    rankings_df['movement'] = rankings_df['rank_change'].apply(
-        lambda x: "▲" if x > 0 else ("▼" if x < 0 else "–")
-    )
-    
-    # Add style classes for color coding
-    rankings_df['movement_class'] = rankings_df['rank_change'].apply(
-        lambda x: "trending-up" if x > 0 else ("trending-down" if x < 0 else "")
-    )
 
     # Store the calculated rankings in session state for other components to use
     st.session_state.power_rankings_calculated = rankings_df.copy()
@@ -1018,8 +1024,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     <div style="position: relative; z-index: 1;">
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {row['team_name']}
-                            <span class="{row['movement_class']}" style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                            <span style="font-size: 1.4rem; font-weight: bold; margin-left: 0.5rem;">
+                                {row['hot_cold_emoji']} <span style="font-size: 0.8rem;">({row['hot_cold_win_pct']:.3f})</span>
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -1073,8 +1079,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     <div style="flex-grow: 1;">
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {row['team_name']}
-                            <span class="{row['movement_class']}" style="font-size: 0.9rem; font-weight: bold; margin-left: 0.5rem;">
-                                {row['movement']} {abs(row['rank_change']) if row['rank_change'] != 0 else ''}
+                            <span style="font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">
+                                {row['hot_cold_emoji']} <span style="font-size: 0.7rem;">({row['hot_cold_win_pct']:.3f})</span>
                             </span>
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
