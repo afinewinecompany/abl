@@ -358,7 +358,7 @@ def calculate_hot_cold_modifier(team_name: str) -> tuple:
     elif win_percentage <= 0.4:
         emoji = "🧊"  # Cold for win percentage 20-40%
     else:
-        emoji = ""   # Neutral - no emoji for 41-59%
+        emoji = "⚖️"  # Balanced/neutral for win percentage 41-59%
     
     return modifier, emoji, win_percentage
 
