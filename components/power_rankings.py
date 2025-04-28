@@ -829,6 +829,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Sort by normalized power score
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
+    # Save the original overall rank for each team before filtering
+    rankings_df['original_rank'] = rankings_df.index + 1
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
 
     # Store the calculated rankings in session state for other components to use
@@ -1019,7 +1021,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                          color: {team_colors['primary']}; width: 40px; height: 40px; border-radius: 50%; 
                          display: flex; align-items: center; justify-content: center; font-weight: bold; 
                          font-size: 1.2rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                        #{idx + 1}
+                        #{row['original_rank']}
                     </div>
                     <div style="position: relative; z-index: 1;">
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
@@ -1072,7 +1074,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     <div style="background: {team_colors['accent']}; color: {team_colors['primary']}; 
                          width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; 
                          justify-content: center; font-weight: bold;">
-                        #{i + 4}
+                        #{row['original_rank']}
                     </div>
                     <div style="flex-grow: 1;">
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
