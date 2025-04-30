@@ -17,7 +17,7 @@ def normalize_value(value, min_val, max_val, reverse=False):
     """
     if max_val == min_val:
         return 1.0
-
+    
     if reverse:
         # For metrics where lower is better
         return 1 - ((value - min_val) / (max_val - min_val))
@@ -42,7 +42,7 @@ def get_contract_score(contract):
         '2025': 0.2,
         '1st': 0.1
     }
-
+    
     return contract_scores.get(contract, 0.1)  # Default to lowest if not found
 
 def normalize_name(name: str) -> str:
@@ -50,17 +50,17 @@ def normalize_name(name: str) -> str:
     try:
         if not name or not isinstance(name, str):
             return ""
-
+        
         # Convert to lowercase, remove accents, strip whitespace
         normalized = name.lower().strip()
-
+        
         # Remove special characters and anything in brackets/parentheses
         normalized = re.sub(r'[\(\[].*?[\)\]]', '', normalized)
         normalized = re.sub(r'[^\w\s]', '', normalized)
-
+        
         # Replace multiple spaces with single space
         normalized = re.sub(r'\s+', ' ', normalized)
-
+        
         return normalized.strip()
     except Exception:
         return ""
@@ -68,7 +68,7 @@ def normalize_name(name: str) -> str:
 def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[str, str]]:
     """
     Create a comprehensive player ID mapping system using both the PLAYERIDMAP.csv file and mlb_ids_df
-
+    
     Returns:
         Dict with the following structure:
         {
@@ -82,67 +82,67 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
         'name_to_mlbid': {},
         'name_to_fantraxid': {}
     }
-
+    
     # Try to load the PLAYERIDMAP.csv file first (this has direct Fantrax ID to MLB ID mapping)
     try:
         player_map_df = pd.read_csv("attached_assets/PLAYERIDMAP.csv")
-
+        
         # Process each row in the player map
         for _, row in player_map_df.iterrows():
             try:
                 # Skip rows with missing critical data
                 if pd.isna(row['MLBID']) or pd.isna(row['PLAYERNAME']):
                     continue
-
+                
                 # Convert MLBID to integer and then to string to remove decimal places
                 try:
                     mlbid = str(int(row['MLBID']))
                 except:
                     # If conversion fails, use as is but ensure no decimal places
                     mlbid = str(row['MLBID']).split('.')[0].strip()
-
+                
                 player_name = normalize_name(str(row['PLAYERNAME']).strip())
-
+                
                 # Add name to MLB ID mapping
                 if player_name:
                     cache['name_to_mlbid'][player_name] = mlbid
-
+                
                 # Process Fantrax ID if available
                 if not pd.isna(row['FANTRAXID']) and str(row['FANTRAXID']).strip():
                     fantrax_id = str(row['FANTRAXID']).strip()
-
+                    
                     # Add Fantrax ID to MLB ID mapping
                     cache['fantrax_to_mlbid'][fantrax_id] = mlbid
-
+                    
                     # Also add without asterisks
                     clean_fantrax_id = fantrax_id.replace('*', '')
                     if clean_fantrax_id != fantrax_id:
                         cache['fantrax_to_mlbid'][clean_fantrax_id] = mlbid
-
+                    
                     # Add name to Fantrax ID mapping
                     if player_name:
                         cache['name_to_fantraxid'][player_name] = fantrax_id
-
+                
                 # Add first/last name variations
                 if not pd.isna(row['FIRSTNAME']) and not pd.isna(row['LASTNAME']):
                     first = str(row['FIRSTNAME']).strip()
                     last = str(row['LASTNAME']).strip()
-
+                    
                     # First + Last format
                     full_name = normalize_name(f"{first} {last}")
                     if full_name:
                         cache['name_to_mlbid'][full_name] = mlbid
-
+                    
                     # Last, First format
                     alt_name = normalize_name(f"{last}, {first}")
                     if alt_name:
                         cache['name_to_mlbid'][alt_name] = mlbid
-
+                    
                     # Last name only (as fallback)
                     last_name = normalize_name(last)
                     if last_name and len(last_name) > 3:  # Only use last names that are longer than 3 chars
                         cache['name_to_mlbid'][last_name] = mlbid
-
+                
                 # Add alternate team name mappings for team lookup
                 if not pd.isna(row['TEAM']) and row['ACTIVE'] == 'Y':
                     team = str(row['TEAM']).strip()
@@ -151,15 +151,15 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
                         full_team = MLB_TEAM_ABBR_TO_NAME.get(team, team)
                         team_player_key = f"{player_name}_{full_team}"
                         cache['name_to_mlbid'][team_player_key] = mlbid
-
+                
             except Exception as e:
                 # Continue silently on error
                 continue
-
+                
     except Exception as e:
         # Fall back to the original MLB IDs file if PLAYERIDMAP.csv isn't available
         st.warning(f"Could not load PLAYERIDMAP.csv: {str(e)}. Using fallback mapping.")
-
+    
     # If we have an mlb_ids_df, add its data to the cache as fallback
     if mlb_ids_df is not None:
         try:
@@ -168,41 +168,41 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
                     # Skip rows with missing MLBAMID
                     if pd.isna(row['MLBAMID']):
                         continue
-
+                    
                     # Convert MLBAMID to integer and then to string to remove decimal places
                     try:
                         mlbamid = str(int(row['MLBAMID']))
                     except:
                         # If conversion fails, use as is but ensure no decimal places
                         mlbamid = str(row['MLBAMID']).split('.')[0].strip()
-
+                    
                     # Try using the Name column
                     if 'Name' in row and not pd.isna(row['Name']):
                         name = normalize_name(row['Name'])
                         if name and name not in cache['name_to_mlbid']:
                             cache['name_to_mlbid'][name] = mlbamid
-
+                    
                     # Add FantraxID if available
                     if 'FantraxID' in row and not pd.isna(row['FantraxID']):
                         fantrax_id = str(row['FantraxID']).strip()
                         if fantrax_id and fantrax_id not in cache['fantrax_to_mlbid']:
                             cache['fantrax_to_mlbid'][fantrax_id] = mlbamid
-
+                            
                             # Also add without asterisks
                             clean_fantrax_id = fantrax_id.replace('*', '')
                             if clean_fantrax_id != fantrax_id:
                                 cache['fantrax_to_mlbid'][clean_fantrax_id] = mlbamid
-
+                    
                     # Use First and Last name if available
                     if not pd.isna(row['First']) and not pd.isna(row['Last']):
                         first = str(row['First']).strip()
                         last = str(row['Last']).strip()
-
+                        
                         # First + Last format
                         full_name = normalize_name(f"{first} {last}")
                         if full_name and full_name not in cache['name_to_mlbid']:
                             cache['name_to_mlbid'][full_name] = mlbamid
-
+                        
                         # Last, First format
                         alt_name = normalize_name(f"{last}, {first}")
                         if alt_name and alt_name not in cache['name_to_mlbid']:
@@ -214,7 +214,7 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
         except Exception as e:
             # Continue silently on error
             pass
-
+    
     return cache
 
 def get_player_headshot_html(player_id, player_name, player_id_cache=None):
@@ -225,10 +225,10 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
     try:
         # Default fallback MLBAMID for missing headshots
         fallback_mlbamid = "805805"
-
+        
         # Get MLB ID using our mapping system
         mlb_id = fallback_mlbamid
-
+        
         if player_id_cache:
             # First try direct Fantrax ID to MLB ID mapping (most reliable)
             if 'fantrax_to_mlbid' in player_id_cache:
@@ -240,11 +240,11 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                     clean_fantrax_id = str(player_id).replace('*', '')
                     if clean_fantrax_id in player_id_cache['fantrax_to_mlbid']:
                         mlb_id = player_id_cache['fantrax_to_mlbid'][clean_fantrax_id]
-
+            
             # If we couldn't find by Fantrax ID, try by player name
             if mlb_id == fallback_mlbamid and 'name_to_mlbid' in player_id_cache and player_name:
                 norm_name = normalize_name(player_name)
-
+                
                 # Try direct name match
                 if norm_name in player_id_cache['name_to_mlbid']:
                     mlb_id = player_id_cache['name_to_mlbid'][norm_name]
@@ -253,7 +253,7 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                     last_name = normalize_name(player_name.split(' ')[-1])
                     if last_name in player_id_cache['name_to_mlbid']:
                         mlb_id = player_id_cache['name_to_mlbid'][last_name]
-
+                
                 # Try without "Jr." suffix
                 if (mlb_id == fallback_mlbamid and 
                     ("Jr." in player_name or "Jr" in player_name or "II" in player_name)):
@@ -262,7 +262,7 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                     base_name = base_name.replace(" II", "").replace(" III", "")
                     if normalize_name(base_name) in player_id_cache['name_to_mlbid']:
                         mlb_id = player_id_cache['name_to_mlbid'][normalize_name(base_name)]
-
+        
         # Ensure MLB ID has no decimal point and is properly formatted as 6-digit number
         if mlb_id != fallback_mlbamid:
             try:
@@ -271,13 +271,13 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
             except:
                 # If conversion fails, use as is but strip any decimal part
                 mlb_id = str(mlb_id).split('.')[0].strip()
-
+        
         # Use the specific URL format we know works
         player_image_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
-
+        
         # Create HTML for the image
         img_html = f'<img src="{player_image_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot">'
-
+        
         return img_html
     except Exception as e:
         # Return fallback image if there's any error
@@ -290,7 +290,7 @@ def get_mlb_team_info(team_name):
     """
     # Use the mapping dictionary to normalize team names
     team_name_normalized = team_name
-
+    
     # Handle Athletics variations explicitly first (highest priority)
     if team_name in ["ATH", "OAK", "A's", "Athletics", "Oakland Athletics", "Las Vegas Athletics"]:
         team_name_normalized = "Athletics"
@@ -300,31 +300,31 @@ def get_mlb_team_info(team_name):
     # For other teams, try the general mapping
     elif team_name in MLB_TEAM_ABBR_TO_NAME:
         team_name_normalized = MLB_TEAM_ABBR_TO_NAME[team_name]
-
+    
     # Try to get team colors with normalized name
     team_colors = MLB_TEAM_COLORS.get(team_name_normalized, None)
-
+    
     # If that failed, try the original name
     if team_colors is None:
         team_colors = MLB_TEAM_COLORS.get(team_name, {'primary': '#1a1c23', 'secondary': '#2d2f36'})
-
+    
     # Try to get team ID with normalized name
     team_id = MLB_TEAM_IDS.get(team_name_normalized, '')
-
+    
     # If that failed, try the original name
     if team_id == '':
         team_id = MLB_TEAM_IDS.get(team_name, '')
-
+    
     # Special case for Athletics since their ID might be different
     if team_name_normalized == "Athletics" and team_id == '':
         team_id = MLB_TEAM_IDS.get("Oakland Athletics", '')
-
+    
     # Debug the team name mappings if needed
     #st.sidebar.write(f"Team: {team_name} → {team_name_normalized} → ID: {team_id}")
-
+    
     # Generate the logo URL if we have a team ID
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
-
+    
     return {
         'colors': team_colors,
         'logo_url': logo_url
@@ -333,11 +333,11 @@ def get_mlb_team_info(team_name):
 def get_position_value(position_str, position_counts=None):
     """
     Calculate a position score based on the relative value and scarcity of the position.
-
+    
     This function now balances two factors:
     1. The inherent defensive value of each position
     2. The positional scarcity based on counts of players at each position
-
+    
     For players with multiple positions, we take the highest position value.
     """
     # Base positional values (defensive value/premium position)
@@ -354,7 +354,7 @@ def get_position_value(position_str, position_counts=None):
         'UT': 0.50,
         'RP': 0.40
     }
-
+    
     # Default scarcity bonus - how rare the position is in general
     scarcity_bonus = {
         'C': 0.10,     # Catchers are rare and valuable
@@ -369,12 +369,12 @@ def get_position_value(position_str, position_counts=None):
         'UT': 0.05,    # Utility players offer flexibility
         'RP': 0.05     # Relief pitchers are common but still get value
     }
-
+    
     # Calculate dynamic position value based on player counts at each position
     if position_counts is not None:
         # Calculate max count for normalization
         max_count = max(position_counts.values()) if position_counts else 1
-
+        
         # Invert and normalize to get scarcity
         for pos in position_counts:
             if pos in scarcity_bonus:
@@ -385,10 +385,10 @@ def get_position_value(position_str, position_counts=None):
                 scarcity = 1 - (count / max_count)
                 # Scale to a reasonable bonus range (max 0.15)
                 scarcity_bonus[pos] = 0.05 + (scarcity * 0.10)
-
+    
     # Split by comma and get the list of positions
     positions = [pos.strip() for pos in position_str.split(',')]
-
+    
     # Find the highest position value
     max_pos_value = 0
     for pos in positions:
@@ -396,40 +396,40 @@ def get_position_value(position_str, position_counts=None):
         base = base_values.get(pos, 0.5)  # Default to 0.5 if position not found
         bonus = scarcity_bonus.get(pos, 0.05)  # Default bonus
         total_value = base + bonus
-
+        
         max_pos_value = max(max_pos_value, total_value)
-
+    
     # Cap at 1.0 to ensure we stay within scale
     return min(max_pos_value, 1.0)
 
 def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None):
     """
     Calculate MVP score based on the weighted normalized values
-
+    
     Now includes position value in the calculation that accounts for positional scarcity
     """
     score = 0
     for col, weight in weights.items():
         if col in norm_columns and col != 'Position':  # Skip Position as we're handling it separately
             score += norm_columns[col][player_row.name] * weight
-
+    
     # Add position value to the score, accounting for positional scarcity
     if 'Position' in player_row and weights.get('Position', 0) > 0:
         position_score = get_position_value(player_row['Position'], position_counts)
         score += position_score * weights.get('Position', 0)
-
+    
     return score
 
 def render():
     """Render the MVP Race page"""
     st.title("🏆 MVP Race Tracker")
-
+    
     st.write("""
     ## Armchair Baseball League Most Valuable Player
-
+    
     This tool analyzes player performance, value, and impact to determine the MVP race leaders.
     Each player is evaluated based on their performance (FPts), position value, and contract factors (age, salary, contract length).
-
+    
     ### MVP Score Components:
     - **FPts (50%)**: Fantasy points scoring is the primary performance metric
     - **Salary (20%)**: Lower salary increases a player's value to their team
@@ -437,7 +437,7 @@ def render():
     - **Contract (10%)**: Longer contracts with team control are more valuable  
     - **Age (10%)**: Younger players are seen as more valuable
     """)
-
+    
     # Load MLB player IDs and create cache for headshots
     player_id_cache = {}
     try:
@@ -445,21 +445,21 @@ def render():
         player_id_cache = create_player_id_cache(mlb_ids_df)
     except Exception as e:
         st.warning(f"Could not load MLB player IDs: {str(e)}")
-
+    
     # Load the MVP player list
     try:
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
-
+        
         # Convert columns to appropriate data types
         mvp_data['Age'] = pd.to_numeric(mvp_data['Age'], errors='coerce')
         mvp_data['Salary'] = pd.to_numeric(mvp_data['Salary'], errors='coerce')
         mvp_data['FPts'] = pd.to_numeric(mvp_data['FPts'], errors='coerce')
         mvp_data['FP/G'] = pd.to_numeric(mvp_data['FP/G'], errors='coerce')
-
+        
         # Create player name field and IDs
         mvp_data['ID'] = mvp_data['ID'].astype(str)
         mvp_data['Player_Name'] = mvp_data['Player']
-
+        
         # Fill missing values with sensible defaults
         mvp_data = mvp_data.fillna({
             'Age': mvp_data['Age'].mean(),
@@ -468,7 +468,7 @@ def render():
             'FPts': 0,
             'FP/G': 0
         })
-
+        
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
             'FPts': 0.50,      # Increased by 5% as requested
@@ -477,17 +477,17 @@ def render():
             'Contract': 0.10,  # Same
             'Age': 0.10        # Same
         }
-
+        
         # Allow user to adjust weights
         st.sidebar.header("MVP Calculation Settings")
-
+        
         custom_weights = {}
         use_custom_weights = st.sidebar.checkbox("Customize MVP Criteria Weights", value=False)
-
+        
         if use_custom_weights:
             st.sidebar.write("Adjust the importance of each factor (should sum to 100%):")
             total = 0
-
+            
             for factor, default in default_weights.items():
                 weight = st.sidebar.slider(
                     f"{factor} Weight", 
@@ -498,68 +498,68 @@ def render():
                 )
                 custom_weights[factor] = weight / 100
                 total += weight
-
+            
             # Show warning if weights don't sum to 100%
             if total != 100:
                 st.sidebar.warning(f"Weights sum to {total}%, not 100%. Results may be skewed.")
-
+            
             weights = custom_weights
         else:
             weights = default_weights
-
+        
         # Filter options
         st.sidebar.header("Filter Options")
-
+        
         # Filter by position
         all_positions = []
         for pos_list in mvp_data['Position'].str.split(','):
             all_positions.extend([p.strip() for p in pos_list])
         unique_positions = sorted(list(set(all_positions)))
-
+        
         selected_position = st.sidebar.selectbox(
             "Filter by Position",
             ["All Positions"] + unique_positions
         )
-
+        
         # Filter by team
         teams = sorted(mvp_data['Team'].unique())
         selected_team = st.sidebar.selectbox(
             "Filter by Team",
             ["All Teams"] + teams
         )
-
+        
         # Calculate normalized values for each metric
         norm_columns = {}
-
+        
         # For metrics where higher is better (FPts)
         for col in ['FPts']:
             min_val = mvp_data[col].min()
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=False))
-
+        
         # For metrics where lower is better (Age, Salary)
         for col in ['Age', 'Salary']:
             min_val = mvp_data[col].min()
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=True))
-
+        
         # For Contract (special case with predefined values)
         norm_columns['Contract'] = mvp_data['Contract'].apply(get_contract_score)
-
+        
         # For Position (calculate based on position value function)
         norm_columns['Position'] = mvp_data['Position'].apply(get_position_value)
-
+        
         # Apply filters if selected
         filtered_data = mvp_data.copy()
-
+        
         if selected_position != "All Positions":
             # Filter by position (check if the selected position is in the comma-separated list)
             filtered_data = filtered_data[filtered_data['Position'].str.contains(selected_position)]
-
+            
         if selected_team != "All Teams":
             # Filter by team
             filtered_data = filtered_data[filtered_data['Team'] == selected_team]
-
+        
         # Calculate position counts for scarcity analysis
         position_counts = {}
         for pos_list in mvp_data['Position'].str.split(','):
@@ -569,150 +569,123 @@ def render():
                     position_counts[pos] += 1
                 else:
                     position_counts[pos] = 1
-
+        
         # Debug position counts
         #st.sidebar.write("Position Counts:", position_counts)
-
+        
         # Calculate MVP score for each player
         mvp_scores = []
-
+        
         for idx, row in filtered_data.iterrows():
             score = calculate_mvp_score(row, weights, norm_columns, position_counts)
             mvp_scores.append(score)
-
+        
         filtered_data['MVP_Score'] = mvp_scores
-
+        
         # Sort by MVP score in descending order
         filtered_data = filtered_data.sort_values('MVP_Score', ascending=False).reset_index(drop=True)
-
+        
         # Top 3 MVP candidates with special highlighting
         st.write("## Current MVP Favorites")
-
+        
         # Display top 3 in a row
         cols = st.columns(3)
-
+        
         for i, (_, player) in enumerate(filtered_data.head(3).iterrows()):
             with cols[i]:
                 team_info = get_mlb_team_info(player['Team'])
                 colors = team_info['colors']
                 logo_url = team_info['logo_url']
-
+                
                 # Calculate stars based on MVP score (1-5 stars)
                 stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
                 stars_display = "⭐" * stars
-
-                # Calculate MVP score as percentage (0-100)
-                mvp_score_display = int(player['MVP_Score'] * 100)
-
-                # Skip complex HTML and use Streamlit native components
-                st.markdown(f"<h3 style='text-align:center;color:white;'>#{i+1}</h3>", unsafe_allow_html=True)
+                
+                # Display player card
+                st.markdown(f"""
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 10px;
                     padding: 1rem;
                     position: relative;
                     overflow: hidden;
-                    height: 450px; /* Increased height to ensure all content fits */
-                    width: 100%;
-                    box-sizing: border-box;
+                    height: 360px;
                 ">
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
                         <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
                     </div>
                     <div style="position: absolute; top: 10px; left: 10px; opacity: 0.2;">
-                        <img src="{logo_url}" style="width: 60px; height: 60px;" alt="Team Logo">
+                        <img src="{logo_url}" style="width: 80px; height: 80px;" alt="Team Logo">
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
-                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 100px; height: 100px; border: 3px solid white;')}
-                        <h4 style="color: white; margin: 0.5rem 0; text-align: center; font-size: 1rem;">{player['Player']}</h4>
-                        <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
-
-                        <div style="width: 100%; margin: 0.5rem 0; text-align: center;">
-                            <div style="color: gold; font-size: 1rem; margin-bottom: 0.2rem;">{stars_display}</div>
-                            <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {mvp_score_display}</div>
-                            <!-- Progress bar container -->
-                            <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 2px; margin-bottom: 5px;">
-                                <!-- Progress bar fill -->
-                                <div style="width: {mvp_score_display}%; background: gold; height: 6px; border-radius: 3px;"></div>
-                            </div>
-                        </div>
-
+                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
+                        <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
+                        <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
                         <div style="
                             display: grid;
                             grid-template-columns: 1fr 1fr;
-                            gap: 0.4rem;
+                            gap: 0.5rem;
                             width: 100%;
-                            margin-top: 0.3rem;
-                            font-size: 0.9rem;
+                            margin-top: 0.5rem;
                         ">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FPts</div>
-                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FPts']:.1f}</div>
+                                <div style="color: white; font-weight: bold;">{player['FPts']}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FP/G</div>
+                                <div style="color: white; font-weight: bold;">{player['FP/G']}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Age</div>
-                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Age']}</div>
+                                <div style="color: white; font-weight: bold;">{player['Age']}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Salary</div>
-                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">${player['Salary']}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
+                                <div style="color: white; font-weight: bold;">${player['Salary']}</div>
                             </div>
                         </div>
-
-                        <div style="
-                            background: rgba(255,255,255,0.1);
-                            padding: 0.3rem;
-                            border-radius: 5px;
-                            text-align: center;
-                            width: 100%;
-                            margin-top: 0.4rem;
-                        ">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FP/G</div>
-                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FP/G']:.1f}</div>
+                        <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
+                            <div style="color: white; font-weight: bold;">{player['Contract']}</div>
                         </div>
                     </div>
                 </div>
-                """
-
-                # Display the player card with corrected HTML
-                st.markdown(card_html, unsafe_allow_html=True)
-
+                """, unsafe_allow_html=True)
+        
         # MVP Race Complete Rankings Table
         st.write("## Complete MVP Rankings")
-
+        
         # Create tabs for different views of the data
         tab1, tab2, tab3 = st.tabs(["Player Cards", "Performance Breakdown", "Value Analysis"])
-
+        
         with tab1:
             # Grid view of player cards
             st.write("### Complete Player Rankings")
-
+            
             # Get total number of players to display
             num_display = min(50, len(filtered_data))
             display_data = filtered_data.head(num_display)
-
+            
             # Filter option
             display_count = st.slider("Number of players to display", 10, 100, 30, 5)
             display_data = filtered_data.head(display_count)
-
+            
             # Instead of using a grid, stack the cards vertically
             for i, (_, player) in enumerate(display_data.iterrows()):
                 rank = i + 1
                 team_info = get_mlb_team_info(player['Team'])
                 colors = team_info['colors']
-
+                
                 # Calculate MVP score as percentage (capped at 100%)
                 mvp_score_pct = min(100, int(player['MVP_Score'] * 100))
-
+                
                 # Make star rating based on MVP score
                 stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
                 stars_display = "⭐" * stars
-                # Create condensed player card with string variable to ensure all tags are properly closed
-                card_html = f"""
+                # Create condensed player card
+                st.markdown(f"""
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 8px;
@@ -721,8 +694,6 @@ def render():
                     position: relative;
                     min-height: 80px;
                     border: 1px solid rgba(255,255,255,0.1);
-                    width: 100%;
-                    box-sizing: border-box;
                 ">
                     <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
                         <span style="color: white; font-weight: bold;">#{rank}</span>
@@ -759,7 +730,7 @@ def render():
                     </div>
                     <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{mvp_score_pct}</span></div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score</div>
                             <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
@@ -767,15 +738,12 @@ def render():
                         </div>
                     </div>
                 </div>
-                """
-
-                # Display the player card
-                st.markdown(card_html, unsafe_allow_html=True)
-
+                """, unsafe_allow_html=True)
+        
         with tab2:
             # Radar chart for performance breakdown
             st.write("### MVP Candidates Performance Breakdown")
-
+            
             # Allow user to select players to compare
             num_display = min(10, len(filtered_data))
             selected_players = st.multiselect(
@@ -783,23 +751,23 @@ def render():
                 filtered_data['Player'].tolist(),
                 default=filtered_data['Player'].head(5).tolist()
             )
-
+            
             if selected_players:
                 # Get selected players data
                 selected_data = filtered_data[filtered_data['Player'].isin(selected_players)]
-
+                
                 # Create radar chart
                 categories = list(weights.keys())
-
+                
                 fig = go.Figure()
-
+                
                 for _, player in selected_data.iterrows():
                     # Get normalized values for each category
                     values = []
                     for cat in categories:
                         if cat in norm_columns:
                             values.append(norm_columns[cat][player.name])
-
+                    
                     # Add player to radar chart
                     fig.add_trace(go.Scatterpolar(
                         r=values,
@@ -808,7 +776,7 @@ def render():
                         name=f"{player['Player']} ({player['Team']})",
                         hovertemplate="%{theta}: %{r:.2f}<extra></extra>"
                     ))
-
+                
                 fig.update_layout(
                     polar=dict(
                         radialaxis=dict(
@@ -828,19 +796,19 @@ def render():
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                 )
-
+                
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Please select at least one player to display the radar chart.")
-
+            
             # Bar chart showing breakdown of MVP score components
             st.write("### MVP Score Component Breakdown")
-
+            
             top_players = filtered_data.head(10) if not selected_players else filtered_data[filtered_data['Player'].isin(selected_players)]
-
+            
             # Create a DataFrame for the breakdown
             breakdown_data = []
-
+            
             for _, player in top_players.iterrows():
                 for component, weight in weights.items():
                     if component in norm_columns:
@@ -852,9 +820,9 @@ def render():
                             'Value': score_contribution,
                             'Total MVP Score': player['MVP_Score']
                         })
-
+            
             breakdown_df = pd.DataFrame(breakdown_data)
-
+            
             # Create stacked bar chart
             fig = px.bar(
                 breakdown_df,
@@ -866,7 +834,7 @@ def render():
                 height=500,
                 color_discrete_sequence=px.colors.qualitative.Set1
             )
-
+            
             # Sort bars by total MVP score
             fig.update_layout(
                 xaxis={'categoryorder': 'array', 'categoryarray': top_players.sort_values('MVP_Score', ascending=False)['Player'].tolist()},
@@ -874,13 +842,13 @@ def render():
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-
+            
             st.plotly_chart(fig, use_container_width=True)
-
+        
         with tab3:
             # Scatter plot showing value analysis
             st.write("### Value vs Performance Analysis")
-
+            
             # Create a plot comparing FPts vs Salary with point size as Age
             fig = px.scatter(
                 filtered_data.head(50),
@@ -902,11 +870,11 @@ def render():
                 size_max=20,
                 height=700
             )
-
+            
             # Add quadrant lines
             avg_salary = filtered_data.head(50)['Salary'].mean()
             avg_fpts = filtered_data.head(50)['FPts'].mean()
-
+            
             fig.add_shape(
                 type='line',
                 x0=avg_salary,
@@ -915,7 +883,7 @@ def render():
                 y1=filtered_data['FPts'].max() * 1.1,
                 line=dict(color='rgba(255,255,255,0.5)', width=1, dash='dash')
             )
-
+            
             fig.add_shape(
                 type='line',
                 x0=0,
@@ -924,7 +892,7 @@ def render():
                 y1=avg_fpts,
                 line=dict(color='rgba(255,255,255,0.5)', width=1, dash='dash')
             )
-
+            
             # Add quadrant labels
             fig.add_annotation(
                 x=avg_salary/2,
@@ -933,7 +901,7 @@ def render():
                 showarrow=False,
                 font=dict(size=12, color="lightgreen")
             )
-
+            
             fig.add_annotation(
                 x=avg_salary*1.5,
                 y=avg_fpts*1.5,
@@ -941,7 +909,7 @@ def render():
                 showarrow=False,
                 font=dict(size=12, color="gold")
             )
-
+            
             fig.add_annotation(
                 x=avg_salary/2,
                 y=avg_fpts/2,
@@ -949,7 +917,7 @@ def render():
                 showarrow=False,
                 font=dict(size=12, color="lightgray")
             )
-
+            
             fig.add_annotation(
                 x=avg_salary*1.5,
                 y=avg_fpts/2,
@@ -957,27 +925,27 @@ def render():
                 showarrow=False,
                 font=dict(size=12, color="tomato")
             )
-
+            
             # Update layout
             fig.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-
+            
             st.plotly_chart(fig, use_container_width=True)
-
+            
             # Add explanation
             st.markdown("""
             ### Understanding the Value Analysis:
-
+            
             - **High Value Players**: Players with high performance but relatively low cost (upper left quadrant)
             - **Star Players**: Players with high performance and corresponding high cost (upper right quadrant)
             - **Low Impact Players**: Players with lower performance and lower cost (lower left quadrant)
             - **Overvalued Players**: Players with high cost but lower performance (lower right quadrant)
-
+            
             Bubble size represents the player's age - larger bubbles are older players.
             Color intensity shows fantasy points per game - brighter colors indicate higher FP/G.
             """)
-
+        
     except Exception as e:
         st.error(f"Error loading or processing MVP data: {str(e)}")
