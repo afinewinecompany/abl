@@ -397,24 +397,80 @@ def render():
         transition: all 0.3s ease-in-out !important;
     }
     
-    /* Complete Player Rankings Hover Effects */
+    /* Complete Player Rankings Styles and Effects */
     .player-card-container {
         transition: all 0.3s ease-in-out !important;
         cursor: pointer !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        border: 2px solid rgba(255,255,255,0.1) !important;
+        margin-bottom: 16px !important;
+        position: relative !important;
+        overflow: hidden !important;
     }
     
+    /* Add a subtle divider between cards */
+    .player-card-container::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 10%;
+        width: 80%;
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+    }
+    
+    /* Hover effects */
     .player-card-container:hover {
         transform: translateY(-5px) !important;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.4) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
+        border-color: rgba(255,215,0,0.3) !important;
     }
     
+    /* Player name hover effect */
     .player-card-container:hover .player-name {
         color: gold !important;
+        text-shadow: 0 0 5px rgba(255,215,0,0.5) !important;
     }
     
+    /* MVP score bar hover effect */
     .player-card-container:hover .mvp-score-bar {
         background: linear-gradient(90deg, gold, #ffcc00) !important;
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.5) !important;
+    }
+    
+    /* Reveal animation as you scroll */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Base animation for all cards with staggered delays */
+    .player-card-container {
+        opacity: 0;
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+    
+    /* Staggered animation delays for player cards */
+    .player-card-container:nth-child(1) { animation-delay: 0.05s; }
+    .player-card-container:nth-child(2) { animation-delay: 0.1s; }
+    .player-card-container:nth-child(3) { animation-delay: 0.15s; }
+    .player-card-container:nth-child(4) { animation-delay: 0.2s; }
+    .player-card-container:nth-child(5) { animation-delay: 0.25s; }
+    .player-card-container:nth-child(6) { animation-delay: 0.3s; }
+    .player-card-container:nth-child(7) { animation-delay: 0.35s; }
+    .player-card-container:nth-child(8) { animation-delay: 0.4s; }
+    .player-card-container:nth-child(9) { animation-delay: 0.45s; }
+    .player-card-container:nth-child(10) { animation-delay: 0.5s; }
+    
+    /* For cards beyond 10, we'll use a formula based on their position */
+    .player-card-container:nth-child(n+11) { 
+        animation-delay: calc(0.5s + (var(--index, 0) * 0.05s)); 
     }
     </style>
     """, unsafe_allow_html=True)
@@ -721,12 +777,14 @@ def render():
                     st.markdown(f"""
                     <div class="player-card-container" style="
                         background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
-                        border-radius: 8px;
-                        padding: 0.8rem;
-                        margin-bottom: 0.8rem;
+                        border-radius: 12px;
+                        padding: 1rem;
+                        margin-bottom: 20px;
                         position: relative;
                         min-height: 80px;
-                        border: 1px solid rgba(255,255,255,0.1);
+                        border: 2px solid rgba(255,255,255,0.1);
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                        backdrop-filter: blur(5px);
                     ">
                         <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
                             <span style="color: white; font-weight: bold;">#{rank}</span>
