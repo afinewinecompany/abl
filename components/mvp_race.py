@@ -199,16 +199,12 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
 
 def get_player_headshot_html(player_id, player_name, player_id_cache=None):
     """
-    Generate player headshot HTML with advanced fallback options
+    Generate player headshot HTML with simplified approach using only the most reliable URL format
     Uses the comprehensive player ID mapping system to find the right MLB ID
     """
     try:
         # Default fallback MLBAMID for missing headshots
         fallback_mlbamid = "805805"
-        
-        # Clean Fantrax ID (remove asterisks)
-        clean_fantrax_id = str(player_id).replace('*', '')
-        fantrax_url = f"https://images.fantrax.com/headshots/{clean_fantrax_id}.jpg"
         
         # Get MLB ID using our mapping system
         mlb_id = fallback_mlbamid
@@ -220,8 +216,10 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                 if player_id in player_id_cache['fantrax_to_mlbid']:
                     mlb_id = player_id_cache['fantrax_to_mlbid'][player_id]
                 # Try without asterisks
-                elif clean_fantrax_id in player_id_cache['fantrax_to_mlbid']:
-                    mlb_id = player_id_cache['fantrax_to_mlbid'][clean_fantrax_id]
+                else:
+                    clean_fantrax_id = str(player_id).replace('*', '')
+                    if clean_fantrax_id in player_id_cache['fantrax_to_mlbid']:
+                        mlb_id = player_id_cache['fantrax_to_mlbid'][clean_fantrax_id]
             
             # If we couldn't find by Fantrax ID, try by player name
             if mlb_id == fallback_mlbamid and 'name_to_mlbid' in player_id_cache and player_name:
@@ -245,36 +243,16 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                     if normalize_name(base_name) in player_id_cache['name_to_mlbid']:
                         mlb_id = player_id_cache['name_to_mlbid'][normalize_name(base_name)]
         
-        # Create array of potential URLs to try - starting with most reliable sources
-        urls = [
-            # Start with Fantrax URL using provided ID
-            fantrax_url,
-            
-            # Then try MLB formats with the MLB ID (from mapping)
-            f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlb_id}/headshot/milb/current",
-            f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current",
-            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlb_id}/headshot/milb/current",
-            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlb_id}/headshot/67/current",
-            f"https://img.mlbstatic.com/mlb-images/image/upload/q_auto/mlb/{mlb_id}"
-        ]
+        # Use the specific URL format we know works
+        player_image_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
         
-        # Final fallback URL that's known to work
-        final_fallback = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{fallback_mlbamid}/headshot/67/current"
-        
-        # Create a chain of onerror handlers to try each URL
-        img_html = f'<img src="{urls[0]}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot" '
-        
-        # Chain fallbacks
-        for i in range(1, len(urls)):
-            img_html += f'onerror="this.onerror=null; this.src=\'{urls[i]}\';" '
-        
-        # Final fallback
-        img_html += f'onerror="this.onerror=null; this.src=\'{final_fallback}\';">'
+        # Create HTML for the image
+        img_html = f'<img src="{player_image_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot">'
         
         return img_html
     except Exception as e:
         # Return fallback image if there's any error
-        return f"""<img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="Default headshot">"""
+        return f"""<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/805805/headshot/67/current" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="Default headshot">"""
 
 def get_mlb_team_info(team_name):
     """
