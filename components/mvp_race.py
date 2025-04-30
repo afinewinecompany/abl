@@ -8,7 +8,7 @@ import re
 from typing import Dict, List, Any, Optional, Tuple
 
 # Constants for MLB team colors
-from components.power_rankings import MLB_TEAM_COLORS, MLB_TEAM_IDS
+from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS, MLB_TEAM_ABBR_TO_NAME
 
 def normalize_value(value, min_val, max_val, reverse=False):
     """
@@ -262,6 +262,15 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
                     base_name = base_name.replace(" II", "").replace(" III", "")
                     if normalize_name(base_name) in player_id_cache['name_to_mlbid']:
                         mlb_id = player_id_cache['name_to_mlbid'][normalize_name(base_name)]
+        
+        # Ensure MLB ID has no decimal point and is properly formatted as 6-digit number
+        if mlb_id != fallback_mlbamid:
+            try:
+                # Convert to int and then back to string to remove any decimals
+                mlb_id = str(int(float(mlb_id)))
+            except:
+                # If conversion fails, use as is but strip any decimal part
+                mlb_id = str(mlb_id).split('.')[0].strip()
         
         # Use the specific URL format we know works
         player_image_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
