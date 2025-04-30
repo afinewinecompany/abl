@@ -713,8 +713,10 @@ def render():
             colors = team_info['colors']
             logo_url = team_info['logo_url']
             
-            # Calculate stars based on MVP score (1-5 stars)
-            stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
+            # Calculate stars based on MVP score (1-5 stars) using 0-100 scale
+            # Scores above 80 get 5 stars, above 60 get 4 stars, etc.
+            star_score = player['MVP_Score'] / 20  # Convert 0-100 scale to 0-5 scale
+            stars = min(5, max(1, int(star_score + 0.5)))  # Round to nearest star, minimum 1, maximum 5
             stars_display = "⭐" * stars
             
             # Create a more native implementation with less complex HTML
@@ -790,11 +792,13 @@ def render():
                 team_info = get_mlb_team_info(player['Team'])
                 colors = team_info['colors']
                 
-                # Calculate MVP score as percentage (capped at 100%)
-                mvp_score_pct = min(100, int(player['MVP_Score'] * 100))
+                # MVP score is already on a 0-100 scale, use directly for progress bar
+                mvp_score_pct = int(player['MVP_Score'])
                 
-                # Make star rating based on MVP score
-                stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
+                # Make star rating based on MVP score using 0-100 scale
+                # Scores above 80 get 5 stars, above 60 get 4 stars, etc.
+                star_score = player['MVP_Score'] / 20  # Convert 0-100 scale to 0-5 scale
+                stars = min(5, max(1, int(star_score + 0.5)))  # Round to nearest star, minimum 1, maximum 5
                 stars_display = "⭐" * stars
                 # Create mini card container with simplified HTML in smaller chunks
                 with st.container():
