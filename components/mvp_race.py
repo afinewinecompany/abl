@@ -630,14 +630,6 @@ def render():
                             margin-top: 0.5rem;
                         ">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FPts</div>
-                                <div style="color: white; font-weight: bold;">{player['FPts']}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FP/G</div>
-                                <div style="color: white; font-weight: bold;">{player['FP/G']}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Age</div>
                                 <div style="color: white; font-weight: bold;">{player['Age']}</div>
                             </div>
