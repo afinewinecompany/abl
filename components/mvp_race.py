@@ -607,7 +607,12 @@ def render():
                     position: relative;
                     overflow: hidden;
                     height: 360px;
-                ">
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    cursor: pointer;
+                "
+                onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.4)';" 
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                >
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
                         <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
                     </div>
@@ -622,7 +627,7 @@ def render():
                         <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
                             <b>MVP Score:</b> {player['MVP_Score']*100:.1f}
                         </div>
-
+                        
                         <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
                             <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
                             <div style="color: white; font-weight: bold;">{player['Contract']}</div>
@@ -671,7 +676,12 @@ def render():
                     position: relative;
                     min-height: 80px;
                     border: 1px solid rgba(255,255,255,0.1);
-                ">
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                    cursor: pointer;
+                "
+                onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.3)';" 
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                >
                     <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
                         <span style="color: white; font-weight: bold;">#{rank}</span>
                     </div>
