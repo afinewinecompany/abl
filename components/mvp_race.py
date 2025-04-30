@@ -422,6 +422,20 @@ def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None)
 
 def render():
     """Render the MVP Race page"""
+    # Add custom CSS for hover effects
+    st.markdown("""
+    <style>
+    .player-card-top:hover {
+        transform: translateY(-5px) !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+    }
+    .player-card:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("🏆 MVP Race Tracker")
     
     st.write("""
@@ -600,19 +614,16 @@ def render():
             
             # Display player card
             st.markdown(f"""
-                <div style="
+                <div class="player-card-top" style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 10px;
                     padding: 1rem;
                     position: relative;
                     overflow: hidden;
                     height: 360px;
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
                     cursor: pointer;
-                "
-                onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.4)';" 
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
-                >
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                ">
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
                         <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
                     </div>
@@ -668,7 +679,7 @@ def render():
                 stars_display = "⭐" * stars
                 # Create condensed player card
                 st.markdown(f"""
-                <div style="
+                <div class="player-card" style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 8px;
                     padding: 0.8rem;
@@ -678,10 +689,7 @@ def render():
                     border: 1px solid rgba(255,255,255,0.1);
                     transition: transform 0.2s ease, box-shadow 0.2s ease;
                     cursor: pointer;
-                "
-                onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.3)';" 
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
-                >
+                ">
                     <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
                         <span style="color: white; font-weight: bold;">#{rank}</span>
                     </div>
