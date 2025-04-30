@@ -386,6 +386,7 @@ def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None)
     Calculate MVP score based on the weighted normalized values
     
     Now includes position value in the calculation that accounts for positional scarcity
+    Age component has been removed as requested and its weight was added to FPts
     """
     score = 0
     for col, weight in weights.items():
@@ -536,14 +537,13 @@ def render():
     ## Armchair Baseball League Most Valuable Player
     
     This tool analyzes player performance, value, and impact to determine the MVP race leaders.
-    Each player is evaluated based on their performance (FPts), position value, and contract factors (age, salary, contract length).
+    Each player is evaluated based on their performance (FPts), position value, and contract factors (salary, contract length).
     
     ### MVP Score Components:
-    - **FPts (60%)**: Fantasy points scoring is the primary performance metric
+    - **FPts (65%)**: Fantasy points scoring is the primary performance metric
     - **Salary (20%)**: Lower salary increases a player's value to their team
     - **Position (5%)**: Position value with SP, C, and SS being the most valuable positions
-    - **Contract (10%)**: Longer contracts with team control are more valuable  
-    - **Age (5%)**: Younger players are seen as more valuable
+    - **Contract (10%)**: Longer contracts with team control are more valuable
     """)
     
     # Load MLB player IDs and create cache for headshots
@@ -579,11 +579,11 @@ def render():
         
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.60,      # Increased by 10% as requested
+            'FPts': 0.65,      # Increased by 15% total as requested
             'Position': 0.05,  # Reduced by 5% as requested
             'Salary': 0.20,    # Same
             'Contract': 0.10,  # Same
-            'Age': 0.05        # Reduced by 5% as requested
+            # Age component removed as requested, its 5% was added to FPts
         }
         
         # Allow user to adjust weights
