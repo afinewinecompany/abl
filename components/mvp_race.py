@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from io import StringIO
 import numpy as np
 import re
+from typing import Dict, List, Any, Optional, Tuple
 
 # Constants for MLB team colors
 from components.power_rankings import MLB_TEAM_COLORS, MLB_TEAM_IDS
@@ -44,24 +45,103 @@ def get_contract_score(contract):
     
     return contract_scores.get(contract, 0.1)  # Default to lowest if not found
 
-def get_player_headshot_html(player_id, player_name):
+def normalize_name(name: str) -> str:
+    """Normalize player name for comparison"""
+    try:
+        if not name or not isinstance(name, str):
+            return ""
+        
+        # Convert to lowercase, remove accents, strip whitespace
+        normalized = name.lower().strip()
+        
+        # Remove special characters and anything in brackets/parentheses
+        normalized = re.sub(r'[\(\[].*?[\)\]]', '', normalized)
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+        
+        # Replace multiple spaces with single space
+        normalized = re.sub(r'\s+', ' ', normalized)
+        
+        return normalized.strip()
+    except Exception:
+        return ""
+
+def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
+    """Create a cache of normalized player names to MLBAMID"""
+    cache = {}
+    try:
+        for _, row in mlb_ids_df.iterrows():
+            try:
+                # Handle empty or NA values
+                if pd.isna(row['Last']) or pd.isna(row['First']) or pd.isna(row['MLBAMID']):
+                    continue
+
+                # Create full name from First and Last
+                name = normalize_name(f"{row['First']} {row['Last']}")
+
+                # Only add if we have a valid name and MLBAMID
+                if name and str(row['MLBAMID']).strip():
+                    cache[name] = str(row['MLBAMID'])
+
+                    # Add alternative name formats
+                    alt_name = normalize_name(f"{row['Last']}, {row['First']}")
+                    if alt_name:
+                        cache[alt_name] = str(row['MLBAMID'])
+
+            except Exception as e:
+                # Continue silently on error
+                continue
+
+    except Exception as e:
+        # Continue silently on error
+        pass
+    
+    return cache
+
+def get_player_headshot_html(player_id, player_name, player_id_cache=None):
     """
-    Generate player headshot HTML with fallback options
-    Based on implementation from prospects component
+    Generate player headshot HTML with advanced fallback options
+    Complete implementation from prospects component
     """
     try:
-        # Clean player ID to remove asterisks
-        clean_id = player_id.replace('*', '')
+        # First try using the provided player_id as a Fantrax ID
+        clean_id = str(player_id).replace('*', '')
+        fantrax_url = f"https://images.fantrax.com/headshots/{clean_id}.jpg"
         
-        # Fantrax headshot URL
-        headshot_url = f"https://images.fantrax.com/headshots/{clean_id}.jpg"
+        # Default fallback MLBAMID for missing headshots
+        fallback_mlbamid = "805805"
         
-        # Fallback URL from MLB
-        fallback_mlbamid = "805805"  # Generic MLB player silhouette
-        fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{fallback_mlbamid}/headshot/67/current"
+        # Try to get MLBAMID if we have a player_id_cache
+        mlbam_id = fallback_mlbamid
+        if player_id_cache and player_name:
+            search_name = normalize_name(player_name)
+            mlbam_id = player_id_cache.get(search_name, fallback_mlbamid)
         
-        # Return image with error handler to fallback if primary fails
-        return f"""<img src="{headshot_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot" onerror="this.onerror=null; this.src='{fallback_url}';">"""
+        # Create array of potential URLs to try
+        urls = [
+            # Start with Fantrax URL
+            fantrax_url,
+            # Then try MLB formats with the MLBAMID
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current",
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current",
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
+            f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/67/current",
+            f"https://img.mlbstatic.com/mlb-images/image/upload/q_auto/mlb/{mlbam_id}"
+        ]
+        
+        # Final fallback URL that's known to work
+        final_fallback = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{fallback_mlbamid}/headshot/67/current"
+        
+        # Create a chain of onerror handlers to try each URL
+        img_html = f'<img src="{urls[0]}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot" '
+        
+        # Chain fallbacks
+        for i in range(1, len(urls)):
+            img_html += f'onerror="this.onerror=null; this.src=\'{urls[i]}\';" '
+        
+        # Final fallback
+        img_html += f'onerror="this.onerror=null; this.src=\'{final_fallback}\';">'
+        
+        return img_html
     except Exception as e:
         # Return fallback image if there's any error
         return f"""<img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="Default headshot">"""
@@ -159,6 +239,14 @@ def render():
     - **Contract (10%)**: Longer contracts with team control are more valuable  
     - **Age (10%)**: Younger players are seen as more valuable
     """)
+    
+    # Load MLB player IDs and create cache for headshots
+    player_id_cache = {}
+    try:
+        mlb_ids_df = pd.read_csv("attached_assets/mlb_player_ids-2.csv")
+        player_id_cache = create_player_id_cache(mlb_ids_df)
+    except Exception as e:
+        st.warning(f"Could not load MLB player IDs: {str(e)}")
     
     # Load the MVP player list
     try:
@@ -319,7 +407,7 @@ def render():
                         <img src="{logo_url}" style="width: 80px; height: 80px;" alt="Team Logo">
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
-                        {get_player_headshot_html(player['ID'], player['Player']).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
+                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
                         <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
                         <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
                         <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
@@ -400,7 +488,7 @@ def render():
                         <span style="color: white; font-weight: bold;">#{rank}</span>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        {get_player_headshot_html(player['ID'], player['Player']).replace('width: 60px; height: 60px;', 'width: 40px; height: 40px; border: 2px solid white;')}
+                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 40px; height: 40px; border: 2px solid white;')}
                         <div style="margin-left: 0.5rem;">
                             <div style="color: white; font-weight: bold; font-size: 0.9rem; line-height: 1;">{player['Player']}</div>
                             <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">{player['Position']} | {player['Team']}</div>
