@@ -65,14 +65,66 @@ def get_mlb_team_info(team_name):
         'logo_url': logo_url
     }
 
+def get_position_value(position_str):
+    """
+    Calculate a position score based on the value of the position.
+    Some positions are inherently more valuable than others.
+    
+    Position values (0-1 scale):
+    - SP: 1.0 (Starting pitchers are highly valuable)
+    - C: 0.95 (Catchers are scarce and valuable)
+    - SS: 0.85 (Premium infield position)
+    - CF: 0.80 (Premium outfield position)
+    - 2B: 0.75
+    - 3B: 0.70
+    - RF: 0.65
+    - LF: 0.60
+    - 1B: 0.55
+    - UT: 0.50 (Utility players with multiple positions have flexible value)
+    - RP: 0.40 (Relief pitchers are generally less valuable)
+    
+    For players with multiple positions, we take the highest value position.
+    """
+    position_values = {
+        'SP': 1.0,
+        'C': 0.95,
+        'SS': 0.85,
+        'CF': 0.80,
+        '2B': 0.75,
+        '3B': 0.70,
+        'RF': 0.65,
+        'LF': 0.60,
+        '1B': 0.55,
+        'UT': 0.50,
+        'RP': 0.40
+    }
+    
+    # Split by comma and get the list of positions
+    positions = [pos.strip() for pos in position_str.split(',')]
+    
+    # Find the highest position value
+    max_pos_value = 0
+    for pos in positions:
+        pos_value = position_values.get(pos, 0.5)  # Default to 0.5 if position not found
+        max_pos_value = max(max_pos_value, pos_value)
+    
+    return max_pos_value
+
 def calculate_mvp_score(player_row, weights, norm_columns):
     """
     Calculate MVP score based on the weighted normalized values
+    
+    Now includes position value in the calculation
     """
     score = 0
     for col, weight in weights.items():
         if col in norm_columns:
             score += norm_columns[col][player_row.name] * weight
+    
+    # Add position value to the score
+    if 'Position' in player_row and weights.get('Position', 0) > 0:
+        position_score = get_position_value(player_row['Position'])
+        score += position_score * weights.get('Position', 0)
     
     return score
 
@@ -84,7 +136,14 @@ def render():
     ## American Baseball League Most Valuable Player
     
     This tool analyzes player performance, value, and impact to determine the MVP race leaders.
-    Each player is evaluated based on their performance (FPts, FP/G) alongside their contract value (age, salary, contract length).
+    Each player is evaluated based on their performance (FPts), position value, and contract factors (age, salary, contract length).
+    
+    ### MVP Score Components:
+    - **FPts (45%)**: Fantasy points scoring is the primary performance metric
+    - **Position (20%)**: Position value with SP, C, and SS being the most valuable positions
+    - **Salary (15%)**: Lower salary increases a player's value to their team
+    - **Contract (10%)**: Longer contracts with team control are more valuable  
+    - **Age (10%)**: Younger players are seen as more valuable
     """)
     
     # Load the MVP player list
@@ -112,11 +171,11 @@ def render():
         
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.35,
-            'FP/G': 0.25,
-            'Salary': 0.20,
-            'Contract': 0.10,
-            'Age': 0.10
+            'FPts': 0.45,     # Increased from 0.35 since we removed FP/G
+            'Position': 0.20, # New factor - position value 
+            'Salary': 0.15,   # Slightly reduced
+            'Contract': 0.10, # Same
+            'Age': 0.10       # Same
         }
         
         # Allow user to adjust weights
@@ -172,8 +231,8 @@ def render():
         # Calculate normalized values for each metric
         norm_columns = {}
         
-        # For metrics where higher is better (FPts, FP/G)
-        for col in ['FPts', 'FP/G']:
+        # For metrics where higher is better (FPts)
+        for col in ['FPts']:
             min_val = mvp_data[col].min()
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=False))
@@ -186,6 +245,9 @@ def render():
         
         # For Contract (special case with predefined values)
         norm_columns['Contract'] = mvp_data['Contract'].apply(get_contract_score)
+        
+        # For Position (calculate based on position value function)
+        norm_columns['Position'] = mvp_data['Position'].apply(get_position_value)
         
         # Apply filters if selected
         filtered_data = mvp_data.copy()
