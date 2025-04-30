@@ -612,7 +612,7 @@ def render():
                     padding: 1rem;
                     position: relative;
                     overflow: hidden;
-                    height: 420px;
+                    height: 450px; /* Increased height to ensure all content fits */
                     width: 100%;
                     box-sizing: border-box;
                 ">
@@ -630,7 +630,9 @@ def render():
                         <div style="width: 100%; margin: 0.5rem 0; text-align: center;">
                             <div style="color: gold; font-size: 1rem; margin-bottom: 0.2rem;">{stars_display}</div>
                             <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {mvp_score_display}</div>
-                            <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 2px;">
+                            <!-- Progress bar container -->
+                            <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 2px; margin-bottom: 5px;">
+                                <!-- Progress bar fill -->
                                 <div style="width: {mvp_score_display}%; background: gold; height: 6px; border-radius: 3px;"></div>
                             </div>
                         </div>
