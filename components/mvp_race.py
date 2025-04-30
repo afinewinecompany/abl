@@ -604,8 +604,8 @@ def render():
                 # Calculate MVP score as percentage (0-100)
                 mvp_score_display = int(player['MVP_Score'] * 100)
 
-                # Use a string variable to build the HTML to ensure all tags are properly closed
-                card_html = f"""
+                # Skip complex HTML and use Streamlit native components
+                st.markdown(f"<h3 style='text-align:center;color:white;'>#{i+1}</h3>", unsafe_allow_html=True)
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 10px;
