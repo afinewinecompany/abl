@@ -659,7 +659,7 @@ def render():
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                                <div style="color: white<font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
+                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
                             </div>
                         </div>
 
@@ -671,8 +671,8 @@ def render():
                             width: 100%;
                             margin-top: 0.4rem;
                         ">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FP/G</div>
+                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FP/G']:.1f}</div>
                         </div>
                     </div>
                 </div>
