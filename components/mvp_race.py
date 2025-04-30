@@ -604,16 +604,16 @@ def render():
                 # Calculate MVP score as percentage (0-100)
                 mvp_score_display = int(player['MVP_Score'] * 100)
                 
-                # Display player card with corrected HTML
-                st.markdown(f"""
+                # Use a string variable to build the HTML to ensure all tags are properly closed
+                card_html = f"""
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 10px;
                     padding: 1rem;
                     position: relative;
                     overflow: hidden;
-                    height: 420px; /* Increased height to fit all content */
-                    width: 100%;   /* Ensure full width */
+                    height: 420px;
+                    width: 100%;
                     box-sizing: border-box;
                 ">
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
@@ -627,7 +627,6 @@ def render():
                         <h4 style="color: white; margin: 0.5rem 0; text-align: center; font-size: 1rem;">{player['Player']}</h4>
                         <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
                         
-                        <!-- MVP Score with progress bar - fixed HTML -->
                         <div style="width: 100%; margin: 0.5rem 0; text-align: center;">
                             <div style="color: gold; font-size: 1rem; margin-bottom: 0.2rem;">{stars_display}</div>
                             <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {mvp_score_display}</div>
@@ -667,7 +666,10 @@ def render():
                         </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                
+                # Display the player card with corrected HTML
+                st.markdown(card_html, unsafe_allow_html=True)
         
         # MVP Race Complete Rankings Table
         st.write("## Complete MVP Rankings")
@@ -699,8 +701,8 @@ def render():
                 # Make star rating based on MVP score
                 stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
                 stars_display = "⭐" * stars
-                # Create condensed player card
-                st.markdown(f"""
+                # Create condensed player card with string variable to ensure all tags are properly closed
+                card_html = f"""
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 8px;
@@ -755,7 +757,10 @@ def render():
                         </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                
+                # Display the player card
+                st.markdown(card_html, unsafe_allow_html=True)
         
         with tab2:
             # Radar chart for performance breakdown
