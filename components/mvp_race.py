@@ -65,49 +65,54 @@ def normalize_name(name: str) -> str:
     except Exception:
         return ""
 
-def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, Dict[str, str]]:
+def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
     """
-    Create a comprehensive cache that maps both names and Fantrax IDs to MLBAMIDs
-    Returns a dictionary with two sub-dictionaries:
-    - 'name_to_mlbamid': Maps normalized player names to MLBAMIDs
-    - 'fantrax_to_mlbamid': Maps Fantrax IDs to MLBAMIDs
+    Create a simplified cache that maps normalized player names to MLBAMIDs
+    Focus on name-based matching only, ignoring IDs
     """
-    cache = {
-        'name_to_mlbamid': {},
-        'fantrax_to_mlbamid': {}
-    }
+    cache = {}
     
     try:
+        # Create mappings from the main MLB ID dataframe
         for _, row in mlb_ids_df.iterrows():
             try:
-                # Skip rows with missing critical data
+                # Skip rows with missing MLBAMID
                 if pd.isna(row['MLBAMID']):
                     continue
                 
                 mlbamid = str(row['MLBAMID']).strip()
                 
-                # Add Fantrax ID mapping if available
-                if 'FantraxID' in row and not pd.isna(row['FantraxID']) and str(row['FantraxID']).strip():
-                    fantrax_id = str(row['FantraxID']).strip()
-                    cache['fantrax_to_mlbamid'][fantrax_id] = mlbamid
+                # Create various forms of player names to increase matching chances
                 
-                # Add name mappings if name components are available
-                if not pd.isna(row['First']) and not pd.isna(row['Last']):
-                    # Create full name from First and Last
-                    full_name = normalize_name(f"{row['First']} {row['Last']}")
-                    if full_name:
-                        cache['name_to_mlbamid'][full_name] = mlbamid
-                    
-                    # Add alternative name formats
-                    alt_name = normalize_name(f"{row['Last']}, {row['First']}")
-                    if alt_name:
-                        cache['name_to_mlbamid'][alt_name] = mlbamid
-                
-                # If there's a Name column with a full name, use that too
+                # Try using the Name column
                 if 'Name' in row and not pd.isna(row['Name']):
                     name = normalize_name(row['Name'])
                     if name:
-                        cache['name_to_mlbamid'][name] = mlbamid
+                        cache[name] = mlbamid
+                
+                # Use First and Last name if available
+                if not pd.isna(row['First']) and not pd.isna(row['Last']):
+                    # First + Last format
+                    full_name = normalize_name(f"{row['First']} {row['Last']}")
+                    if full_name:
+                        cache[full_name] = mlbamid
+                    
+                    # Last, First format
+                    alt_name = normalize_name(f"{row['Last']}, {row['First']}")
+                    if alt_name:
+                        cache[alt_name] = mlbamid
+                    
+                    # Last name only (as fallback)
+                    last_name = normalize_name(row['Last'])
+                    if last_name and len(last_name) > 3:  # Only use last names that are longer than 3 chars
+                        cache[last_name] = mlbamid
+                    
+                    # Add variations for players like "Jr.", etc.
+                    if 'Jr.' in str(row['Last']) or 'Jr' in str(row['Last']):
+                        base_last = normalize_name(str(row['Last']).replace('Jr.', '').replace('Jr', '').strip())
+                        clean_name = normalize_name(f"{row['First']} {base_last}")
+                        if clean_name:
+                            cache[clean_name] = mlbamid
 
             except Exception as e:
                 # Continue silently on error
@@ -122,7 +127,7 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, Dict[str, str]
 def get_player_headshot_html(player_id, player_name, player_id_cache=None):
     """
     Generate player headshot HTML with advanced fallback options
-    Uses both Fantrax ID and MLBAMID for maximum coverage
+    Uses multiple matching strategies to find the right player image
     """
     try:
         # Default fallback MLBAMID for missing headshots
@@ -132,28 +137,34 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
         clean_fantrax_id = str(player_id).replace('*', '')
         fantrax_url = f"https://images.fantrax.com/headshots/{clean_fantrax_id}.jpg"
         
-        # Get MLBAMID using various lookup methods
+        # Get MLBAMID using player name lookup
         mlbam_id = fallback_mlbamid
-        if player_id_cache:
-            # 1. Try mapping from Fantrax ID to MLBAMID
-            if 'fantrax_to_mlbamid' in player_id_cache and player_id in player_id_cache['fantrax_to_mlbamid']:
-                mlbam_id = player_id_cache['fantrax_to_mlbamid'][player_id]
+        
+        if player_id_cache and player_name:
+            # Try different variations of the player name
+            name_variations = [
+                normalize_name(player_name),                           # Regular name
+                normalize_name(player_name.split(' ')[0]),             # First name only (if space exists)
+                normalize_name(player_name.split(' ')[-1])             # Last name only (if space exists)
+            ]
             
-            # 2. If not found by Fantrax ID, try with cleaned Fantrax ID (no asterisks)
-            elif 'fantrax_to_mlbamid' in player_id_cache and clean_fantrax_id in player_id_cache['fantrax_to_mlbamid']:
-                mlbam_id = player_id_cache['fantrax_to_mlbamid'][clean_fantrax_id]
+            # Try to match any variation
+            for name_var in name_variations:
+                if name_var in player_id_cache:
+                    mlbam_id = player_id_cache[name_var]
+                    break
             
-            # 3. If still not found, try by player name
-            elif 'name_to_mlbamid' in player_id_cache and player_name:
-                search_name = normalize_name(player_name)
-                if search_name in player_id_cache['name_to_mlbamid']:
-                    mlbam_id = player_id_cache['name_to_mlbamid'][search_name]
+            # Extract last name for players with "Jr." suffix
+            if "Jr." in player_name or "Jr" in player_name:
+                base_name = player_name.replace("Jr.", "").replace("Jr", "").strip()
+                if normalize_name(base_name) in player_id_cache:
+                    mlbam_id = player_id_cache[normalize_name(base_name)]
         
         # Create array of potential URLs to try
         urls = [
-            # Start with Fantrax URL
+            # Start with Fantrax URL (direct ID match)
             fantrax_url,
-            # Then try MLB formats with the MLBAMID
+            # Then try MLB formats with the MLBAMID (from name matching)
             f"https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_180/v1/people/{mlbam_id}/headshot/milb/current",
             f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbam_id}/headshot/67/current",
             f"https://img.mlbstatic.com/mlb-photos/image/upload/w_120,h_180,g_auto,c_fill/v1/people/{mlbam_id}/headshot/milb/current",
