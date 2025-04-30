@@ -387,16 +387,34 @@ def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None)
 
 def render():
     """Render the MVP Race page"""
-    # Add custom CSS for hover effects
+    # Add enhanced CSS for hover effects
     st.markdown("""
     <style>
+    /* MVP Favorites Cards Hover Effect */
     .player-card-top:hover {
         transform: translateY(-5px) !important;
         box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+        transition: all 0.3s ease-in-out !important;
     }
-    .player-card:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+    
+    /* Complete Player Rankings Hover Effects */
+    .player-card-container {
+        transition: all 0.3s ease-in-out !important;
+        cursor: pointer !important;
+    }
+    
+    .player-card-container:hover {
+        transform: translateY(-5px) !important;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.4) !important;
+    }
+    
+    .player-card-container:hover .player-name {
+        color: gold !important;
+    }
+    
+    .player-card-container:hover .mvp-score-bar {
+        background: linear-gradient(90deg, gold, #ffcc00) !important;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -665,13 +683,7 @@ def render():
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Contract
-                    st.markdown(f"""
-                    <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; margin: 0.5rem auto; width: 60%; text-align: center;">
-                        <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                        <div style="color: white; font-weight: bold;">{player['Contract']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Removed Contract display as requested
         
         # MVP Race Complete Rankings Table
         st.write("## Complete MVP Rankings")
@@ -705,9 +717,9 @@ def render():
                 stars_display = "⭐" * stars
                 # Create mini card container with simplified HTML in smaller chunks
                 with st.container():
-                    # Background container and rank
+                    # Background container and rank with added class for hover effects
                     st.markdown(f"""
-                    <div style="
+                    <div class="player-card-container" style="
                         background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                         border-radius: 8px;
                         padding: 0.8rem;
@@ -726,7 +738,7 @@ def render():
                         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
                             {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 40px; height: 40px; border: 2px solid white;')}
                             <div style="margin-left: 0.5rem;">
-                                <div style="color: white; font-weight: bold; font-size: 0.9rem; line-height: 1;">{player['Player']}</div>
+                                <div class="player-name" style="color: white; font-weight: bold; font-size: 0.9rem; line-height: 1;">{player['Player']}</div>
                                 <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">{player['Position']} | {player['Team']}</div>
                             </div>
                         </div>
@@ -773,7 +785,7 @@ def render():
                     # Progress bar for MVP score
                     st.markdown(f"""
                         <div style="background: rgba(255,255,255,0.1); border-radius: 3px; height: 6px; margin-top: 0.2rem;">
-                            <div style="height: 6px; background: gold; border-radius: 3px; width: {mvp_score_pct}%;"></div>
+                            <div class="mvp-score-bar" style="height: 6px; background: gold; border-radius: 3px; width: {mvp_score_pct}%;"></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
