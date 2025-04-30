@@ -1,0 +1,38 @@
+<div style="margin-left: 0.5rem;">
+                <div style="color: white; font-weight: bold; font-size: 0.9rem; line-height: 1;">Garrett Crochet</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">SP | NYY</div>
+            </div>
+        </div>
+        <div style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem;
+            margin: 0.4rem 0;
+        ">
+            <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">FPts</div>
+                <div style="color: white; font-weight: bold; font-size: 0.8rem;">153.0</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Age</div>
+                <div style="color: white; font-weight: bold; font-size: 0.8rem;">25</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Salary</div>
+                <div style="color: white; font-weight: bold; font-size: 0.8rem;">$11M</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Contract</div>
+                <div style="color: white; font-weight: bold; font-size: 0.8rem;">2029</div>
+            </div>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score</div>
+                <div style="color: gold; font-size: 0.7rem;">⭐⭐⭐⭐⭐</div>
+            </div>
+            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
+                <div style="height: 6px; background: gold; border-radius: 3px; width: 106%;"></div>
+            </div>
+        </div>
+    </div>

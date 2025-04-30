@@ -61,19 +61,10 @@ def get_player_headshot_html(player_id, player_name):
         fallback_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{fallback_mlbamid}/headshot/67/current"
         
         # Return image with error handler to fallback if primary fails
-        return f"""
-        <img src="{headshot_url}" 
-            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
-            alt="{player_name} headshot"
-            onerror="this.onerror=null; this.src='{fallback_url}';">
-        """
+        return f"""<img src="{headshot_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot" onerror="this.onerror=null; this.src='{fallback_url}';">"""
     except Exception as e:
         # Return fallback image if there's any error
-        return f"""
-        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" 
-            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" 
-            alt="Default headshot">
-        """
+        return f"""<img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/805805/headshot/67/current" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" alt="Default headshot">"""
 
 def get_mlb_team_info(team_name):
     """
@@ -388,8 +379,8 @@ def render():
                 team_info = get_mlb_team_info(player['Team'])
                 colors = team_info['colors']
                 
-                # Calculate MVP score as percentage
-                mvp_score_pct = int(player['MVP_Score'] * 100)
+                # Calculate MVP score as percentage (capped at 100%)
+                mvp_score_pct = min(100, int(player['MVP_Score'] * 100))
                 
                 # Make star rating based on MVP score
                 stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
