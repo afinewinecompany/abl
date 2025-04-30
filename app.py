@@ -4,7 +4,7 @@ import os
 import base64
 from PIL import Image
 from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi
-import components.mvp_race_simplified as mvp_race  # Use the simplified version of mvp_race
+import components.mvp_race_native as mvp_race  # Use the native Streamlit version of mvp_race
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import (
     fetch_api_data, 
