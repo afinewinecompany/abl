@@ -94,7 +94,13 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
                 if pd.isna(row['MLBID']) or pd.isna(row['PLAYERNAME']):
                     continue
                 
-                mlbid = str(row['MLBID']).strip()
+                # Convert MLBID to integer and then to string to remove decimal places
+                try:
+                    mlbid = str(int(row['MLBID']))
+                except:
+                    # If conversion fails, use as is but ensure no decimal places
+                    mlbid = str(row['MLBID']).split('.')[0].strip()
+                
                 player_name = normalize_name(str(row['PLAYERNAME']).strip())
                 
                 # Add name to MLB ID mapping
@@ -137,6 +143,15 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
                     if last_name and len(last_name) > 3:  # Only use last names that are longer than 3 chars
                         cache['name_to_mlbid'][last_name] = mlbid
                 
+                # Add alternate team name mappings for team lookup
+                if not pd.isna(row['TEAM']) and row['ACTIVE'] == 'Y':
+                    team = str(row['TEAM']).strip()
+                    if team in MLB_TEAM_ABBR_TO_NAME:
+                        # If the player is active and we have a team, add their ID under the full team name too
+                        full_team = MLB_TEAM_ABBR_TO_NAME.get(team, team)
+                        team_player_key = f"{player_name}_{full_team}"
+                        cache['name_to_mlbid'][team_player_key] = mlbid
+                
             except Exception as e:
                 # Continue silently on error
                 continue
@@ -154,7 +169,12 @@ def create_player_id_cache(mlb_ids_df: pd.DataFrame = None) -> Dict[str, Dict[st
                     if pd.isna(row['MLBAMID']):
                         continue
                     
-                    mlbamid = str(row['MLBAMID']).strip()
+                    # Convert MLBAMID to integer and then to string to remove decimal places
+                    try:
+                        mlbamid = str(int(row['MLBAMID']))
+                    except:
+                        # If conversion fails, use as is but ensure no decimal places
+                        mlbamid = str(row['MLBAMID']).split('.')[0].strip()
                     
                     # Try using the Name column
                     if 'Name' in row and not pd.isna(row['Name']):
