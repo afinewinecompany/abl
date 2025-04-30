@@ -612,40 +612,42 @@ def render():
             stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
             stars_display = "⭐" * stars
             
-            # Display player card
-            st.markdown(f"""
-                <div class="player-card-top" style="
-                    background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
-                    border-radius: 10px;
-                    padding: 1rem;
-                    position: relative;
-                    overflow: hidden;
-                    height: 360px;
-                    cursor: pointer;
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
-                ">
-                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
-                        <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
+            # Display player card - completely revised for better HTML formatting
+            html_content = f"""
+            <div class="player-card-top" style="
+                background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                border-radius: 10px;
+                padding: 1rem;
+                position: relative;
+                overflow: hidden;
+                height: 360px;
+                cursor: pointer;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                margin-bottom: 15px;
+            ">
+                <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
+                    <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
+                </div>
+                <div style="position: absolute; top: 10px; left: 10px; opacity: 0.2;">
+                    <img src="{logo_url}" style="width: 80px; height: 80px;" alt="Team Logo">
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
+                    {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
+                    <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
+                    <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
+                    <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
+                    <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        <b>MVP Score:</b> {player['MVP_Score']*100:.1f}
                     </div>
-                    <div style="position: absolute; top: 10px; left: 10px; opacity: 0.2;">
-                        <img src="{logo_url}" style="width: 80px; height: 80px;" alt="Team Logo">
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
-                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
-                        <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
-                        <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
-                        <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
-                        <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                            <b>MVP Score:</b> {player['MVP_Score']*100:.1f}
-                        </div>
-                        
-                        <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                            <div style="color: white; font-weight: bold;">{player['Contract']}</div>
-                        </div>
+                    
+                    <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
+                        <div style="color: white; font-weight: bold;">{player['Contract']}</div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """
+            st.markdown(html_content, unsafe_allow_html=True)
         
         # MVP Race Complete Rankings Table
         st.write("## Complete MVP Rankings")
@@ -677,8 +679,8 @@ def render():
                 # Make star rating based on MVP score
                 stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
                 stars_display = "⭐" * stars
-                # Create condensed player card
-                st.markdown(f"""
+                # Create condensed player card - using the same method as top MVP cards
+                card_html = f"""
                 <div class="player-card" style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 8px;
@@ -733,7 +735,8 @@ def render():
                         </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                st.markdown(card_html, unsafe_allow_html=True)
         
         with tab2:
             # Radar chart for performance breakdown
