@@ -609,46 +609,58 @@ def render():
                     padding: 1rem;
                     position: relative;
                     overflow: hidden;
-                    height: 360px;
+                    height: 420px; /* Increased height to fit all content */
+                    width: 100%;   /* Ensure full width */
+                    box-sizing: border-box;
                 ">
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
                         <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
                     </div>
                     <div style="position: absolute; top: 10px; left: 10px; opacity: 0.2;">
-                        <img src="{logo_url}" style="width: 80px; height: 80px;" alt="Team Logo">
+                        <img src="{logo_url}" style="width: 60px; height: 60px;" alt="Team Logo">
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
-                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 120px; height: 120px; border: 3px solid white;')}
-                        <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
-                        <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
-                        <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
+                        {get_player_headshot_html(player['ID'], player['Player'], player_id_cache).replace('width: 60px; height: 60px;', 'width: 100px; height: 100px; border: 3px solid white;')}
+                        <h4 style="color: white; margin: 0.5rem 0; text-align: center; font-size: 1rem;">{player['Player']}</h4>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
+                        
+                        <!-- MVP Score with progress bar -->
+                        <div style="width: 100%; margin: 0.5rem 0; text-align: center;">
+                            <div style="color: gold; font-size: 1rem; margin-bottom: 0.2rem;">{stars_display}</div>
+                            <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {player['MVP_Score']:.3f}</div>
+                            <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 2px;">
+                                <div style="width: {min(100, int(player['MVP_Score'] * 100))}%; background: gold; height: 6px; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        
                         <div style="
                             display: grid;
                             grid-template-columns: 1fr 1fr;
-                            gap: 0.5rem;
+                            gap: 0.4rem;
                             width: 100%;
-                            margin-top: 0.5rem;
+                            margin-top: 0.3rem;
+                            font-size: 0.9rem;
                         ">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FPts</div>
-                                <div style="color: white; font-weight: bold;">{player['FPts']}</div>
+                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FPts']:.1f}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">FP/G</div>
-                                <div style="color: white; font-weight: bold;">{player['FP/G']}</div>
+                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FP/G']:.1f}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Age</div>
-                                <div style="color: white; font-weight: bold;">{player['Age']}</div>
+                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Age']}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Salary</div>
-                                <div style="color: white; font-weight: bold;">${player['Salary']}</div>
+                                <div style="color: white; font-weight: bold; font-size: 0.8rem;">${player['Salary']}</div>
                             </div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
+                        <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.4rem;">
                             <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                            <div style="color: white; font-weight: bold;">{player['Contract']}</div>
+                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
                         </div>
                     </div>
                 </div>
@@ -694,6 +706,8 @@ def render():
                     position: relative;
                     min-height: 80px;
                     border: 1px solid rgba(255,255,255,0.1);
+                    width: 100%;
+                    box-sizing: border-box;
                 ">
                     <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
                         <span style="color: white; font-weight: bold;">#{rank}</span>
@@ -730,7 +744,7 @@ def render():
                     </div>
                     <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score</div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']:.3f}</span></div>
                             <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
