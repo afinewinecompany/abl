@@ -622,6 +622,9 @@ def render():
                         <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
                         <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
                         <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
+                        <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            <b>MVP Score:</b> {player['MVP_Score']:.3f}
+                        </div>
                         <div style="
                             display: grid;
                             grid-template-columns: 1fr 1fr;
@@ -730,7 +733,7 @@ def render():
                     </div>
                     <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score</div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']:.3f}</span></div>
                             <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
