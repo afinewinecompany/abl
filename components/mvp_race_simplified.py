@@ -33,16 +33,29 @@ def get_player_headshot_html(player_id, player_name):
         # Default fallback ID for missing headshots
         fallback_id = "805805"
         
-        # Simplified player image URL
-        player_image_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{player_id or fallback_id}/headshot/67/current"
+        # Ensure player_id is properly formatted (6 digits, no decimal)
+        if player_id:
+            # Convert to string if it's not already
+            player_id = str(player_id).strip()
+            # Remove decimal point if present
+            player_id = player_id.replace('.', '')
+            # Ensure 6 digits by zero-padding
+            if len(player_id) < 6:
+                player_id = player_id.zfill(6)
+        else:
+            player_id = fallback_id
         
-        # Create simple HTML for the image
-        img_html = f'<img src="{player_image_url}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" alt="{player_name} headshot">'
+        # Simplified player image URL
+        player_image_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{player_id}/headshot/67/current"
+        
+        # Create simple HTML for the image with border and shadow for better visibility
+        img_html = f'<img src="{player_image_url}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" alt="{player_name} headshot">'
         
         return img_html
-    except:
+    except Exception as e:
+        print(f"Error displaying player headshot for {player_name}: {str(e)}")
         # Return fallback image if there's any error
-        return f'<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/805805/headshot/67/current" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" alt="Default headshot">'
+        return f'<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/805805/headshot/67/current" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" alt="Default headshot">'
 
 def get_mlb_team_info(team_name):
     """Get team colors and logo URL for an MLB team"""
@@ -277,77 +290,137 @@ def render():
             filtered_data = filtered_data.sort_values('MVP_Score', ascending=False).reset_index(drop=True)
             
             # Top 3 MVP candidates with special highlighting
-            st.write("## Current MVP Favorites")
+            st.write("## MVP Frontrunners")
             
-            # Display top 3 in a row
-            cols = st.columns(3)
-            
+            # Use a single column stacked layout for better mobile experience
             for i, (_, player) in enumerate(filtered_data.head(3).iterrows()):
-                with cols[i]:
-                    # Get team colors
-                    team_info = get_mlb_team_info(player['Team'])
-                    colors = team_info['colors']
-                    
-                    # Calculate stars and MVP score
-                    stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
-                    stars_display = "⭐" * stars
-                    mvp_score_display = int(player['MVP_Score'] * 100)
-                    
-                    # Create a simple colored box
-                    st.markdown(
-                        f"""
-                        <div style="background: {colors['primary']}; 
-                                    padding: 10px; 
-                                    border-radius: 10px; 
-                                    text-align: center;">
-                            <h3 style="color: white; margin: 0;">#{i+1}</h3>
+                # Get team colors
+                team_info = get_mlb_team_info(player['Team'])
+                colors = team_info['colors']
+                
+                # Calculate stars and MVP score
+                stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
+                stars_display = "⭐" * stars
+                mvp_score_display = int(player['MVP_Score'] * 100)
+                
+                # Create a card container with team colors
+                st.markdown(
+                    f"""
+                    <div style="
+                        background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                        border-radius: 12px;
+                        margin-bottom: 15px;
+                        padding: 12px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                        position: relative;
+                    ">
+                        <div style="
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            background: rgba(0,0,0,0.3);
+                            color: white;
+                            border-radius: 20px;
+                            padding: 5px 12px;
+                            font-weight: bold;
+                            font-size: 16px;
+                        ">
+                            #{i+1}
                         </div>
-                        """, 
-                        unsafe_allow_html=True
-                    )
-                    
-                    # Display player headshot
-                    st.markdown(
-                        f"""
-                        <div style="text-align: center; margin: 10px 0;">
-                            {get_player_headshot_html(player['ID'], player['Player'])}
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="margin-right: 15px;">
+                                {get_player_headshot_html(player['ID'], player['Player'])}
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; color: white; font-size: 20px;">{player['Player']}</h3>
+                                <p style="margin: 0; color: rgba(255,255,255,0.8);">{player['Position']} | {player['Team']}</p>
+                                <div style="color: gold; margin-top: 5px;">{stars_display}</div>
+                            </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    
-                    # Player name and info
-                    st.markdown(
-                        f"""
-                        <div style="text-align: center; margin-bottom: 10px;">
-                            <h4 style="margin: 5px 0;">{player['Player']}</h4>
-                            <p style="opacity: 0.8; margin: 0;">{player['Position']} | {player['Team']}</p>
+                        
+                        <div style="
+                            background: rgba(0,0,0,0.2);
+                            border-radius: 8px;
+                            padding: 10px;
+                            margin-bottom: 10px;
+                        ">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="color: white; font-weight: bold;">MVP Score:</span>
+                                <span style="color: white; font-weight: bold;">{mvp_score_display}</span>
+                            </div>
+                            <div style="
+                                width: 100%;
+                                height: 8px;
+                                background: rgba(255,255,255,0.2);
+                                border-radius: 4px;
+                            ">
+                                <div style="
+                                    width: {mvp_score_display}%;
+                                    height: 8px;
+                                    background: gold;
+                                    border-radius: 4px;
+                                "></div>
+                            </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    
-                    # Star rating
-                    st.markdown(f"<p style='text-align: center; color: gold;'>{stars_display}</p>", unsafe_allow_html=True)
-                    
-                    # MVP score
-                    st.markdown(f"<p style='text-align: center;'><b>MVP Score:</b> {mvp_score_display}</p>", unsafe_allow_html=True)
-                    st.progress(player['MVP_Score'])
-                    
-                    # Stats using Streamlit's native components
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("FPts", f"{player['FPts']:.1f}")
-                    with col2:
-                        st.metric("Age", f"{player['Age']}")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Salary", f"${player['Salary']}")
-                    with col2:
-                        st.metric("FP/G", f"{player['FP/G']:.1f}")
-                    
-                    st.info(f"Contract: {player['Contract']}")
+                        
+                        <div style="
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 8px;
+                            margin-bottom: 10px;
+                        ">
+                            <div style="
+                                background: rgba(255,255,255,0.1);
+                                padding: 8px;
+                                border-radius: 8px;
+                                text-align: center;
+                            ">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Fantasy Points</div>
+                                <div style="color: white; font-weight: bold; font-size: 16px;">{player['FPts']:.1f}</div>
+                            </div>
+                            <div style="
+                                background: rgba(255,255,255,0.1);
+                                padding: 8px;
+                                border-radius: 8px;
+                                text-align: center;
+                            ">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Age</div>
+                                <div style="color: white; font-weight: bold; font-size: 16px;">{player['Age']}</div>
+                            </div>
+                            <div style="
+                                background: rgba(255,255,255,0.1);
+                                padding: 8px;
+                                border-radius: 8px;
+                                text-align: center;
+                            ">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Salary</div>
+                                <div style="color: white; font-weight: bold; font-size: 16px;">${player['Salary']}</div>
+                            </div>
+                            <div style="
+                                background: rgba(255,255,255,0.1);
+                                padding: 8px;
+                                border-radius: 8px;
+                                text-align: center;
+                            ">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 12px;">FPts/Game</div>
+                                <div style="color: white; font-weight: bold; font-size: 16px;">{player['FP/G']:.1f}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="
+                            background: rgba(255,255,255,0.1);
+                            padding: 8px;
+                            border-radius: 8px;
+                            text-align: center;
+                        ">
+                            <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Contract</div>
+                            <div style="color: white; font-weight: bold; font-size: 16px;">{player['Contract']}</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
             
             # MVP Race Complete Rankings Table
             st.write("## Complete MVP Rankings")
@@ -363,7 +436,7 @@ def render():
                 display_count = st.slider("Number of players to display", 10, 100, 30, 5)
                 display_data = filtered_data.head(display_count)
                 
-                # Use a container for better mobile display
+                # Use a mobile-friendly compact list layout
                 for i, (_, player) in enumerate(display_data.iterrows()):
                     rank = i + 1
                     team_info = get_mlb_team_info(player['Team'])
@@ -374,43 +447,91 @@ def render():
                     stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
                     stars_display = "⭐" * stars
                     
-                    # Create a simple container with player info
-                    col1, col2 = st.columns([0.15, 0.85])
-                    
-                    with col1:
-                        # Rank number
-                        st.markdown(f"<h3 style='text-align:center;'>#{rank}</h3>", unsafe_allow_html=True)
-                        # Small headshot
-                        st.markdown(f"<div style='text-align:center;'>{get_player_headshot_html(player['ID'], player['Player']).replace('width: 80px;', 'width: 60px;').replace('height: 80px;', 'height: 60px;')}</div>", unsafe_allow_html=True)
-                    
-                    with col2:
-                        # Create a colored box with player info
-                        st.markdown(
-                            f"""
-                            <div style="background: linear-gradient(90deg, {colors['primary']} 0%, {colors['secondary']} 100%);
-                                       padding: 10px; border-radius: 8px; margin-bottom: 5px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <div>
-                                        <h4 style="color: white; margin: 0;">{player['Player']}</h4>
-                                        <p style="color: rgba(255,255,255,0.8); margin: 0;">{player['Position']} | {player['Team']}</p>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <p style="color: gold; margin: 0;">{stars_display}</p>
-                                        <p style="color: white; font-weight: bold; margin: 0;">MVP: {mvp_score_pct}</p>
-                                    </div>
+                    # Create a compact card with simplified layout - better for mobile
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                            border-radius: 8px;
+                            margin-bottom: 10px;
+                            padding: 10px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            position: relative;
+                        ">
+                            <div style="
+                                position: absolute;
+                                top: 10px;
+                                right: 10px;
+                                background: rgba(0,0,0,0.3);
+                                color: white;
+                                border-radius: 15px;
+                                padding: 2px 8px;
+                                font-size: 12px;
+                                font-weight: bold;
+                            ">
+                                #{rank}
+                            </div>
+                            
+                            <div style="display: flex; align-items: center;">
+                                <!-- Player image -->
+                                <div style="margin-right: 10px;">
+                                    {get_player_headshot_html(player['ID'], player['Player']).replace('width: 80px; height: 80px;', 'width: 50px; height: 50px;')}
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                                    <div style="color: white;">FPts: {player['FPts']:.1f}</div>
-                                    <div style="color: white;">Age: {player['Age']}</div>
-                                    <div style="color: white;">Salary: ${player['Salary']}</div>
+                                
+                                <!-- Player info -->
+                                <div style="flex-grow: 1;">
+                                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                        <h4 style="color: white; margin: 0; font-size: 16px;">{player['Player']}</h4>
+                                        <div style="color: gold;">{stars_display}</div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                        <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 12px;">{player['Position']} | {player['Team']}</p>
+                                        <p style="color: white; font-weight: bold; font-size: 14px;">{mvp_score_pct}</p>
+                                    </div>
+                                    
+                                    <!-- Stats in a grid -->
+                                    <div style="
+                                        display: grid;
+                                        grid-template-columns: 1fr 1fr 1fr;
+                                        gap: 5px;
+                                        margin-top: 5px;
+                                        font-size: 12px;
+                                    ">
+                                        <div style="background: rgba(255,255,255,0.1); padding: 3px 5px; border-radius: 3px; text-align: center;">
+                                            <span style="color: rgba(255,255,255,0.7);">FPts: </span>
+                                            <span style="color: white; font-weight: bold;">{player['FPts']:.1f}</span>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 3px 5px; border-radius: 3px; text-align: center;">
+                                            <span style="color: rgba(255,255,255,0.7);">Age: </span>
+                                            <span style="color: white; font-weight: bold;">{player['Age']}</span>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 3px 5px; border-radius: 3px; text-align: center;">
+                                            <span style="color: rgba(255,255,255,0.7);">$: </span>
+                                            <span style="color: white; font-weight: bold;">{player['Salary']}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    
-                    # Add a separator
-                    st.markdown("<hr style='margin: 5px 0; opacity: 0.2;'>", unsafe_allow_html=True)
+                            
+                            <!-- Progress bar -->
+                            <div style="
+                                width: 100%;
+                                height: 4px;
+                                background: rgba(255,255,255,0.2);
+                                border-radius: 2px;
+                                margin-top: 8px;
+                            ">
+                                <div style="
+                                    width: {mvp_score_pct}%;
+                                    height: 4px;
+                                    background: gold;
+                                    border-radius: 2px;
+                                "></div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
             
             with tab2:
                 # Performance analysis charts
@@ -471,9 +592,9 @@ def render():
                 # Display full data with MVP score
                 display_cols = ['Player', 'Team', 'Position', 'FPts', 'FP/G', 'Age', 'Salary', 'Contract', 'MVP_Score']
                 
-                # Format the MVP Score column to show as percentage
+                # Format the MVP Score column to show as simple number without "/100"
                 display_data = filtered_data[display_cols].copy()
-                display_data['MVP_Score'] = (display_data['MVP_Score'] * 100).round(1).astype(str) + '%'
+                display_data['MVP_Score'] = (display_data['MVP_Score'] * 100).round(1).astype(int)
                 
                 # Allow sorting by any column
                 st.dataframe(display_data)
