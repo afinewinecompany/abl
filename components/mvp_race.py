@@ -299,68 +299,82 @@ def get_position_value(position_str, position_counts=None):
     """
     Calculate a position score based on the relative value and scarcity of the position.
     
-    This function now balances two factors:
-    1. The inherent defensive value of each position
-    2. The positional scarcity based on counts of players at each position
+    This function now heavily emphasizes positional scarcity while still considering
+    the inherent defensive value of each position. Scarcity is calculated dynamically
+    based on the actual distribution of players at each position.
     
     For players with multiple positions, we take the highest position value.
     """
     # Base positional values (defensive value/premium position)
+    # These now account for 40% of the total position value (reduced from previous implementation)
     base_values = {
-        'SP': 0.90,
-        'C': 0.90,
-        'SS': 0.85,
-        'CF': 0.80,
-        '2B': 0.75,
-        '3B': 0.70,
-        'RF': 0.65,
-        'LF': 0.60,
-        '1B': 0.55,
-        'UT': 0.50,
-        'RP': 0.40
+        'SP': 0.90,    # Starting pitchers are premium
+        'C': 0.90,     # Catchers are premium defensive positions
+        'SS': 0.85,    # Shortstops are premium defensive positions
+        'CF': 0.80,    # Center fielders are premium defensive positions
+        '2B': 0.75,    # Second basemen are moderately valuable
+        '3B': 0.70,    # Third basemen are moderately valuable
+        'RF': 0.65,    # Right fielders have moderate value
+        'LF': 0.60,    # Left fielders have moderate value
+        '1B': 0.55,    # First basemen have lower defensive value
+        'UT': 0.50,    # Utility players have flexible value
+        'RP': 0.40     # Relief pitchers have lower value
     }
     
-    # Default scarcity bonus - how rare the position is in general
-    scarcity_bonus = {
-        'C': 0.10,     # Catchers are rare and valuable
-        'SP': 0.05,    # Top starting pitchers are valuable
-        'SS': 0.05,    # Shortstops are premium
-        'CF': 0.05,    # Center fielders are premium
-        '2B': 0.05,    # Second basemen are moderately rare
-        '3B': 0.05,    # Third basemen are moderately rare
-        'RF': 0.05,    # Right fielders get slight bonus
-        'LF': 0.05,    # Left fielders get slight bonus
-        '1B': 0.05,    # First basemen are common but still get value
-        'UT': 0.05,    # Utility players offer flexibility
-        'RP': 0.05     # Relief pitchers are common but still get value
+    # Default scarcity values when position_counts is not available
+    # Only used as fallback when we can't calculate actual scarcity
+    default_scarcity = {
+        'C': 0.85,     # Catchers are historically scarce
+        'SS': 0.80,    # Shortstops are premium and scarce
+        'SP': 0.75,    # Quality starting pitchers are scarce
+        'CF': 0.70,    # Center fielders are moderately scarce
+        '2B': 0.65,    # Second basemen are moderately scarce
+        '3B': 0.60,    # Third basemen are moderately common
+        'RF': 0.55,    # Right fielders are common
+        'LF': 0.50,    # Left fielders are common
+        '1B': 0.45,    # First basemen are very common
+        'UT': 0.40,    # Utility players are common
+        'RP': 0.35     # Relief pitchers are very common
     }
     
-    # Calculate dynamic position value based on player counts at each position
-    if position_counts is not None:
-        # Calculate max count for normalization
-        max_count = max(position_counts.values()) if position_counts else 1
+    # Calculate dynamic scarcity based on actual player counts (60% of position value)
+    scarcity_values = default_scarcity.copy()  # Start with defaults
+    
+    if position_counts is not None and len(position_counts) > 0:
+        # Get the count range for scaling
+        min_count = min(position_counts.values()) 
+        max_count = max(position_counts.values())
+        count_range = max_count - min_count
         
-        # Invert and normalize to get scarcity
-        for pos in position_counts:
-            if pos in scarcity_bonus:
-                # More scarce positions (fewer players) get higher bonus
-                # Range: 0.05 (common) to 0.15 (rare)
-                count = position_counts[pos]
-                # Inverse relationship - fewer players = higher scarcity
-                scarcity = 1 - (count / max_count)
-                # Scale to a reasonable bonus range (max 0.15)
-                scarcity_bonus[pos] = 0.05 + (scarcity * 0.10)
+        # Only recalculate if we have a meaningful distribution
+        if count_range > 0:
+            for pos in position_counts:
+                if pos in scarcity_values:
+                    count = position_counts[pos]
+                    
+                    # Normalize the count inversely (fewer players = higher scarcity)
+                    # This creates a score from 0 to 1 where 1 = most scarce (fewest players)
+                    normalized_scarcity = 1 - ((count - min_count) / count_range)
+                    
+                    # Apply a curve to emphasize differences in scarcity
+                    # Squaring the value puts more emphasis on the most scarce positions
+                    curved_scarcity = normalized_scarcity ** 1.5
+                    
+                    # Scale to a range from 0.3 to 1.0
+                    scarcity_values[pos] = 0.3 + (curved_scarcity * 0.7)
     
     # Split by comma and get the list of positions
     positions = [pos.strip() for pos in position_str.split(',')]
     
-    # Find the highest position value
+    # Find the highest position value considering both base value and scarcity
     max_pos_value = 0
     for pos in positions:
-        # Combine base value and scarcity bonus
+        # Get component values with defaults if position not found
         base = base_values.get(pos, 0.5)  # Default to 0.5 if position not found
-        bonus = scarcity_bonus.get(pos, 0.05)  # Default bonus
-        total_value = base + bonus
+        scarcity = scarcity_values.get(pos, 0.4)  # Default scarcity
+        
+        # Weight the components: 40% base value, 60% scarcity
+        total_value = (base * 0.4) + (scarcity * 0.6)
         
         max_pos_value = max(max_pos_value, total_value)
     
@@ -674,7 +688,18 @@ def render():
             score = calculate_mvp_score(row, weights, norm_columns, position_counts)
             mvp_scores.append(score)
         
-        filtered_data['MVP_Score'] = mvp_scores
+        filtered_data['MVP_Score_Raw'] = mvp_scores
+        
+        # Scale the MVP scores to a 0-100 scale for better user understanding
+        max_score = max(mvp_scores)
+        min_score = min(mvp_scores)
+        score_range = max_score - min_score
+        
+        # Scale scores to 0-100 range and round to 1 decimal place
+        if score_range > 0:
+            filtered_data['MVP_Score'] = ((filtered_data['MVP_Score_Raw'] - min_score) / score_range * 100).round(1)
+        else:
+            filtered_data['MVP_Score'] = 50.0  # Default if all scores are the same
         
         # Sort by MVP score in descending order
         filtered_data = filtered_data.sort_values('MVP_Score', ascending=False).reset_index(drop=True)
@@ -732,10 +757,10 @@ def render():
                     <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem; text-align: center;">{stars_display}</div>
                     """, unsafe_allow_html=True)
                     
-                    # MVP Score
+                    # MVP Score 
                     st.markdown(f"""
                     <div style="background: rgba(0,0,0,0.3); padding: 0.3rem; border-radius: 12px; margin: 0 auto; width: 60%; text-align: center;">
-                        <span style="color: white; font-weight: bold;">MVP Score: {player['MVP_Score']*100:.1f}</span>
+                        <span style="color: white; font-weight: bold;">MVP Score: {player['MVP_Score']:.1f}</span>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -834,7 +859,7 @@ def render():
                     st.markdown(f"""
                         <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']*100:.1f}</span></div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']:.1f}</span></div>
                                 <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                             </div>
                         </div>
@@ -852,7 +877,66 @@ def render():
             # Radar chart for performance breakdown
             st.write("### MVP Candidates Performance Breakdown")
             
+            # Position Scarcity Analysis
+            st.write("#### Position Value Breakdown")
+            st.markdown("""
+            The **Position** component (10% of MVP score) now heavily emphasizes positional scarcity.
+            It's calculated using two factors:
+            - **Base Value (40%)**: The inherent defensive value of a position
+            - **Scarcity (60%)**: The rarity of players at each position
+            """)
+            
+            # Create a visualization of position scarcity
+            if position_counts and len(position_counts) > 0:
+                col1, col2 = st.columns([2, 1])
+                
+                with col1:
+                    # Display the player counts by position in a bar chart
+                    positions = list(position_counts.keys())
+                    counts = list(position_counts.values())
+                    position_df = pd.DataFrame({
+                        'Position': positions,
+                        'Player Count': counts
+                    })
+                    
+                    position_df = position_df.sort_values('Player Count')
+                    fig = px.bar(
+                        position_df, 
+                        x='Position', 
+                        y='Player Count',
+                        title='Player Distribution by Position (Lower Count = Higher Scarcity)',
+                        color='Player Count',
+                        color_continuous_scale=px.colors.sequential.Viridis_r,  # Reversed so lower count is brighter
+                        height=300
+                    )
+                    fig.update_layout(
+                        xaxis_title="Position",
+                        yaxis_title="Number of Players",
+                        template="plotly_dark",
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                with col2:
+                    # Calculate and display the position values
+                    position_values = {}
+                    for pos in positions:
+                        position_values[pos] = get_position_value(pos, position_counts)
+                    
+                    value_df = pd.DataFrame({
+                        'Position': list(position_values.keys()),
+                        'Position Value': list(position_values.values())
+                    })
+                    value_df = value_df.sort_values('Position Value', ascending=False)
+                    
+                    st.markdown("##### Position Value Ranking")
+                    st.table(value_df.set_index('Position').style.format({'Position Value': '{:.2f}'}))
+            else:
+                st.info("Position data not available for scarcity analysis.")
+            
             # Allow user to select players to compare
+            st.write("#### Player Attribute Comparison")
             num_display = min(10, len(filtered_data))
             selected_players = st.multiselect(
                 "Select Players to Compare",
