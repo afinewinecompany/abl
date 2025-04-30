@@ -286,9 +286,39 @@ def get_player_headshot_html(player_id, player_name, player_id_cache=None):
 def get_mlb_team_info(team_name):
     """
     Get team colors and logo URL for an MLB team
+    Handles different team name formats (abbreviation, full name, shorthand)
     """
-    team_colors = MLB_TEAM_COLORS.get(team_name, {'primary': '#1a1c23', 'secondary': '#2d2f36'})
-    team_id = MLB_TEAM_IDS.get(team_name, '')
+    # Use the mapping dictionary to normalize team names
+    team_name_normalized = team_name
+    
+    # Check if it's an abbreviated team name and convert to full name
+    if team_name in MLB_TEAM_ABBR_TO_NAME:
+        team_name_normalized = MLB_TEAM_ABBR_TO_NAME[team_name]
+    
+    # Special case handling for problematic teams
+    if team_name == "STL" or team_name == "St. Louis Cardinals" or team_name == "Cardinals":
+        team_name_normalized = "Saint Louis Cardinals"
+    elif team_name == "OAK" or team_name == "Oakland Athletics" or team_name == "A's":
+        team_name_normalized = "Athletics"
+    
+    # Try to get team colors with normalized name
+    team_colors = MLB_TEAM_COLORS.get(team_name_normalized, None)
+    
+    # If that failed, try the original name
+    if team_colors is None:
+        team_colors = MLB_TEAM_COLORS.get(team_name, {'primary': '#1a1c23', 'secondary': '#2d2f36'})
+    
+    # Try to get team ID with normalized name
+    team_id = MLB_TEAM_IDS.get(team_name_normalized, '')
+    
+    # If that failed, try the original name
+    if team_id == '':
+        team_id = MLB_TEAM_IDS.get(team_name, '')
+    
+    # Debug the team name mappings if needed
+    #st.sidebar.write(f"Team: {team_name} → {team_name_normalized} → ID: {team_id}")
+    
+    # Generate the logo URL if we have a team ID
     logo_url = f"https://www.mlbstatic.com/team-logos/team-cap-on-dark/{team_id}.svg" if team_id else ""
     
     return {
@@ -296,29 +326,20 @@ def get_mlb_team_info(team_name):
         'logo_url': logo_url
     }
 
-def get_position_value(position_str):
+def get_position_value(position_str, position_counts=None):
     """
-    Calculate a position score based on the value of the position.
-    Some positions are inherently more valuable than others.
+    Calculate a position score based on the relative value and scarcity of the position.
     
-    Position values (0-1 scale):
-    - SP: 1.0 (Starting pitchers are highly valuable)
-    - C: 0.95 (Catchers are scarce and valuable)
-    - SS: 0.85 (Premium infield position)
-    - CF: 0.80 (Premium outfield position)
-    - 2B: 0.75
-    - 3B: 0.70
-    - RF: 0.65
-    - LF: 0.60
-    - 1B: 0.55
-    - UT: 0.50 (Utility players with multiple positions have flexible value)
-    - RP: 0.40 (Relief pitchers are generally less valuable)
+    This function now balances two factors:
+    1. The inherent defensive value of each position
+    2. The positional scarcity based on counts of players at each position
     
-    For players with multiple positions, we take the highest value position.
+    For players with multiple positions, we take the highest position value.
     """
-    position_values = {
-        'SP': 1.0,
-        'C': 0.95,
+    # Base positional values (defensive value/premium position)
+    base_values = {
+        'SP': 0.90,
+        'C': 0.90,
         'SS': 0.85,
         'CF': 0.80,
         '2B': 0.75,
@@ -330,31 +351,67 @@ def get_position_value(position_str):
         'RP': 0.40
     }
     
+    # Default scarcity bonus - how rare the position is in general
+    scarcity_bonus = {
+        'C': 0.10,     # Catchers are rare and valuable
+        'SP': 0.05,    # Top starting pitchers are valuable
+        'SS': 0.05,    # Shortstops are premium
+        'CF': 0.05,    # Center fielders are premium
+        '2B': 0.05,    # Second basemen are moderately rare
+        '3B': 0.05,    # Third basemen are moderately rare
+        'RF': 0.05,    # Right fielders get slight bonus
+        'LF': 0.05,    # Left fielders get slight bonus
+        '1B': 0.05,    # First basemen are common but still get value
+        'UT': 0.05,    # Utility players offer flexibility
+        'RP': 0.05     # Relief pitchers are common but still get value
+    }
+    
+    # Calculate dynamic position value based on player counts at each position
+    if position_counts is not None:
+        # Calculate max count for normalization
+        max_count = max(position_counts.values()) if position_counts else 1
+        
+        # Invert and normalize to get scarcity
+        for pos in position_counts:
+            if pos in scarcity_bonus:
+                # More scarce positions (fewer players) get higher bonus
+                # Range: 0.05 (common) to 0.15 (rare)
+                count = position_counts[pos]
+                # Inverse relationship - fewer players = higher scarcity
+                scarcity = 1 - (count / max_count)
+                # Scale to a reasonable bonus range (max 0.15)
+                scarcity_bonus[pos] = 0.05 + (scarcity * 0.10)
+    
     # Split by comma and get the list of positions
     positions = [pos.strip() for pos in position_str.split(',')]
     
     # Find the highest position value
     max_pos_value = 0
     for pos in positions:
-        pos_value = position_values.get(pos, 0.5)  # Default to 0.5 if position not found
-        max_pos_value = max(max_pos_value, pos_value)
+        # Combine base value and scarcity bonus
+        base = base_values.get(pos, 0.5)  # Default to 0.5 if position not found
+        bonus = scarcity_bonus.get(pos, 0.05)  # Default bonus
+        total_value = base + bonus
+        
+        max_pos_value = max(max_pos_value, total_value)
     
-    return max_pos_value
+    # Cap at 1.0 to ensure we stay within scale
+    return min(max_pos_value, 1.0)
 
-def calculate_mvp_score(player_row, weights, norm_columns):
+def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None):
     """
     Calculate MVP score based on the weighted normalized values
     
-    Now includes position value in the calculation
+    Now includes position value in the calculation that accounts for positional scarcity
     """
     score = 0
     for col, weight in weights.items():
-        if col in norm_columns:
+        if col in norm_columns and col != 'Position':  # Skip Position as we're handling it separately
             score += norm_columns[col][player_row.name] * weight
     
-    # Add position value to the score
+    # Add position value to the score, accounting for positional scarcity
     if 'Position' in player_row and weights.get('Position', 0) > 0:
-        position_score = get_position_value(player_row['Position'])
+        position_score = get_position_value(player_row['Position'], position_counts)
         score += position_score * weights.get('Position', 0)
     
     return score
@@ -499,11 +556,24 @@ def render():
             # Filter by team
             filtered_data = filtered_data[filtered_data['Team'] == selected_team]
         
+        # Calculate position counts for scarcity analysis
+        position_counts = {}
+        for pos_list in mvp_data['Position'].str.split(','):
+            for pos in pos_list:
+                pos = pos.strip()
+                if pos in position_counts:
+                    position_counts[pos] += 1
+                else:
+                    position_counts[pos] = 1
+        
+        # Debug position counts
+        #st.sidebar.write("Position Counts:", position_counts)
+        
         # Calculate MVP score for each player
         mvp_scores = []
         
         for idx, row in filtered_data.iterrows():
-            score = calculate_mvp_score(row, weights, norm_columns)
+            score = calculate_mvp_score(row, weights, norm_columns, position_counts)
             mvp_scores.append(score)
         
         filtered_data['MVP_Score'] = mvp_scores
@@ -569,7 +639,7 @@ def render():
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Salary</div>
-                                <div style="color: white; font-weight: bold;">${player['Salary']}M</div>
+                                <div style="color: white; font-weight: bold;">${player['Salary']}</div>
                             </div>
                         </div>
                         <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
@@ -647,7 +717,7 @@ def render():
                         </div>
                         <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
                             <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Salary</div>
-                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">${player['Salary']}M</div>
+                            <div style="color: white; font-weight: bold; font-size: 0.8rem;">${player['Salary']}</div>
                         </div>
                         <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
                             <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Contract</div>
