@@ -330,7 +330,7 @@ def render():
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Salary</div>
-                                <div style="color: white; font-weight: bold;">$M{player['Salary']}</div>
+                                <div style="color: white; font-weight: bold;">${player['Salary']}M</div>
                             </div>
                         </div>
                         <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
@@ -344,43 +344,101 @@ def render():
         # MVP Race Complete Rankings Table
         st.write("## Complete MVP Rankings")
         
-        # Create two tabs for table view and radar chart view
-        tab1, tab2, tab3 = st.tabs(["Table View", "Visual Breakdown", "Value Analysis"])
+        # Create tabs for different views of the data
+        tab1, tab2, tab3 = st.tabs(["Player Cards", "Performance Breakdown", "Value Analysis"])
         
         with tab1:
-            # Enhanced table with styling
-            display_columns = ['Player', 'Position', 'Team', 'Age', 'Salary', 'Contract', 'FPts', 'FP/G', 'MVP_Score']
+            # Grid view of player cards
+            st.write("### Complete Player Rankings")
             
-            # Format the MVP score for display
-            display_df = filtered_data[display_columns].copy()
-            display_df['MVP_Score'] = (display_df['MVP_Score'] * 100).round(1)
+            # Get total number of players to display
+            num_display = min(50, len(filtered_data))
+            display_data = filtered_data.head(num_display)
             
-            # Add a rank column
-            display_df.insert(0, 'Rank', range(1, len(display_df) + 1))
+            # Filter option
+            display_count = st.slider("Number of players to display", 10, 100, 30, 5)
+            display_data = filtered_data.head(display_count)
             
-            # Rename columns for better display
-            display_df = display_df.rename(columns={
-                'MVP_Score': 'MVP Score'
-            })
-            
-            st.dataframe(
-                display_df,
-                column_config={
-                    "Rank": st.column_config.NumberColumn(format="%d"),
-                    "MVP Score": st.column_config.ProgressColumn(
-                        "MVP Score",
-                        help="MVP score out of 100",
-                        format="%d",
-                        min_value=0,
-                        max_value=100
-                    ),
-                    "FPts": st.column_config.NumberColumn(format="%.1f"),
-                    "FP/G": st.column_config.NumberColumn(format="%.2f"),
-                    "Salary": st.column_config.NumberColumn(format="$%dM"),
-                },
-                hide_index=True,
-                use_container_width=True
-            )
+            # Calculate number of columns (responsive design)
+            cols_per_row = 5  # We'll show 5 cards per row
+
+            # Create rows of players                
+            for i in range(0, len(display_data), cols_per_row):
+                # Create a row with cols_per_row columns
+                cols = st.columns(cols_per_row)
+                
+                # Fill each column with a player card
+                for j in range(cols_per_row):
+                    if i + j < len(display_data):
+                        player = display_data.iloc[i + j]
+                        rank = i + j + 1
+                        
+                        with cols[j]:
+                            team_info = get_mlb_team_info(player['Team'])
+                            colors = team_info['colors']
+                            
+                            # Calculate MVP score as percentage
+                            mvp_score_pct = int(player['MVP_Score'] * 100)
+                            
+                            # Make star rating based on MVP score
+                            stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
+                            stars_display = "⭐" * stars
+                            
+                            # Create condensed player card
+                            st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                                border-radius: 8px;
+                                padding: 0.8rem;
+                                margin-bottom: 0.8rem;
+                                position: relative;
+                                min-height: 180px;
+                                border: 1px solid rgba(255,255,255,0.1);
+                            ">
+                                <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 12px;">
+                                    <span style="color: white; font-weight: bold;">#{rank}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                    <img src="{get_player_headshot_url(player['ID'])}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; object-fit: cover;" alt="{player['Player']}">
+                                    <div style="margin-left: 0.5rem;">
+                                        <div style="color: white; font-weight: bold; font-size: 0.9rem; line-height: 1;">{player['Player']}</div>
+                                        <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">{player['Position']} | {player['Team']}</div>
+                                    </div>
+                                </div>
+                                <div style="
+                                    display: grid;
+                                    grid-template-columns: 1fr 1fr;
+                                    gap: 0.4rem;
+                                    margin: 0.4rem 0;
+                                ">
+                                    <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                                        <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">FPts</div>
+                                        <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['FPts']:.1f}</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                                        <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Age</div>
+                                        <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Age']}</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                                        <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Salary</div>
+                                        <div style="color: white; font-weight: bold; font-size: 0.8rem;">${player['Salary']}M</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 0.25rem; border-radius: 4px; text-align: center;">
+                                        <div style="color: rgba(255,255,255,0.7); font-size: 0.65rem;">Contract</div>
+                                        <div style="color: white; font-weight: bold; font-size: 0.8rem;">{player['Contract']}</div>
+                                    </div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score</div>
+                                        <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
+                                    </div>
+                                    <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
+                                        <div style="height: 6px; background: gold; border-radius: 3px; width: {mvp_score_pct}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
         
         with tab2:
             # Radar chart for performance breakdown
