@@ -425,15 +425,15 @@ def render():
     st.title("🏆 MVP Race Tracker")
     
     st.write("""
-    ## American Baseball League Most Valuable Player
+    ## Armchair Baseball League Most Valuable Player
     
     This tool analyzes player performance, value, and impact to determine the MVP race leaders.
     Each player is evaluated based on their performance (FPts), position value, and contract factors (age, salary, contract length).
     
     ### MVP Score Components:
-    - **FPts (45%)**: Fantasy points scoring is the primary performance metric
+    - **FPts (50%)**: Fantasy points scoring is the primary performance metric
     - **Salary (20%)**: Lower salary increases a player's value to their team
-    - **Position (15%)**: Position value with SP, C, and SS being the most valuable positions
+    - **Position (10%)**: Position value with SP, C, and SS being the most valuable positions
     - **Contract (10%)**: Longer contracts with team control are more valuable  
     - **Age (10%)**: Younger players are seen as more valuable
     """)
@@ -471,9 +471,9 @@ def render():
         
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.45,      # Performance is the primary factor
-            'Position': 0.15,  # Reduced by 5% as requested
-            'Salary': 0.20,    # Increased by 5% as requested
+            'FPts': 0.50,      # Increased by 5% as requested
+            'Position': 0.10,  # Reduced by another 5% as requested
+            'Salary': 0.20,    # Same
             'Contract': 0.10,  # Same
             'Age': 0.10        # Same
         }
