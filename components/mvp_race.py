@@ -630,7 +630,7 @@ def render():
                         <!-- MVP Score with progress bar - fixed HTML -->
                         <div style="width: 100%; margin: 0.5rem 0; text-align: center;">
                             <div style="color: gold; font-size: 1rem; margin-bottom: 0.2rem;">{stars_display}</div>
-                            <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {mvp_score_display}/100</div>
+                            <div style="color: white; font-size: 0.8rem; font-weight: bold;">MVP Score: {mvp_score_display}</div>
                             <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 2px;">
                                 <div style="width: {mvp_score_display}%; background: gold; height: 6px; border-radius: 3px;"></div>
                             </div>
@@ -747,7 +747,7 @@ def render():
                     </div>
                     <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{mvp_score_pct}/100</span></div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{mvp_score_pct}</span></div>
                             <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
