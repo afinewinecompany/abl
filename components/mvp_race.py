@@ -622,22 +622,7 @@ def render():
                         <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
                             <b>MVP Score:</b> {player['MVP_Score']*100:.1f}
                         </div>
-                        <div style="
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 0.5rem;
-                            width: 100%;
-                            margin-top: 0.5rem;
-                        ">
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Age</div>
-                                <div style="color: white; font-weight: bold;">{player['Age']}</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center;">
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Salary</div>
-                                <div style="color: white; font-weight: bold;">${player['Salary']}</div>
-                            </div>
-                        </div>
+
                         <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
                             <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
                             <div style="color: white; font-weight: bold;">{player['Contract']}</div>
