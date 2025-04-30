@@ -588,21 +588,18 @@ def render():
         # Top 3 MVP candidates with special highlighting
         st.write("## Current MVP Favorites")
         
-        # Display top 3 in a row
-        cols = st.columns(3)
-        
+        # Display top 3 stacked vertically
         for i, (_, player) in enumerate(filtered_data.head(3).iterrows()):
-            with cols[i]:
-                team_info = get_mlb_team_info(player['Team'])
-                colors = team_info['colors']
-                logo_url = team_info['logo_url']
-                
-                # Calculate stars based on MVP score (1-5 stars)
-                stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
-                stars_display = "⭐" * stars
-                
-                # Display player card
-                st.markdown(f"""
+            team_info = get_mlb_team_info(player['Team'])
+            colors = team_info['colors']
+            logo_url = team_info['logo_url']
+            
+            # Calculate stars based on MVP score (1-5 stars)
+            stars = min(5, max(1, int(player['MVP_Score'] * 5 + 0.5)))
+            stars_display = "⭐" * stars
+            
+            # Display player card
+            st.markdown(f"""
                 <div style="
                     background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
                     border-radius: 10px;
@@ -623,7 +620,7 @@ def render():
                         <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">{player['Position']} | {player['Team']}</div>
                         <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">{stars_display}</div>
                         <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                            <b>MVP Score:</b> {player['MVP_Score']:.3f}
+                            <b>MVP Score:</b> {player['MVP_Score']*100:.1f}
                         </div>
                         <div style="
                             display: grid;
@@ -733,7 +730,7 @@ def render():
                     </div>
                     <div style="background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']:.3f}</span></div>
+                            <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">MVP Score: <span style="color: white; font-weight: bold;">{player['MVP_Score']*100:.1f}</span></div>
                             <div style="color: gold; font-size: 0.7rem;">{stars_display}</div>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.2rem;">
