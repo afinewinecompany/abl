@@ -291,15 +291,15 @@ def get_mlb_team_info(team_name):
     # Use the mapping dictionary to normalize team names
     team_name_normalized = team_name
     
-    # Check if it's an abbreviated team name and convert to full name
-    if team_name in MLB_TEAM_ABBR_TO_NAME:
-        team_name_normalized = MLB_TEAM_ABBR_TO_NAME[team_name]
-    
-    # Special case handling for problematic teams
-    if team_name == "STL" or team_name == "St. Louis Cardinals" or team_name == "Cardinals":
-        team_name_normalized = "Saint Louis Cardinals"
-    elif team_name == "OAK" or team_name == "Oakland Athletics" or team_name == "A's":
+    # Handle Athletics variations explicitly first (highest priority)
+    if team_name in ["ATH", "OAK", "A's", "Athletics", "Oakland Athletics", "Las Vegas Athletics"]:
         team_name_normalized = "Athletics"
+    # Special case handling for other problematic teams
+    elif team_name in ["STL", "St. Louis Cardinals", "Cardinals"]:
+        team_name_normalized = "Saint Louis Cardinals"
+    # For other teams, try the general mapping
+    elif team_name in MLB_TEAM_ABBR_TO_NAME:
+        team_name_normalized = MLB_TEAM_ABBR_TO_NAME[team_name]
     
     # Try to get team colors with normalized name
     team_colors = MLB_TEAM_COLORS.get(team_name_normalized, None)
@@ -314,6 +314,10 @@ def get_mlb_team_info(team_name):
     # If that failed, try the original name
     if team_id == '':
         team_id = MLB_TEAM_IDS.get(team_name, '')
+    
+    # Special case for Athletics since their ID might be different
+    if team_name_normalized == "Athletics" and team_id == '':
+        team_id = MLB_TEAM_IDS.get("Oakland Athletics", '')
     
     # Debug the team name mappings if needed
     #st.sidebar.write(f"Team: {team_name} → {team_name_normalized} → ID: {team_id}")
@@ -428,8 +432,8 @@ def render():
     
     ### MVP Score Components:
     - **FPts (45%)**: Fantasy points scoring is the primary performance metric
-    - **Position (20%)**: Position value with SP, C, and SS being the most valuable positions
-    - **Salary (15%)**: Lower salary increases a player's value to their team
+    - **Salary (20%)**: Lower salary increases a player's value to their team
+    - **Position (15%)**: Position value with SP, C, and SS being the most valuable positions
     - **Contract (10%)**: Longer contracts with team control are more valuable  
     - **Age (10%)**: Younger players are seen as more valuable
     """)
@@ -467,11 +471,11 @@ def render():
         
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.45,     # Increased from 0.35 since we removed FP/G
-            'Position': 0.20, # New factor - position value 
-            'Salary': 0.15,   # Slightly reduced
-            'Contract': 0.10, # Same
-            'Age': 0.10       # Same
+            'FPts': 0.45,      # Performance is the primary factor
+            'Position': 0.15,  # Reduced by 5% as requested
+            'Salary': 0.20,    # Increased by 5% as requested
+            'Contract': 0.10,  # Same
+            'Age': 0.10        # Same
         }
         
         # Allow user to adjust weights
