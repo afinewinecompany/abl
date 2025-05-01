@@ -580,7 +580,7 @@ def render():
         })
         
         # Calculate value score that combines salary and contract
-        def calculate_value_score(salary, contract, age):
+        def calculate_value_score(salary, contract):
             # Base salary score (lower is better)
             salary_score = 1.0 - (salary / mvp_data['Salary'].max())
             
@@ -601,10 +601,6 @@ def render():
             # Get base contract value
             contract_value = contract_values.get(contract, 0.1)
             
-            # Special handling for 1st contracts of young players
-            if contract == '1st' and age < 26:
-                contract_value += 0.3  # Significant boost for young 1st contracts
-            
             # Salary tiers affect contract multiplier
             if salary < 5:  # Low salary players
                 contract_multiplier = 1.5  # Better contract multiplier for low salary
@@ -617,12 +613,6 @@ def render():
             value_score = (salary_score * 0.6) + (contract_value * contract_multiplier * 0.4)
             
             return min(1.0, value_score)  # Cap at 1.0
-
-        # Add Value score to normalized columns
-        norm_columns['Value'] = mvp_data.apply(
-            lambda x: calculate_value_score(x['Salary'], x['Contract'], x['Age']), 
-            axis=1
-        )
 
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
@@ -690,15 +680,11 @@ def render():
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=False))
         
-        # For metrics where lower is better (Salary)
-        # Age component has been removed as requested
-        for col in ['Salary']:
-            min_val = mvp_data[col].min()
-            max_val = mvp_data[col].max()
-            norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=True))
-        
-        # For Contract (special case with predefined values)
-        norm_columns['Contract'] = mvp_data['Contract'].apply(get_contract_score)
+        # For Value (a combined score of Salary and Contract)
+        norm_columns['Value'] = mvp_data.apply(
+            lambda x: calculate_value_score(x['Salary'], x['Contract']), 
+            axis=1
+        )
         
         # For Position (calculate based on position value function)
         norm_columns['Position'] = mvp_data['Position'].apply(get_position_value)
