@@ -540,9 +540,9 @@ def render():
     Each player is evaluated based on their performance (FPts), position value, and overall team value.
     
     ### MVP Score Components:
-    - **FPts (65%)**: Fantasy points scoring is the primary performance metric
+    - **FPts (70%)**: Fantasy points scoring is the primary performance metric
     - **Position (5%)**: Position value with SP, C, and SS being the most valuable positions
-    - **Value (30%)**: Combined measure of salary and contract length
+    - **Value (25%)**: Combined measure of salary and contract length
         - Low salary, long-term contracts are most valuable
         - Young players (under 26) on 1st contracts receive a bonus
         - Contract length provides more value for lower-salaried players
@@ -626,9 +626,9 @@ def render():
 
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.65,      # Performance is still primary factor
+            'FPts': 0.70,      # Performance is primary factor (increased)
             'Position': 0.05,  # Position value remains same
-            'Value': 0.30,    # Combined salary and contract value
+            'Value': 0.25,    # Combined salary and contract value (reduced)
         }
         
         # Allow user to adjust weights
