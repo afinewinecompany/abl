@@ -690,8 +690,9 @@ def render():
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=False))
         
-        # For metrics where lower is better (Age, Salary)
-        for col in ['Age', 'Salary']:
+        # For metrics where lower is better (Salary)
+        # Age component has been removed as requested
+        for col in ['Salary']:
             min_val = mvp_data[col].min()
             max_val = mvp_data[col].max()
             norm_columns[col] = mvp_data[col].apply(lambda x: normalize_value(x, min_val, max_val, reverse=True))
