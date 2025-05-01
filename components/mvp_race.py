@@ -537,13 +537,15 @@ def render():
     ## Armchair Baseball League Most Valuable Player
     
     This tool analyzes player performance, value, and impact to determine the MVP race leaders.
-    Each player is evaluated based on their performance (FPts), position value, and contract factors (salary, contract length).
+    Each player is evaluated based on their performance (FPts), position value, and overall team value.
     
     ### MVP Score Components:
     - **FPts (65%)**: Fantasy points scoring is the primary performance metric
-    - **Salary (20%)**: Lower salary increases a player's value to their team
     - **Position (5%)**: Position value with SP, C, and SS being the most valuable positions
-    - **Contract (10%)**: Longer contracts with team control are more valuable
+    - **Value (30%)**: Combined measure of salary and contract length
+        - Low salary, long-term contracts are most valuable
+        - Young players (under 26) on 1st contracts receive a bonus
+        - Contract length provides more value for lower-salaried players
     """)
     
     # Load MLB player IDs and create cache for headshots
@@ -577,13 +579,56 @@ def render():
             'FP/G': 0
         })
         
+        # Calculate value score that combines salary and contract
+        def calculate_value_score(salary, contract, age):
+            # Base salary score (lower is better)
+            salary_score = 1.0 - (salary / mvp_data['Salary'].max())
+            
+            # Contract length base values
+            contract_values = {
+                '2050': 1.0,
+                '2045': 0.9,
+                '2040': 0.8,
+                '2035': 0.7,
+                '2029': 0.6,
+                '2028': 0.5,
+                '2027': 0.4,
+                '2026': 0.3,
+                '2025': 0.2,
+                '1st': 0.15  # Base value for 1st contracts
+            }
+            
+            # Get base contract value
+            contract_value = contract_values.get(contract, 0.1)
+            
+            # Special handling for 1st contracts of young players
+            if contract == '1st' and age < 26:
+                contract_value += 0.3  # Significant boost for young 1st contracts
+            
+            # Salary tiers affect contract multiplier
+            if salary < 5:  # Low salary players
+                contract_multiplier = 1.5  # Better contract multiplier for low salary
+            elif salary < 10:  # Mid salary players
+                contract_multiplier = 1.2
+            else:  # High salary players
+                contract_multiplier = 1.0
+            
+            # Calculate final value score
+            value_score = (salary_score * 0.6) + (contract_value * contract_multiplier * 0.4)
+            
+            return min(1.0, value_score)  # Cap at 1.0
+
+        # Add Value score to normalized columns
+        norm_columns['Value'] = mvp_data.apply(
+            lambda x: calculate_value_score(x['Salary'], x['Contract'], x['Age']), 
+            axis=1
+        )
+
         # Define weights for MVP criteria (sum should be 1.0)
         default_weights = {
-            'FPts': 0.65,      # Increased by 15% total as requested
-            'Position': 0.05,  # Reduced by 5% as requested
-            'Salary': 0.20,    # Same
-            'Contract': 0.10,  # Same
-            # Age component removed as requested, its 5% was added to FPts
+            'FPts': 0.65,      # Performance is still primary factor
+            'Position': 0.05,  # Position value remains same
+            'Value': 0.30,    # Combined salary and contract value
         }
         
         # Allow user to adjust weights
