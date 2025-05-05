@@ -490,47 +490,7 @@ def render():
     </style>
     """, unsafe_allow_html=True)
     
-    # TEST SECTION - Uncomment to debug HTML rendering
-    with st.expander("HTML Test Section"):
-        st.markdown("### Testing HTML Rendering")
-        
-        # Test simple container
-        html_code = """
-        <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
-            <p style="margin: 0; color: white;">MVP Score: 82.1</p>
-        </div>
-        """
-        st.markdown("#### Simple HTML Container:")
-        st.markdown(html_code, unsafe_allow_html=True)
-        
-        # Test complex card
-        card_html = """
-        <div style="
-            background: linear-gradient(135deg, #4a0072 0%, #9c0063 100%);
-            border-radius: 10px;
-            padding: 1rem;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 15px;
-        ">
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 0.5rem;">
-                <h3 style="color: white; margin: 0.5rem 0; text-align: center;">Test Player</h3>
-                <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem;">SP | LAD</div>
-                <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem;">⭐⭐⭐⭐</div>
-                <div style="color: white; background: rgba(0,0,0,0.3); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                    <b>MVP Score:</b> 82.1
-                </div>
-                
-                <div style="background: rgba(255,255,255,0.1); padding: 0.3rem; border-radius: 5px; text-align: center; width: 100%; margin-top: 0.5rem;">
-                    <div style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Contract</div>
-                    <div style="color: white; font-weight: bold;">2035</div>
-                </div>
-            </div>
-        </div>
-        """
-        st.markdown("#### Complex Player Card HTML:")
-        st.markdown(card_html, unsafe_allow_html=True)
-    
+
     st.title("🏆 MVP Race Tracker")
     
     st.write("""
