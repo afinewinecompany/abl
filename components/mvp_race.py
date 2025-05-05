@@ -295,54 +295,42 @@ def get_mlb_team_info(team_name):
         'logo_url': logo_url
     }
 
-def get_position_value(position_str, position_counts=None):
+def get_position_value(position_str, position_counts=None, points_data=None):
     """
-    Calculate a position score based on the relative value and scarcity of the position.
+    Calculate a position score based on the relative scarcity of the position in fantasy baseball.
     
-    This function now heavily emphasizes positional scarcity while still considering
-    the inherent defensive value of each position. Scarcity is calculated dynamically
-    based on the actual distribution of players at each position.
+    This function focuses exclusively on positional scarcity relative to fantasy points scored, 
+    ignoring defensive value which doesn't matter for fantasy baseball. It calculates relative 
+    value by looking at:
+    1. How rare players are at each position (fewer players = higher scarcity)
+    2. How fantasy points are distributed at each position (lower average points = higher scarcity)
     
     For players with multiple positions, we take the highest position value.
     """
-    # Base positional values (defensive value/premium position)
-    # These now account for 40% of the total position value (reduced from previous implementation)
-    base_values = {
-        'SP': 0.90,    # Starting pitchers are premium
-        'C': 0.90,     # Catchers are premium defensive positions
-        'SS': 0.85,    # Shortstops are premium defensive positions
-        'CF': 0.80,    # Center fielders are premium defensive positions
-        '2B': 0.75,    # Second basemen are moderately valuable
-        '3B': 0.70,    # Third basemen are moderately valuable
-        'RF': 0.65,    # Right fielders have moderate value
-        'LF': 0.60,    # Left fielders have moderate value
-        '1B': 0.55,    # First basemen have lower defensive value
-        'UT': 0.50,    # Utility players have flexible value
-        'RP': 0.40     # Relief pitchers have lower value
-    }
-    
-    # Default scarcity values when position_counts is not available
+    # Default scarcity values when position data is not available
     # Only used as fallback when we can't calculate actual scarcity
     default_scarcity = {
-        'C': 0.85,     # Catchers are historically scarce
-        'SS': 0.80,    # Shortstops are premium and scarce
-        'SP': 0.75,    # Quality starting pitchers are scarce
-        'CF': 0.70,    # Center fielders are moderately scarce
-        '2B': 0.65,    # Second basemen are moderately scarce
-        '3B': 0.60,    # Third basemen are moderately common
-        'RF': 0.55,    # Right fielders are common
-        'LF': 0.50,    # Left fielders are common
-        '1B': 0.45,    # First basemen are very common
-        'UT': 0.40,    # Utility players are common
-        'RP': 0.35     # Relief pitchers are very common
+        'C': 0.90,     # Catchers are historically scarce and low-scoring
+        'SS': 0.85,    # Shortstops are moderately scarce 
+        '2B': 0.80,    # Second basemen are moderately scarce
+        'CF': 0.75,    # Center fielders have mid-range scarcity
+        '3B': 0.70,    # Third basemen are moderately common
+        'SP': 0.65,    # Starting pitchers are common but high variance
+        '1B': 0.60,    # First basemen are very common and high-scoring
+        'RF': 0.55,    # Right fielders are common and high-scoring
+        'LF': 0.50,    # Left fielders are common and high-scoring
+        'UT': 0.45,    # Utility players are very common
+        'RP': 0.40     # Relief pitchers are very common and low-scoring
     }
     
-    # Calculate dynamic scarcity based on actual player counts (60% of position value)
-    scarcity_values = default_scarcity.copy()  # Start with defaults
+    # We'll compute scarcity based solely on player counts and distribution of fantasy points
+    # Initialize with defaults
+    scarcity_values = default_scarcity.copy() 
     
+    # PART 1: Calculate scarcity based on player counts (50% of the total score)
     if position_counts is not None and len(position_counts) > 0:
         # Get the count range for scaling
-        min_count = min(position_counts.values()) 
+        min_count = min(position_counts.values())
         max_count = max(position_counts.values())
         count_range = max_count - min_count
         
@@ -354,39 +342,92 @@ def get_position_value(position_str, position_counts=None):
                     
                     # Normalize the count inversely (fewer players = higher scarcity)
                     # This creates a score from 0 to 1 where 1 = most scarce (fewest players)
-                    normalized_scarcity = 1 - ((count - min_count) / count_range)
+                    count_scarcity = 1 - ((count - min_count) / count_range)
                     
                     # Apply a curve to emphasize differences in scarcity
                     # Squaring the value puts more emphasis on the most scarce positions
-                    curved_scarcity = normalized_scarcity ** 1.5
+                    curved_count_scarcity = count_scarcity ** 1.2
                     
-                    # Scale to a range from 0.3 to 1.0
-                    scarcity_values[pos] = 0.3 + (curved_scarcity * 0.7)
+                    # Store in the scarcity values dictionary (will combine with fantasy points later)
+                    scarcity_values[pos] = curved_count_scarcity
+    
+    # PART 2: Calculate scarcity based on fantasy points per position (50% of total score)
+    # This calculation compares the average fantasy points at each position
+    # Positions with lower average fantasy points have higher scarcity value
+    position_fpts = {}
+    
+    # We can compute this from the mvp_data DataFrame, but we need to pass it
+    # Get the mvp_data from the global scope
+    try:
+        # Get the global mvp_data DataFrame to calculate position FPts
+        global_mvp_data = points_data if points_data is not None else None
+        
+        if global_mvp_data is not None and 'Position' in global_mvp_data.columns and 'FPts' in global_mvp_data.columns:
+            # Calculate average FPts for each position
+            for pos in position_counts.keys() if position_counts else []:
+                # Get all players at this position
+                pos_players = global_mvp_data[global_mvp_data['Position'].str.contains(pos, na=False)]
+                
+                if len(pos_players) > 0:
+                    # Calculate the average FPts for this position
+                    avg_fpts = pos_players['FPts'].mean()
+                    position_fpts[pos] = avg_fpts
+            
+            # If we have position fantasy points data, calculate scarcity based on points
+            if len(position_fpts) > 1:  # Need at least 2 positions to compare
+                # Get min and max for normalization
+                min_fpts = min(position_fpts.values())
+                max_fpts = max(position_fpts.values())
+                fpts_range = max_fpts - min_fpts
+                
+                # Calculate scarcity based on fantasy points (inverse - lower points = higher scarcity)
+                if fpts_range > 0:
+                    for pos, avg_fpts in position_fpts.items():
+                        # Normalize fantasy points inversely (lower points = higher scarcity)
+                        # This creates a value between 0-1 where positions with fewer points have higher values
+                        fpts_scarcity = 1 - ((avg_fpts - min_fpts) / fpts_range)
+                        
+                        # Apply curved emphasis to highlight differences
+                        curved_fpts_scarcity = fpts_scarcity ** 1.2
+                        
+                        # Combine with count-based scarcity value (if we have it)
+                        if pos in scarcity_values:
+                            # Weighted average: 50% count-based, 50% fantasy-points-based
+                            scarcity_values[pos] = (scarcity_values[pos] * 0.5) + (curved_fpts_scarcity * 0.5)
+    except Exception as e:
+        # Silently continue if there's an error with fantasy points calculation
+        pass
     
     # Split by comma and get the list of positions
     positions = [pos.strip() for pos in position_str.split(',')]
     
-    # Find the highest position value considering both base value and scarcity
+    # Find the highest position value 
     max_pos_value = 0
     for pos in positions:
-        # Get component values with defaults if position not found
-        base = base_values.get(pos, 0.5)  # Default to 0.5 if position not found
-        scarcity = scarcity_values.get(pos, 0.4)  # Default scarcity
+        # Get scarcity value with default if position not found
+        scarcity = scarcity_values.get(pos, 0.5)  # Default to middle value if position not found
         
-        # Weight the components: 40% base value, 60% scarcity
-        total_value = (base * 0.4) + (scarcity * 0.6)
+        # Scale to a range from 0.3 to 1.0 to avoid extremely low values
+        scaled_scarcity = 0.3 + (scarcity * 0.7)
         
-        max_pos_value = max(max_pos_value, total_value)
+        max_pos_value = max(max_pos_value, scaled_scarcity)
     
     # Cap at 1.0 to ensure we stay within scale
     return min(max_pos_value, 1.0)
 
-def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None):
+def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None, points_data=None):
     """
     Calculate MVP score based on the weighted normalized values
     
     Now includes position value in the calculation that accounts for positional scarcity
-    Age component has been removed as requested and its weight was added to FPts
+    relative to fantasy points scored, rather than defensive value
+    
+    Args:
+        player_row: Row from the DataFrame containing player data
+        weights: Dictionary of component weights in the MVP calculation
+        norm_columns: Dictionary of normalized component values
+        position_counts: Dictionary mapping positions to player counts
+        points_data: Optional DataFrame containing fantasy points data by position
     """
     score = 0
     for col, weight in weights.items():
@@ -395,7 +436,7 @@ def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None)
     
     # Add position value to the score, accounting for positional scarcity
     if 'Position' in player_row and weights.get('Position', 0) > 0:
-        position_score = get_position_value(player_row['Position'], position_counts)
+        position_score = get_position_value(player_row['Position'], position_counts, points_data)
         score += position_score * weights.get('Position', 0)
     
     return score
@@ -501,7 +542,7 @@ def render():
     
     ### MVP Score Components:
     - **FPts (70%)**: Fantasy points scoring is the primary performance metric
-    - **Position (5%)**: Position value with SP, C, and SS being the most valuable positions
+    - **Position (5%)**: Position value based on scarcity and fantasy points production
     - **Value (25%)**: Combined measure of salary and contract length
         - Low salary, long-term contracts are most valuable
         - Young players (under 26) on 1st contracts receive a bonus
@@ -677,7 +718,7 @@ def render():
         mvp_scores = []
         
         for idx, row in filtered_data.iterrows():
-            score = calculate_mvp_score(row, weights, norm_columns, position_counts)
+            score = calculate_mvp_score(row, weights, norm_columns, position_counts, mvp_data)
             mvp_scores.append(score)
         
         filtered_data['MVP_Score_Raw'] = mvp_scores
@@ -876,10 +917,12 @@ def render():
             # Position Scarcity Analysis
             st.write("#### Position Value Breakdown")
             st.markdown("""
-            The **Position** component (5% of MVP score) now heavily emphasizes positional scarcity.
+            The **Position** component (5% of MVP score) now focuses exclusively on fantasy baseball value.
             It's calculated using two factors:
-            - **Base Value (40%)**: The inherent defensive value of a position
-            - **Scarcity (60%)**: The rarity of players at each position
+            - **Player Scarcity (50%)**: How rare players are at each position (fewer players = higher scarcity)
+            - **Fantasy Points Scarcity (50%)**: How fantasy points are distributed at each position (lower average points = higher scarcity)
+            
+            This approach prioritizes positions that are both rare and tend to produce fewer fantasy points, making players at those positions more valuable in fantasy baseball.
             """)
             
             # Create a visualization of position scarcity
