@@ -319,8 +319,8 @@ def get_position_value(position_str, position_counts=None, points_data=None):
         '1B': 0.60,    # First basemen are very common and high-scoring
         'RF': 0.55,    # Right fielders are common and high-scoring
         'LF': 0.50,    # Left fielders are common and high-scoring
-        'UT': 0.45,    # Utility players are very common
-        'RP': 0.40     # Relief pitchers are very common and low-scoring
+        'RP': 0.40,    # Relief pitchers are very common and low-scoring
+        'UT': 0.25     # Utility players get a low value as any position player can fill this role
     }
     
     # We'll compute scarcity based solely on player counts and distribution of fantasy points
@@ -403,9 +403,22 @@ def get_position_value(position_str, position_counts=None, points_data=None):
     
     # Find the highest position value 
     max_pos_value = 0
+    has_ut_only = False
+    
+    # Check if UT is the only position
+    if len(positions) == 1 and positions[0] == 'UT':
+        has_ut_only = True
+    
     for pos in positions:
         # Get scarcity value with default if position not found
         scarcity = scarcity_values.get(pos, 0.5)  # Default to middle value if position not found
+        
+        # Special handling for UT position
+        if pos == 'UT':
+            if has_ut_only:  # If UT is the only position, penalize it more
+                scarcity = 0.15  # Fixed low value for UT-only players
+            else:  # If UT is one of multiple positions, don't let it increase the value
+                continue  # Skip UT in max calculation when player has other positions
         
         # Scale to a range from 0.3 to 1.0 to avoid extremely low values
         scaled_scarcity = 0.3 + (scarcity * 0.7)
@@ -545,7 +558,6 @@ def render():
     - **Position (5%)**: Position value based on scarcity and fantasy points production
     - **Value (25%)**: Combined measure of salary and contract length
         - Low salary, long-term contracts are most valuable
-        - Young players (under 26) on 1st contracts receive a bonus
         - Contract length provides more value for lower-salaried players
     """)
     
@@ -923,6 +935,9 @@ def render():
             - **Fantasy Points Scarcity (50%)**: How fantasy points are distributed at each position (lower average points = higher scarcity)
             
             This approach prioritizes positions that are both rare and tend to produce fewer fantasy points, making players at those positions more valuable in fantasy baseball.
+            
+            **Special UT Handling**: The Utility (UT) position receives lower value since any position player can fill this role. 
+            Players with only the UT designation are ranked lowest in positional value.
             """)
             
             # Create a visualization of position scarcity
