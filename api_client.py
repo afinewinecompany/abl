@@ -25,59 +25,83 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""
         try:
-            st.sidebar.info(f"Making API request to {endpoint}...")
+            # Only display info on sidebar if requested
+            st.sidebar.info(f"Attempting API request to {endpoint}...")
+            
+            # Set appropriate headers to mimic a browser request
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json',
+                'Connection': 'keep-alive'
+            }
+            
             response = self.session.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
-                timeout=15  # Extended timeout
+                headers=headers,
+                timeout=20  # Extended timeout
             )
-            response.raise_for_status()
             
             # Get the response content
             response_text = response.text
             
             # Check if response is likely HTML instead of JSON (common error)
             if response_text.strip().startswith(('<html', '<!DOCTYPE html')):
-                st.warning(f"Received HTML response from {endpoint} instead of JSON")
+                # Provide a single clear warning in the main UI area
+                st.warning(f"🚨 API Connectivity Issue: The Fantrax API returned HTML instead of JSON. Using fallback data for {endpoint}.")
+                
+                # Add explanatory message in the sidebar with possible solutions
+                st.sidebar.error(f"🔍 API Error Details: {endpoint}")
+                st.sidebar.info("""
+                Possible causes:
+                - Fantrax API may have changed
+                - Authentication may be required
+                - API rate limits might be in effect
+                - Session cookies might be needed
+                """)
+                
+                # Return mock data for this request
                 return self._get_mock_data(endpoint)
                 
             # Try to parse as JSON
             try:
+                # Attempt to parse the JSON response
                 data = response.json()
                 
                 # Check if the response contains an 'error' key, which indicates API error
                 if isinstance(data, dict) and 'error' in data:
                     error_msg = data.get('error', 'Unknown API error')
                     st.sidebar.error(f"API Error in {endpoint}: {error_msg}")
-                    st.sidebar.warning(f"Dictionary keys: {list(data.keys())}")
-                    # Log detailed information for debugging
-                    st.sidebar.info(f"Full response: {data}")
+                    
+                    # Return mock data for this specific error
                     return self._get_mock_data(endpoint)
                 
                 # Success!
                 if isinstance(data, (dict, list)):
+                    st.sidebar.success(f"✅ API request to {endpoint} successful")
                     return data
                 else:
                     st.warning(f"Unexpected data type from {endpoint}: {type(data)}")
-                    # If we got a string or other non-dict/list, return mock data
+                    # Return mock data for unexpected response type
                     return self._get_mock_data(endpoint)
                     
             except ValueError as json_error:
-                st.error(f"Failed to parse JSON from {endpoint}: {str(json_error)}")
-                # Show a sample of the response for debugging
-                if len(response_text) > 100:
-                    st.sidebar.info(f"Response preview: {response_text[:100]}...")
-                else:
-                    st.sidebar.info(f"Response: {response_text}")
+                # JSON parsing error - display a clear error message
+                st.warning(f"Failed to parse JSON response from {endpoint}: {str(json_error)}")
+                
+                # Return mock data
                 return self._get_mock_data(endpoint)
                 
         except requests.exceptions.RequestException as e:
-            st.warning(f"API request to {endpoint} failed: {str(e)}")
+            # Network or HTTP error 
+            st.warning(f"API connection to {endpoint} failed: {str(e)}")
+            st.sidebar.info("Using fallback data while API connection issues persist")
             return self._get_mock_data(endpoint)
         except Exception as e:
+            # General error handling
             st.error(f"Unexpected error in API request to {endpoint}: {str(e)}")
             import traceback
-            st.sidebar.error(f"API request error traceback: {traceback.format_exc()}")
+            st.sidebar.error(f"API error details: {str(e)}")
             return self._get_mock_data(endpoint)
 
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
@@ -248,12 +272,41 @@ class FantraxAPI:
         """Fetch standings data directly from the API for power rankings calculation"""
         try:
             st.sidebar.info("Fetching standings data from Fantrax API...")
+            
+            # Set appropriate headers to mimic a browser request
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json',
+                'Connection': 'keep-alive'
+            }
+            
             response = self.session.get(
                 "https://www.fantrax.com/fxea/general/getStandings",
                 params={"leagueId": self.league_id},
+                headers=headers,
                 timeout=20  # Extended timeout
             )
-            response.raise_for_status()
+            
+            # Get the response content
+            response_text = response.text
+            
+            # Check if response is likely HTML instead of JSON (common error)
+            if response_text.strip().startswith(('<html', '<!DOCTYPE html')):
+                # Provide a clear warning in the main UI area
+                st.warning("🚨 API Connectivity Issue: The Fantrax API returned HTML instead of JSON for standings data. Using fallback data.")
+                
+                # Add explanatory message in the sidebar
+                st.sidebar.error("🔍 API Error Details: getStandings")
+                st.sidebar.info("""
+                Possible causes:
+                - Fantrax API may have changed
+                - Authentication may be required
+                - API rate limits might be in effect
+                - Session cookies might be needed
+                """)
+                
+                # Return mock data
+                return self._get_mock_data("getStandings")
             
             # Try to parse the JSON response
             try:
@@ -263,32 +316,35 @@ class FantraxAPI:
                 if isinstance(response_data, dict) and 'standings' in response_data:
                     # API returned a dictionary with a 'standings' key containing the actual data
                     standings_data = response_data['standings']
-                    st.sidebar.success(f"Received standings data: {len(standings_data)} teams found")
+                    st.sidebar.success(f"✅ Received standings data: {len(standings_data)} teams found")
                     return standings_data
                 elif isinstance(response_data, list):
                     # API returned a list directly (expected format)
-                    st.sidebar.success(f"Received standings data: {len(response_data)} teams found")
+                    st.sidebar.success(f"✅ Received standings data: {len(response_data)} teams found")
                     return response_data
                 else:
                     # Unknown format - log it for debugging
-                    st.sidebar.warning(f"Unexpected API response format: {type(response_data)}")
+                    st.sidebar.warning(f"⚠️ Unexpected API response format: {type(response_data)}")
                     if isinstance(response_data, dict):
                         st.sidebar.info(f"Response keys: {list(response_data.keys())}")
                     
-                    # Return what we got, let the processor handle it
-                    return response_data
+                    # Return mock data when the format is unexpected
+                    return self._get_mock_data("getStandings")
             except ValueError as e:
-                st.error(f"Failed to parse JSON response from standings API: {str(e)}")
-                st.warning("Response was not valid JSON - using mock data instead")
+                # JSON parsing error
+                st.warning(f"Failed to parse JSON response from standings API: {str(e)}")
+                
+                # Return mock data
                 return self._get_mock_data("getStandings")
         except requests.exceptions.RequestException as e:
+            # Network or HTTP error
             st.warning(f"Standings API request failed: {str(e)}")
-            st.info("Using mock data for development purposes")
+            st.sidebar.info("Using fallback data while API connection issues persist")
             return self._get_mock_data("getStandings")
         except Exception as e:
+            # General error handling
             st.error(f"Unexpected error fetching standings: {str(e)}")
-            import traceback
-            st.sidebar.error(f"Traceback: {traceback.format_exc()}")
+            st.sidebar.error(f"API error details: {str(e)}")
             return self._get_mock_data("getStandings")
         
     def get_scoring_periods(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
