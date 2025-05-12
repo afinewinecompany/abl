@@ -500,6 +500,25 @@ st.markdown("""
 
 def main():
     try:
+        # Check if we're using mock data and display a clear notification banner at the top
+        if 'any_mock_data_used' in st.session_state and st.session_state.any_mock_data_used:
+            st.warning("""
+            ### ⚠️ **Using Test Data Mode**
+            
+            The app is currently using test data because it can't connect to the Fantrax API.
+            This is normal and allows you to use all features of the app without live API access.
+            
+            **Hot/Cold modifier data from your team_records.csv file is still being used.**
+            """)
+            
+            # Add expandable details about what APIs failed
+            if 'using_mock_data' in st.session_state:
+                with st.expander("📋 API Connection Details"):
+                    st.info("The following API endpoints are using test data:")
+                    for endpoint, using_mock in st.session_state.using_mock_data.items():
+                        if using_mock:
+                            st.markdown(f"- ❌ `{endpoint}`")
+        
         # Display header image
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
