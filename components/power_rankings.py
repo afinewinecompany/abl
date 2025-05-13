@@ -345,9 +345,10 @@ def calculate_hot_cold_modifier(team_name: str) -> tuple:
     # Calculate win percentage
     win_percentage = wins / total_games if total_games > 0 else 0.0
     
-    # Assign modifier on a scale from 1.0 to 1.25 (reduced from 1.5)
-    # This reduces the impact of hot/cold on the overall power score
-    modifier = 1.0 + (0.25 * win_percentage)
+    # Assign modifier on a scale from 1.0 to 1.125 (further reduced from 1.25)
+    # This significantly reduces the impact of hot/cold on the overall power score
+    # Previous scale was 1.0-1.25, now it's 1.0-1.125 (only 12.5% impact)
+    modifier = 1.0 + (0.125 * win_percentage)
     
     # Determine emoji based on win percentage
     if win_percentage >= 0.8:
