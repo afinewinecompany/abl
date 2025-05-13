@@ -345,10 +345,8 @@ def calculate_hot_cold_modifier(team_name: str) -> tuple:
     # Calculate win percentage
     win_percentage = wins / total_games if total_games > 0 else 0.0
     
-    # Assign modifier on a scale from 1.0 to 1.125 (further reduced from 1.25)
-    # This significantly reduces the impact of hot/cold on the overall power score
-    # Previous scale was 1.0-1.25, now it's 1.0-1.125 (only 12.5% impact)
-    modifier = 1.0 + (0.125 * win_percentage)
+    # Assign modifier on a scale from 1.0 to 1.5
+    modifier = 1.0 + (0.5 * win_percentage)
     
     # Determine emoji based on win percentage
     if win_percentage >= 0.8:
@@ -539,11 +537,7 @@ def calculate_power_score(row: pd.Series, all_teams_data: pd.DataFrame) -> float
     schedule_factor = 1.0  # No impact
 
     # Calculate the raw power score without strength of schedule
-    # Only apply hot/cold modifier if the toggle is enabled
-    if st.session_state.get('include_hot_cold', True):
-        raw_power_score = weekly_avg * points_mod * hot_cold_mod
-    else:
-        raw_power_score = weekly_avg * points_mod  # Skip hot/cold modifier
+    raw_power_score = weekly_avg * points_mod * hot_cold_mod  # Removed schedule_factor
 
     # Show detailed info for each team if enabled
     if debug_modifiers:
@@ -636,20 +630,11 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Add version info
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### Power Rankings Options")
-    
-    # Add toggle for including/excluding hot/cold modifier
-    include_hot_cold = st.sidebar.checkbox("Include Hot/Cold modifier", value=True, 
-                        help="Turn this off to rank teams solely based on fantasy points without considering recent performance")
-    
-    # Store the setting in session state for use in calculations
-    st.session_state.include_hot_cold = include_hot_cold
-    
+    st.sidebar.markdown("### Version Info")
+    st.sidebar.info("Power Rankings v2.3.1\n- Linear modifier distribution\n- SoS modifier removed\n- Using last 3 weeks win% for hot/cold\n- No playoff data included")
+
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
-    
-    st.sidebar.markdown("### Version Info")
-    st.sidebar.info("Power Rankings v2.3.3\n- Linear modifier distribution\n- Hot/Cold toggle added\n- Hot/Cold impact reduced (1.0-1.125×)\n- No playoff data included")
 
     # Get custom data from parameters or session state
     if power_rankings_data:
@@ -702,32 +687,14 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Add an expander with detailed explanation of the new calculation method
     with st.expander("📊 How Power Scores Are Calculated"):
-        # Check if hot/cold modifier is included
-        include_hot_cold = st.session_state.get('include_hot_cold', True)
-        
-        # Dynamically build markdown based on hot/cold setting
-        if include_hot_cold:
-            components_text = """
-            Power scores are calculated using three main components:
-
-            1. **Weekly Average** - Average fantasy points per week
-            2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
-            3. **Hot/Cold Modifier** - Based on team's last 3 weeks win/loss record (1.0× to 1.125×)
-            """
-        else:
-            components_text = """
-            Power scores are calculated using two main components:
-
-            1. **Weekly Average** - Average fantasy points per week
-            2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
-            
-            *Hot/Cold Modifier is currently disabled*
-            """
-            
-        st.markdown(f"""
+        st.markdown("""
         ### Power Score Calculation Details
 
-        {components_text}
+        Power scores are calculated using three main components:
+
+        1. **Weekly Average** - Average fantasy points per week
+        2. **Points Modifier** - Based on total points compared to other teams (1.0× to 1.9×)
+        3. **Hot/Cold Modifier** - Based on team's last 3 weeks win/loss record (1.0× to 1.5×)
 
         #### Linear Distribution Method
 
@@ -737,7 +704,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
           the lowest total points receive a 1.0× modifier. All other teams receive a proportional value
           between these extremes based on where their points total falls in the league range.
 
-        - **Hot/Cold Modifier**: Teams with a 100% win rate in their last 3 weeks receive a 1.25× bonus, teams with a 0%
+        - **Hot/Cold Modifier**: Teams with a 100% win rate in their last 3 weeks receive a 1.5× bonus, teams with a 0%
           win rate in the last 3 weeks receive a 1.0× modifier. All teams receive a proportional value based on their 
           win percentage over their most recent 3 weeks of play.
 
