@@ -592,6 +592,12 @@ def render():
             'FP/G': 0
         })
         
+        # Validate data loaded correctly
+        if len(mvp_data) == 0:
+            raise ValueError("No player data found in MVP-Player-List.csv")
+            
+        st.sidebar.success(f"✅ Loaded {len(mvp_data):,} players successfully")
+        
         # Calculate value score that combines salary and contract
         def calculate_value_score(salary, contract):
             # Base salary score (lower is better)
@@ -1193,5 +1199,13 @@ def render():
             Color intensity shows fantasy points per game - brighter colors indicate higher FP/G.
             """)
         
+    except FileNotFoundError:
+        st.error("MVP-Player-List.csv file not found. Please ensure the file is in the attached_assets folder.")
+        return
+    except pd.errors.EmptyDataError:
+        st.error("MVP-Player-List.csv file is empty or corrupted.")
+        return
     except Exception as e:
-        st.error(f"Error loading or processing MVP data: {str(e)}")
+        st.error(f"Error loading MVP data: {str(e)}")
+        st.write("Please check that the MVP-Player-List.csv file contains valid player data.")
+        return
