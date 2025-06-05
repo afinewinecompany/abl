@@ -55,12 +55,62 @@ def render():
                 trade_groups[key] = []
             trade_groups[key].append(row)
         
+        # Team colors and logos mapping
+        def get_team_colors(team_name):
+            """Get team colors for styling"""
+            team_colors = {
+                'Arizona Diamondbacks': {'primary': '#A71930', 'secondary': '#000000'},
+                'Atlanta Braves': {'primary': '#CE1141', 'secondary': '#13274F'},
+                'Baltimore Orioles': {'primary': '#DF4601', 'secondary': '#000000'},
+                'Boston Red Sox': {'primary': '#BD3039', 'secondary': '#0C2340'},
+                'Chicago Cubs': {'primary': '#0E3386', 'secondary': '#CC3433'},
+                'Chicago White Sox': {'primary': '#27251F', 'secondary': '#C4CED4'},
+                'Cincinnati Reds': {'primary': '#C6011F', 'secondary': '#000000'},
+                'Cleveland Guardians': {'primary': '#E31937', 'secondary': '#002653'},
+                'Colorado Rockies': {'primary': '#33006F', 'secondary': '#C4CED4'},
+                'Detroit Tigers': {'primary': '#0C2340', 'secondary': '#FA4616'},
+                'Houston Astros': {'primary': '#002D62', 'secondary': '#EB6E1F'},
+                'Kansas City Royals': {'primary': '#004687', 'secondary': '#BD9B60'},
+                'Los Angeles Angels': {'primary': '#BA0021', 'secondary': '#003263'},
+                'Los Angeles Dodgers': {'primary': '#005A9C', 'secondary': '#FFFFFF'},
+                'Miami Marlins': {'primary': '#00A3E0', 'secondary': '#EF3340'},
+                'Milwaukee Brewers': {'primary': '#FFC52F', 'secondary': '#12284B'},
+                'Minnesota Twins': {'primary': '#002B5C', 'secondary': '#D31145'},
+                'New York Mets': {'primary': '#002D72', 'secondary': '#FF5910'},
+                'New York Yankees': {'primary': '#132448', 'secondary': '#C4CED4'},
+                'Oakland Athletics': {'primary': '#003831', 'secondary': '#EFB21E'},
+                'Philadelphia Phillies': {'primary': '#E81828', 'secondary': '#002D72'},
+                'Pittsburgh Pirates': {'primary': '#FDB827', 'secondary': '#27251F'},
+                'San Diego Padres': {'primary': '#2F241D', 'secondary': '#FFC425'},
+                'San Francisco Giants': {'primary': '#FD5A1E', 'secondary': '#27251F'},
+                'Seattle Mariners': {'primary': '#0C2C56', 'secondary': '#005C5C'},
+                'St. Louis Cardinals': {'primary': '#C41E3A', 'secondary': '#FEDB00'},
+                'Saint Louis Cardinals': {'primary': '#C41E3A', 'secondary': '#FEDB00'},
+                'Tampa Bay Rays': {'primary': '#092C5C', 'secondary': '#8FBCE6'},
+                'Texas Rangers': {'primary': '#003278', 'secondary': '#C0111F'},
+                'Toronto Blue Jays': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
+                'Washington Nationals': {'primary': '#AB0003', 'secondary': '#14225A'}
+            }
+            return team_colors.get(team_name, {'primary': '#333333', 'secondary': '#666666'})
+
         # Calculate values for each trade
         def get_player_value(player_name):
             """Get combined value of a player from MVP and prospect rankings"""
             mvp_val = mvp_values.get(player_name, 0)
             prospect_val = prospect_values.get(player_name, 0)
             return mvp_val + prospect_val
+        
+        def get_player_value_breakdown(player_name):
+            """Get detailed breakdown of player value"""
+            mvp_val = mvp_values.get(player_name, 0)
+            prospect_val = prospect_values.get(player_name, 0)
+            total_val = mvp_val + prospect_val
+            return {
+                'mvp_value': mvp_val,
+                'prospect_value': prospect_val,
+                'total_value': total_val,
+                'source': 'MVP' if mvp_val > prospect_val else 'Prospect' if prospect_val > 0 else 'Unknown'
+            }
         
         def get_draft_pick_value(pick_text):
             """Calculate value of draft picks based on year and round"""
@@ -197,28 +247,53 @@ def render():
             st.write("### 🥇 Biggest Trade Winners")
             for i, (team, stats) in enumerate(sorted_teams[:5]):
                 if stats['total_value'] > 0:
-                    col1, col2, col3, col4 = st.columns([1, 3, 2, 2])
-                    with col1:
-                        st.markdown(f"**#{i+1}**")
-                    with col2:
-                        st.markdown(f"**{team}**")
-                    with col3:
-                        st.metric("Net Value", f"+{stats['total_value']:.1f}")
-                    with col4:
-                        st.metric("Trades", stats['trade_count'])
+                    colors = get_team_colors(team)
+                    
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                        border-radius: 10px;
+                        padding: 1rem;
+                        margin-bottom: 10px;
+                        color: white;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 1.2rem; font-weight: bold;">#{i+1} {team}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.1rem; font-weight: bold;">+{stats['total_value']:.1f} pts</div>
+                                <div style="font-size: 0.9rem; opacity: 0.8;">{stats['trade_count']} trades</div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             st.write("### 🔻 Biggest Trade Losers")
             for i, (team, stats) in enumerate(sorted_teams[-5:]):
                 if stats['total_value'] < 0:
-                    col1, col2, col3, col4 = st.columns([1, 3, 2, 2])
-                    with col1:
-                        st.markdown(f"**#{len(sorted_teams)-4+i}**")
-                    with col2:
-                        st.markdown(f"**{team}**")
-                    with col3:
-                        st.metric("Net Value", f"{stats['total_value']:.1f}")
-                    with col4:
-                        st.metric("Trades", stats['trade_count'])
+                    colors = get_team_colors(team)
+                    
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                        border-radius: 10px;
+                        padding: 1rem;
+                        margin-bottom: 10px;
+                        color: white;
+                        opacity: 0.8;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 1.2rem; font-weight: bold;">#{len(sorted_teams)-4+i} {team}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.1rem; font-weight: bold;">{stats['total_value']:.1f} pts</div>
+                                <div style="font-size: 0.9rem; opacity: 0.8;">{stats['trade_count']} trades</div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         
         with tab2:
             st.write("## All Trade Transactions")
@@ -259,22 +334,95 @@ def render():
                 for i, trade in enumerate(lopsided_trades[:10]):
                     winner = max(trade['team_values'], key=trade['team_values'].get)
                     loser = min(trade['team_values'], key=trade['team_values'].get)
+                    winner_colors = get_team_colors(winner)
+                    loser_colors = get_team_colors(loser)
                     
-                    st.write(f"### Trade #{i+1}: {trade['date'].strftime('%B %d')}")
-                    col1, col2, col3 = st.columns([2, 1, 2])
+                    st.write(f"### Trade #{i+1}: {trade['date'].strftime('%B %d, %Y')}")
+                    
+                    # Team comparison with styling
+                    col1, col2, col3 = st.columns([5, 1, 5])
                     
                     with col1:
-                        st.success(f"**Winner: {winner}**")
-                        st.write(f"Net gain: +{trade['team_values'][winner]:.1f} pts")
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(135deg, {winner_colors['primary']} 0%, {winner_colors['secondary']} 100%);
+                            border-radius: 10px;
+                            padding: 1rem;
+                            color: white;
+                            text-align: center;
+                        ">
+                            <h4 style="margin: 0; color: white;">🏆 WINNER</h4>
+                            <h3 style="margin: 0.5rem 0; color: white;">{winner}</h3>
+                            <div style="font-size: 1.2rem; font-weight: bold;">+{trade['team_values'][winner]:.1f} pts</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Show what winner received
+                        st.write("**Received:**")
+                        received_items = [item for item in trade['trade_details'][winner] if item['direction'] == 'received']
+                        for item in received_items:
+                            if "Draft Pick" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            elif "Budget Amount" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            else:
+                                # Show player breakdown
+                                breakdown = get_player_value_breakdown(item['item'])
+                                mvp_part = f"MVP: {breakdown['mvp_value']:.1f}" if breakdown['mvp_value'] > 0 else ""
+                                prospect_part = f"Prospect: {breakdown['prospect_value']:.1f}" if breakdown['prospect_value'] > 0 else ""
+                                parts = [p for p in [mvp_part, prospect_part] if p]
+                                detail = f" ({', '.join(parts)})" if parts else ""
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
                     
                     with col2:
-                        st.write("vs")
+                        st.markdown("<div style='text-align: center; padding-top: 3rem; font-size: 2rem;'>⚖️</div>", unsafe_allow_html=True)
                     
                     with col3:
-                        st.error(f"**Loser: {loser}**")
-                        st.write(f"Net loss: {trade['team_values'][loser]:.1f} pts")
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(135deg, {loser_colors['primary']} 0%, {loser_colors['secondary']} 100%);
+                            border-radius: 10px;
+                            padding: 1rem;
+                            color: white;
+                            text-align: center;
+                            opacity: 0.7;
+                        ">
+                            <h4 style="margin: 0; color: white;">📉 LOSER</h4>
+                            <h3 style="margin: 0.5rem 0; color: white;">{loser}</h3>
+                            <div style="font-size: 1.2rem; font-weight: bold;">{trade['team_values'][loser]:.1f} pts</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Show what loser gave up
+                        st.write("**Gave Up:**")
+                        gave_items = [item for item in trade['trade_details'][loser] if item['direction'] == 'gave']
+                        for item in gave_items:
+                            if "Draft Pick" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            elif "Budget Amount" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            else:
+                                # Show player breakdown
+                                breakdown = get_player_value_breakdown(item['item'])
+                                mvp_part = f"MVP: {breakdown['mvp_value']:.1f}" if breakdown['mvp_value'] > 0 else ""
+                                prospect_part = f"Prospect: {breakdown['prospect_value']:.1f}" if breakdown['prospect_value'] > 0 else ""
+                                parts = [p for p in [mvp_part, prospect_part] if p]
+                                detail = f" ({', '.join(parts)})" if parts else ""
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
                     
-                    st.write(f"**Value Difference:** {trade['value_difference']:.1f} points")
+                    # Summary
+                    st.markdown(f"""
+                    <div style="
+                        background: rgba(255, 255, 255, 0.1);
+                        border-radius: 5px;
+                        padding: 0.5rem;
+                        text-align: center;
+                        margin: 1rem 0;
+                    ">
+                        <strong>Value Difference: {trade['value_difference']:.1f} points</strong>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                     st.divider()
             else:
                 st.info("No significantly lopsided trades found (>30 point difference)")
