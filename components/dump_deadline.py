@@ -34,10 +34,11 @@ def render():
             prospect_data = pd.read_csv("attached_assets/ABL-Import.csv")
             prospect_values = {}
             for _, row in prospect_data.iterrows():
-                if pd.notna(row.get('Player')):
-                    # Prospect value based on ranking position
-                    prospect_rank = prospect_data.index[prospect_data['Player'] == row['Player']].tolist()[0] + 1
-                    prospect_values[row['Player']] = max(1, 51 - prospect_rank)  # Scale 1-50
+                if pd.notna(row.get('Name')):
+                    # Use the actual prospect score (multiply by 10 to scale to similar range as MVP values)
+                    prospect_score = pd.to_numeric(row.get('Score', 0), errors='coerce')
+                    if pd.notna(prospect_score):
+                        prospect_values[row['Name']] = prospect_score * 10  # Scale to 0-100 range
         except:
             prospect_values = {}
             st.warning("Could not load prospect data for enhanced valuations")
