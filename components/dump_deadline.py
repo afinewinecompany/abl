@@ -93,12 +93,23 @@ def render():
             # Scale to 0-100 range
             return total_score * 100
         
-        # Calculate comprehensive values for all MVP players
-        mvp_values = {}
+        # Calculate comprehensive values for all MVP players with exponential scaling
+        mvp_raw_values = {}
         for _, row in mvp_data.iterrows():
             player_name = row.get('Player', '')
             if player_name:
-                mvp_values[player_name] = calculate_comprehensive_player_value(row)
+                mvp_raw_values[player_name] = calculate_comprehensive_player_value(row)
+        
+        # Apply exponential scaling to MVP values to emphasize elite players
+        mvp_values = {}
+        if mvp_raw_values:
+            max_value = max(mvp_raw_values.values())
+            for player_name, raw_value in mvp_raw_values.items():
+                # Normalize to 0-1, apply exponential scaling, then scale back
+                normalized = raw_value / max_value if max_value > 0 else 0
+                # Use exponential function (x^2.5) to emphasize top players
+                exponential_scaled = normalized ** 2.5
+                mvp_values[player_name] = exponential_scaled * max_value
         
         # Load prospect data for additional player values
         try:
