@@ -100,7 +100,24 @@ def render():
             if player_name:
                 mvp_raw_values[player_name] = calculate_comprehensive_player_value(row)
         
-        # Apply scaling to MVP values to emphasize elite players
+        # Get list of players who appear in trade transactions
+        try:
+            trade_data = pd.read_csv("attached_assets/Fantrax-Transaction-History-Trades-ABL Season 5.csv")
+            traded_players = set()
+            for _, row in trade_data.iterrows():
+                player_name = row.get('Player', '')
+                if player_name and not player_name.startswith('2026 Draft Pick') and not player_name.startswith('2027 Draft Pick') and not player_name.startswith('2028 Draft Pick') and not player_name.startswith('2029 Draft Pick') and not player_name.startswith('Budget Amount'):
+                    traded_players.add(player_name)
+        except:
+            traded_players = set()  # If trade data not available, use all players
+        
+        # Filter MVP players to only those who appear in trades
+        if traded_players:
+            filtered_mvp_raw_values = {k: v for k, v in mvp_raw_values.items() if k in traded_players}
+        else:
+            filtered_mvp_raw_values = mvp_raw_values
+        
+        # Apply scaling to MVP values to emphasize elite players (filtered to traded players only)
         # Available distribution types:
         # 1. Linear (no scaling): y = x
         # 2. Exponential: y = x^n (current: 1.6)
@@ -113,11 +130,11 @@ def render():
         distribution_type = "quadratic"  # Change this to test different distributions
         
         mvp_values = {}
-        if mvp_raw_values:
-            max_value = max(mvp_raw_values.values())
+        if filtered_mvp_raw_values:
+            max_value = max(filtered_mvp_raw_values.values())
             import math
             
-            for player_name, raw_value in mvp_raw_values.items():
+            for player_name, raw_value in filtered_mvp_raw_values.items():
                 normalized = raw_value / max_value if max_value > 0 else 0
                 
                 if distribution_type == "linear":
