@@ -616,6 +616,12 @@ def render():
             
         st.sidebar.success(f"✅ Loaded {len(mvp_data):,} players successfully")
         
+        # Debug information
+        st.write(f"**Data loaded successfully:** {len(mvp_data)} players")
+        st.write(f"**Columns:** {list(mvp_data.columns)}")
+        st.write(f"**Sample data:**")
+        st.dataframe(mvp_data.head(3))
+        
         # Calculate value score that combines salary and contract
         def calculate_value_score(salary, contract):
             # Base salary score (lower is better)
