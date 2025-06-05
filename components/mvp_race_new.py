@@ -126,62 +126,36 @@ def render():
             # Player headshot URL (MLB official API)
             headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
             
+            # Create a styled container using native Streamlit components
             with st.container():
-                st.markdown(f"""
-                <div style="
-                    border-left: 5px solid {color};
-                    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 100%);
-                    border-radius: 10px;
-                    padding: 20px;
-                    margin: 15px 0;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                    position: relative;
-                ">
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="
-                            background: {color};
-                            color: white;
-                            border-radius: 50%;
-                            width: 40px;
-                            height: 40px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-weight: bold;
-                            font-size: 18px;
-                        ">
-                            #{i+1}
-                        </div>
-                        
-                        <img src="{headshot_url}" 
-                             style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;"
-                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%23ddd%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 font-size=%2212%22>?</text></svg>'">
-                        
-                        <div style="flex: 1;">
-                            <h3 style="margin: 0; color: {color}; font-size: 1.5em;">{player['Player']}</h3>
-                            <p style="margin: 5px 0; color: #666; font-size: 1.1em;">
-                                {player['Position']} • {player['Team']} • Age {int(player['Age'])}
-                            </p>
-                        </div>
-                        
-                        <div style="text-align: center; margin: 0 20px;">
-                            <div style="font-size: 0.9em; color: #888; margin-bottom: 5px;">MVP Score</div>
-                            <div style="font-size: 2.2em; font-weight: bold; color: {color};">{player['MVP_Score']:.1f}</div>
-                        </div>
-                        
-                        <div style="text-align: center; margin: 0 20px;">
-                            <div style="font-size: 0.9em; color: #888; margin-bottom: 5px;">Fantasy Points</div>
-                            <div style="font-size: 1.8em; font-weight: bold;">{player['FPts']:.1f}</div>
-                        </div>
-                        
-                        <div style="text-align: right; min-width: 120px;">
-                            <div style="font-size: 0.9em; color: #888;">Contract</div>
-                            <div style="font-size: 1.2em; font-weight: bold;">${player['Salary']:.1f}M</div>
-                            <div style="font-size: 1.1em; color: {color};">{player['Contract']}</div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Add team color indicator
+                st.markdown(f"<div style='height: 3px; background: {color}; margin-bottom: 10px; border-radius: 2px;'></div>", unsafe_allow_html=True)
+                
+                # Create columns for layout
+                col1, col2, col3, col4, col5 = st.columns([1, 1, 4, 2, 2])
+                
+                with col1:
+                    st.markdown(f"<div style='background: {color}; color: white; text-align: center; padding: 8px; border-radius: 50%; width: 30px; height: 30px; line-height: 14px; font-weight: bold;'>#{i+1}</div>", unsafe_allow_html=True)
+                
+                with col2:
+                    # Display player headshot
+                    if mlb_id != '000000':
+                        st.image(headshot_url, width=50, caption="")
+                    else:
+                        st.markdown("🏀", help="Player photo not available")
+                
+                with col3:
+                    st.markdown(f"**{player['Player']}**")
+                    st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
+                
+                with col4:
+                    st.metric("MVP Score", f"{player['MVP_Score']:.1f}", delta=None)
+                
+                with col5:
+                    st.metric("Fantasy Points", f"{player['FPts']:.1f}")
+                    st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
+                
+                st.divider()
         
         # Tabs for different views
         tab1, tab2, tab3 = st.tabs(["📊 Rankings", "📈 Analysis", "🎯 Value Analysis"])
