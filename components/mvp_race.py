@@ -713,11 +713,16 @@ def render():
         
         if selected_position != "All Positions":
             # Filter by position (check if the selected position is in the comma-separated list)
-            filtered_data = filtered_data[filtered_data['Position'].str.contains(selected_position)]
+            filtered_data = filtered_data[filtered_data['Position'].str.contains(selected_position, na=False)]
             
         if selected_team != "All Teams":
             # Filter by team
             filtered_data = filtered_data[filtered_data['Team'] == selected_team]
+        
+        # Debug: Check if we have data after filtering
+        if len(filtered_data) == 0:
+            st.warning("No players found matching the current filters. Please adjust your filters.")
+            return
         
         # Calculate position counts for scarcity analysis
         position_counts = {}
@@ -735,11 +740,17 @@ def render():
         # Calculate MVP score for each player
         mvp_scores = []
         
-        for idx, row in filtered_data.iterrows():
-            score = calculate_mvp_score(row, weights, norm_columns, position_counts, mvp_data)
-            mvp_scores.append(score)
-        
-        filtered_data['MVP_Score_Raw'] = mvp_scores
+        try:
+            for idx, row in filtered_data.iterrows():
+                score = calculate_mvp_score(row, weights, norm_columns, position_counts, mvp_data)
+                mvp_scores.append(score)
+            
+            filtered_data['MVP_Score_Raw'] = mvp_scores
+            
+        except Exception as e:
+            st.error(f"Error calculating MVP scores: {str(e)}")
+            st.write(f"Debug info: {len(filtered_data)} players, weights: {weights}")
+            return
         
         # Scale the MVP scores to a 0-100 scale for better user understanding
         max_score = max(mvp_scores)
