@@ -26,6 +26,27 @@ def render():
         # Load MVP player data
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
         
+        # Load player ID mapping for headshots
+        try:
+            id_map = pd.read_csv("attached_assets/PLAYERIDMAP.csv")
+            # Create mapping from player names to MLB IDs
+            name_to_mlb_id = {}
+            for _, row in id_map.iterrows():
+                if pd.notna(row.get('MLBID')):
+                    # Try multiple name formats
+                    names_to_try = [
+                        row.get('PLAYERNAME', ''),
+                        row.get('MLBNAME', ''),
+                        row.get('FANTRAXNAME', ''),
+                        row.get('FANGRAPHSNAME', '')
+                    ]
+                    for name in names_to_try:
+                        if pd.notna(name) and name.strip():
+                            name_to_mlb_id[name.strip()] = str(row['MLBID'])
+        except Exception as e:
+            st.warning(f"Could not load player ID mapping: {str(e)}")
+            name_to_mlb_id = {}
+        
         # Data validation and cleaning
         mvp_data['Age'] = pd.to_numeric(mvp_data['Age'], errors='coerce').fillna(25)
         mvp_data['Salary'] = pd.to_numeric(mvp_data['Salary'], errors='coerce').fillna(1.0)
@@ -84,25 +105,83 @@ def render():
         top_10 = mvp_data.head(10)
         
         for i, (_, player) in enumerate(top_10.iterrows()):
+            # Team colors for styling
+            team_colors = {
+                'WAS': '#AB0003', 'ATH': '#003831', 'NYY': '#132448', 'COL': '#C4CED4', 
+                'NYM': '#002D72', 'MIL': '#FFC52F', 'LAA': '#C41E3A', 'CWS': '#27251F',
+                'PIT': '#FDB827', 'LAD': '#005A9C', 'ARI': '#A71930', 'TEX': '#003278',
+                'DET': '#0C2340', 'TB': '#092C5C', 'ATL': '#CE1141', 'KC': '#004687',
+                'STL': '#C41E3A', 'CHC': '#0E3386', 'PHI': '#E81828', 'TOR': '#134A8E',
+                'SF': '#FD5A1E', 'BOS': '#BD3039', 'SEA': '#0C2C56', 'HOU': '#002D62',
+                'BAL': '#DF4601', 'MIN': '#002B5C', 'CLE': '#E31937', 'CIN': '#C6011F',
+                'MIA': '#00A3E0', 'SD': '#2F241D'
+            }
+            
+            color = team_colors.get(player['Team'], '#333333')
+            
+            # Get MLB ID for headshot
+            player_name = player['Player']
+            mlb_id = name_to_mlb_id.get(player_name, '000000')
+            
+            # Player headshot URL (MLB official API)
+            headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
+            
             with st.container():
-                # Create columns for the card layout
-                col1, col2, col3, col4 = st.columns([1, 4, 2, 2])
-                
-                with col1:
-                    st.markdown(f"### #{i+1}")
-                
-                with col2:
-                    st.markdown(f"**{player['Player']}**")
-                    st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
-                
-                with col3:
-                    st.metric("MVP Score", f"{player['MVP_Score']:.1f}")
-                
-                with col4:
-                    st.metric("Fantasy Points", f"{player['FPts']:.1f}")
-                    st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
-                
-                st.divider()
+                st.markdown(f"""
+                <div style="
+                    border-left: 5px solid {color};
+                    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 100%);
+                    border-radius: 10px;
+                    padding: 20px;
+                    margin: 15px 0;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    position: relative;
+                ">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="
+                            background: {color};
+                            color: white;
+                            border-radius: 50%;
+                            width: 40px;
+                            height: 40px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: bold;
+                            font-size: 18px;
+                        ">
+                            #{i+1}
+                        </div>
+                        
+                        <img src="{headshot_url}" 
+                             style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;"
+                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%23ddd%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 font-size=%2212%22>?</text></svg>'">
+                        
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: {color}; font-size: 1.5em;">{player['Player']}</h3>
+                            <p style="margin: 5px 0; color: #666; font-size: 1.1em;">
+                                {player['Position']} • {player['Team']} • Age {int(player['Age'])}
+                            </p>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 0 20px;">
+                            <div style="font-size: 0.9em; color: #888; margin-bottom: 5px;">MVP Score</div>
+                            <div style="font-size: 2.2em; font-weight: bold; color: {color};">{player['MVP_Score']:.1f}</div>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 0 20px;">
+                            <div style="font-size: 0.9em; color: #888; margin-bottom: 5px;">Fantasy Points</div>
+                            <div style="font-size: 1.8em; font-weight: bold;">{player['FPts']:.1f}</div>
+                        </div>
+                        
+                        <div style="text-align: right; min-width: 120px;">
+                            <div style="font-size: 0.9em; color: #888;">Contract</div>
+                            <div style="font-size: 1.2em; font-weight: bold;">${player['Salary']:.1f}M</div>
+                            <div style="font-size: 1.1em; color: {color};">{player['Contract']}</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
         
         # Tabs for different views
         tab1, tab2, tab3 = st.tabs(["📊 Rankings", "📈 Analysis", "🎯 Value Analysis"])
