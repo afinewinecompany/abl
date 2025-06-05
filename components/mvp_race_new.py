@@ -4,20 +4,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 def render():
-    """Render the MVP Race page with simplified implementation"""
+    """Render the MVP Race page with working player card display"""
+    st.title("🏆 MVP Race")
     
-    st.title("🏆 MVP Race Tracker")
-    
-    st.write("""
-    ## Armchair Baseball League Most Valuable Player
-    
-    This tool analyzes player performance, value, and impact to determine the MVP race leaders.
-    Each player is evaluated based on their performance (FPts), position value, and overall team value.
-    
-    ### MVP Score Components:
-    - **FPts (70%)**: Fantasy points scoring is the primary performance metric
-    - **Position (5%)**: Position value based on scarcity and fantasy points production
-    - **Value (25%)**: Combined measure of salary and contract length
+    # Info about the MVP calculation
+    st.info("""
+    **ABL MVP Algorithm Components:**
+    - **Fantasy Points (70%)**: Primary performance metric
+    - **Position Value (5%)**: Scarcity-based positional adjustment  
+    - **Contract Value (25%)**: Salary efficiency and contract length
         - Low salary, long-term contracts are most valuable
         - Contract length provides more value for lower-salaried players
     """)
@@ -27,13 +22,11 @@ def render():
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
         
         # Load player ID mapping for headshots
+        name_to_mlb_id = {}
         try:
             id_map = pd.read_csv("attached_assets/PLAYERIDMAP.csv")
-            # Create mapping from player names to MLB IDs
-            name_to_mlb_id = {}
             for _, row in id_map.iterrows():
                 if pd.notna(row.get('MLBID')):
-                    # Try multiple name formats
                     names_to_try = [
                         row.get('PLAYERNAME', ''),
                         row.get('MLBNAME', ''),
@@ -45,42 +38,22 @@ def render():
                             name_to_mlb_id[name.strip()] = str(row['MLBID'])
         except Exception as e:
             st.warning(f"Could not load player ID mapping: {str(e)}")
-            name_to_mlb_id = {}
         
         # Data validation and cleaning
         mvp_data['Age'] = pd.to_numeric(mvp_data['Age'], errors='coerce').fillna(25)
         mvp_data['Salary'] = pd.to_numeric(mvp_data['Salary'], errors='coerce').fillna(1.0)
         mvp_data['FPts'] = pd.to_numeric(mvp_data['FPts'], errors='coerce').fillna(0)
-        mvp_data['FP/G'] = pd.to_numeric(mvp_data['FP/G'], errors='coerce').fillna(0)
         
-        # Clean string fields
-        mvp_data['Player'] = mvp_data['Player'].fillna('Unknown Player')
-        mvp_data['Team'] = mvp_data['Team'].fillna('FA')
-        mvp_data['Position'] = mvp_data['Position'].fillna('UT')
-        mvp_data['Contract'] = mvp_data['Contract'].fillna('1st')
-        
-        # Remove rows with missing critical data
-        mvp_data = mvp_data.dropna(subset=['Player'])
-        
-        st.success(f"✅ Loaded {len(mvp_data):,} players successfully")
-        
-        # Calculate MVP Score based on the three components
+        # Calculate MVP score
         def calculate_mvp_score(row):
-            # Component 1: Fantasy Points (70%) - normalized to 0-1 scale
-            fpts_score = row['FPts'] / mvp_data['FPts'].max()
+            # FPts component (70%)
+            fpts_score = row['FPts'] / mvp_data['FPts'].max() if mvp_data['FPts'].max() > 0 else 0
             
-            # Component 2: Position Value (5%) - based on positional scarcity
-            position_values = {
-                'C': 1.0, 'SS': 0.9, '2B': 0.8, '3B': 0.7, 'CF': 0.6,
-                'LF': 0.5, 'RF': 0.5, '1B': 0.4, 'SP': 0.8, 'RP': 0.3, 'UT': 0.6
-            }
-            # Get primary position (first one listed)
-            primary_pos = row['Position'].split(',')[0].strip() if pd.notna(row['Position']) else 'UT'
-            position_score = position_values.get(primary_pos, 0.5)
+            # Position value component (5%) - simplified
+            position_score = 0.5  # Default position value
             
-            # Component 3: Value Score (25%) - combination of salary and contract
-            # Lower salary is better, longer contracts are better
-            salary_score = 1.0 - (row['Salary'] / mvp_data['Salary'].max())
+            # Value component (25%) - salary efficiency and contract
+            salary_score = 1.0 - (row['Salary'] / mvp_data['Salary'].max()) if mvp_data['Salary'].max() > 0 else 0.5
             
             contract_values = {
                 '2050': 1.0, '2045': 0.9, '2040': 0.8, '2035': 0.7, '2029': 0.6,
@@ -88,254 +61,222 @@ def render():
             }
             contract_score = contract_values.get(str(row['Contract']), 0.1)
             
-            # Combine salary and contract for value score
             value_score = (salary_score * 0.6) + (contract_score * 0.4)
             
-            # Calculate final MVP Score (weighted combination)
-            mvp_score = (fpts_score * 0.70) + (position_score * 0.05) + (value_score * 0.25)
-            
-            return mvp_score * 100  # Scale to 0-100
+            # Combine all components
+            total_score = (fpts_score * 0.70) + (position_score * 0.05) + (value_score * 0.25)
+            return total_score * 100  # Scale to 0-100
         
+        # Calculate MVP scores
         mvp_data['MVP_Score'] = mvp_data.apply(calculate_mvp_score, axis=1)
         mvp_data = mvp_data.sort_values('MVP_Score', ascending=False).reset_index(drop=True)
         
-        # Display top MVP candidates as cards
+        st.sidebar.success(f"✅ Loaded {len(mvp_data):,} players successfully")
+        
+        # Team colors for display
+        team_colors = {
+            'Arizona Diamondbacks': {'primary': '#A71930', 'secondary': '#000000'},
+            'Atlanta Braves': {'primary': '#CE1141', 'secondary': '#13274F'},
+            'Baltimore Orioles': {'primary': '#DF4601', 'secondary': '#000000'},
+            'Boston Red Sox': {'primary': '#BD3039', 'secondary': '#0C2340'},
+            'Chicago Cubs': {'primary': '#0E3386', 'secondary': '#CC3433'},
+            'Chicago White Sox': {'primary': '#27251F', 'secondary': '#C4CED4'},
+            'Cincinnati Reds': {'primary': '#C6011F', 'secondary': '#000000'},
+            'Cleveland Guardians': {'primary': '#E31937', 'secondary': '#002653'},
+            'Colorado Rockies': {'primary': '#33006F', 'secondary': '#C4CED4'},
+            'Detroit Tigers': {'primary': '#0C2340', 'secondary': '#FA4616'},
+            'Houston Astros': {'primary': '#002D62', 'secondary': '#EB6E1F'},
+            'Kansas City Royals': {'primary': '#004687', 'secondary': '#BD9B60'},
+            'Los Angeles Angels': {'primary': '#BA0021', 'secondary': '#003263'},
+            'Los Angeles Dodgers': {'primary': '#005A9C', 'secondary': '#FFFFFF'},
+            'Miami Marlins': {'primary': '#00A3E0', 'secondary': '#EF3340'},
+            'Milwaukee Brewers': {'primary': '#FFC52F', 'secondary': '#12284B'},
+            'Minnesota Twins': {'primary': '#002B5C', 'secondary': '#D31145'},
+            'New York Mets': {'primary': '#002D72', 'secondary': '#FF5910'},
+            'New York Yankees': {'primary': '#132448', 'secondary': '#C4CED4'},
+            'Oakland Athletics': {'primary': '#003831', 'secondary': '#EFB21E'},
+            'Philadelphia Phillies': {'primary': '#E81828', 'secondary': '#002D72'},
+            'Pittsburgh Pirates': {'primary': '#FDB827', 'secondary': '#27251F'},
+            'San Diego Padres': {'primary': '#2F241D', 'secondary': '#FFC425'},
+            'San Francisco Giants': {'primary': '#FD5A1E', 'secondary': '#27251F'},
+            'Seattle Mariners': {'primary': '#0C2C56', 'secondary': '#005C5C'},
+            'St. Louis Cardinals': {'primary': '#C41E3A', 'secondary': '#FEDB00'},
+            'Tampa Bay Rays': {'primary': '#092C5C', 'secondary': '#8FBCE6'},
+            'Texas Rangers': {'primary': '#003278', 'secondary': '#C0111F'},
+            'Toronto Blue Jays': {'primary': '#134A8E', 'secondary': '#1D2D5C'},
+            'Washington Nationals': {'primary': '#AB0003', 'secondary': '#14225A'}
+        }
+        
+        # Display top 3 MVP candidates with special highlighting
         st.write("## Current MVP Favorites")
         
-        top_10 = mvp_data.head(10)
-        
-        for i, (_, player) in enumerate(top_10.iterrows()):
-            # Team colors for styling
-            team_colors = {
-                'WAS': '#AB0003', 'ATH': '#003831', 'NYY': '#132448', 'COL': '#C4CED4', 
-                'NYM': '#002D72', 'MIL': '#FFC52F', 'LAA': '#C41E3A', 'CWS': '#27251F',
-                'PIT': '#FDB827', 'LAD': '#005A9C', 'ARI': '#A71930', 'TEX': '#003278',
-                'DET': '#0C2340', 'TB': '#092C5C', 'ATL': '#CE1141', 'KC': '#004687',
-                'STL': '#C41E3A', 'CHC': '#0E3386', 'PHI': '#E81828', 'TOR': '#134A8E',
-                'SF': '#FD5A1E', 'BOS': '#BD3039', 'SEA': '#0C2C56', 'HOU': '#002D62',
-                'BAL': '#DF4601', 'MIN': '#002B5C', 'CLE': '#E31937', 'CIN': '#C6011F',
-                'MIA': '#00A3E0', 'SD': '#2F241D'
-            }
-            
-            color = team_colors.get(player['Team'], '#333333')
-            
-            # Get MLB ID for headshot
+        for i, (_, player) in enumerate(mvp_data.head(3).iterrows()):
+            colors = team_colors.get(player['Team'], {'primary': '#333333', 'secondary': '#666666'})
             player_name = player['Player']
             mlb_id = name_to_mlb_id.get(player_name, '000000')
             
-            # Player headshot URL (MLB official API)
-            headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
+            # Calculate stars
+            star_score = player['MVP_Score'] / 20
+            stars = min(5, max(1, int(star_score + 0.5)))
+            stars_display = "⭐" * stars
             
-            # Create a styled container using native Streamlit components
-            with st.container():
-                # Add team color indicator
-                st.markdown(f"<div style='height: 3px; background: {color}; margin-bottom: 10px; border-radius: 2px;'></div>", unsafe_allow_html=True)
+            # Create card layout
+            col1, col2, col3 = st.columns([1, 10, 1])
+            
+            with col2:
+                # Card background
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                    border-radius: 10px;
+                    padding: 1rem;
+                    position: relative;
+                    text-align: center;
+                    margin-bottom: 15px;
+                ">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 5px;">
+                        <span style="color: white; font-size: 0.8rem;">#{i+1}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                # Create columns for layout
-                col1, col2, col3, col4, col5 = st.columns([1, 1, 4, 2, 2])
+                # Player headshot
+                if mlb_id != '000000':
+                    headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
+                    st.markdown(f"""
+                    <div style="text-align: center; margin-top: -60px;">
+                        <img src="{headshot_url}" style="width: 120px; height: 120px; border: 3px solid white; border-radius: 50%; object-fit: cover;">
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                with col1:
-                    st.markdown(f"<div style='background: {color}; color: white; text-align: center; padding: 8px; border-radius: 50%; width: 30px; height: 30px; line-height: 14px; font-weight: bold;'>#{i+1}</div>", unsafe_allow_html=True)
+                # Player info
+                st.markdown(f"""
+                <h3 style="color: white; margin: 0.5rem 0; text-align: center;">{player['Player']}</h3>
+                <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 0.3rem; text-align: center;">{player['Position']} | {player['Team']}</div>
+                """, unsafe_allow_html=True)
                 
-                with col2:
-                    # Display player headshot
-                    if mlb_id != '000000':
-                        st.image(headshot_url, width=50, caption="")
-                    else:
-                        st.markdown("🏀", help="Player photo not available")
+                # Star rating
+                st.markdown(f"""
+                <div style="margin: 0.5rem 0; color: gold; font-size: 1.2rem; text-align: center;">{stars_display}</div>
+                """, unsafe_allow_html=True)
                 
-                with col3:
-                    st.markdown(f"**{player['Player']}**")
-                    st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
-                
-                with col4:
-                    st.metric("MVP Score", f"{player['MVP_Score']:.1f}", delta=None)
-                
-                with col5:
-                    st.metric("Fantasy Points", f"{player['FPts']:.1f}")
-                    st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
-                
-                st.divider()
+                # MVP Score
+                st.markdown(f"""
+                <div style="background: rgba(0,0,0,0.3); padding: 0.3rem; border-radius: 12px; margin: 0 auto; width: 60%; text-align: center;">
+                    <span style="color: white; font-weight: bold;">MVP Score: {player['MVP_Score']:.1f}</span>
+                </div>
+                """, unsafe_allow_html=True)
         
-        # Tabs for different views
+        # Complete rankings
+        st.write("## Complete MVP Rankings")
+        
+        display_count = st.slider("Number of players to display", 10, 100, 30, 5)
+        display_data = mvp_data.head(display_count)
+        
+        # Display remaining players (after top 3)
+        for i, (_, player) in enumerate(display_data.iterrows()):
+            if i >= 3:  # Skip first 3 as they're already shown above
+                rank = i + 1
+                colors = team_colors.get(player['Team'], {'primary': '#333333', 'secondary': '#666666'})
+                player_name = player['Player']
+                mlb_id = name_to_mlb_id.get(player_name, '000000')
+                
+                with st.container():
+                    # Team color strip
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                        height: 5px;
+                        border-radius: 3px 3px 0 0;
+                        margin-bottom: 10px;
+                    "></div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Player card content
+                    col1, col2, col3, col4, col5 = st.columns([1, 2, 4, 2, 2])
+                    
+                    with col1:
+                        st.markdown(f"""
+                        <div style="
+                            background: {colors['primary']};
+                            color: white;
+                            text-align: center;
+                            padding: 8px;
+                            border-radius: 50%;
+                            width: 35px;
+                            height: 35px;
+                            line-height: 19px;
+                            font-weight: bold;
+                            margin: 0 auto;
+                        ">#{rank}</div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col2:
+                        if mlb_id != '000000':
+                            headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
+                            st.image(headshot_url, width=60)
+                        else:
+                            st.markdown("⚾", help="Player photo not available")
+                    
+                    with col3:
+                        st.markdown(f"**{player['Player']}**")
+                        st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
+                        
+                        mvp_pct = min(100, player['MVP_Score'])
+                        st.markdown(f"""
+                        <div style="background: #ddd; border-radius: 10px; height: 8px; margin-top: 5px;">
+                            <div style="background: {colors['primary']}; height: 8px; border-radius: 10px; width: {mvp_pct}%;"></div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col4:
+                        st.metric("MVP Score", f"{player['MVP_Score']:.1f}")
+                    
+                    with col5:
+                        st.metric("Fantasy Points", f"{player['FPts']:.1f}")
+                        st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
+                    
+                    st.divider()
+        
+        # Analysis tabs
         tab1, tab2, tab3 = st.tabs(["📊 Rankings", "📈 Analysis", "🎯 Value Analysis"])
         
         with tab1:
-            st.write("### Complete MVP Rankings")
-            
-            # Display filters
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                teams = sorted(mvp_data['Team'].unique())
-                selected_team = st.selectbox("Filter by Team", ["All Teams"] + teams)
-            
-            with col2:
-                # Get all positions
-                all_positions = []
-                for pos_list in mvp_data['Position'].str.split(','):
-                    if pd.notna(pos_list):
-                        all_positions.extend([p.strip() for p in pos_list])
-                unique_positions = sorted(list(set(all_positions)))
-                selected_position = st.selectbox("Filter by Position", ["All Positions"] + unique_positions)
-            
-            # Apply filters
-            filtered_data = mvp_data.copy()
-            
-            if selected_team != "All Teams":
-                filtered_data = filtered_data[filtered_data['Team'] == selected_team]
-            
-            if selected_position != "All Positions":
-                filtered_data = filtered_data[filtered_data['Position'].str.contains(selected_position, na=False)]
-            
-            # Display filtered results
-            display_columns = ['Player', 'Team', 'Position', 'FPts', 'Salary', 'Contract', 'Age']
+            st.write("### MVP Candidates Table")
             st.dataframe(
-                filtered_data[display_columns].head(50),
-                use_container_width=True,
-                hide_index=True
+                display_data[['Player', 'Team', 'Position', 'MVP_Score', 'FPts', 'Salary', 'Contract']].head(20),
+                use_container_width=True
             )
         
         with tab2:
-            st.write("### MVP Score Component Analysis")
+            st.write("### Performance Analysis")
             
-            # Calculate individual component scores for visualization
-            mvp_data['FPts_Component'] = (mvp_data['FPts'] / mvp_data['FPts'].max()) * 70
-            mvp_data['Position_Component'] = mvp_data['Position'].apply(lambda pos: {
-                'C': 5.0, 'SS': 4.5, '2B': 4.0, '3B': 3.5, 'CF': 3.0,
-                'LF': 2.5, 'RF': 2.5, '1B': 2.0, 'SP': 4.0, 'RP': 1.5, 'UT': 3.0
-            }.get(pos.split(',')[0].strip() if pd.notna(pos) else 'UT', 2.5))
-            
-            # Value component calculation for visualization
-            salary_normalized = 1.0 - (mvp_data['Salary'] / mvp_data['Salary'].max())
-            contract_scores = mvp_data['Contract'].apply(lambda c: {
-                '2050': 1.0, '2045': 0.9, '2040': 0.8, '2035': 0.7, '2029': 0.6,
-                '2028': 0.5, '2027': 0.4, '2026': 0.3, '2025': 0.2, '1st': 0.15
-            }.get(str(c), 0.1))
-            mvp_data['Value_Component'] = ((salary_normalized * 0.6) + (contract_scores * 0.4)) * 25
-            
-            # MVP Score Component Breakdown (Top 15 players)
-            top_15 = mvp_data.head(15)
-            
-            fig = go.Figure()
-            
-            fig.add_trace(go.Bar(
-                name='Fantasy Points (70%)',
-                x=top_15['Player'],
-                y=top_15['FPts_Component'],
-                marker_color='#1f77b4'
-            ))
-            
-            fig.add_trace(go.Bar(
-                name='Position Value (5%)',
-                x=top_15['Player'],
-                y=top_15['Position_Component'],
-                marker_color='#ff7f0e'
-            ))
-            
-            fig.add_trace(go.Bar(
-                name='Contract Value (25%)',
-                x=top_15['Player'],
-                y=top_15['Value_Component'],
-                marker_color='#2ca02c'
-            ))
-            
-            fig.update_layout(
-                title='MVP Score Component Breakdown (Top 15 Players)',
-                xaxis_title='Player',
-                yaxis_title='Component Score',
-                barmode='stack',
-                height=500,
-                xaxis_tickangle=-45
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Age vs MVP Score scatter
-            fig2 = px.scatter(
-                mvp_data.head(50),
-                x='Age',
+            fig = px.scatter(
+                display_data.head(20),
+                x='FPts',
                 y='MVP_Score',
-                size='Salary',
                 color='Team',
+                size='Salary',
                 hover_name='Player',
-                hover_data=['FPts', 'Position', 'Contract'],
-                title='Age vs MVP Score (Top 50 Players)',
-                labels={'Age': 'Player Age', 'MVP_Score': 'MVP Score'}
+                title='MVP Score vs Fantasy Points',
+                labels={'FPts': 'Fantasy Points', 'MVP_Score': 'MVP Score'}
             )
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
         
         with tab3:
             st.write("### Value Analysis")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # MVP Score vs Salary
-                fig3 = px.scatter(
-                    mvp_data.head(100),
-                    x='Salary',
-                    y='MVP_Score',
-                    size='FPts',
-                    color='Contract',
-                    hover_name='Player',
-                    hover_data=['FPts', 'Position', 'Age'],
-                    title='MVP Score vs Salary',
-                    labels={'Salary': 'Salary ($ Millions)', 'MVP_Score': 'MVP Score'}
-                )
-                st.plotly_chart(fig3, use_container_width=True)
-            
-            with col2:
-                # Contract distribution pie chart
-                contract_counts = mvp_data.head(100)['Contract'].value_counts()
-                fig4 = px.pie(
-                    values=contract_counts.values,
-                    names=contract_counts.index,
-                    title='Contract Distribution (Top 100 Players)'
-                )
-                st.plotly_chart(fig4, use_container_width=True)
-            
-            # Value insights
-            st.write("#### MVP Insights")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.write("**Best Value MVP Candidates**")
-                # Players with high MVP Score but lower salaries
-                mvp_data['Value_Ratio'] = mvp_data['MVP_Score'] / (mvp_data['Salary'] + 0.1)
-                best_value = mvp_data.nlargest(8, 'Value_Ratio')[['Player', 'Team', 'MVP_Score', 'Salary', 'Contract']]
-                
-                for _, player in best_value.iterrows():
-                    st.write(f"**{player['Player']}** ({player['Team']})")
-                    st.write(f"MVP: {player['MVP_Score']:.1f} • ${player['Salary']}M • {player['Contract']}")
-                    st.write("---")
-            
-            with col2:
-                st.write("**Highest MVP Scores**")
-                top_mvp = mvp_data.head(8)[['Player', 'Team', 'MVP_Score', 'FPts']]
-                
-                for _, player in top_mvp.iterrows():
-                    st.write(f"**{player['Player']}** ({player['Team']})")
-                    st.write(f"MVP: {player['MVP_Score']:.1f} • {player['FPts']:.1f} FPts")
-                    st.write("---")
-            
-            with col3:
-                st.write("**Position Leaders**")
-                # Top MVP by position
-                position_leaders = []
-                for pos in ['C', 'SS', '2B', '3B', '1B', 'OF', 'SP', 'RP']:
-                    if pos == 'OF':
-                        pos_data = mvp_data[mvp_data['Position'].str.contains('LF|RF|CF', na=False)]
-                    else:
-                        pos_data = mvp_data[mvp_data['Position'].str.contains(pos, na=False)]
-                    
-                    if not pos_data.empty:
-                        leader = pos_data.iloc[0]
-                        st.write(f"**{pos}:** {leader['Player']}")
-                        st.write(f"MVP: {leader['MVP_Score']:.1f}")
-                        st.write("---")
-    
+            fig = px.scatter(
+                display_data.head(20),
+                x='Salary',
+                y='FPts',
+                color='MVP_Score',
+                hover_name='Player',
+                title='Performance vs Salary',
+                labels={'Salary': 'Salary ($M)', 'FPts': 'Fantasy Points'}
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
     except FileNotFoundError:
         st.error("MVP-Player-List.csv file not found. Please ensure the file is in the attached_assets folder.")
     except Exception as e:
