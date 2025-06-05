@@ -360,7 +360,9 @@ def render():
                         # Show what winner received
                         st.write("**Received:**")
                         received_items = [item for item in trade['trade_details'][winner] if item['direction'] == 'received']
+                        winner_received_total = 0
                         for item in received_items:
+                            winner_received_total += item['value']
                             if "Draft Pick" in item['item']:
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts")
                             elif "Budget Amount" in item['item']:
@@ -373,6 +375,27 @@ def render():
                                 parts = [p for p in [mvp_part, prospect_part] if p]
                                 detail = f" ({', '.join(parts)})" if parts else ""
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
+                        
+                        # Show what winner gave up
+                        st.write("**Gave Up:**")
+                        gave_items = [item for item in trade['trade_details'][winner] if item['direction'] == 'gave']
+                        winner_gave_total = 0
+                        for item in gave_items:
+                            winner_gave_total += item['value']
+                            if "Draft Pick" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            elif "Budget Amount" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            else:
+                                # Show player breakdown
+                                breakdown = get_player_value_breakdown(item['item'])
+                                mvp_part = f"MVP: {breakdown['mvp_value']:.1f}" if breakdown['mvp_value'] > 0 else ""
+                                prospect_part = f"Prospect: {breakdown['prospect_value']:.1f}" if breakdown['prospect_value'] > 0 else ""
+                                parts = [p for p in [mvp_part, prospect_part] if p]
+                                detail = f" ({', '.join(parts)})" if parts else ""
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
+                        
+                        st.write(f"**Net Value: +{winner_received_total - winner_gave_total:.1f} pts**")
                     
                     with col2:
                         st.markdown("<div style='text-align: center; padding-top: 3rem; font-size: 2rem;'>⚖️</div>", unsafe_allow_html=True)
@@ -393,10 +416,12 @@ def render():
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Show what loser gave up
-                        st.write("**Gave Up:**")
-                        gave_items = [item for item in trade['trade_details'][loser] if item['direction'] == 'gave']
-                        for item in gave_items:
+                        # Show what loser received
+                        st.write("**Received:**")
+                        loser_received_items = [item for item in trade['trade_details'][loser] if item['direction'] == 'received']
+                        loser_received_total = 0
+                        for item in loser_received_items:
+                            loser_received_total += item['value']
                             if "Draft Pick" in item['item']:
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts")
                             elif "Budget Amount" in item['item']:
@@ -409,6 +434,27 @@ def render():
                                 parts = [p for p in [mvp_part, prospect_part] if p]
                                 detail = f" ({', '.join(parts)})" if parts else ""
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
+                        
+                        # Show what loser gave up
+                        st.write("**Gave Up:**")
+                        gave_items = [item for item in trade['trade_details'][loser] if item['direction'] == 'gave']
+                        loser_gave_total = 0
+                        for item in gave_items:
+                            loser_gave_total += item['value']
+                            if "Draft Pick" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            elif "Budget Amount" in item['item']:
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts")
+                            else:
+                                # Show player breakdown
+                                breakdown = get_player_value_breakdown(item['item'])
+                                mvp_part = f"MVP: {breakdown['mvp_value']:.1f}" if breakdown['mvp_value'] > 0 else ""
+                                prospect_part = f"Prospect: {breakdown['prospect_value']:.1f}" if breakdown['prospect_value'] > 0 else ""
+                                parts = [p for p in [mvp_part, prospect_part] if p]
+                                detail = f" ({', '.join(parts)})" if parts else ""
+                                st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
+                        
+                        st.write(f"**Net Value: {loser_received_total - loser_gave_total:.1f} pts**")
                     
                     # Summary
                     st.markdown(f"""
