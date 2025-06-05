@@ -11,9 +11,6 @@ import html
 # Import team colors and IDs from prospects.py
 from components.prospects import MLB_TEAM_COLORS, MLB_TEAM_IDS
 
-# Import API client
-from api_client import FantraxAPI
-
 # Load division data
 def load_division_data() -> Dict[str, str]:
     """
@@ -323,119 +320,9 @@ def load_team_records() -> Dict[str, Dict[str, int]]:
         print(f"Error loading team records: {e}")
         return {}
         
-def calculate_hot_cold_modifier(team_name: str, current_week: int = 10) -> tuple:
+def calculate_hot_cold_modifier(team_name: str) -> tuple:
     """
-    Calculate hot/cold modifier based on recent team record from Fantrax API standings.
-    Uses the last 3 completed weeks of data.
-    
-    Args:
-        team_name: Name of the team
-        current_week: Current week number (default 10)
-        
-    Returns:
-        tuple: (modifier value, emoji, win percentage)
-    """
-    try:
-        # Initialize Fantrax API
-        api = FantraxAPI()
-        
-        # Get current standings data
-        standings_data = api.get_standings()
-        
-        if not standings_data:
-            st.sidebar.warning("No standings data received from API")
-            return calculate_hot_cold_modifier_csv(team_name)
-        
-        # Debug: Show the actual API response structure
-        st.sidebar.write("DEBUG: API Response Type:", type(standings_data))
-        if isinstance(standings_data, list) and len(standings_data) > 0:
-            st.sidebar.write("DEBUG: First team data:", standings_data[0])
-        elif isinstance(standings_data, dict):
-            st.sidebar.write("DEBUG: Response keys:", list(standings_data.keys()))
-        
-        # Find the team in current standings
-        team_record = None
-        for team_data in standings_data:
-            if isinstance(team_data, dict):
-                # Check various possible team name fields
-                team_field_names = ['name', 'team_name', 'teamName', 'team', 'Team']
-                for field in team_field_names:
-                    if field in team_data and team_data[field] == team_name:
-                        team_record = team_data
-                        break
-                if team_record:
-                    break
-        
-        if not team_record:
-            st.sidebar.warning(f"Team '{team_name}' not found in standings data")
-            return calculate_hot_cold_modifier_csv(team_name)
-        
-        # Extract wins and losses from the team record
-        # Try different possible field names for wins/losses
-        wins_fields = ['wins', 'W', 'w', 'Wins']
-        losses_fields = ['losses', 'L', 'l', 'Losses']
-        
-        total_wins = 0
-        total_losses = 0
-        
-        for field in wins_fields:
-            if field in team_record:
-                total_wins = int(team_record[field])
-                break
-                
-        for field in losses_fields:
-            if field in team_record:
-                total_losses = int(team_record[field])
-                break
-        
-        # Calculate recent performance based on available data
-        # Since we can't get historical weekly data easily, we'll use a portion of total record
-        # as an approximation of recent performance (last 30% of games)
-        total_games = total_wins + total_losses
-        if total_games == 0:
-            return 1.0, "⚖️", 0.0
-        
-        # Use last 30% of games as "recent" performance approximation
-        recent_games = max(3, int(total_games * 0.3))  # At least 3 games
-        
-        # Calculate overall win percentage
-        overall_win_pct = total_wins / total_games
-        
-        # Add some variance for "recent" performance simulation
-        # This is a simplified approach since we don't have weekly historical data
-        import random
-        random.seed(hash(team_name))  # Consistent seed for each team
-        recent_variance = random.uniform(-0.1, 0.1)  # +/- 10% variance
-        recent_win_pct = max(0.0, min(1.0, overall_win_pct + recent_variance))
-        
-        # Assign modifier on a scale from 1.0 to 1.5
-        modifier = 1.0 + (0.5 * recent_win_pct)
-        
-        # Determine emoji based on win percentage
-        if recent_win_pct >= 0.8:
-            emoji = "🔥"  # Fire/hot for win percentage 80%+
-        elif recent_win_pct >= 0.6:
-            emoji = "🔆"  # Warm for win percentage 60-79%
-        elif recent_win_pct <= 0.2:
-            emoji = "❄️"  # Very cold for win percentage below 20%
-        elif recent_win_pct <= 0.4:
-            emoji = "🧊"  # Cold for win percentage 20-40%
-        else:
-            emoji = "⚖️"  # Balanced/neutral for win percentage 41-59%
-        
-        st.sidebar.info(f"Hot/Cold for {team_name}: {total_wins}-{total_losses} overall (recent trend: {recent_win_pct:.1%})")
-        
-        return modifier, emoji, recent_win_pct
-        
-    except Exception as e:
-        st.sidebar.error(f"Error calculating hot/cold modifier via API: {str(e)}")
-        # Fallback to CSV-based calculation
-        return calculate_hot_cold_modifier_csv(team_name)
-
-def calculate_hot_cold_modifier_csv(team_name: str) -> tuple:
-    """
-    Fallback function to calculate hot/cold modifier based on team_records.csv.
-    Used when API is unavailable.
+    Calculate hot/cold modifier based on recent team record from team_records.csv.
     
     Args:
         team_name: Name of the team
