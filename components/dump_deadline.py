@@ -45,7 +45,7 @@ def render():
             # Fantasy Points per Game component (30% weight) - health/consistency factor
             fpg_score = min(1.0, fpg / max_fpg) if max_fpg > 0 else 0
             
-            # Position value component (10% weight) - scarcity-based
+            # Position value component (5% weight) - scarcity-based (reduced from 10%)
             position_values = {
                 'C': 1.0,      # Catcher - most scarce
                 'SS': 0.9,     # Shortstop
@@ -77,16 +77,16 @@ def render():
             # Age factor (10% weight) - younger players more valuable (increased from 5%)
             age_score = max(0, (35 - age) / 15) if age <= 35 else 0
             
-            # Salary efficiency (10% weight) - lower salary relative to performance is better (increased from 5%)
+            # Salary efficiency (10% weight) - lower salary relative to performance is better
             salary_efficiency = 1.0 - (salary / max_salary) if max_salary > 0 else 0.5
             
             # Combine all components
             total_score = (
                 fpts_score * 0.40 +      # Fantasy points
-                fpg_score * 0.30 +       # Points per game (increased from 25%)
-                pos_score * 0.10 +       # Position value
-                contract_score * 0.10 +  # Contract value (reduced from 15%)
-                age_score * 0.05 +       # Age factor
+                fpg_score * 0.30 +       # Points per game
+                pos_score * 0.05 +       # Position value (reduced from 10%)
+                contract_score * 0.10 +  # Contract value
+                age_score * 0.10 +       # Age factor (increased from 5%)
                 salary_efficiency * 0.05 # Salary efficiency
             )
             
