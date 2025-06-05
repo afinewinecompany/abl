@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import base64
 from PIL import Image
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, mvp_race_new as mvp_race
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, mvp_race_new as mvp_race, dump_deadline
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import (
     fetch_api_data, 
@@ -848,11 +848,12 @@ def main():
                 st.session_state.weekly_results = []
             
             # Create tabs for different sections
-            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
                 "🏠 League Info",
                 "👥 Team Rosters",
                 "🏆 Power Rankings",
                 "🌟 MVP Race",
+                "🔥 Dump Deadline",
                 "📚 Handbook", 
                 "🏆 DDI Rankings"
             ])
@@ -879,9 +880,12 @@ def main():
                 mvp_race.render()
 
             with tab5:
-                prospects.render(data['roster_data'])
+                dump_deadline.render()
 
             with tab6:
+                prospects.render(data['roster_data'])
+
+            with tab7:
                 # Get the power rankings data from the power_rankings component
                 if 'power_rankings_calculated' in st.session_state and st.session_state.power_rankings_calculated is not None:
                     # Use the calculated power rankings
