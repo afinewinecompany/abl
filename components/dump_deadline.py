@@ -169,18 +169,46 @@ def render():
             """Get combined value of a player from MVP and prospect rankings"""
             mvp_val = mvp_values.get(player_name, 0)
             prospect_val = prospect_values.get(player_name, 0)
+            
+            # Rule: If player has both MVP and prospect scores, but zero FPts, ignore MVP score
+            if mvp_val > 0 and prospect_val > 0:
+                # Check if player has zero fantasy points in MVP data
+                player_row = mvp_data[mvp_data['Player'] == player_name]
+                if not player_row.empty:
+                    fpts = pd.to_numeric(player_row.iloc[0].get('FPts', 0), errors='coerce')
+                    if fpts == 0:
+                        # Player has no MLB production, use only prospect value
+                        return prospect_val
+            
             return mvp_val + prospect_val
         
         def get_player_value_breakdown(player_name):
             """Get detailed breakdown of player value"""
             mvp_val = mvp_values.get(player_name, 0)
             prospect_val = prospect_values.get(player_name, 0)
-            total_val = mvp_val + prospect_val
             
-            # Get additional details for MVP players
+            # Apply the same zero FPts rule as get_player_value
+            effective_mvp_val = mvp_val
             mvp_details = ""
-            if player_name in mvp_values and mvp_val > 0:
-                # Find the player in MVP data for details
+            zero_fpts_override = False
+            
+            if mvp_val > 0 and prospect_val > 0:
+                # Check if player has zero fantasy points in MVP data
+                player_row = mvp_data[mvp_data['Player'] == player_name]
+                if not player_row.empty:
+                    row = player_row.iloc[0]
+                    fpts = pd.to_numeric(row.get('FPts', 0), errors='coerce')
+                    fpg = pd.to_numeric(row.get('FP/G', 0), errors='coerce')
+                    
+                    if fpts == 0:
+                        # Player has no MLB production, ignore MVP value
+                        effective_mvp_val = 0
+                        zero_fpts_override = True
+                        mvp_details = "No MLB FPts - using prospect value only"
+                    else:
+                        mvp_details = f"FPts: {fpts:.1f}, FP/G: {fpg:.1f}"
+            elif player_name in mvp_values and mvp_val > 0:
+                # Get details for MVP-only players
                 player_row = mvp_data[mvp_data['Player'] == player_name]
                 if not player_row.empty:
                     row = player_row.iloc[0]
@@ -188,11 +216,23 @@ def render():
                     fpg = pd.to_numeric(row.get('FP/G', 0), errors='coerce')
                     mvp_details = f"FPts: {fpts:.1f}, FP/G: {fpg:.1f}"
             
+            total_val = effective_mvp_val + prospect_val
+            
+            # Determine primary source
+            if zero_fpts_override:
+                source = 'Prospect (MLB inactive)'
+            elif effective_mvp_val > prospect_val:
+                source = 'MLB'
+            elif prospect_val > 0:
+                source = 'Prospect'
+            else:
+                source = 'Unknown'
+            
             return {
-                'mvp_value': mvp_val,
+                'mvp_value': effective_mvp_val,
                 'prospect_value': prospect_val,
                 'total_value': total_val,
-                'source': 'MLB' if mvp_val > prospect_val else 'Prospect' if prospect_val > 0 else 'Unknown',
+                'source': source,
                 'details': mvp_details
             }
         
