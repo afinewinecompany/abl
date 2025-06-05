@@ -569,6 +569,24 @@ def render():
     except Exception as e:
         st.warning(f"Could not load MLB player IDs: {str(e)}")
     
+    # Load additional player ID mapping for better headshot matching
+    name_to_mlb_id = {}
+    try:
+        id_map = pd.read_csv("attached_assets/PLAYERIDMAP.csv")
+        for _, row in id_map.iterrows():
+            if pd.notna(row.get('MLBID')):
+                names_to_try = [
+                    row.get('PLAYERNAME', ''),
+                    row.get('MLBNAME', ''),
+                    row.get('FANTRAXNAME', ''),
+                    row.get('FANGRAPHSNAME', '')
+                ]
+                for name in names_to_try:
+                    if pd.notna(name) and name.strip():
+                        name_to_mlb_id[name.strip()] = str(row['MLBID'])
+    except Exception:
+        pass
+    
     # Load the MVP player list
     try:
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
