@@ -106,10 +106,23 @@ def render():
             prospect_values = {}
             for _, row in prospect_data.iterrows():
                 if pd.notna(row.get('Name')):
-                    # Use the actual prospect score (multiply by 4 to scale appropriately - prospects are future value with high uncertainty)
+                    player_name = row['Name']
                     prospect_score = pd.to_numeric(row.get('Score', 0), errors='coerce')
                     if pd.notna(prospect_score):
-                        prospect_values[row['Name']] = prospect_score * 4  # Scale to 0-40 range
+                        # Check if player also appears in MVP data with actual fantasy points
+                        base_multiplier = 4  # Default 0-40 range
+                        
+                        if player_name in mvp_values:
+                            # Player is in both lists - check if they have MLB production
+                            player_mvp_row = mvp_data[mvp_data['Player'] == player_name]
+                            if not player_mvp_row.empty:
+                                fpts = pd.to_numeric(player_mvp_row.iloc[0].get('FPts', 0), errors='coerce')
+                                if fpts > 0:
+                                    # Player has MLB production - significantly reduce prospect score
+                                    # Focus more on MLB performance than prospect grade
+                                    base_multiplier = 1.5  # Reduce to 0-15 range for players with MLB performance
+                        
+                        prospect_values[player_name] = prospect_score * base_multiplier
         except:
             prospect_values = {}
             st.warning("Could not load prospect data for enhanced valuations")
@@ -187,13 +200,14 @@ def render():
             mvp_val = mvp_values.get(player_name, 0)
             prospect_val = prospect_values.get(player_name, 0)
             
-            # Apply the same zero FPts rule as get_player_value
+            # Apply the same logic as get_player_value
             effective_mvp_val = mvp_val
             mvp_details = ""
             zero_fpts_override = False
+            reduced_prospect_override = False
             
             if mvp_val > 0 and prospect_val > 0:
-                # Check if player has zero fantasy points in MVP data
+                # Check if player has fantasy points in MVP data
                 player_row = mvp_data[mvp_data['Player'] == player_name]
                 if not player_row.empty:
                     row = player_row.iloc[0]
@@ -206,7 +220,9 @@ def render():
                         zero_fpts_override = True
                         mvp_details = "No MLB FPts - using prospect value only"
                     else:
-                        mvp_details = f"FPts: {fpts:.1f}, FP/G: {fpg:.1f}"
+                        # Player has MLB production - prospect score was reduced
+                        reduced_prospect_override = True
+                        mvp_details = f"FPts: {fpts:.1f}, FP/G: {fpg:.1f} (prospect score reduced)"
             elif player_name in mvp_values and mvp_val > 0:
                 # Get details for MVP-only players
                 player_row = mvp_data[mvp_data['Player'] == player_name]
