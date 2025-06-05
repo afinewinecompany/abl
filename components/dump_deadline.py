@@ -100,16 +100,45 @@ def render():
             if player_name:
                 mvp_raw_values[player_name] = calculate_comprehensive_player_value(row)
         
-        # Apply exponential scaling to MVP values to emphasize elite players
+        # Apply scaling to MVP values to emphasize elite players
+        # Available distribution types:
+        # 1. Linear (no scaling): y = x
+        # 2. Exponential: y = x^n (current: 1.6)
+        # 3. Logarithmic: y = log(1 + x * (e-1))
+        # 4. Square root: y = sqrt(x)
+        # 5. Sigmoid: y = 1 / (1 + e^(-k*(x-0.5)))
+        # 6. Quadratic: y = x^2
+        # 7. Cubic: y = x^3
+        
+        distribution_type = "exponential"  # Change this to test different distributions
+        
         mvp_values = {}
         if mvp_raw_values:
             max_value = max(mvp_raw_values.values())
+            import math
+            
             for player_name, raw_value in mvp_raw_values.items():
-                # Normalize to 0-1, apply exponential scaling, then scale back
                 normalized = raw_value / max_value if max_value > 0 else 0
-                # Use exponential function (x^1.6) to emphasize top players
-                exponential_scaled = normalized ** 1.6
-                mvp_values[player_name] = exponential_scaled * max_value
+                
+                if distribution_type == "linear":
+                    scaled = normalized
+                elif distribution_type == "exponential":
+                    scaled = normalized ** 1.6
+                elif distribution_type == "logarithmic":
+                    scaled = math.log(1 + normalized * (math.e - 1)) / math.log(math.e)
+                elif distribution_type == "square_root":
+                    scaled = math.sqrt(normalized)
+                elif distribution_type == "sigmoid":
+                    k = 5  # Steepness parameter
+                    scaled = 1 / (1 + math.exp(-k * (normalized - 0.5)))
+                elif distribution_type == "quadratic":
+                    scaled = normalized ** 2
+                elif distribution_type == "cubic":
+                    scaled = normalized ** 3
+                else:
+                    scaled = normalized  # Default to linear
+                
+                mvp_values[player_name] = scaled * max_value
         
         # Load prospect data for additional player values
         try:
