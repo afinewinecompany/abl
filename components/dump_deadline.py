@@ -106,10 +106,10 @@ def render():
             prospect_values = {}
             for _, row in prospect_data.iterrows():
                 if pd.notna(row.get('Name')):
-                    # Use the actual prospect score (multiply by 3 to scale appropriately - prospects are future value with high uncertainty)
+                    # Use the actual prospect score (multiply by 4 to scale appropriately - prospects are future value with high uncertainty)
                     prospect_score = pd.to_numeric(row.get('Score', 0), errors='coerce')
                     if pd.notna(prospect_score):
-                        prospect_values[row['Name']] = prospect_score * 3  # Scale to 0-30 range (further reduced weighting)
+                        prospect_values[row['Name']] = prospect_score * 4  # Scale to 0-40 range
         except:
             prospect_values = {}
             st.warning("Could not load prospect data for enhanced valuations")
