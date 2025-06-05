@@ -107,8 +107,8 @@ def render():
             for player_name, raw_value in mvp_raw_values.items():
                 # Normalize to 0-1, apply exponential scaling, then scale back
                 normalized = raw_value / max_value if max_value > 0 else 0
-                # Use exponential function (x^2.5) to emphasize top players
-                exponential_scaled = normalized ** 2.5
+                # Use exponential function (x^1.5) to moderately emphasize top players
+                exponential_scaled = normalized ** 1.5
                 mvp_values[player_name] = exponential_scaled * max_value
         
         # Load prospect data for additional player values
