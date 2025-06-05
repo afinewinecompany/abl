@@ -346,6 +346,13 @@ def calculate_hot_cold_modifier(team_name: str, current_week: int = 10) -> tuple
             st.sidebar.warning("No standings data received from API")
             return calculate_hot_cold_modifier_csv(team_name)
         
+        # Debug: Show the actual API response structure
+        st.sidebar.write("DEBUG: API Response Type:", type(standings_data))
+        if isinstance(standings_data, list) and len(standings_data) > 0:
+            st.sidebar.write("DEBUG: First team data:", standings_data[0])
+        elif isinstance(standings_data, dict):
+            st.sidebar.write("DEBUG: Response keys:", list(standings_data.keys()))
+        
         # Find the team in current standings
         team_record = None
         for team_data in standings_data:
