@@ -27,13 +27,19 @@ def render():
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
         
         # Data validation and cleaning
-        mvp_data['Age'] = pd.to_numeric(mvp_data['Age'], errors='coerce')
-        mvp_data['Salary'] = pd.to_numeric(mvp_data['Salary'], errors='coerce')
-        mvp_data['FPts'] = pd.to_numeric(mvp_data['FPts'], errors='coerce')
-        mvp_data['FP/G'] = pd.to_numeric(mvp_data['FP/G'], errors='coerce')
+        mvp_data['Age'] = pd.to_numeric(mvp_data['Age'], errors='coerce').fillna(25)
+        mvp_data['Salary'] = pd.to_numeric(mvp_data['Salary'], errors='coerce').fillna(1.0)
+        mvp_data['FPts'] = pd.to_numeric(mvp_data['FPts'], errors='coerce').fillna(0)
+        mvp_data['FP/G'] = pd.to_numeric(mvp_data['FP/G'], errors='coerce').fillna(0)
+        
+        # Clean string fields
+        mvp_data['Player'] = mvp_data['Player'].fillna('Unknown Player')
+        mvp_data['Team'] = mvp_data['Team'].fillna('FA')
+        mvp_data['Position'] = mvp_data['Position'].fillna('UT')
+        mvp_data['Contract'] = mvp_data['Contract'].fillna('1st')
         
         # Remove rows with missing critical data
-        mvp_data = mvp_data.dropna(subset=['Player', 'FPts'])
+        mvp_data = mvp_data.dropna(subset=['Player'])
         
         st.success(f"✅ Loaded {len(mvp_data):,} players successfully")
         
@@ -78,62 +84,25 @@ def render():
         top_10 = mvp_data.head(10)
         
         for i, (_, player) in enumerate(top_10.iterrows()):
-            # Create player card with team colors
-            team_colors = {
-                'WAS': ('#AB0003', '#14225A'), 'ATH': ('#003831', '#EFB21E'), 'NYY': ('#132448', '#C4CED4'),
-                'COL': ('#C4CED4', '#333366'), 'NYM': ('#002D72', '#FF5910'), 'MIL': ('#FFC52F', '#12284B'),
-                'LAA': ('#C41E3A', '#003263'), 'CWS': ('#27251F', '#C4CED4'), 'PIT': ('#FDB827', '#27251F'),
-                'LAD': ('#005A9C', '#EF3E42'), 'ARI': ('#A71930', '#E3D4A1'), 'TEX': ('#003278', '#C0111F'),
-                'DET': ('#0C2340', '#FA4616'), 'TB': ('#092C5C', '#8FBCE6'), 'ATL': ('#CE1141', '#13274F'),
-                'KC': ('#004687', '#BD9B60'), 'STL': ('#C41E3A', '#FEDB00'), 'CHC': ('#0E3386', '#CC3433'),
-                'PHI': ('#E81828', '#002D72'), 'TOR': ('#134A8E', '#1D2D5C'), 'SF': ('#FD5A1E', '#27251F'),
-                'BOS': ('#BD3039', '#0C2340'), 'SEA': ('#0C2C56', '#005C5C'), 'HOU': ('#002D62', '#EB6E1F'),
-                'BAL': ('#DF4601', '#000000'), 'MIN': ('#002B5C', '#D31145'), 'CLE': ('#E31937', '#002B5C'),
-                'CIN': ('#C6011F', '#000000'), 'MIA': ('#00A3E0', '#EF3340'), 'SD': ('#2F241D', '#FFC425')
-            }
-            
-            colors = team_colors.get(player['Team'], ('#333333', '#666666'))
-            
             with st.container():
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(135deg, {colors[0]} 0%, {colors[1]} 100%);
-                    border-radius: 15px;
-                    padding: 20px;
-                    margin: 10px 0;
-                    color: white;
-                    position: relative;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                ">
-                    <div style="position: absolute; top: 15px; right: 20px; 
-                                background: rgba(255,255,255,0.2); padding: 8px 12px; 
-                                border-radius: 20px; font-weight: bold;">
-                        #{i+1}
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <h2 style="margin: 0; font-size: 1.8em;">{player['Player']}</h2>
-                        <p style="margin: 5px 0; opacity: 0.9; font-size: 1.1em;">
-                            {player['Position']} | {player['Team']} | Age {player['Age']}
-                        </p>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 0.9em; opacity: 0.8;">MVP Score</div>
-                            <div style="font-size: 2em; font-weight: bold;">{player['MVP_Score']:.1f}</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 0.9em; opacity: 0.8;">Fantasy Points</div>
-                            <div style="font-size: 1.5em; font-weight: bold;">{player['FPts']:.1f}</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 0.9em; opacity: 0.8;">Salary / Contract</div>
-                            <div style="font-size: 1.2em; font-weight: bold;">${player['Salary']}M / {player['Contract']}</div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Create columns for the card layout
+                col1, col2, col3, col4 = st.columns([1, 4, 2, 2])
+                
+                with col1:
+                    st.markdown(f"### #{i+1}")
+                
+                with col2:
+                    st.markdown(f"**{player['Player']}**")
+                    st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
+                
+                with col3:
+                    st.metric("MVP Score", f"{player['MVP_Score']:.1f}")
+                
+                with col4:
+                    st.metric("Fantasy Points", f"{player['FPts']:.1f}")
+                    st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
+                
+                st.divider()
         
         # Tabs for different views
         tab1, tab2, tab3 = st.tabs(["📊 Rankings", "📈 Analysis", "🎯 Value Analysis"])
