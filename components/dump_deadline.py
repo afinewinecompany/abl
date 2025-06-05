@@ -39,10 +39,10 @@ def render():
             max_fpg = mvp_data['FP/G'].max() if 'FP/G' in mvp_data.columns else 25
             max_salary = mvp_data['Salary'].max() if 'Salary' in mvp_data.columns else 70
             
-            # Fantasy Points component (40% weight) - primary performance metric
+            # Fantasy Points component (45% weight) - primary performance metric
             fpts_score = min(1.0, fpts / max_fpts) if max_fpts > 0 else 0
             
-            # Fantasy Points per Game component (30% weight) - health/consistency factor
+            # Fantasy Points per Game component (25% weight) - health/consistency factor
             fpg_score = min(1.0, fpg / max_fpg) if max_fpg > 0 else 0
             
             # Position value component (5% weight) - scarcity-based (reduced from 10%)
@@ -82,11 +82,11 @@ def render():
             
             # Combine all components
             total_score = (
-                fpts_score * 0.40 +      # Fantasy points
-                fpg_score * 0.30 +       # Points per game
-                pos_score * 0.05 +       # Position value (reduced from 10%)
+                fpts_score * 0.45 +      # Fantasy points (increased from 40%)
+                fpg_score * 0.25 +       # Points per game (reduced from 30%)
+                pos_score * 0.05 +       # Position value
                 contract_score * 0.10 +  # Contract value
-                age_score * 0.10 +       # Age factor (increased from 5%)
+                age_score * 0.10 +       # Age factor
                 salary_efficiency * 0.05 # Salary efficiency
             )
             
@@ -107,8 +107,8 @@ def render():
             for player_name, raw_value in mvp_raw_values.items():
                 # Normalize to 0-1, apply exponential scaling, then scale back
                 normalized = raw_value / max_value if max_value > 0 else 0
-                # Use exponential function (x^1.5) to moderately emphasize top players
-                exponential_scaled = normalized ** 1.5
+                # Use exponential function (x^1.75) to emphasize top players
+                exponential_scaled = normalized ** 1.75
                 mvp_values[player_name] = exponential_scaled * max_value
         
         # Load prospect data for additional player values
