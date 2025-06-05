@@ -110,7 +110,7 @@ def render():
         # 6. Quadratic: y = x^2
         # 7. Cubic: y = x^3
         
-        distribution_type = "exponential"  # Change this to test different distributions
+        distribution_type = "quadratic"  # Change this to test different distributions
         
         mvp_values = {}
         if mvp_raw_values:
