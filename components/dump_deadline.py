@@ -42,7 +42,7 @@ def render():
             # Fantasy Points component (40% weight) - primary performance metric
             fpts_score = min(1.0, fpts / max_fpts) if max_fpts > 0 else 0
             
-            # Fantasy Points per Game component (25% weight) - health/consistency factor
+            # Fantasy Points per Game component (30% weight) - health/consistency factor
             fpg_score = min(1.0, fpg / max_fpg) if max_fpg > 0 else 0
             
             # Position value component (10% weight) - scarcity-based
@@ -66,7 +66,7 @@ def render():
                 if pos_clean in position_values:
                     pos_score = max(pos_score, position_values[pos_clean])
             
-            # Contract value component (15% weight) - longer contracts more valuable for young players
+            # Contract value component (10% weight) - longer contracts more valuable for young players
             contract_values = {
                 '2050': 1.0, '2045': 0.95, '2040': 0.9, '2035': 0.85, 
                 '2029': 0.8, '2028': 0.7, '2027': 0.6, '2026': 0.5, 
@@ -74,18 +74,18 @@ def render():
             }
             contract_score = contract_values.get(contract, 0.1)
             
-            # Age factor (5% weight) - younger players more valuable
+            # Age factor (10% weight) - younger players more valuable (increased from 5%)
             age_score = max(0, (35 - age) / 15) if age <= 35 else 0
             
-            # Salary efficiency (5% weight) - lower salary relative to performance is better
+            # Salary efficiency (10% weight) - lower salary relative to performance is better (increased from 5%)
             salary_efficiency = 1.0 - (salary / max_salary) if max_salary > 0 else 0.5
             
             # Combine all components
             total_score = (
                 fpts_score * 0.40 +      # Fantasy points
-                fpg_score * 0.25 +       # Points per game
+                fpg_score * 0.30 +       # Points per game (increased from 25%)
                 pos_score * 0.10 +       # Position value
-                contract_score * 0.15 +  # Contract value
+                contract_score * 0.10 +  # Contract value (reduced from 15%)
                 age_score * 0.05 +       # Age factor
                 salary_efficiency * 0.05 # Salary efficiency
             )
@@ -106,10 +106,10 @@ def render():
             prospect_values = {}
             for _, row in prospect_data.iterrows():
                 if pd.notna(row.get('Name')):
-                    # Use the actual prospect score (multiply by 5 to scale appropriately - prospects are future value)
+                    # Use the actual prospect score (multiply by 3 to scale appropriately - prospects are future value with high uncertainty)
                     prospect_score = pd.to_numeric(row.get('Score', 0), errors='coerce')
                     if pd.notna(prospect_score):
-                        prospect_values[row['Name']] = prospect_score * 5  # Scale to 0-50 range (reduced weighting)
+                        prospect_values[row['Name']] = prospect_score * 3  # Scale to 0-30 range (further reduced weighting)
         except:
             prospect_values = {}
             st.warning("Could not load prospect data for enhanced valuations")
