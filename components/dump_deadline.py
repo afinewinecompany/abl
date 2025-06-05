@@ -546,6 +546,7 @@ def render():
                                 detail = f" ({', '.join(parts)})" if parts else ""
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
                         
+                        st.write(f"**Gain: {winner_received_total:.1f} pts**")
                         st.write(f"**Net Value: +{winner_received_total - winner_gave_total:.1f} pts**")
                     
                     with col2:
@@ -605,6 +606,7 @@ def render():
                                 detail = f" ({', '.join(parts)})" if parts else ""
                                 st.write(f"• {item['item']} - {item['value']:.1f} pts{detail}")
                         
+                        st.write(f"**Gain: {loser_received_total:.1f} pts**")
                         st.write(f"**Net Value: {loser_received_total - loser_gave_total:.1f} pts**")
                     
                     # Summary
