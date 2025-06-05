@@ -616,11 +616,7 @@ def render():
             
         st.sidebar.success(f"✅ Loaded {len(mvp_data):,} players successfully")
         
-        # Debug information
-        st.write(f"**Data loaded successfully:** {len(mvp_data)} players")
-        st.write(f"**Columns:** {list(mvp_data.columns)}")
-        st.write(f"**Sample data:**")
-        st.dataframe(mvp_data.head(3))
+
         
         # Calculate value score that combines salary and contract
         def calculate_value_score(salary, contract):
@@ -872,11 +868,79 @@ def render():
             display_count = st.slider("Number of players to display", 10, 100, 30, 5)
             display_data = filtered_data.head(display_count)
             
-            # Instead of using a grid, stack the cards vertically
+            # Display player cards with proper styling
             for i, (_, player) in enumerate(display_data.iterrows()):
                 rank = i + 1
                 team_info = get_mlb_team_info(player['Team'])
                 colors = team_info['colors']
+                
+                # Get player headshot with ID mapping
+                player_name = player['Player']
+                mlb_id = name_to_mlb_id.get(player_name, '000000')
+                headshot_url = f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlb_id}/headshot/67/current"
+                
+                # Create player card container
+                with st.container():
+                    # Team color strip
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, {colors['primary']} 0%, {colors['secondary']} 100%);
+                        height: 5px;
+                        border-radius: 3px 3px 0 0;
+                        margin-bottom: 10px;
+                    "></div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Player card content using columns
+                    col1, col2, col3, col4, col5 = st.columns([1, 2, 4, 2, 2])
+                    
+                    with col1:
+                        # Rank badge
+                        st.markdown(f"""
+                        <div style="
+                            background: {colors['primary']};
+                            color: white;
+                            text-align: center;
+                            padding: 8px;
+                            border-radius: 50%;
+                            width: 35px;
+                            height: 35px;
+                            line-height: 19px;
+                            font-weight: bold;
+                            margin: 0 auto;
+                        ">#{rank}</div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col2:
+                        # Player headshot
+                        if mlb_id != '000000':
+                            st.image(headshot_url, width=60)
+                        else:
+                            st.markdown("⚾", help="Player photo not available")
+                    
+                    with col3:
+                        # Player details
+                        st.markdown(f"**{player['Player']}**")
+                        st.caption(f"{player['Position']} • {player['Team']} • Age {int(player['Age'])}")
+                        
+                        # MVP score bar
+                        mvp_pct = min(100, player['MVP_Score'])
+                        st.markdown(f"""
+                        <div style="background: #ddd; border-radius: 10px; height: 8px; margin-top: 5px;">
+                            <div style="background: {colors['primary']}; height: 8px; border-radius: 10px; width: {mvp_pct}%;"></div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col4:
+                        # MVP Score
+                        st.metric("MVP Score", f"{player['MVP_Score']:.1f}")
+                    
+                    with col5:
+                        # Fantasy Points and Contract
+                        st.metric("Fantasy Points", f"{player['FPts']:.1f}")
+                        st.caption(f"${player['Salary']:.1f}M • {player['Contract']}")
+                    
+                    st.divider()
                 
                 # MVP score is already on a 0-100 scale, use directly for progress bar
                 mvp_score_pct = int(player['MVP_Score'])
