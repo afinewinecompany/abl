@@ -21,13 +21,84 @@ def render():
         # Load trade data
         trades_df = pd.read_csv("attached_assets/Fantrax-Transaction-History-Trades-ABL Season 5.csv")
         
-        # Load MVP data for player values
+        # Load MVP data for comprehensive player values
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
+        
+        def calculate_comprehensive_player_value(player_data):
+            """Calculate comprehensive player value using all MVP metrics"""
+            # Clean and prepare data
+            age = pd.to_numeric(player_data.get('Age', 25), errors='coerce')
+            salary = pd.to_numeric(player_data.get('Salary', 1), errors='coerce')
+            fpts = pd.to_numeric(player_data.get('FPts', 0), errors='coerce')
+            fpg = pd.to_numeric(player_data.get('FP/G', 0), errors='coerce')
+            contract = str(player_data.get('Contract', '2025'))
+            position = str(player_data.get('Position', 'UT'))
+            
+            # Normalize values to 0-1 scale based on dataset ranges
+            max_fpts = mvp_data['FPts'].max() if 'FPts' in mvp_data.columns else 400
+            max_fpg = mvp_data['FP/G'].max() if 'FP/G' in mvp_data.columns else 25
+            max_salary = mvp_data['Salary'].max() if 'Salary' in mvp_data.columns else 70
+            
+            # Fantasy Points component (40% weight) - primary performance metric
+            fpts_score = min(1.0, fpts / max_fpts) if max_fpts > 0 else 0
+            
+            # Fantasy Points per Game component (25% weight) - health/consistency factor
+            fpg_score = min(1.0, fpg / max_fpg) if max_fpg > 0 else 0
+            
+            # Position value component (10% weight) - scarcity-based
+            position_values = {
+                'C': 1.0,      # Catcher - most scarce
+                'SS': 0.9,     # Shortstop
+                '2B': 0.85,    # Second base
+                '3B': 0.8,     # Third base
+                'CF': 0.75,    # Center field
+                'SP': 0.7,     # Starting pitcher
+                '1B': 0.65,    # First base
+                'LF': 0.6, 'RF': 0.6,  # Corner outfield
+                'RP': 0.5,     # Relief pitcher
+                'UT': 0.55,    # Utility
+                'DH': 0.4      # Designated hitter
+            }
+            # Get highest position value for multi-position players
+            pos_score = 0
+            for pos in position.split(','):
+                pos_clean = pos.strip()
+                if pos_clean in position_values:
+                    pos_score = max(pos_score, position_values[pos_clean])
+            
+            # Contract value component (15% weight) - longer contracts more valuable for young players
+            contract_values = {
+                '2050': 1.0, '2045': 0.95, '2040': 0.9, '2035': 0.85, 
+                '2029': 0.8, '2028': 0.7, '2027': 0.6, '2026': 0.5, 
+                '2025': 0.3, '1st': 0.2
+            }
+            contract_score = contract_values.get(contract, 0.1)
+            
+            # Age factor (5% weight) - younger players more valuable
+            age_score = max(0, (35 - age) / 15) if age <= 35 else 0
+            
+            # Salary efficiency (5% weight) - lower salary relative to performance is better
+            salary_efficiency = 1.0 - (salary / max_salary) if max_salary > 0 else 0.5
+            
+            # Combine all components
+            total_score = (
+                fpts_score * 0.40 +      # Fantasy points
+                fpg_score * 0.25 +       # Points per game
+                pos_score * 0.10 +       # Position value
+                contract_score * 0.15 +  # Contract value
+                age_score * 0.05 +       # Age factor
+                salary_efficiency * 0.05 # Salary efficiency
+            )
+            
+            # Scale to 0-100 range
+            return total_score * 100
+        
+        # Calculate comprehensive values for all MVP players
         mvp_values = {}
         for _, row in mvp_data.iterrows():
-            # MVP value: inverse of rank (higher rank = lower value)
-            mvp_rank = mvp_data.index[mvp_data['Player'] == row['Player']].tolist()[0] + 1
-            mvp_values[row['Player']] = max(1, 101 - mvp_rank)  # Scale 1-100
+            player_name = row.get('Player', '')
+            if player_name:
+                mvp_values[player_name] = calculate_comprehensive_player_value(row)
         
         # Load prospect data for additional player values
         try:
@@ -105,11 +176,24 @@ def render():
             mvp_val = mvp_values.get(player_name, 0)
             prospect_val = prospect_values.get(player_name, 0)
             total_val = mvp_val + prospect_val
+            
+            # Get additional details for MVP players
+            mvp_details = ""
+            if player_name in mvp_values and mvp_val > 0:
+                # Find the player in MVP data for details
+                player_row = mvp_data[mvp_data['Player'] == player_name]
+                if not player_row.empty:
+                    row = player_row.iloc[0]
+                    fpts = pd.to_numeric(row.get('FPts', 0), errors='coerce')
+                    fpg = pd.to_numeric(row.get('FP/G', 0), errors='coerce')
+                    mvp_details = f"FPts: {fpts:.1f}, FP/G: {fpg:.1f}"
+            
             return {
                 'mvp_value': mvp_val,
                 'prospect_value': prospect_val,
                 'total_value': total_val,
-                'source': 'MVP' if mvp_val > prospect_val else 'Prospect' if prospect_val > 0 else 'Unknown'
+                'source': 'MLB' if mvp_val > prospect_val else 'Prospect' if prospect_val > 0 else 'Unknown',
+                'details': mvp_details
             }
         
         def get_draft_pick_value(pick_text):
