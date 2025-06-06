@@ -409,7 +409,7 @@ def render():
             # Store trade analysis
             trade_analysis.append({
                 'date': trade_items[0]['Date'],
-                'teams': list(teams_involved),
+                'teams_involved': list(teams_involved),
                 'team_values': team_values,
                 'trade_details': trade_details,
                 'total_value': sum(abs(v) for v in team_values.values()) / 2,  # Divide by 2 to avoid double counting
