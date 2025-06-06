@@ -367,16 +367,18 @@ def render():
             return max(1, final_value)
         
         def get_budget_value(budget_text):
-            """Extract budget amount and convert to value with reduced impact"""
+            """Extract budget amount and convert to value based on actual scarcity"""
             if not isinstance(budget_text, str) or "Budget Amount" not in budget_text:
                 return 0
             
             amount_match = re.search(r'\$(\d+(?:\.\d+)?)', budget_text)
             if amount_match:
                 amount = float(amount_match.group(1))
-                # Reduced value: Each dollar is worth 1.5 points (reduced from 2.5)
-                # This makes FAAB money less impactful in trade calculations
-                return amount * 1.5
+                # Scarcity-based valuation: $499 total remaining across all 30 teams
+                # Average remaining per team: $499/30 = $16.63
+                # Each dollar represents 1/$499 = 0.2% of total pool
+                # Value scaled to reflect actual scarcity: 1.2 points per dollar
+                return amount * 1.2
             return 0
         
         # Analyze each trade group
