@@ -167,7 +167,7 @@ def render():
                     prospect_score = pd.to_numeric(row.get('Score', 0), errors='coerce')
                     if pd.notna(prospect_score):
                         # Check if player also appears in MVP data with actual fantasy points
-                        base_multiplier = 4  # Default 0-40 range
+                        base_multiplier = 3.5  # Default 0-35 range (reduced from 0-40)
                         
                         if player_name in mvp_values:
                             # Player is in both lists - check if they have MLB production
