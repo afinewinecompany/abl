@@ -20,6 +20,7 @@ def render():
     try:
         # Load trade data
         trades_df = pd.read_csv("attached_assets/Fantrax-Transaction-History-Trades-ABL Season 5.csv")
+        st.write(f"DEBUG: Loaded {len(trades_df)} trade records from Fantrax transaction list")
         
         # Load MVP data for comprehensive player values
         mvp_data = pd.read_csv("attached_assets/MVP-Player-List.csv")
@@ -386,6 +387,10 @@ def render():
                 return amount * 1.2
             return 0
         
+        # Debug: Show all unique players in transaction data
+        all_players = trades_df['Player'].dropna().unique()
+        st.write(f"DEBUG: Found {len(all_players)} unique players/items in Fantrax transaction data")
+        
         # Analyze each trade group
         trade_analysis = []
         
@@ -428,6 +433,9 @@ def render():
                     item_type = "Budget"
                 else:
                     value = get_player_value(player)
+                    # Debug: Track player processing
+                    if player not in all_players:
+                        st.warning(f"DEBUG: Player '{player}' not found in Fantrax transaction data!")
                 
                 # Add value to receiving team, subtract from giving team
                 if pd.notna(to_team) and to_team in team_values:
