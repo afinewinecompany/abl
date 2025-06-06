@@ -2,20 +2,20 @@ Player,Team,Position,From,To,Date (EDT),Period,Unique
 Trea Turner,PHI,SS,Chicago Cubs,Saint Louis Cardinals,"Thu Jun 5, 2025, 4:11PM",72,1
 "2026 Draft Pick, Round 3 (Colorado Rockies)",,,Saint Louis Cardinals,Chicago Cubs,"Thu Jun 5, 2025, 4:11PM",72,1
 Bo Bichette,TOR,SS,Saint Louis Cardinals,Chicago Cubs,"Thu Jun 5, 2025, 4:11PM",72,1
-"2027 Draft Pick, Round 2 (Texas Rangers)",,,Texas Rangers,Baltimore Orioles,"Thu Jun 5, 2025, 11:43AM",71,2
-Corbin Burnes,ARI,SP,Texas Rangers,Baltimore Orioles,"Thu Jun 5, 2025, 11:43AM",71,2
+"2027 Draft Pick, Round 2 (Texas Rangers)",,,Texas Rangers,Baltimore Orioles,"Thu Jun 5, 2025, 11:43AM",71,3
+Corbin Burnes,ARI,SP,Texas Rangers,Baltimore Orioles,"Thu Jun 5, 2025, 11:43AM",71,3
 Willy Adames,SF,SS,Cleveland Guardians,Texas Rangers,"Wed Jun 4, 2025, 8:40PM",71,2
 Chris Paddack,MIN,SP,Cleveland Guardians,Texas Rangers,"Wed Jun 4, 2025, 8:40PM",71,2
 Zac Gallen,ARI,SP,Cleveland Guardians,Texas Rangers,"Wed Jun 4, 2025, 8:40PM",71,2
 Nico Hoerner,CHC,"2B,SS",Cleveland Guardians,Texas Rangers,"Wed Jun 4, 2025, 8:40PM",71,2
 Dylan Moore,SEA,"1B,2B,3B,SS,LF,RF",Cleveland Guardians,Texas Rangers,"Wed Jun 4, 2025, 8:40PM",71,2
-Jon Berti,CHC,"2B,3B",Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,3
-James Outman,LAD,CF,Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,3
-Thairo Estrada,COL,2B,Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,3
-Oneil Cruz,PIT,"SS,CF",Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,3
-Bishop Letson,MIL,SP,Athletics,Cleveland Guardians,"Wed Jun 4, 2025, 8:32AM",70,3
-Fernando Cruz,NYY,"SP,RP",Cleveland Guardians,Athletics,"Wed Jun 4, 2025, 8:32AM",70,3
-"2026 Draft Pick, Round 3 (Atlanta Braves)",,,Cleveland Guardians,Athletics,"Wed Jun 4, 2025, 8:32AM",70,3
+Jon Berti,CHC,"2B,3B",Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,2
+James Outman,LAD,CF,Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,2
+Thairo Estrada,COL,2B,Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,2
+Oneil Cruz,PIT,"SS,CF",Texas Rangers,Cleveland Guardians,"Wed Jun 4, 2025, 8:40PM",71,2
+Bishop Letson,MIL,SP,Athletics,Cleveland Guardians,"Wed Jun 4, 2025, 8:32AM",70,44
+Fernando Cruz,NYY,"SP,RP",Cleveland Guardians,Athletics,"Wed Jun 4, 2025, 8:32AM",70,44
+"2026 Draft Pick, Round 3 (Atlanta Braves)",,,Cleveland Guardians,Athletics,"Wed Jun 4, 2025, 8:32AM",70,44
 Bryce Harper,PHI,1B,Boston Red Sox,Chicago Cubs,"Wed Jun 4, 2025, 12:46AM",70,4
 Kris Bryant,COL,"1B,RF",Chicago Cubs,Boston Red Sox,"Wed Jun 4, 2025, 12:46AM",70,4
 Ronel Blanco,HOU,SP,Chicago Cubs,Boston Red Sox,"Wed Jun 4, 2025, 12:46AM",70,4
@@ -136,56 +136,45 @@ Joc Pederson,TEX,1B,Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40A
 Isiah Kiner-Falefa,PIT,"2B,3B,SS",Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40AM",67,32
 Mike Yastrzemski,SF,"CF,RF",Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40AM",67,32
 "2026 Draft Pick, Round 4 (Houston Astros)",,,Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40AM",67,32
-"2026 Draft Pick, Round 3 (Pittsburgh Pirates)",,,Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40AM",67,32
-Matt Chapman,SF,3B,Cleveland Guardians,Seattle Mariners,"Sun Jun 1, 2025, 8:40AM",67,32
-Brandon Lowe,TB,"1B,2B",Seattle Mariners,Cleveland Guardians,"Sun Jun 1, 2025, 8:40AM",67,32
-"2027 Draft Pick, Round 2 (Seattle Mariners)",,,Seattle Mariners,Cleveland Guardians,"Sun Jun 1, 2025, 8:40AM",67,32
-Dylan Moore,SEA,"1B,2B,3B,SS,LF,RF",Seattle Mariners,Cleveland Guardians,"Sun Jun 1, 2025, 8:40AM",67,32
-Ranger Suarez,PHI,SP,Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Dansby Swanson,CHC,SS,Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Austin Hays,CIN,LF,Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Jose Quintana,MIL,SP,Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Luis Arraez,SD,"1B,2B",Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Clayton Kershaw,LAD,SP,Baltimore Orioles,Kansas City Royals,"Sun Jun 1, 2025, 4:32AM",67,33
-Zander Mueth,PIT,SP,Kansas City Royals,Baltimore Orioles,"Sun Jun 1, 2025, 4:32AM",67,33
-"2026 Draft Pick, Round 2 (Kansas City Royals)",,,Kansas City Royals,Baltimore Orioles,"Sun Jun 1, 2025, 4:32AM",67,33
-Budget Amount: $2.00,,,Kansas City Royals,Baltimore Orioles,"Sun Jun 1, 2025, 4:32AM",67,33
-Noah Schultz,CHW,SP,Kansas City Royals,Baltimore Orioles,"Sun Jun 1, 2025, 4:32AM",67,33
-Miguel Vargas,CHW,"1B,3B,LF",Colorado Rockies,Seattle Mariners,"Sun Jun 1, 2025, 12:07AM",67,34
-"2026 Draft Pick, Round 4 (Colorado Rockies)",,,Colorado Rockies,Seattle Mariners,"Sun Jun 1, 2025, 12:07AM",67,34
-William Bergolla,CHW,"2B,SS",Seattle Mariners,Colorado Rockies,"Sun Jun 1, 2025, 12:07AM",67,34
-Jeremy Rodriguez,NYM,SS,Seattle Mariners,Colorado Rockies,"Sun Jun 1, 2025, 12:07AM",67,34
-Brendan Donovan,STL,"2B,3B,SS,LF",Colorado Rockies,Detroit Tigers,"Sun Jun 1, 2025, 12:05AM",67,35
-Graham Ashcraft,CIN,"SP,RP",Colorado Rockies,Detroit Tigers,"Sun Jun 1, 2025, 12:05AM",67,35
-Tommy Troy,ARI,SS,Detroit Tigers,Colorado Rockies,"Sun Jun 1, 2025, 12:05AM",67,35
-Ryne Stanek,NYM,RP,Detroit Tigers,(Drop),"Sun Jun 1, 2025, 12:05AM",67,35
-Tyler Phillips,MIA,"SP,RP",Detroit Tigers,(Drop),"Sun Jun 1, 2025, 12:05AM",67,35
-Hunter Gaddis,CLE,RP,Baltimore Orioles,Texas Rangers,"Sun Jun 1, 2025, 12:02AM",67,36
-Budget Amount: $3.00,,,Texas Rangers,Baltimore Orioles,"Sun Jun 1, 2025, 12:02AM",67,36
-Bo Bichette,TOR,SS,Colorado Rockies,Saint Louis Cardinals,"Sun Jun 1, 2025, 12:01AM",67,37
-"2026 Draft Pick, Round 3 (Colorado Rockies)",,,Colorado Rockies,Saint Louis Cardinals,"Sun Jun 1, 2025, 12:01AM",67,37
-Blake Mitchell,KC,C,Saint Louis Cardinals,Colorado Rockies,"Sun Jun 1, 2025, 12:01AM",67,37
-Budget Amount: $1.00,,,Saint Louis Cardinals,Colorado Rockies,"Sun Jun 1, 2025, 12:01AM",67,37
-J.P. Crawford,SEA,SS,Saint Louis Cardinals,Colorado Rockies,"Sun Jun 1, 2025, 12:01AM",67,37
-Kenley Jansen,LAA,RP,Minnesota Twins,Saint Louis Cardinals,"Sun Jun 1, 2025, 12:01AM",67,38
-Diego Cartaya,MIN,C,Minnesota Twins,(Drop),"Sun Jun 1, 2025, 12:01AM",67,38
-Liam Hendriks,BOS,RP,Saint Louis Cardinals,Minnesota Twins,"Sun Jun 1, 2025, 12:01AM",67,38
-Sean Linan,LAD,"SP,RP",Saint Louis Cardinals,Minnesota Twins,"Sun Jun 1, 2025, 12:01AM",67,38
-Budget Amount: $2.00,,,Saint Louis Cardinals,Minnesota Twins,"Sun Jun 1, 2025, 12:01AM",67,38
-A.J. Ewing,NYM,"2B,CF",Detroit Tigers,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,39
-Andruw Monasterio,MIL,"1B,2B,3B,SS",Detroit Tigers,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,39
-"2026 Draft Pick, Round 4 (Detroit Tigers)",,,Detroit Tigers,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,39
-Nasim Nunez,WSH,"2B,SS,CF",Detroit Tigers,(Drop),"Sun Jun 1, 2025, 12:00AM",67,39
-Yoan Moncada,LAA,3B,Tampa Bay Rays,Detroit Tigers,"Sun Jun 1, 2025, 12:00AM",67,39
-Kyle Farmer,COL,"1B,2B,3B,SS",Tampa Bay Rays,Detroit Tigers,"Sun Jun 1, 2025, 12:00AM",67,39
-Cooper Pratt,MIL,SS,Los Angeles Angels,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,40
-Spencer Torkelson,DET,1B,Tampa Bay Rays,Los Angeles Angels,"Sun Jun 1, 2025, 12:00AM",67,40
-"2027 Draft Pick, Round 1 (Seattle Mariners)",,,Seattle Mariners,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,41
-Noah Cameron,KC,SP,Seattle Mariners,Tampa Bay Rays,"Sun Jun 1, 2025, 12:00AM",67,41
-Kyle Stowers,MIA,"LF,CF,RF",Tampa Bay Rays,Seattle Mariners,"Sun Jun 1, 2025, 12:00AM",67,41
-Seth Lugo,KC,SP,Tampa Bay Rays,Seattle Mariners,"Sun Jun 1, 2025, 12:00AM",67,41
-Maykel Coret,TB,CF,Baltimore Orioles,Cincinnati Reds,"Sun Jun 1, 2025, 12:00AM",67,42
-Jung Hoo Lee,SF,CF,Baltimore Orioles,Cincinnati Reds,"Sun Jun 1, 2025, 12:00AM",67,42
-Ryan Sloan,SEA,SP,Cincinnati Reds,Baltimore Orioles,"Sun Jun 1, 2025, 12:00AM",67,42
-"2028 Draft Pick, Round 3 (Chicago Cubs)",,,Chicago Cubs,Minnesota Twins,"Sun Jun 1, 2025, 12:00AM",67,43
-Jake Meyers,HOU,CF,Minnesota Twins,Chicago Cubs,"Sun Jun 1, 2025, 12:00AM",67,43
+Jose Siri,TBR,"CF,RF",Seattle Mariners,Cleveland Guardians,"Sun Jun 1, 2025, 8:40AM",67,32
+"2026 Draft Pick, Round 5 (Cleveland Guardians)",,,Seattle Mariners,Colorado Rockies,"Sat May 31, 2025, 11:53PM",67,33
+Cooper Bowman,CHC,SP,Colorado Rockies,Seattle Mariners,"Sat May 31, 2025, 11:53PM",67,33
+Ryan Vilade,TBR,"1B,3B,LF,RF",Colorado Rockies,Seattle Mariners,"Sat May 31, 2025, 11:53PM",67,33
+"2026 Draft Pick, Round 4 (Seattle Mariners)",,,Seattle Mariners,Colorado Rockies,"Sat May 31, 2025, 11:53PM",67,33
+David Bednar,PIT,RP,Seattle Mariners,Tampa Bay Rays,"Sat May 31, 2025, 11:46PM",67,34
+Luke Williams,TBR,"2B,3B,SS",Tampa Bay Rays,Seattle Mariners,"Sat May 31, 2025, 11:46PM",67,34
+Garrett Crochet,BOS,SP,Minnesota Twins,New York Mets,"Sat May 31, 2025, 10:17PM",67,35
+Yoán Moncada,LAA,3B,Minnesota Twins,New York Mets,"Sat May 31, 2025, 10:17PM",67,35
+"2026 Draft Pick, Round 2 (Chicago Cubs)",,,Minnesota Twins,New York Mets,"Sat May 31, 2025, 10:17PM",67,35
+"2026 Draft Pick, Round 3 (Tampa Bay Rays)",,,New York Mets,Minnesota Twins,"Sat May 31, 2025, 10:17PM",67,35
+"2027 Draft Pick, Round 1 (Minnesota Twins)",,,New York Mets,Minnesota Twins,"Sat May 31, 2025, 10:17PM",67,35
+Anthony Rizzo,NYY,1B,New York Mets,Minnesota Twins,"Sat May 31, 2025, 10:17PM",67,35
+Colt Keith,DET,"2B,3B",New York Mets,Minnesota Twins,"Sat May 31, 2025, 10:17PM",67,35
+Brandon Pfaadt,ARI,SP,Los Angeles Dodgers,Saint Louis Cardinals,"Sat May 31, 2025, 9:58PM",67,36
+Kyle Farmer,CIN,"2B,3B,SS",Los Angeles Dodgers,Saint Louis Cardinals,"Sat May 31, 2025, 9:58PM",67,36
+Reynaldo Lopez,ATL,SP,Saint Louis Cardinals,Los Angeles Dodgers,"Sat May 31, 2025, 9:58PM",67,36
+Matt Wallner,MIN,"LF,RF",Saint Louis Cardinals,Los Angeles Dodgers,"Sat May 31, 2025, 9:58PM",67,36
+Roman Anthony,BOS,CF,Los Angeles Dodgers,New York Yankees,"Sat May 31, 2025, 9:21PM",67,37
+Luis Gil,NYY,SP,New York Yankees,Los Angeles Dodgers,"Sat May 31, 2025, 9:21PM",67,37
+Matthew Batten,SDP,"1B,2B,3B,SS,LF,RF",New York Yankees,Los Angeles Dodgers,"Sat May 31, 2025, 9:21PM",67,37
+Jose Fermin,CLE,"2B,3B,SS",Los Angeles Dodgers,Tampa Bay Rays,"Sat May 31, 2025, 8:57PM",67,38
+Marcelo Mayer,BOS,SS,Tampa Bay Rays,Los Angeles Dodgers,"Sat May 31, 2025, 8:57PM",67,38
+"2026 Draft Pick, Round 5 (Tampa Bay Rays)",,,Tampa Bay Rays,Los Angeles Dodgers,"Sat May 31, 2025, 8:57PM",67,38
+"2027 Draft Pick, Round 3 (Los Angeles Dodgers)",,,Los Angeles Dodgers,Tampa Bay Rays,"Sat May 31, 2025, 8:57PM",67,38
+Max Scherzer,TOR,SP,Chicago Cubs,Los Angeles Dodgers,"Sat May 31, 2025, 8:35PM",67,39
+Ben Brown,CHC,SP,Los Angeles Dodgers,Chicago Cubs,"Sat May 31, 2025, 8:35PM",67,39
+Colton Cowser,BAL,"LF,CF,RF",Tampa Bay Rays,Houston Astros,"Sat May 31, 2025, 7:35PM",67,40
+Sammy Stafura,HOU,C,Houston Astros,Tampa Bay Rays,"Sat May 31, 2025, 7:35PM",67,40
+"2026 Draft Pick, Round 4 (Tampa Bay Rays)",,,Tampa Bay Rays,Houston Astros,"Sat May 31, 2025, 7:35PM",67,40
+"2026 Draft Pick, Round 5 (Houston Astros)",,,Houston Astros,Tampa Bay Rays,"Sat May 31, 2025, 7:35PM",67,40
+Budget Amount: $4.00,,,Houston Astros,Tampa Bay Rays,"Sat May 31, 2025, 7:35PM",67,40
+"2026 Draft Pick, Round 1 (Los Angeles Angels)",,,Los Angeles Angels,Kansas City Royals,"Sat May 31, 2025, 7:23PM",67,41
+"2026 Draft Pick, Round 2 (Los Angeles Angels)",,,Los Angeles Angels,Kansas City Royals,"Sat May 31, 2025, 7:23PM",67,41
+Blake Snell,LAD,SP,Kansas City Royals,Los Angeles Angels,"Sat May 31, 2025, 7:23PM",67,41
+Jose Ramirez,CLE,"2B,3B",Kansas City Royals,Los Angeles Angels,"Sat May 31, 2025, 7:23PM",67,41
+Ronny Mauricio,NYM,"2B,SS",Los Angeles Angels,Texas Rangers,"Sat May 31, 2025, 7:15PM",67,42
+"2026 Draft Pick, Round 3 (Los Angeles Angels)",,,Los Angeles Angels,Texas Rangers,"Sat May 31, 2025, 7:15PM",67,42
+"2028 Draft Pick, Round 3 (Texas Rangers)",,,Texas Rangers,Los Angeles Angels,"Sat May 31, 2025, 7:15PM",67,42
+Robbie Ray,SFG,SP,Texas Rangers,Los Angeles Angels,"Sat May 31, 2025, 7:15PM",67,42
+Wander Franco,TBR,SS,Los Angeles Angels,Boston Red Sox,"Sat May 31, 2025, 7:13PM",67,43
+"2028 Draft Pick, Round 3 (Boston Red Sox)",,,Boston Red Sox,Los Angeles Angels,"Sat May 31, 2025, 7:13PM",67,43
