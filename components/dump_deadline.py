@@ -310,7 +310,7 @@ def render():
             }
         
         def get_draft_pick_value(pick_text):
-            """Calculate value of draft picks based on year and round"""
+            """Calculate value of draft picks based on year and round with quadratic scaling"""
             if not isinstance(pick_text, str) or "Draft Pick" not in pick_text:
                 return 0
             
@@ -324,13 +324,47 @@ def render():
             year = int(year_match.group(1))
             round_num = int(round_match.group(1))
             
-            # Base value decreases with later years and rounds
+            # Enhanced draft pick valuation with quadratic scaling
             current_year = 2025
-            year_penalty = (year - current_year) * 5  # 5 point penalty per year
-            round_penalty = (round_num - 1) * 10  # 10 point penalty per round
             
-            base_value = 50
-            return max(1, base_value - year_penalty - round_penalty)
+            # Base values by round (higher for earlier rounds)
+            round_base_values = {
+                1: 50,  # 1st round picks
+                2: 35,  # 2nd round picks  
+                3: 25,  # 3rd round picks
+                4: 18,  # 4th round picks
+                5: 12   # 5th+ round picks
+            }
+            
+            base_value = round_base_values.get(round_num, 8)  # Default for rounds 6+
+            
+            # Year proximity factor (closer years more valuable)
+            years_out = year - current_year
+            if years_out <= 0:
+                year_multiplier = 1.0  # Current year picks
+            elif years_out == 1:
+                year_multiplier = 0.85  # Next year
+            elif years_out == 2:
+                year_multiplier = 0.7   # 2 years out
+            elif years_out == 3:
+                year_multiplier = 0.55  # 3 years out
+            else:
+                year_multiplier = 0.4   # 4+ years out
+            
+            # Apply quadratic scaling to emphasize elite picks (1st and 2nd round)
+            raw_value = base_value * year_multiplier
+            
+            # Normalize for quadratic scaling (0-1 range)
+            max_possible = 50  # 1st round current year
+            normalized = min(1.0, raw_value / max_possible)
+            
+            # Apply quadratic distribution (x²) to emphasize early picks
+            quadratic_scaled = normalized ** 2
+            
+            # Scale back to meaningful range
+            final_value = quadratic_scaled * max_possible
+            
+            return max(1, final_value)
         
         def get_budget_value(budget_text):
             """Extract budget amount and convert to value"""
