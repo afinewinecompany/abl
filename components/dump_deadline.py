@@ -539,13 +539,14 @@ def render():
                     
                     # Show teams and their net gains/losses
                     st.write("### Team Summary")
-                    for team in trade['teams']:
+                    teams_key = 'teams_involved' if 'teams_involved' in trade else 'teams'
+                    for team in trade[teams_key]:
                         net_value = trade['team_values'][team]
                         color = "🟢" if net_value > 0 else "🔴" if net_value < 0 else "🟡"
                         st.write(f"{color} **{team}**: {net_value:+.1f} points")
                     
                     st.write("### Trade Details")
-                    for team in trade['teams']:
+                    for team in trade[teams_key]:
                         st.write(f"**{team}:**")
                         received = [item for item in trade['trade_details'][team] if item['direction'] == 'received']
                         gave = [item for item in trade['trade_details'][team] if item['direction'] == 'gave']
