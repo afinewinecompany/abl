@@ -495,7 +495,30 @@ def render():
         with tab2:
             st.write("## All Trade Transactions")
             
-            for i, trade in enumerate(trade_analysis[:20]):  # Show top 20 trades
+            # Get all unique team names from trades
+            all_teams = set()
+            for trade in trade_analysis:
+                all_teams.update(trade['teams_involved'])
+            all_teams = sorted(list(all_teams))
+            
+            # Team filter dropdown
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                selected_team = st.selectbox(
+                    "Filter by Team:",
+                    ["All Teams"] + all_teams,
+                    key="team_filter"
+                )
+            
+            # Filter trades based on selected team
+            if selected_team == "All Teams":
+                filtered_trades = trade_analysis[:20]  # Show top 20 trades
+            else:
+                filtered_trades = [trade for trade in trade_analysis if selected_team in trade['teams_involved']][:20]
+            
+            st.write(f"Showing {len(filtered_trades)} trades" + (f" for {selected_team}" if selected_team != "All Teams" else ""))
+            
+            for i, trade in enumerate(filtered_trades):
                 with st.expander(f"Trade #{i+1}: {trade['date'].strftime('%B %d, %Y')} - Value Diff: {trade['value_difference']:.1f}"):
                     
                     # Show teams and their net gains/losses
