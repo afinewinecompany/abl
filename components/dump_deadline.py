@@ -188,10 +188,15 @@ def render():
         trades_df['Date'] = pd.to_datetime(trades_df['Date (EDT)'])
         trades_df = trades_df.sort_values('Date')
         
-        # Group trades by timestamp to identify complete transactions
+        # Group trades by unique identifier to identify complete transactions
         trade_groups = {}
         for _, row in trades_df.iterrows():
-            key = f"{row['Date']}_{row['Period']}"
+            # Use the 'Unique' column if available, otherwise fall back to date/period
+            if 'Unique' in row and pd.notna(row['Unique']):
+                key = str(row['Unique'])
+            else:
+                key = f"{row['Date']}_{row['Period']}"
+            
             if key not in trade_groups:
                 trade_groups[key] = []
             trade_groups[key].append(row)
