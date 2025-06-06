@@ -367,15 +367,16 @@ def render():
             return max(1, final_value)
         
         def get_budget_value(budget_text):
-            """Extract budget amount and convert to value"""
+            """Extract budget amount and convert to value with reduced impact"""
             if not isinstance(budget_text, str) or "Budget Amount" not in budget_text:
                 return 0
             
             amount_match = re.search(r'\$(\d+(?:\.\d+)?)', budget_text)
             if amount_match:
                 amount = float(amount_match.group(1))
-                # Each dollar is worth 2.5 points (since $40 max per team)
-                return amount * 2.5
+                # Reduced value: Each dollar is worth 1.5 points (reduced from 2.5)
+                # This makes FAAB money less impactful in trade calculations
+                return amount * 1.5
             return 0
         
         # Analyze each trade group
