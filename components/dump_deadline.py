@@ -39,10 +39,10 @@ def render():
             max_fpg = mvp_data['FP/G'].max() if 'FP/G' in mvp_data.columns else 25
             max_salary = mvp_data['Salary'].max() if 'Salary' in mvp_data.columns else 70
             
-            # Fantasy Points component (45% weight) - primary performance metric
+            # Fantasy Points component (60% weight) - primary performance metric
             fpts_score = min(1.0, fpts / max_fpts) if max_fpts > 0 else 0
             
-            # Fantasy Points per Game component (25% weight) - health/consistency factor
+            # Fantasy Points per Game component (10% weight) - health/consistency factor
             fpg_score = min(1.0, fpg / max_fpg) if max_fpg > 0 else 0
             
             # Position value component (5% weight) - scarcity-based (reduced from 10%)
@@ -82,8 +82,8 @@ def render():
             
             # Combine all components
             total_score = (
-                fpts_score * 0.45 +      # Fantasy points (increased from 40%)
-                fpg_score * 0.25 +       # Points per game (reduced from 30%)
+                fpts_score * 0.60 +      # Fantasy points (increased to 60%)
+                fpg_score * 0.10 +       # Points per game (reduced to 10%)
                 pos_score * 0.05 +       # Position value
                 contract_score * 0.10 +  # Contract value
                 age_score * 0.10 +       # Age factor
