@@ -45,6 +45,97 @@ def get_contract_score(contract):
     
     return contract_scores.get(contract, 0.1)  # Default to lowest if not found
 
+def calculate_hitter_ros_score(row, hitter_ros_df):
+    """
+    Calculate Rest of Season fantasy score for hitters based on league scoring settings
+    
+    Scoring: 1B=1, 2B=2, 3B=3, HR=4, SB=2, RBI=1, R=1, BB=1, HBP=1, IBB=1
+    """
+    if hitter_ros_df is None or hitter_ros_df.empty:
+        return 0
+    
+    # Find matching player in ROS data
+    player_name = normalize_name(row.get('Name', ''))
+    ros_match = None
+    
+    for _, ros_row in hitter_ros_df.iterrows():
+        if normalize_name(ros_row.get('Name', '')) == player_name:
+            ros_match = ros_row
+            break
+    
+    if ros_match is None:
+        return 0
+    
+    # Calculate fantasy points based on league scoring
+    try:
+        singles = float(ros_match.get('1B', 0)) * 1
+        doubles = float(ros_match.get('2B', 0)) * 2
+        triples = float(ros_match.get('3B', 0)) * 3
+        home_runs = float(ros_match.get('HR', 0)) * 4
+        stolen_bases = float(ros_match.get('SB', 0)) * 2
+        rbis = float(ros_match.get('RBI', 0)) * 1
+        runs = float(ros_match.get('R', 0)) * 1
+        walks = float(ros_match.get('BB', 0)) * 1
+        hbp = float(ros_match.get('HBP', 0)) * 1
+        ibb = float(ros_match.get('IBB', 0)) * 1
+        
+        total_fantasy_points = (singles + doubles + triples + home_runs + 
+                              stolen_bases + rbis + runs + walks + hbp + ibb)
+        
+        return total_fantasy_points
+    except (ValueError, TypeError):
+        return 0
+
+def calculate_pitcher_ros_score(row, pitcher_ros_df):
+    """
+    Calculate Rest of Season fantasy score for pitchers based on league scoring settings
+    
+    Scoring: IP=2, K=1, QA7=8, S=6, HLD=3, ER=-1, H=-0.5, BB=-0.5, HB=-0.5
+    QA7: IP=4-4.67 & ER<=1, or IP=5-6.67 & ER<=2, or IP>=7 & ER<=3
+    """
+    if pitcher_ros_df is None or pitcher_ros_df.empty:
+        return 0
+    
+    # Find matching player in ROS data
+    player_name = normalize_name(row.get('Name', ''))
+    ros_match = None
+    
+    for _, ros_row in pitcher_ros_df.iterrows():
+        if normalize_name(ros_row.get('Name', '')) == player_name:
+            ros_match = ros_row
+            break
+    
+    if ros_match is None:
+        return 0
+    
+    # Calculate fantasy points based on league scoring
+    try:
+        ip = float(ros_match.get('IP', 0)) * 2
+        strikeouts = float(ros_match.get('SO', 0)) * 1
+        saves = float(ros_match.get('SV', 0)) * 6
+        holds = float(ros_match.get('HLD', 0)) * 3
+        earned_runs = float(ros_match.get('ER', 0)) * -1
+        hits_allowed = float(ros_match.get('H', 0)) * -0.5
+        walks_allowed = float(ros_match.get('BB', 0)) * -0.5
+        hit_batsmen = float(ros_match.get('HBP', 0)) * -0.5
+        
+        # Calculate Quality Appearance 7 (QA7)
+        ip_value = float(ros_match.get('IP', 0))
+        er_value = float(ros_match.get('ER', 0))
+        qa7_points = 0
+        
+        if (4 <= ip_value <= 4.67 and er_value <= 1) or \
+           (5 <= ip_value <= 6.67 and er_value <= 2) or \
+           (ip_value >= 7 and er_value <= 3):
+            qa7_points = 8
+        
+        total_fantasy_points = (ip + strikeouts + saves + holds + earned_runs + 
+                              hits_allowed + walks_allowed + hit_batsmen + qa7_points)
+        
+        return total_fantasy_points
+    except (ValueError, TypeError):
+        return 0
+
 def normalize_name(name: str) -> str:
     """Normalize player name for comparison"""
     try:
@@ -428,12 +519,9 @@ def get_position_value(position_str, position_counts=None, points_data=None):
     # Cap at 1.0 to ensure we stay within scale
     return min(max_pos_value, 1.0)
 
-def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None, points_data=None):
+def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None, points_data=None, ros_data=None):
     """
-    Calculate MVP score based on the weighted normalized values
-    
-    Now includes position value in the calculation that accounts for positional scarcity
-    relative to fantasy points scored, rather than defensive value
+    Calculate MVP score based on weighted combination of ROS fantasy scoring (80%) and MVP metrics (20%)
     
     Args:
         player_row: Row from the DataFrame containing player data
@@ -441,18 +529,38 @@ def calculate_mvp_score(player_row, weights, norm_columns, position_counts=None,
         norm_columns: Dictionary of normalized component values
         position_counts: Dictionary mapping positions to player counts
         points_data: Optional DataFrame containing fantasy points data by position
+        ros_data: Dictionary containing 'hitters' and 'pitchers' ROS DataFrames
     """
-    score = 0
+    # Calculate traditional MVP score (20% weight)
+    traditional_mvp_score = 0
     for col, weight in weights.items():
-        if col in norm_columns and col != 'Position':  # Skip Position as we're handling it separately
-            score += norm_columns[col][player_row.name] * weight
+        if col in norm_columns and col != 'Position':
+            traditional_mvp_score += norm_columns[col][player_row.name] * weight
     
-    # Add position value to the score, accounting for positional scarcity
+    # Add position value to traditional MVP score
     if 'Position' in player_row and weights.get('Position', 0) > 0:
         position_score = get_position_value(player_row['Position'], position_counts, points_data)
-        score += position_score * weights.get('Position', 0)
+        traditional_mvp_score += position_score * weights.get('Position', 0)
     
-    return score
+    # Calculate ROS fantasy score (80% weight)
+    ros_score = 0
+    if ros_data is not None:
+        # Check if player is a pitcher or hitter based on position
+        position = player_row.get('Position', '')
+        if 'SP' in position or 'RP' in position:
+            # Pitcher
+            ros_score = calculate_pitcher_ros_score(player_row, ros_data.get('pitchers'))
+        else:
+            # Hitter
+            ros_score = calculate_hitter_ros_score(player_row, ros_data.get('hitters'))
+    
+    # Normalize ROS score to 0-1 scale (will be done globally later)
+    # For now, use raw ROS score
+    
+    # Combine scores: 20% traditional MVP + 80% ROS
+    final_score = (traditional_mvp_score * 0.2) + (ros_score * 0.8)
+    
+    return final_score
 
 def render():
     """Render the MVP Race page"""
@@ -586,6 +694,16 @@ def render():
                         name_to_mlb_id[name.strip()] = str(row['MLBID'])
     except Exception:
         pass
+    
+    # Load ROS data files
+    ros_data = {'hitters': None, 'pitchers': None}
+    try:
+        hitter_ros_df = pd.read_csv("attached_assets/hitter_ROS.csv")
+        pitcher_ros_df = pd.read_csv("attached_assets/pitcher_ROS.csv")
+        ros_data = {'hitters': hitter_ros_df, 'pitchers': pitcher_ros_df}
+        st.success(f"Loaded ROS data: {len(hitter_ros_df)} hitters, {len(pitcher_ros_df)} pitchers")
+    except Exception as e:
+        st.warning(f"Could not load ROS data files: {str(e)}")
     
     # Load the MVP player list
     try:
@@ -757,24 +875,61 @@ def render():
         # Debug position counts
         #st.sidebar.write("Position Counts:", position_counts)
         
-        # Calculate MVP score for each player
-        mvp_scores = []
+        # Calculate ROS scores first for normalization
+        ros_scores = []
+        traditional_mvp_scores = []
         
         try:
             for idx, row in filtered_data.iterrows():
-                score = calculate_mvp_score(row, weights, norm_columns, position_counts, mvp_data)
-                mvp_scores.append(score)
+                # Calculate traditional MVP score (20% weight)
+                traditional_score = 0
+                for col, weight in weights.items():
+                    if col in norm_columns and col != 'Position':
+                        traditional_score += norm_columns[col][row.name] * weight
+                
+                # Add position value to traditional MVP score
+                if 'Position' in row and weights.get('Position', 0) > 0:
+                    position_score = get_position_value(row['Position'], position_counts, mvp_data)
+                    traditional_score += position_score * weights.get('Position', 0)
+                
+                traditional_mvp_scores.append(traditional_score)
+                
+                # Calculate ROS fantasy score
+                ros_score = 0
+                if ros_data is not None:
+                    position = row.get('Position', '')
+                    if 'SP' in position or 'RP' in position:
+                        ros_score = calculate_pitcher_ros_score(row, ros_data.get('pitchers'))
+                    else:
+                        ros_score = calculate_hitter_ros_score(row, ros_data.get('hitters'))
+                
+                ros_scores.append(ros_score)
             
-            filtered_data['MVP_Score_Raw'] = mvp_scores
+            # Normalize ROS scores to 0-1 scale
+            if ros_scores and max(ros_scores) > min(ros_scores):
+                max_ros = max(ros_scores)
+                min_ros = min(ros_scores)
+                ros_range = max_ros - min_ros
+                normalized_ros_scores = [(score - min_ros) / ros_range for score in ros_scores]
+            else:
+                normalized_ros_scores = [0.5 for _ in ros_scores]  # Default if all ROS scores are the same
+            
+            # Combine scores: 20% traditional MVP + 80% ROS
+            final_scores = []
+            for i in range(len(filtered_data)):
+                final_score = (traditional_mvp_scores[i] * 0.2) + (normalized_ros_scores[i] * 0.8)
+                final_scores.append(final_score)
+            
+            filtered_data['MVP_Score_Raw'] = final_scores
             
         except Exception as e:
             st.error(f"Error calculating MVP scores: {str(e)}")
             st.write(f"Debug info: {len(filtered_data)} players, weights: {weights}")
             return
         
-        # Scale the MVP scores to a 0-100 scale for better user understanding
-        max_score = max(mvp_scores)
-        min_score = min(mvp_scores)
+        # Scale the final MVP scores to a 0-100 scale for better user understanding
+        max_score = max(final_scores)
+        min_score = min(final_scores)
         score_range = max_score - min_score
         
         # Scale scores to 0-100 range and round to 1 decimal place
