@@ -495,28 +495,44 @@ def render():
         with tab2:
             st.write("## All Trade Transactions")
             
-            # Get all unique team names from trades
+            # Get all unique team names from trades with error handling
             all_teams = set()
-            for trade in trade_analysis:
-                all_teams.update(trade['teams_involved'])
-            all_teams = sorted(list(all_teams))
+            try:
+                for trade in trade_analysis:
+                    if 'teams_involved' in trade:
+                        all_teams.update(trade['teams_involved'])
+                    elif 'teams' in trade:  # Fallback for backward compatibility
+                        all_teams.update(trade['teams'])
+                all_teams = sorted(list(all_teams))
+            except Exception as e:
+                st.error(f"Error loading team data: {str(e)}")
+                all_teams = []
             
             # Team filter dropdown
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                selected_team = st.selectbox(
-                    "Filter by Team:",
-                    ["All Teams"] + all_teams,
-                    key="team_filter"
-                )
-            
-            # Filter trades based on selected team
-            if selected_team == "All Teams":
-                filtered_trades = trade_analysis[:20]  # Show top 20 trades
+            if all_teams:
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    selected_team = st.selectbox(
+                        "Filter by Team:",
+                        ["All Teams"] + all_teams,
+                        key="team_filter"
+                    )
+                
+                # Filter trades based on selected team
+                if selected_team == "All Teams":
+                    filtered_trades = trade_analysis[:20]  # Show top 20 trades
+                else:
+                    filtered_trades = []
+                    for trade in trade_analysis:
+                        teams_key = 'teams_involved' if 'teams_involved' in trade else 'teams'
+                        if teams_key in trade and selected_team in trade[teams_key]:
+                            filtered_trades.append(trade)
+                    filtered_trades = filtered_trades[:20]
+                
+                st.write(f"Showing {len(filtered_trades)} trades" + (f" for {selected_team}" if selected_team != "All Teams" else ""))
             else:
-                filtered_trades = [trade for trade in trade_analysis if selected_team in trade['teams_involved']][:20]
-            
-            st.write(f"Showing {len(filtered_trades)} trades" + (f" for {selected_team}" if selected_team != "All Teams" else ""))
+                st.warning("No team data available for filtering")
+                filtered_trades = trade_analysis[:20]
             
             for i, trade in enumerate(filtered_trades):
                 with st.expander(f"Trade #{i+1}: {trade['date'].strftime('%B %d, %Y')} - Value Diff: {trade['value_difference']:.1f}"):
