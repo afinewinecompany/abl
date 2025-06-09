@@ -636,6 +636,29 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
 
     # Add a debug option in sidebar to show detailed modifiers
     st.session_state.debug_modifiers = st.sidebar.checkbox("Show detailed modifier calculations", value=False)
+    
+    # Ranking movement tracking section
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📊 Ranking Movement Tracker")
+    
+    # Button to take snapshot
+    if st.sidebar.button("📸 Take Ranking Snapshot", type="primary"):
+        # Take snapshot after calculating final rankings
+        st.session_state.take_snapshot = True
+        st.sidebar.success("Snapshot will be saved after rankings are calculated!")
+    
+    # Show last snapshot date if available
+    from utils import load_rankings_history
+    history_df = load_rankings_history(ranking_type="power")
+    if not history_df.empty:
+        last_snapshot = history_df['date'].max()
+        st.sidebar.info(f"Last snapshot: {last_snapshot.strftime('%Y-%m-%d')}")
+        
+        # Option to show movement from last snapshot
+        show_movement = st.sidebar.checkbox("Show movement from last snapshot", value=True)
+    else:
+        show_movement = False
+        st.sidebar.info("No previous snapshots available")
 
     # Get custom data from parameters or session state
     if power_rankings_data:
@@ -832,10 +855,69 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     rankings_df = rankings_df.sort_values('power_score', ascending=False).reset_index(drop=True)
     # Save the original overall rank for each team before filtering
     rankings_df['original_rank'] = rankings_df.index + 1
+    
+    # Calculate ranking movement if enabled
+    movement_data = {}
+    if show_movement and not history_df.empty:
+        # Get the most recent snapshot
+        latest_snapshot_date = history_df['date'].max()
+        latest_snapshot = history_df[history_df['date'] == latest_snapshot_date]
+        
+        # Create a mapping of team to previous rank
+        prev_rankings = {}
+        for _, row in latest_snapshot.iterrows():
+            prev_rankings[row['team_name']] = row['rank']
+        
+        # Calculate movement for each team
+        for idx, row in rankings_df.iterrows():
+            team_name = row['team_name']
+            current_rank = row['original_rank']
+            
+            if team_name in prev_rankings:
+                prev_rank = prev_rankings[team_name]
+                movement = prev_rank - current_rank  # Positive = moved up, negative = moved down
+                
+                if movement > 0:
+                    movement_data[team_name] = {'movement': movement, 'direction': 'up', 'emoji': '📈', 'text': f'+{movement}'}
+                elif movement < 0:
+                    movement_data[team_name] = {'movement': abs(movement), 'direction': 'down', 'emoji': '📉', 'text': f'-{abs(movement)}'}
+                else:
+                    movement_data[team_name] = {'movement': 0, 'direction': 'same', 'emoji': '➡️', 'text': '—'}
+            else:
+                movement_data[team_name] = {'movement': 0, 'direction': 'new', 'emoji': '🆕', 'text': 'NEW'}
+    
+    # Add movement data to rankings dataframe
+    rankings_df['movement'] = rankings_df['team_name'].map(
+        lambda x: movement_data.get(x, {'movement': 0})['movement']
+    )
+    rankings_df['movement_direction'] = rankings_df['team_name'].map(
+        lambda x: movement_data.get(x, {'direction': 'same'})['direction']
+    )
+    rankings_df['movement_emoji'] = rankings_df['team_name'].map(
+        lambda x: movement_data.get(x, {'emoji': ''})['emoji']
+    )
+    rankings_df['movement_text'] = rankings_df['team_name'].map(
+        lambda x: movement_data.get(x, {'text': ''})['text']
+    )
     rankings_df.index = rankings_df.index + 1  # Start ranking from 1
 
     # Store the calculated rankings in session state for other components to use
     st.session_state.power_rankings_calculated = rankings_df.copy()
+    
+    # Handle snapshot taking if requested
+    if st.session_state.get('take_snapshot', False):
+        from utils import save_rankings_history
+        # Prepare data for snapshot with required columns
+        snapshot_df = rankings_df[['team_name', 'power_score', 'raw_power_score']].copy()
+        snapshot_df['rank'] = snapshot_df.index
+        
+        if save_rankings_history(snapshot_df, ranking_type="power"):
+            st.sidebar.success("📸 Ranking snapshot saved successfully!")
+        else:
+            st.sidebar.error("❌ Failed to save ranking snapshot")
+        
+        # Reset the snapshot flag
+        st.session_state.take_snapshot = False
     
     # Load division data and create mapping
     division_mapping = load_division_data()
@@ -1081,6 +1163,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 600; color: white; display: flex; align-items: center;">
                             {html.escape(str(row['team_name']))}
                             {row['hot_cold_emoji'] if row['hot_cold_emoji'] else ""}
+                            {f" {row['movement_emoji']} {row['movement_text']}" if show_movement and row.get('movement_text') else ""}
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.9rem;">
