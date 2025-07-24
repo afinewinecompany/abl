@@ -3,6 +3,7 @@ from typing import Dict, List, Any, Union
 import streamlit as st
 import time
 import datetime
+import os
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
@@ -10,7 +11,11 @@ class FantraxAPI:
     def __init__(self):
         self.base_url = "https://www.fantrax.com/fxea/general"
         self.league_id = "grx2lginm1v4p5jd"
-
+        
+        # Get authentication credentials from environment
+        self.username = os.getenv('FANTRAX_USERNAME')
+        self.password = os.getenv('FANTRAX_PASSWORD')
+        
         # Configure retry strategy
         retry_strategy = Retry(
             total=3,  # number of retries
@@ -21,6 +26,39 @@ class FantraxAPI:
         # Create session with retry strategy
         self.session = requests.Session()
         self.session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
+        
+        # Authenticate if credentials are available
+        if self.username and self.password:
+            self._authenticate()
+        else:
+            st.sidebar.warning("⚠️ No Fantrax credentials found - using mock data")
+    
+    def _authenticate(self):
+        """Authenticate with Fantrax to get session cookies"""
+        try:
+            st.sidebar.info("🔐 Authenticating with Fantrax...")
+            
+            # Login to Fantrax
+            login_url = "https://www.fantrax.com/login"
+            login_data = {
+                'username': self.username,
+                'password': self.password
+            }
+            
+            response = self.session.post(login_url, data=login_data, timeout=15)
+            response.raise_for_status()
+            
+            # Check if login was successful by looking for session cookies or redirects
+            if 'JSESSIONID' in self.session.cookies or response.url != login_url:
+                st.sidebar.success("✅ Fantrax authentication successful")
+                return True
+            else:
+                st.sidebar.error("❌ Fantrax authentication failed - invalid credentials")
+                return False
+                
+        except Exception as e:
+            st.sidebar.error(f"❌ Authentication error: {str(e)}")
+            return False
 
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""

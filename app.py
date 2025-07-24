@@ -563,6 +563,35 @@ def main():
                 st.success("Cache cleared! Refreshing with latest roster data...")
                 st.rerun()
             
+            # Add API test button
+            st.markdown("### 🔍 API Diagnostics")
+            if st.button("Test Fantrax API Connection", use_container_width=True):
+                with st.spinner("Testing API connection..."):
+                    try:
+                        from api_client import FantraxAPI
+                        api_client = FantraxAPI()
+                        
+                        # Test roster API directly
+                        st.info("Testing getTeamRosters endpoint...")
+                        roster_response = api_client.get_team_rosters()
+                        
+                        if isinstance(roster_response, dict) and 'rosters' in roster_response:
+                            rosters = roster_response.get('rosters', {})
+                            st.success(f"✅ API Working: Found {len(rosters)} teams in roster data")
+                            
+                            # Show sample team names
+                            team_names = []
+                            for team_id, team_data in list(rosters.items())[:3]:
+                                team_name = team_data.get('teamName', 'Unknown')
+                                team_names.append(team_name)
+                            st.info(f"Sample teams: {', '.join(team_names)}")
+                        else:
+                            st.error("❌ API returned unexpected format or mock data")
+                            st.write("Response type:", type(roster_response))
+                            
+                    except Exception as e:
+                        st.error(f"❌ API Test Failed: {str(e)}")
+            
             # Add "Take New Rankings Snapshot" button with improved styling and feedback
             st.markdown("### 📸 Rankings History")
             st.markdown("""
