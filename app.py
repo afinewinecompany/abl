@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import base64
 from PIL import Image
-from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, mvp_race_new as mvp_race, dump_deadline, handbook
+from components import league_info, rosters, standings, power_rankings, prospects, transactions, ddi, mvp_race_new as mvp_race, dump_deadline
 # Projected Rankings completely removed as it's no longer relevant for this season
 from utils import (
     fetch_api_data, 
@@ -883,7 +883,7 @@ def main():
                 dump_deadline.render()
 
             with tab6:
-                handbook.render(data['roster_data'])
+                prospects.render(data['roster_data'])
 
             with tab7:
                 # Get the power rankings data from the power_rankings component
