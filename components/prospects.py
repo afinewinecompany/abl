@@ -75,6 +75,8 @@ def normalize_name(name: str) -> str:
 def render(roster_data: pd.DataFrame):
     """Main render function for prospects page"""
     st.header("🌟 Prospect Analysis")
+    
+    st.info("📋 **Current Roster Data**: Team prospect listings reflect the current roster composition from Fantrax API, including all completed trades and transactions.")
 
     # Load division data
     divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
@@ -94,13 +96,14 @@ def render(roster_data: pd.DataFrame):
         prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
         prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
 
-        # Merge with import data - ensure we keep all ranked players
+        # Merge with import data using current roster data as the primary source
+        # This ensures we only show players currently on team rosters (post-trades)
         ranked_prospects = pd.merge(
             prospects_data,
             prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
             left_on='clean_name',
             right_on=prospect_import['Name'].apply(normalize_name),
-            how='outer'  # Changed to outer join to keep all players
+            how='left'  # Use left join to only keep current roster players
         )
 
         # Fill missing values and clean up
@@ -128,8 +131,14 @@ def render(roster_data: pd.DataFrame):
         # First render the Top 100 prospects list
         render_top_100_header(ranked_prospects, player_id_cache, global_max_score, global_min_score)
 
-        # Calculate team rankings using average score
-        team_scores = ranked_prospects.groupby('team').agg({
+        # Calculate team rankings using current roster data (post-trades)
+        # Only include players who are currently on team rosters and have prospect scores
+        current_team_prospects = ranked_prospects[
+            (ranked_prospects['team'].notna()) & 
+            (ranked_prospects['prospect_score'] > 0)
+        ]
+        
+        team_scores = current_team_prospects.groupby('team').agg({
             'prospect_score': ['sum', 'mean', 'count']
         }).reset_index()
 
@@ -158,9 +167,12 @@ def render(roster_data: pd.DataFrame):
         columns = [col1, col2, col3]
         for idx, (_, row) in enumerate(team_scores.head(3).iterrows()):
             with columns[idx]:
-                team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                    'prospect_score', ascending=False
-                )
+                # Filter team prospects using current roster data (post-trades)
+                team_prospects = ranked_prospects[
+                    (ranked_prospects['team'] == row['team']) & 
+                    (ranked_prospects['prospect_score'] > 0)  # Only include players with prospect scores
+                ].sort_values('prospect_score', ascending=False)
+                
                 render_prospect_preview({
                     'player_name': f"#{idx + 1} {row['team']}",
                     'position': division_mapping.get(row['team'], "Unknown"),
@@ -173,9 +185,12 @@ def render(roster_data: pd.DataFrame):
         remaining_teams = team_scores.iloc[3:]
 
         for i, (_, row) in enumerate(remaining_teams.iterrows()):
-            team_prospects = ranked_prospects[ranked_prospects['team'] == row['team']].sort_values(
-                'prospect_score', ascending=False
-            )
+            # Filter team prospects using current roster data (post-trades)
+            team_prospects = ranked_prospects[
+                (ranked_prospects['team'] == row['team']) & 
+                (ranked_prospects['prospect_score'] > 0)  # Only include players with prospect scores
+            ].sort_values('prospect_score', ascending=False)
+            
             render_prospect_preview({
                 'player_name': f"#{i + 4} {row['team']}",
                 'position': division_mapping.get(row['team'], "Unknown"),
