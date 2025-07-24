@@ -34,6 +34,11 @@ class DataProcessor:
                 return pd.DataFrame(columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team'])
 
             rosters = roster_data.get('rosters', {})
+            st.sidebar.info(f"Processing roster data for {len(rosters)} teams")
+            
+            # Debug: Show team names being processed
+            team_names = [team_data.get('teamName', 'Unknown') for team_data in rosters.values()]
+            st.sidebar.info(f"Teams found: {', '.join(team_names[:5])}{'...' if len(team_names) > 5 else ''}")
 
             for team_id, team_data in rosters.items():
                 team_name = team_data.get('teamName', 'Unknown')
@@ -79,6 +84,11 @@ class DataProcessor:
             df = pd.DataFrame(roster_list) if roster_list else pd.DataFrame(
                 columns=['team', 'player_name', 'position', 'status', 'salary', 'mlb_team']
             )
+            
+            st.sidebar.success(f"Processed {len(df)} total players across all teams")
+            if len(df) > 0:
+                unique_teams = df['team'].nunique()
+                st.sidebar.info(f"Data contains {unique_teams} unique teams with roster assignments")
 
             return df
 

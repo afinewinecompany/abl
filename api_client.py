@@ -25,7 +25,7 @@ class FantraxAPI:
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Make API request with error handling and retries"""
         try:
-            st.sidebar.info(f"Making API request to {endpoint}...")
+            st.sidebar.info(f"Making API request to {endpoint} with params: {params}")
             response = self.session.get(
                 f"{self.base_url}/{endpoint}",
                 params=params,
@@ -56,9 +56,11 @@ class FantraxAPI:
                 
                 # Success!
                 if isinstance(data, (dict, list)):
+                    st.sidebar.success(f"✅ {endpoint} API call successful - using live data")
                     return data
                 else:
                     st.warning(f"Unexpected data type from {endpoint}: {type(data)}")
+                    st.sidebar.warning(f"⚠️ {endpoint} returned unexpected format - falling back to mock data")
                     # If we got a string or other non-dict/list, return mock data
                     return self._get_mock_data(endpoint)
                     
@@ -73,11 +75,13 @@ class FantraxAPI:
                 
         except requests.exceptions.RequestException as e:
             st.warning(f"API request to {endpoint} failed: {str(e)}")
+            st.sidebar.warning(f"🔄 {endpoint} API unavailable - using mock data for development")
             return self._get_mock_data(endpoint)
         except Exception as e:
             st.error(f"Unexpected error in API request to {endpoint}: {str(e)}")
             import traceback
             st.sidebar.error(f"API request error traceback: {traceback.format_exc()}")
+            st.sidebar.warning(f"🔄 {endpoint} API failed - using mock data for development")
             return self._get_mock_data(endpoint)
 
     def _get_mock_data(self, endpoint: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
@@ -239,10 +243,35 @@ class FantraxAPI:
         """Fetch league information"""
         return self._make_request("getLeagueInfo", {"leagueId": self.league_id})
 
-    def get_team_rosters(self) -> Dict[str, Any]:
+    def get_team_rosters(self, period: str = None) -> Dict[str, Any]:
         """Fetch team rosters"""
+        # Use the current period if not specified
+        if period is None:
+            # Try to get current period from scoring periods
+            try:
+                scoring_periods = self.get_scoring_periods()
+                current_period = "1"  # Default fallback
+                
+                # Extract current period from the response
+                if isinstance(scoring_periods, list):
+                    for period_obj in scoring_periods:
+                        if isinstance(period_obj, dict) and period_obj.get('isCurrent', False):
+                            current_period = str(period_obj.get('periodNum', 1))
+                            break
+                elif isinstance(scoring_periods, dict) and 'items' in scoring_periods:
+                    for period_obj in scoring_periods['items']:
+                        if isinstance(period_obj, dict) and period_obj.get('isCurrent', False):
+                            current_period = str(period_obj.get('periodNum', 1))
+                            break
+                
+                period = current_period
+                st.sidebar.info(f"Using scoring period: {period}")
+            except Exception as e:
+                st.sidebar.warning(f"Could not determine current period, using period 1: {str(e)}")
+                period = "1"
+        
         return self._make_request("getTeamRosters", 
-                              {"leagueId": self.league_id, "period": "1"})
+                              {"leagueId": self.league_id, "period": period})
 
     def get_standings(self) -> List[Dict[str, Any]]:
         """Fetch standings data directly from the API for power rankings calculation"""

@@ -556,8 +556,12 @@ def main():
         # Streamlined sidebar
         with st.sidebar:
             st.markdown("### 🔄 League Controls")
-            if st.button("Refresh Data", use_container_width=True):
-                st.experimental_rerun()
+            st.markdown("Refresh roster data to get the latest trades and player assignments from Fantrax API.")
+            if st.button("🔄 Refresh Roster Data", use_container_width=True):
+                # Clear the cache to force fresh API data
+                fetch_api_data.clear()
+                st.success("Cache cleared! Refreshing with latest roster data...")
+                st.rerun()
             
             # Add "Take New Rankings Snapshot" button with improved styling and feedback
             st.markdown("### 📸 Rankings History")

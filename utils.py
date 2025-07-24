@@ -7,7 +7,7 @@ import os
 import datetime
 from pathlib import Path
 
-@st.cache_data
+@st.cache_data(ttl=300)  # Cache for 5 minutes only to ensure fresh trade data
 def fetch_api_data():
     """
     Fetch all required data from API and process it.
