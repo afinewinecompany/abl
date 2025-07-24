@@ -576,12 +576,12 @@ def main():
                         roster_response = api_client.get_team_rosters()
                         
                         if isinstance(roster_response, dict) and 'rosters' in roster_response:
-                            rosters = roster_response.get('rosters', {})
-                            st.success(f"✅ API Working: Found {len(rosters)} teams in roster data")
+                            rosters_data = roster_response.get('rosters', {})
+                            st.success(f"✅ API Working: Found {len(rosters_data)} teams in roster data")
                             
                             # Show sample team names
                             team_names = []
-                            for team_id, team_data in list(rosters.items())[:3]:
+                            for team_id, team_data in list(rosters_data.items())[:3]:
                                 team_name = team_data.get('teamName', 'Unknown')
                                 team_names.append(team_name)
                             st.info(f"Sample teams: {', '.join(team_names)}")
