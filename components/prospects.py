@@ -116,7 +116,9 @@ def render(roster_data: pd.DataFrame):
         # Handle position column conflict: merge has both 'Position' (from prospect CSV) and 'position' (from roster)
         # Use prospect CSV position as primary, fall back to roster position
         ranked_prospects['final_position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
-        ranked_prospects['team'] = ranked_prospects['MLB Team']  # Use prospect CSV team assignments
+        # Use CURRENT ROSTER team assignments from Fantrax API (not prospect CSV) to reflect actual trades
+        # The 'team' column from prospects_data comes from current Fantrax roster data
+        # Keep the original team assignment from current roster - don't overwrite with outdated CSV data
 
         # Remove duplicates but keep the one with rank if available
         ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
@@ -133,8 +135,8 @@ def render(roster_data: pd.DataFrame):
         # Drop the original Position column to avoid confusion
         ranked_prospects = ranked_prospects.drop(columns=['Position'], errors='ignore')
         
-        # The team column was already correctly set to MLB Team values earlier at line 120
-        # No need to reassign it since it already contains the correct prospect CSV team assignments
+        # Team assignments now use current Fantrax roster data (from 'team' column in prospects_data)
+        # This reflects actual trades and current team rosters, not outdated prospect CSV assignments
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
@@ -145,6 +147,7 @@ def render(roster_data: pd.DataFrame):
 
         # Calculate team rankings using current roster data (post-trades)
         # Only include players who are currently on team rosters and have prospect scores
+        # The 'team' column now reflects current Fantrax API roster assignments
         current_team_prospects = ranked_prospects[
             (ranked_prospects['team'].notna()) & 
             (ranked_prospects['prospect_score'] > 0)
