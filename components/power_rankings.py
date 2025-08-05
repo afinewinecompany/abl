@@ -397,16 +397,27 @@ def get_previous_rankings() -> Dict[str, int]:
             print("No snapshots found in history.")
             return {}
         
-        # Use the most recent snapshot date for movement comparison
-        most_recent_date = available_dates[-1]
-        print(f"Using most recent snapshot date for movement comparison: {most_recent_date}")
+        # For movement tracking, we want to compare against the second-most recent snapshot
+        # so we can see changes from the last snapshot to current live data
+        if len(available_dates) >= 2:
+            # Use second most recent to show movement from that snapshot to current
+            comparison_date = available_dates[-2]
+            print(f"Using second-most recent snapshot for movement comparison: {comparison_date}")
+            print(f"Available dates: {available_dates}")
+            print(f"Most recent snapshot: {available_dates[-1]}")
+        else:
+            # Fall back to most recent if only one snapshot available
+            comparison_date = available_dates[-1]
+            print(f"Only one snapshot available, using: {comparison_date}")
         
-        # Get all rankings from the most recent date
-        latest_rankings = history_df[history_df['date_only'] == most_recent_date]
+        print(f"Selected comparison date for movement tracking: {comparison_date}")
+        
+        # Get all rankings from the comparison date
+        latest_rankings = history_df[history_df['date_only'] == comparison_date]
         
         # Print information about which date we're using
-        print(f"Using rankings from {most_recent_date} for movement indicators")
-        print(f"Found {len(latest_rankings)} teams in snapshot from {most_recent_date}")
+        print(f"Using rankings from {comparison_date} for movement indicators")
+        print(f"Found {len(latest_rankings)} teams in snapshot from {comparison_date}")
         
         # Create a dictionary mapping team names to their previous rankings
         for _, row in latest_rankings.iterrows():
@@ -422,7 +433,7 @@ def get_previous_rankings() -> Dict[str, int]:
             previous_rankings[team_name] = rank
         
         # Debug info - print snapshot details
-        print(f"Loaded previous rankings from {most_recent_date}:")
+        print(f"Loaded previous rankings from {comparison_date}:")
         if previous_rankings:
             sorted_teams = sorted(previous_rankings.items(), key=lambda x: x[1])
             for team, rank in sorted_teams[:10]:  # Show top 10
@@ -841,17 +852,8 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     # Calculate ranking movement if enabled
     movement_data = {}
     if show_movement:
-        print(f"Movement tracking enabled. Loading historical rankings...")
-        
         # Use the get_previous_rankings function to get historical data
         prev_rankings = get_previous_rankings()
-        
-        print(f"Previous rankings loaded: {len(prev_rankings)} teams")
-        if prev_rankings:
-            print("Sample of previous rankings:")
-            sample_teams = list(prev_rankings.items())[:5]
-            for team, rank in sample_teams:
-                print(f"  {team}: rank {rank}")
         
         # Calculate movement for each team comparing current live rankings to previous snapshot
         for idx, row in rankings_df.iterrows():
@@ -862,8 +864,6 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                 prev_rank = prev_rankings[team_name]
                 movement = prev_rank - current_rank  # Positive = moved up, negative = moved down
                 
-                print(f"Movement calc for {team_name}: prev={prev_rank}, current={current_rank}, movement={movement}")
-                
                 if movement > 0:
                     movement_data[team_name] = {'movement': movement, 'direction': 'up', 'emoji': '📈', 'text': f'+{movement}'}
                 elif movement < 0:
@@ -872,9 +872,6 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     movement_data[team_name] = {'movement': 0, 'direction': 'same', 'emoji': '➡️', 'text': '—'}
             else:
                 movement_data[team_name] = {'movement': 0, 'direction': 'new', 'emoji': '🆕', 'text': 'NEW'}
-                print(f"{team_name} not found in previous rankings - marked as NEW")
-        
-        print(f"Movement data calculated for {len(movement_data)} teams")
     
     # Add movement data to rankings dataframe
     rankings_df['movement'] = rankings_df['team_name'].map(
