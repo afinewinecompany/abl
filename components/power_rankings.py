@@ -1097,6 +1097,7 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                         <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
                             {html.escape(str(row['team_name']))}
                             {row['hot_cold_emoji'] if row['hot_cold_emoji'] else ""}
+                            {f" {row['movement_emoji']} {row['movement_text']}" if show_movement and row.get('movement_text') else ""}
                         </div>
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                             <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; flex: 1; text-align: center;">
