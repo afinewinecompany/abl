@@ -78,6 +78,9 @@ def render(roster_data: pd.DataFrame):
     
     st.info("📋 **Current Roster Data**: Team prospect listings reflect the current roster composition from Fantrax API, including all completed trades and transactions.")
 
+    # Debug info
+    st.info(f"DEBUG: Roster data shape: {roster_data.shape}, Columns: {roster_data.columns.tolist()}")
+
     # Load division data
     divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
     division_mapping = dict(zip(divisions_df['team'], divisions_df['division']))
@@ -210,6 +213,8 @@ def render(roster_data: pd.DataFrame):
 
     except Exception as e:
         st.error(f"Error processing prospect data: {str(e)}")
+        import traceback
+        st.error(f"Full traceback: {traceback.format_exc()}")
         return
 
 def create_player_id_cache(mlb_ids_df: pd.DataFrame) -> Dict[str, str]:
