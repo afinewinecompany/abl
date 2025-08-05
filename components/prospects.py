@@ -89,7 +89,8 @@ def render(roster_data: pd.DataFrame):
     try:
         # Load and process prospect scores
         prospect_import = pd.read_csv("attached_assets/ABL-Import.csv", na_values=['NA', ''], keep_default_na=True)
-        prospect_import['Name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
+        # Create normalized name column for merging
+        prospect_import['clean_name'] = prospect_import['Name'].fillna('').astype(str).apply(normalize_name)
 
         # Get all players that could be prospects (MINORS, ACTIVE, or RESERVE)
         prospects_data = roster_data.copy()
@@ -99,9 +100,9 @@ def render(roster_data: pd.DataFrame):
         # Merge prospect import data with current roster data
         # Use prospect import as primary source to ensure correct team assignments after trades
         ranked_prospects = pd.merge(
-            prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
+            prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank', 'clean_name']],
             prospects_data,
-            left_on=prospect_import['Name'].apply(normalize_name),
+            left_on='clean_name',
             right_on='clean_name',
             how='inner'  # Only include players that exist in both datasets
         )
