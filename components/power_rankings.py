@@ -385,37 +385,28 @@ def get_previous_rankings() -> Dict[str, int]:
         # Convert date column to datetime for comparison
         history_df['date'] = pd.to_datetime(history_df['date'])
         
-        # Get today's date to exclude it
-        today = datetime.now().date()
-        
         # Convert the history_df dates to date objects for comparison
         history_df['date_only'] = history_df['date'].dt.date
         
-        # Exclude today's data (if exists) to get previous snapshots
-        previous_snapshots = history_df[history_df['date_only'] < today]
-        
-        # If we have no previous snapshots, return empty dict
-        if previous_snapshots.empty:
-            print("No previous snapshots found (excluding today).")
-            return {}
-        
-        # Find all available dates in the history data
-        available_dates = sorted(previous_snapshots['date_only'].unique())
+        # Find all available dates in the history data (no exclusion of today)
+        available_dates = sorted(history_df['date_only'].unique())
         print(f"Available ranking dates: {available_dates}")
         
-        # Use the most recent snapshot date
+        # If we have snapshots, use the most recent one for comparison
+        if len(available_dates) == 0:
+            print("No snapshots found in history.")
+            return {}
+        
+        # Use the most recent snapshot date for movement comparison
         most_recent_date = available_dates[-1]
-        print(f"Using most recent snapshot date: {most_recent_date}")
+        print(f"Using most recent snapshot date for movement comparison: {most_recent_date}")
         
         # Get all rankings from the most recent date
-        latest_rankings = previous_snapshots[previous_snapshots['date_only'] == most_recent_date]
+        latest_rankings = history_df[history_df['date_only'] == most_recent_date]
         
         # Print information about which date we're using
         print(f"Using rankings from {most_recent_date} for movement indicators")
-        
-        # Check if we have the teams mentioned by the user
-        has_washington = False
-        has_pittsburgh = False
+        print(f"Found {len(latest_rankings)} teams in snapshot from {most_recent_date}")
         
         # Create a dictionary mapping team names to their previous rankings
         for _, row in latest_rankings.iterrows():
@@ -428,27 +419,18 @@ def get_previous_rankings() -> Dict[str, int]:
             team_name = row[team_column]
             rank = row['rank']
             
-            # Check if this is one of our target teams
-            if team_name == "Washington Nationals":
-                has_washington = True
-                print(f"Found Washington Nationals at rank {rank} in previous data")
-            elif team_name == "Pittsburgh Pirates":
-                has_pittsburgh = True
-                print(f"Found Pittsburgh Pirates at rank {rank} in previous data")
-            
             previous_rankings[team_name] = rank
         
-        # Report if we couldn't find the teams
-        if not has_washington:
-            print("WARNING: Washington Nationals not found in historical rankings!")
-        if not has_pittsburgh:
-            print("WARNING: Pittsburgh Pirates not found in historical rankings!")
-            
-        # Debug info - print all previous rankings
-        print("All previous rankings:")
-        sorted_teams = sorted(previous_rankings.items(), key=lambda x: x[1])
-        for team, rank in sorted_teams:
-            print(f"  Rank {rank}: {team}")
+        # Debug info - print snapshot details
+        print(f"Loaded previous rankings from {most_recent_date}:")
+        if previous_rankings:
+            sorted_teams = sorted(previous_rankings.items(), key=lambda x: x[1])
+            for team, rank in sorted_teams[:10]:  # Show top 10
+                print(f"  Rank {rank}: {team}")
+            if len(sorted_teams) > 10:
+                print(f"  ... and {len(sorted_teams) - 10} more teams")
+        else:
+            print("  No team rankings found in snapshot!")
     
     except Exception as e:
         # Log the error but return an empty dict to avoid crashing
