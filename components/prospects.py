@@ -96,21 +96,21 @@ def render(roster_data: pd.DataFrame):
         prospects_data['clean_name'] = prospects_data['player_name'].fillna('').astype(str).apply(normalize_name)
         prospects_data = prospects_data.drop_duplicates(subset=['clean_name'], keep='first')
 
-        # Merge with import data using current roster data as the primary source
-        # This ensures we only show players currently on team rosters (post-trades)
+        # Merge prospect import data with current roster data
+        # Use prospect import as primary source to ensure correct team assignments after trades
         ranked_prospects = pd.merge(
-            prospects_data,
             prospect_import[['Name', 'Position', 'MLB Team', 'Score', 'Rank']],
-            left_on='clean_name',
-            right_on=prospect_import['Name'].apply(normalize_name),
-            how='left'  # Use left join to only keep current roster players
+            prospects_data,
+            left_on=prospect_import['Name'].apply(normalize_name),
+            right_on='clean_name',
+            how='inner'  # Only include players that exist in both datasets
         )
 
-        # Fill missing values and clean up
+        # Fill missing values and clean up - use prospect import data as primary source
         ranked_prospects['prospect_score'] = ranked_prospects['Score'].fillna(0)
-        ranked_prospects['player_name'] = ranked_prospects['player_name'].fillna(ranked_prospects['Name'])
+        ranked_prospects['player_name'] = ranked_prospects['Name'].fillna(ranked_prospects['player_name'])
         ranked_prospects['position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
-        ranked_prospects['mlb_team'] = ranked_prospects['MLB Team'].fillna(ranked_prospects['team'])
+        ranked_prospects['team'] = ranked_prospects['MLB Team']  # Use prospect CSV team assignments
 
         # Remove duplicates but keep the one with rank if available
         ranked_prospects = ranked_prospects.sort_values('Rank').drop_duplicates(
@@ -123,6 +123,9 @@ def render(roster_data: pd.DataFrame):
             'MLB Team': 'mlb_team',
             'Position': 'position'
         }, inplace=True)
+        
+        # Ensure team column reflects correct assignments from prospect CSV
+        ranked_prospects['team'] = ranked_prospects['mlb_team']
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
