@@ -840,24 +840,29 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
     
     # Calculate ranking movement if enabled
     movement_data = {}
-    if show_movement and not history_df.empty:
-        # Get the most recent snapshot
-        latest_snapshot_date = history_df['date'].max()
-        latest_snapshot = history_df[history_df['date'] == latest_snapshot_date]
+    if show_movement:
+        print(f"Movement tracking enabled. Loading historical rankings...")
         
-        # Create a mapping of team to previous rank
-        prev_rankings = {}
-        for _, row in latest_snapshot.iterrows():
-            prev_rankings[row['team_name']] = row['rank']
+        # Use the get_previous_rankings function to get historical data
+        prev_rankings = get_previous_rankings()
         
-        # Calculate movement for each team
+        print(f"Previous rankings loaded: {len(prev_rankings)} teams")
+        if prev_rankings:
+            print("Sample of previous rankings:")
+            sample_teams = list(prev_rankings.items())[:5]
+            for team, rank in sample_teams:
+                print(f"  {team}: rank {rank}")
+        
+        # Calculate movement for each team comparing current live rankings to previous snapshot
         for idx, row in rankings_df.iterrows():
             team_name = row['team_name']
-            current_rank = row['original_rank']
+            current_rank = idx + 1  # Current ranking position (1-based)
             
             if team_name in prev_rankings:
                 prev_rank = prev_rankings[team_name]
                 movement = prev_rank - current_rank  # Positive = moved up, negative = moved down
+                
+                print(f"Movement calc for {team_name}: prev={prev_rank}, current={current_rank}, movement={movement}")
                 
                 if movement > 0:
                     movement_data[team_name] = {'movement': movement, 'direction': 'up', 'emoji': '📈', 'text': f'+{movement}'}
@@ -867,6 +872,9 @@ def render(standings_data: pd.DataFrame, power_rankings_data: dict = None, weekl
                     movement_data[team_name] = {'movement': 0, 'direction': 'same', 'emoji': '➡️', 'text': '—'}
             else:
                 movement_data[team_name] = {'movement': 0, 'direction': 'new', 'emoji': '🆕', 'text': 'NEW'}
+                print(f"{team_name} not found in previous rankings - marked as NEW")
+        
+        print(f"Movement data calculated for {len(movement_data)} teams")
     
     # Add movement data to rankings dataframe
     rankings_df['movement'] = rankings_df['team_name'].map(
