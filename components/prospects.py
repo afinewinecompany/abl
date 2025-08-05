@@ -78,8 +78,7 @@ def render(roster_data: pd.DataFrame):
     
     st.info("📋 **Current Roster Data**: Team prospect listings reflect the current roster composition from Fantrax API, including all completed trades and transactions.")
 
-    # Debug info
-    st.info(f"DEBUG: Roster data shape: {roster_data.shape}, Columns: {roster_data.columns.tolist()}")
+
 
     # Load division data
     divisions_df = pd.read_csv("attached_assets/divisions.csv", header=None, names=['division', 'team'])
@@ -134,8 +133,8 @@ def render(roster_data: pd.DataFrame):
         # Drop the original Position column to avoid confusion
         ranked_prospects = ranked_prospects.drop(columns=['Position'], errors='ignore')
         
-        # Ensure team column reflects correct assignments from prospect CSV
-        ranked_prospects['team'] = ranked_prospects['mlb_team']
+        # The team column was already correctly set to MLB Team values earlier at line 120
+        # No need to reassign it since it already contains the correct prospect CSV team assignments
 
         # Calculate global min/max scores for consistent color scaling
         global_max_score = ranked_prospects['prospect_score'].max()
