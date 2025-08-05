@@ -110,7 +110,10 @@ def render(roster_data: pd.DataFrame):
         # Fill missing values and clean up - use prospect import data as primary source
         ranked_prospects['prospect_score'] = ranked_prospects['Score'].fillna(0)
         ranked_prospects['player_name'] = ranked_prospects['Name'].fillna(ranked_prospects['player_name'])
-        ranked_prospects['position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
+        
+        # Handle position column conflict: merge has both 'Position' (from prospect CSV) and 'position' (from roster)
+        # Use prospect CSV position as primary, fall back to roster position
+        ranked_prospects['final_position'] = ranked_prospects['Position'].fillna(ranked_prospects['position'])
         ranked_prospects['team'] = ranked_prospects['MLB Team']  # Use prospect CSV team assignments
 
         # Remove duplicates but keep the one with rank if available
@@ -119,11 +122,14 @@ def render(roster_data: pd.DataFrame):
             keep='first'
         )
 
-        # Rename columns for consistency
+        # Rename columns for consistency - avoid renaming to existing column names
         ranked_prospects.rename(columns={
             'MLB Team': 'mlb_team',
-            'Position': 'position'
+            'final_position': 'position'
         }, inplace=True)
+        
+        # Drop the original Position column to avoid confusion
+        ranked_prospects = ranked_prospects.drop(columns=['Position'], errors='ignore')
         
         # Ensure team column reflects correct assignments from prospect CSV
         ranked_prospects['team'] = ranked_prospects['mlb_team']
