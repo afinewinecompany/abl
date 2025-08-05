@@ -79,8 +79,13 @@ def audit_prospect_teams():
                     'score': prospect['Score']
                 })
         else:
-            # Player not found in current rosters
-            print(f"⚠️  Player not found in current rosters: {name} (listed as {listed_team})")
+            # Player not found in current rosters - check if they were traded away
+            trade_matches = trades[trades['Player'].apply(lambda x: normalize_name(str(x))) == clean_name]
+            if len(trade_matches) > 0:
+                latest_trade = trade_matches.iloc[-1]  # Get most recent trade
+                print(f"⚠️  {name} (listed as {listed_team}) was traded to {latest_trade['To']} - not in current rosters")
+            else:
+                print(f"⚠️  Player not found in current rosters: {name} (listed as {listed_team})")
     
     if mismatches:
         print(f"\n🚨 Found {len(mismatches)} team assignment mismatches:")
